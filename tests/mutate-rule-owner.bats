@@ -7,7 +7,10 @@
 # the code (M33: P139.2 finished with 1 of 10 rules broken; the docs plan that
 # finished R188 could not break kernel code). A rule's plan must serve the
 # rule's requirement. A rule without a plan keeps today's rule: the plan that
-# completes the requirement asks for it. L1: the kernel on a fixture project.
+# completes the requirement asks for it. A retired rule (T168) is owed no
+# break: vbw plan done does not ask for it, vbw mutate refuses its address and
+# vbw show plan leaves it out, the other rules keeping their addresses. L1: the
+# kernel on a fixture project.
 
 load helper
 
@@ -65,6 +68,22 @@ status_of() { jq -r --arg p "$1" '.plans[] | select(.id == $p) | .status' .vbw/r
   [ "$status" -eq 0 ] || { echo "$output"; false; }
   run "$VBW" plan done P1.2 < /dev/null
   [ "$status" -ne 0 ] && [[ "$output" == *"R1.1"* ]] || { echo "$output"; false; }
+}
+
+@test "T168: a retired rule is owed no break and is left out of the plan's rules; R1.2 keeps its address" {
+  plan_doc "" "" | "$VBW" apply > /dev/null
+  printf '{"rules": [{"rule": "R1.1", "retire": "paying is another requirement now"}]}' | "$VBW" apply --patch > /dev/null
+  git add -A && git commit -q -m "feat(shop): start"
+  "$VBW" approve > /dev/null
+  VBW_SESSION_ID=s1 "$VBW" run start build P1.1 P1.2 > /dev/null
+  run "$VBW" show plan P1.2
+  [[ "$output" == *"R1.2 more prints more -> C1"* ]] && [[ "$output" != *"R1.1"* ]] || { echo "$output"; false; }
+  [ "$("$VBW" show plan P1.2 --json | jq -c '[.rules[].n]')" = '["R1.2"]' ]
+  run "$VBW" mutate P1.2 R1.1 --none "nothing" < /dev/null
+  [ "$status" -ne 0 ] && [[ "$output" == *"R1.1 is retired (paying is another requirement now)"* ]] || { echo "$output"; false; }
+  "$VBW" plan done P1.1 < /dev/null > /dev/null
+  run "$VBW" plan done P1.2 < /dev/null
+  [ "$status" -ne 0 ] && [[ "$output" == *"R1.2"* ]] && [[ "$output" != *"R1.1"* ]] || { echo "$output"; false; }
 }
 
 @test "T152: a rule's plan must serve the rule's requirement" {

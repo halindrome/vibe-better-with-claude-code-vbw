@@ -13,7 +13,7 @@ export const ROLE_COLORS = {
   scout: '#3ab0ff', debugger: '#8a6bff', docs: '#c27aff',
 }
 export const STATE_COLORS = {
-  running: '#ffaf00', done: 'green', failed: 'red', quiet: 'gray', cut: 'gray',
+  running: '#ffaf00', done: 'green', failed: 'red', quiet: 'gray', cut: 'gray', open: 'gray',
 }
 export const NEUTRAL = 'gray'
 export const ACCENT = '#af87ff'
@@ -22,8 +22,10 @@ export const PROGRESS = 'green'
 export const ESTIMATE = '#ffaf00'
 
 // A mark and a word per state, so the state reads with colour switched off.
-export const STATE_MARKS = { running: '●', done: '✓', failed: '✗', quiet: '…', cut: '■' }
-export const STATE_WORDS = { running: 'running', done: 'done', failed: 'failed', quiet: 'quiet', cut: 'cut off' }
+export const STATE_MARKS = { running: '●', done: '✓', failed: '✗', quiet: '…', cut: '■', open: '○' }
+export const STATE_WORDS = { running: 'running', done: 'done', failed: 'failed', quiet: 'quiet', cut: 'cut off', open: 'open' }
+// A refusal VBW gave (docs/panel.md, Refusals): amber like a need, with its own mark and word.
+export const REFUSED_MARK = '⊘'
 
 const own = (o, k) => typeof k === 'string' && Object.prototype.hasOwnProperty.call(o, k)
 export const roleColor = (role) => (own(ROLE_COLORS, role) ? ROLE_COLORS[role] : NEUTRAL)

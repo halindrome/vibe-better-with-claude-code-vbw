@@ -56,7 +56,9 @@ cmd_show() {
     qa)
       qa_state "$record" | jq -r '(if (.recheck | length) == 0 then "Nothing needs checking again" else
           (.recheck | to_entries[] | "\(.key) is checked again: \(.value | join("; "))") end),
-        (.standing[] | "\(.) keeps its pass"), (.problems[] | "problem: " + .)'
+        (.standing[] | "\(.) keeps its pass"),
+        (if (.interleaved | length) > 0 then "note: phases \(.interleaved | if length < 2 then join("") else (.[:-1] | join(", ")) + " and " + .[-1] end) build on each other through their plans; each is checked again when the other'"'"'s tests change" else empty end),
+        (.problems[] | "problem: " + .)'
       ;;
     req)
       [ $# -eq 1 ] || vbw_usage_error "usage: vbw show req ID"
@@ -170,7 +172,7 @@ cmd_show() {
              .own as $o | "  own work: \(($o.planning + $o.copies + $o.tracking + $o.saving + $o.record) | s) of \($o.wall | s) s: planning \($o.planning | s), copies \($o.copies | s), read tracking \($o.tracking | s), saving \($o.saving | s), record \($o.record | s)" end),
           evidence_block($budget),
           ((.checks + (.commands | map_values(select(.of_files | not))) + (.test_files // {})) | to_entries[]
-            | "  \(.key) \(.value.status)\(if .value.exit != null then " exit \(.value.exit)" else "" end) \(.value.seconds)s\(if .value.reused then " reused (proof of \(.value.at))" elif (.value.why // "") != "" then " ran: \(.value.why)" else " not recorded" end)",
+            | "  \(.key) \(.value.status)\(if .value.exit != null then " exit \(.value.exit)" else "" end) \(.value.seconds | sec)s\(if .value.reused then " reused (proof of \(.value.at))" elif (.value.why // "") != "" then " ran: \(.value.why)" else " not recorded" end)",
               (.value.tail | select(length > 0) | split("\n")[] | "    | " + .)),
           (.scope[] | "  scope: " + .),
           ((.undone // [])[] | "  scope: \(.commit[0:12]) (\(.plan)) undone by \(.by[0:12]), not judged"),
@@ -189,7 +191,7 @@ show_costs() {
     --json) [ $# -eq 1 ] || vbw_usage_error "usage: vbw show costs [--json | --ceiling USD]"; mode=json ;;
     --ceiling)
       [ $# -eq 2 ] || vbw_usage_error "usage: vbw show costs --ceiling USD"
-      printf '%s' "$2" | grep -Eq '^([0-9]+[.]?[0-9]*|[.][0-9]+)$' \
+      printf '%s' "$2" | grep -E '^([0-9]+[.]?[0-9]*|[.][0-9]+)$' > /dev/null \
         && jq -ne --argjson c "$2" '$c > 0' > /dev/null 2>&1 \
         || vbw_usage_error "the ceiling must be a positive number of dollars (vbw show costs --ceiling USD)"
       mode=ceiling; ceiling=$2 ;;
@@ -248,12 +250,30 @@ show_contract_changes() {
           | "removed requirement \(.key): \(.value.text)"),
         ($new.requirements | to_entries[] | select($old.requirements[.key] != null and ($old.requirements[.key] | del(.rules)) != (.value | del(.rules)))
           | "changed requirement \(.key): [\($old.requirements[.key].proof)] \($old.requirements[.key].text) -> [\(.value.proof)] \(.value.text)"),
+        # Rules by address (T168): a rule is found again by its words wherever it now
+        # stands (moved, retired, re-pointed); new words in the place of words that are
+        # gone are a reworded rule; what is left was added or removed.
         ($new.requirements | to_entries[] | select($old.requirements[.key] != null) | .key as $q
-          | (($old.requirements[$q].rules // []) | map({key: .text, value: .check}) | from_entries) as $o
-          | ((.value.rules // []) | map({key: .text, value: .check}) | from_entries) as $n
-          | ($n | to_entries[] | select($o[.key] == null) | "added rule \($q): \(.key) -> \(.value)"),
-            ($o | to_entries[] | select($n[.key] == null) | "removed rule \($q): \(.key)"),
-            ($n | to_entries[] | select($o[.key] != null and $o[.key] != .value) | "changed rule \($q): \(.key) -> \(.value) (was \($o[.key]))")),
+          | ($old.requirements[$q].rules // []) as $o | (.value.rules // []) as $n
+          | def at($l; $t): first($l | to_entries[] | select(.value.text == $t) | .key) // null;
+            def retiring($w; $v): if ($v | has("retired")) and ($w | has("retired") | not) then $v.retired else null end;
+            ($n | to_entries[] | .key as $k | .value as $v | at($o; $v.text) as $j
+              | if $j == null then
+                  $o[$k] as $w
+                  | if $w != null and at($n; $w.text) == null
+                    then "reworded rule \($q).\($k + 1): \($w.text) -> \($v.text)"
+                      + (if $w.check != $v.check then " (check \($v.check), was \($w.check))" else "" end)
+                      + (retiring($w; $v) | if . then ", retired (\(.))" else "" end)
+                    else "added rule \($q).\($k + 1): \($v.text) -> \($v.check)" end
+                else $o[$j] as $w
+                  | (if $j != $k then "moved rule \($q).\($k + 1): \($v.text) (was \($q).\($j + 1))" else empty end),
+                    (retiring($w; $v) | if . then "retired rule \($q).\($k + 1): \($v.text) (\(.))" else empty end),
+                    (if $w.check != $v.check then "changed rule \($q).\($k + 1): \($v.text) -> \($v.check) (was \($w.check))" else empty end),
+                    (if ($w.plan // null) != ($v.plan // null) then "changed rule \($q).\($k + 1): \($v.text) -> plan \($v.plan // "none") (was \($w.plan // "none"))" else empty end)
+                end),
+            ($o | to_entries[] | .key as $j | .value as $w | select(at($n; $w.text) == null)
+              | select($n[$j] == null or at($o; $n[$j].text) != null)
+              | "removed rule \($q).\($j + 1): \($w.text)")),
         ($new.checks | to_entries[] | select($old.checks[.key] == null)
           | "added check \(.key) (\(.value.req)): " + (.value | check_line)),
         ($old.checks | to_entries[] | select($new.checks[.key] == null)
@@ -289,8 +309,11 @@ def phase_status($r): .id as $id | [$r.plans[] | select(.phase == $id) | .status
   | if ($s | length) > 0 and all($s[]; . == "done") then "built"
     elif any($s[]; . != "planned") then "building" else "planned" end;
 def argv_line: map(if test("^[A-Za-z0-9_./:=@%+-]+$") then . else @sh end) | join(" ");
-def rule_lines: if .proof == "auto" then
-    (if (.rules // []) | length == 0 then "rules not listed" else (.rules[] | "rule: \(.text) -> \(.check)") end)
+# A rule is shown by its address Rn.k, its place among the requirement'"'"'s rules (T168).
+def rule_lines: if .proof == "auto" then .id as $q |
+    (if (.rules // []) | length == 0 then "rules not listed" else (.rules | to_entries[]
+      | if .value | has("retired") then "rule \($q).\(.key + 1) retired: \(.value.text) (\(.value.retired))"
+        else "rule \($q).\(.key + 1): \(.value.text) -> \(.value.check)" end) end)
   else empty end;
 def check_line: (.run | argv_line)
   + (if (.exit // 0) != 0 then " (exit \(.exit))" else "" end)
@@ -299,17 +322,21 @@ def check_line: (.run | argv_line)
   + (if .alone then " [alone]" else "" end);
 '
 
-# Commits whose VBW-Req trailer lists REQ as an exact token (not a substring:
-# R1 must not match R12).
+# Commits of the record's own history (lib/history.sh) whose VBW-Req trailer
+# lists REQ as an exact token (not a substring: R1 must not match R12). An older
+# commit naming the same id is an old roadmap's, not this requirement's.
 show_commits_for_req() {
-  local req="$1" line subject reqs r
+  local req="$1" line subject reqs r HISTORY_ARGS=()
+  # shellcheck source=history.sh
+  . "$VBW_LIB/history.sh"
+  history_args
   while IFS= read -r line; do
     subject=${line%%$'\x1f'*}
     reqs=${line#*$'\x1f'}
     for r in $(printf '%s' "$reqs" | tr ',' ' '); do
       [ "$r" = "$req" ] && { vbw_out '  %s\n' "$subject"; break; }
     done
-  done < <(git -C "$VBW_ROOT" log --format='%h %s%x1f%(trailers:key=VBW-Req,valueonly,separator=%x2C)' 2>/dev/null)
+  done < <(git -C "$VBW_ROOT" log --format='%h %s%x1f%(trailers:key=VBW-Req,valueonly,separator=%x2C)' "${HISTORY_ARGS[@]}" 2>/dev/null)
 }
 
 # show_work RECORD plan|fix ID [--json]: what a Dev needs, and nothing else.
@@ -352,7 +379,9 @@ show_work() {
           {plan: $p,
            requirements: [$p.reqs[] as $q | $r.requirements[] | select(.id == $q) | {id, text, proof,
              other_open_plans: [$r.plans[] | select(.id != $p.id and .status != "done" and any(.reqs[]; . == $q)) | .id]}],
+           # A retired rule (T168) is not the plan'"'"'s: it is left out, the others keep their addresses.
            rules: [$p.reqs[] as $q | $r.requirements[] | select(.id == $q and .proof == "auto") | (.rules // []) | to_entries[]
+             | select(.value | has("retired") | not)
              | {n: "\($q).\(.key + 1)", text: .value.text, check: .value.check}],
            tier: ([$r.phases[] | select(.id == $p.phase)][0].tier // null),
            checks: checks_for($p.reqs), commands: $r.commands} end

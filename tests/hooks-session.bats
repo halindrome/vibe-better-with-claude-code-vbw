@@ -55,12 +55,21 @@ session_start() {
   [[ "$(printf '%s' "$output" | jq -r '.systemMessage')" == *"/vbw:update"* ]]
 }
 
-@test "a session started in a subdirectory of a VBW project is told the guards are off" {
+@test "a session started in a subfolder of a VBW project gets the project's state and is told the project folder" {
   "$VBW" init > /dev/null
-  mkdir -p src/deep
-  run session_start "$PROJECT/src/deep"
+  mkdir -p "src/Sub Folder With Spaces"
+  run session_start "$PROJECT/src/Sub Folder With Spaces"
   [ "$status" -eq 0 ]
-  [[ "$(printf '%s' "$output" | jq -r '.hookSpecificOutput.additionalContext')" == *"not at its root, so the VBW guards are off"* ]]
+  local ctx
+  ctx=$(printf '%s' "$output" | jq -r '.hookSpecificOutput.additionalContext')
+  [[ "$ctx" == *"VBW project (project with space · M1 First milestone"* ]] || { echo "$ctx"; false; }
+  [[ "$ctx" == *"This session started in src/Sub Folder With Spaces, a subfolder of the project at $PROJECT: VBW's paths (.vbw/, plan files) are relative to $PROJECT."* ]] || { echo "$ctx"; false; }
+  [[ "$ctx" != *"guards are off"* ]]
+  # A record above the git top is another project's, as for the kernel: nothing is said.
+  mkdir -p "inner repo" && git -C "inner repo" init -q
+  run session_start "$PROJECT/inner repo"
+  [ "$status" -eq 0 ]
+  [ -z "$output" ]
 }
 
 @test "VBW 1's command copies are removed (they would shadow VBW 2's commands); nothing else is touched" {

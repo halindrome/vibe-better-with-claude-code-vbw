@@ -150,3 +150,11 @@ shard_list() {
     false
   }
 }
+
+@test "a newer push to a pull request cancels the run it replaces; a push to main is never cancelled" {
+  # Top level, before jobs: one group per pull request; a push to main has a group of its own run.
+  awk '/^jobs:/ { exit } { print }' "$CI" > "$BATS_TEST_TMPDIR/head"
+  grep -qxF 'concurrency:' "$BATS_TEST_TMPDIR/head"
+  grep -qxF '  group: ci-${{ github.event.pull_request.number || github.run_id }}' "$BATS_TEST_TMPDIR/head"
+  grep -qxF '  cancel-in-progress: true' "$BATS_TEST_TMPDIR/head"
+}

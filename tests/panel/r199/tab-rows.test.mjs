@@ -6,7 +6,7 @@
 // '[ Now ] [ Plan ]' in a pane about 64 columns wide, with 'VB' / 'W' and a lone
 // ']' spilling down its right edge. So the stand-in draws a Button without a
 // hotkey as '[ Name ]' (with one, '[k] Name': the same width), and the pane packs
-// its eight tabs into whole rows: a name is never split, no row is wider than
+// its six tabs into whole rows: a name is never split, no row is wider than
 // the pane, the layout with the fewest rows wins, at an equal count the full
 // names win over the short ones, and the portrait (6 columns, 'VBW') stays only
 // when it costs the tabs nothing (no row and no short name) and the pane is not
@@ -22,7 +22,7 @@ import { screen, widest } from '../r189/helpers/screen.mjs'
 
 // id, full name, short name
 const TABS = [['now', 'Now', 'Now'], ['plan', 'Plan', 'Plan'], ['proof', 'Proof', 'Proof'], ['timeline', 'Timeline', 'Time'],
-  ['decisions', 'Decisions', 'Log'], ['team', 'Team', 'Team'], ['sessions', 'Sessions', 'Sess'], ['costs', 'Costs', 'Cost']]
+  ['sessions', 'Sessions', 'Sess'], ['settings', 'Settings', 'Set']]
 const FULL = TABS.map((t) => t[1])
 const SHORT = TABS.map((t) => t[2])
 const WIDTHS = [100, 64, 60, 50, 40]
@@ -117,7 +117,7 @@ test("the pane's width model names a button's chrome (4 cells) and the gap betwe
   assert.match(src, /\bTAB_GAP\s*=\s*1\b/, 'no TAB_GAP = 1 in panel-pane.js')
 })
 
-test('on every tab at 100, 64, 60, 50 and 40 body columns each of the eight names is whole on one line, no row is wider than the pane, and the head is clipped as drawn', async () => {
+test('on every tab at 100, 64, 60, 50 and 40 body columns each of the six names is whole on one line, no row is wider than the pane, and the head is clipped as drawn', async () => {
   const h = await opened()
   for (const [id] of TABS) {
     await h.press('tab-' + id)
@@ -132,15 +132,15 @@ test('on every tab at 100, 64, 60, 50 and 40 body columns each of the eight name
   assert.deepEqual(h.errors, [])
 })
 
-test('the layout with the fewest rows wins: at 90 or more body columns the eight full names sit on one row; the portrait stays from 91, where it fits beside them', async () => {
+test('the layout with the fewest rows wins: at 65 or more body columns the six full names sit on one row; the portrait stays from 71, where it fits beside them', async () => {
   const h = await opened()
-  for (const columns of [120, 100, 91]) {
+  for (const columns of [120, 100, 80, 71]) {
     const d = await drawn(h, columns, 30, columns + ' columns')
     assert.deepEqual(d.shown, FULL, columns + ' columns: ' + JSON.stringify(d.headLines))
     assert.equal(d.rows, 1, columns + ' columns: the tabs take ' + d.rows + ' rows')
     assert.ok(d.image, columns + ' columns: no portrait, though it fits beside the full names')
   }
-  for (const columns of [90, 85]) {
+  for (const columns of [70, 65]) {
     const d = await drawn(h, columns, 30, columns + ' columns')
     assert.deepEqual(d.shown, FULL, columns + ' columns: ' + JSON.stringify(d.headLines))
     assert.equal(d.rows, 1, columns + ' columns: the tabs take ' + d.rows + ' rows')
@@ -148,36 +148,34 @@ test('the layout with the fewest rows wins: at 90 or more body columns the eight
   }
 })
 
-test('at about 64 body columns the full names sit on two rows beside the portrait: at an equal number of rows the full names win over the short ones', async () => {
+test('from 52 to 64 body columns the short names sit on one row (one row beats two rows of full names), beside the portrait from 58', async () => {
   const h = await opened()
-  for (const columns of [69, 64, 60, 54]) {
+  for (const [columns, portrait] of [[64, true], [58, true], [57, false], [52, false]]) {
     const d = await drawn(h, columns, 30, columns + ' columns')
-    assert.deepEqual(d.shown, FULL, columns + ' columns: ' + JSON.stringify(d.headLines))
-    assert.equal(d.rows, 2, columns + ' columns: the tabs take ' + d.rows + ' rows')
-    assert.ok(d.image, columns + ' columns: no portrait, though it costs the tabs nothing')
+    assert.deepEqual(d.shown, SHORT, columns + ' columns: ' + JSON.stringify(d.headLines))
+    assert.equal(d.rows, 1, columns + ' columns: the tabs take ' + d.rows + ' rows')
+    assert.equal(Boolean(d.image), portrait, columns + ' columns: the portrait ' + (portrait ? 'is missing though it costs nothing' : 'is kept though it costs the tabs a row'))
   }
 })
 
-test('the portrait is left out when keeping it would force the short names: at 50 body columns the full names sit on two rows with no portrait', async () => {
+test('from 38 to 51 body columns the full names sit on two rows: at an equal number of rows the full names win over the short ones; the portrait stays from 44', async () => {
   const h = await opened()
-  for (const columns of [50, 45]) {
+  for (const [columns, portrait] of [[51, true], [44, true], [43, false], [40, false], [38, false]]) {
     const d = await drawn(h, columns, 30, columns + ' columns')
     assert.deepEqual(d.shown, FULL, columns + ' columns: ' + JSON.stringify(d.headLines))
     assert.equal(d.rows, 2, columns + ' columns: the tabs take ' + d.rows + ' rows')
-    assert.ok(!d.image, columns + ' columns: the portrait is kept though the full names fit on two rows only without it')
+    assert.equal(Boolean(d.image), portrait, columns + ' columns: the portrait ' + (portrait ? 'is missing though it costs nothing' : 'is kept though beside it the full names take three rows'))
   }
 })
 
-test('at 40 body columns the short names sit on two rows and the portrait is left out (beside it they would take three); at 44 it stays beside them', async () => {
+test('below 38 body columns, narrower than the pane ever is, the short names sit on two rows, beside the portrait from 32', async () => {
   const h = await opened()
-  const narrow = await drawn(h, 40, 30, '40 columns')
-  assert.deepEqual(narrow.shown, SHORT, '40 columns: ' + JSON.stringify(narrow.headLines))
-  assert.equal(narrow.rows, 2, '40 columns: the tabs take ' + narrow.rows + ' rows')
-  assert.ok(!narrow.image, '40 columns: the portrait is kept though it costs the tabs a row')
-  const mid = await drawn(h, 44, 30, '44 columns')
-  assert.deepEqual(mid.shown, SHORT, '44 columns: ' + JSON.stringify(mid.headLines))
-  assert.equal(mid.rows, 2, '44 columns: the tabs take ' + mid.rows + ' rows')
-  assert.ok(mid.image, '44 columns: no portrait, though it costs the tabs nothing')
+  for (const [columns, portrait] of [[37, true], [32, true], [31, false], [26, false]]) {
+    const d = await drawn(h, columns, 30, columns + ' columns')
+    assert.deepEqual(d.shown, SHORT, columns + ' columns: ' + JSON.stringify(d.headLines))
+    assert.equal(d.rows, 2, columns + ' columns: the tabs take ' + d.rows + ' rows')
+    assert.equal(Boolean(d.image), portrait, columns + ' columns: portrait ' + Boolean(d.image))
+  }
 })
 
 test('the portrait is left out when the pane is short, at any width, and the names stay whole', async () => {
@@ -210,7 +208,7 @@ test('on every tab the pane draws no more rows than Claude Code reports, the hea
 
 test("with no height reported the head counts the same way and the pane still ends with '+N more · open Mission Control' within its fixed height", async () => {
   const h = await opened()
-  for (const id of ['decisions', 'plan']) {
+  for (const id of ['plan']) {
     await h.press('tab-' + id)
     for (const columns of [80, 40]) {
       const where = id + ' inline at ' + columns + ' columns'

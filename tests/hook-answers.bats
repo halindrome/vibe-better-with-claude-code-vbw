@@ -5,6 +5,7 @@
 # user's place. The hooks run through hooks.json the way Claude Code runs them
 # (vbw_hook). Claude Code's meanings (hooks reference):
 #   PreToolUse permissionDecision "deny"  blocks the tool call; the reason goes to Claude
+#                                         (VBW's guards add a systemMessage beside it: the user sees the refusal)
 #   PreToolUse permissionDecision "ask"   shows the call to the user, who decides
 #   PreToolUse permissionDecision "allow" skips the user (never returned by VBW:
 #                                         on AskUserQuestion it means the hook answered)
@@ -59,7 +60,9 @@ ask_call() {
 }
 session_call() { jq -nc --arg d "$PROJECT" '{hook_event_name: "SessionStart", session_id: "s1", cwd: $d, source: "startup"}' | vbw_hook SessionStart; }
 
-DENY='["hookSpecificOutput.hookEventName","hookSpecificOutput.permissionDecision","hookSpecificOutput.permissionDecisionReason"]'
+DENY='["hookSpecificOutput.hookEventName","hookSpecificOutput.permissionDecision","hookSpecificOutput.permissionDecisionReason","systemMessage"]'
+# The user's line beside a deny: the reason's first line (what was refused and why), never its Next: step for Claude.
+USER_LINE='.systemMessage == ("VBW guard blocked this call: " + (.hookSpecificOutput.permissionDecisionReason | ltrimstr("VBW guard: ") | split("\n")[0])) and (.systemMessage | contains("Next:") | not)'
 POST='["hookSpecificOutput.additionalContext","hookSpecificOutput.hookEventName","systemMessage"]'
 
 @test "R128: session-start.sh additionalContext: in a VBW project SessionStart adds context for Claude to read, and nothing else" {
@@ -84,11 +87,12 @@ POST='["hookSpecificOutput.additionalContext","hookSpecificOutput.hookEventName"
   [ -z "$output" ] || { echo "$output"; false; }
 }
 
-@test "R128: guard-bash.jq and common.jq deny: a guarded Bash call is denied with a 'VBW guard:' reason, which blocks it and tells Claude why" {
+@test "R128: guard-bash.jq and common.jq deny and systemMessage: a guarded Bash call is denied with a 'VBW guard:' reason, which blocks it and tells Claude why, and shows the user what was refused" {
   run bash_call "vbw approve"
   [ "$status" -eq 0 ]
   [ "$(shape "$output")" = "$DENY" ] || { echo "$output"; false; }
   printf '%s' "$output" | jq -e '.hookSpecificOutput | .hookEventName == "PreToolUse" and .permissionDecision == "deny" and (.permissionDecisionReason | startswith("VBW guard: "))'
+  printf '%s' "$output" | jq -e "$USER_LINE" || { echo "$output"; false; }
 }
 
 @test "R128: guard-bash.jq no output: an ordinary Bash call gets no answer, so Claude Code's own permission flow decides" {
@@ -97,11 +101,12 @@ POST='["hookSpecificOutput.additionalContext","hookSpecificOutput.hookEventName"
   [ -z "$output" ] || { echo "$output"; false; }
 }
 
-@test "R128: guard-file.jq deny: writing the record with a file tool is denied with a 'VBW guard:' reason" {
+@test "R128: guard-file.jq deny: writing the record with a file tool is denied with a 'VBW guard:' reason, and the user sees what was refused" {
   run file_call Write "$PROJECT/.vbw/record.json"
   [ "$status" -eq 0 ]
   [ "$(shape "$output")" = "$DENY" ] || { echo "$output"; false; }
   printf '%s' "$output" | jq -e '.hookSpecificOutput | .hookEventName == "PreToolUse" and .permissionDecision == "deny" and (.permissionDecisionReason | startswith("VBW guard: "))'
+  printf '%s' "$output" | jq -e "$USER_LINE" || { echo "$output"; false; }
 }
 
 @test "R128: guard-file.jq no output: an ordinary read gets no answer" {

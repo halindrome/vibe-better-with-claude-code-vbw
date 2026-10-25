@@ -59,13 +59,13 @@ If a VBW release is also installed from the marketplace, the session still runs 
 
 ```bash
 bash tools/test.sh                   # shellcheck on tools + the bats suite, without the timed speed checks
-bash tools/test.sh --release         # the run before a push: adds the benchmarks and tests/timed-*.bats
+bash tools/test.sh --release         # the release run (CI runs it on every pull request): adds the benchmarks and tests/timed-*.bats
 PATH="/bin:$PATH" bash tools/test.sh # the same under macOS /bin/bash 3.2
 bash tools/test.sh --shard 2/4       # share 2 of 4, the way CI's macOS jobs run it
 bash tools/test.sh --shard 2/4 --list # show that share without running it
 ```
 
-Run `PATH="/bin:$PATH" bash tools/test.sh --release` before a push. It adds the hook, status line and panel benchmarks and the timed test files, which run alone after the rest; `vbw prove` and plain `bash tools/test.sh` skip them, so a busy machine never fails a proof. When the last proof passed (results it reused count: the read lists still vouch for them), left no command skipped and no quick command standing in, and only the version files and `CHANGELOG.md` changed since, the release run reuses it and runs only the benchmarks and the timed test files; otherwise it runs everything and says why.
+Before a push, run the test files of the area you changed under macOS `/bin/bash` 3.2 (`PATH="/bin:$PATH" bats tests/...`). The pull request's CI is the gate: it runs the release run, `bash tools/test.sh --release`, in shards under macOS `/bin/bash` 3.2, bash 5 and Linux, on the latest push only: a newer push to the pull request cancels the run it replaces. The release run adds the hook, status line and panel benchmarks and the timed test files, which run alone after the rest; `vbw prove` and plain `bash tools/test.sh` skip them, so a busy machine never fails a proof. When the last proof passed (results it reused count: the read lists still vouch for them), left no command skipped and no quick command standing in, and only the version files and `CHANGELOG.md` changed since, the release run reuses it and runs only the benchmarks and the timed test files; otherwise it runs everything and says why.
 
 A new test file needs no list edit: shares are worked out from `tests/*.bats` on every run.
 

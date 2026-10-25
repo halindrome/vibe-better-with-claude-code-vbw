@@ -10,14 +10,16 @@
 // one-line sites and rows), panel-pane.js (Mission Control), panel-view.js, and
 // panel-candy.js (motion, sprites, celebrations), whose frames this file blits.
 import { holderName, readRegistry, configDir } from './panel-sessions.js'
-import { panelView, datedRows, liveNeed, supports, clock, COMMS_MIN_VERSION } from './panel-view.js'
-import { SOUNDS } from './panel-sounds.js'
+import { panelView, datedRows, liveNeed, supports, COMMS_MIN_VERSION } from './panel-view.js'
+import * as sounds from './panel-sounds.js'
 import { gatherRun, findRun } from './panel-feed.js'
 import { stageModel, renderStage } from './panel-stage.js'
-import { liveStep } from './panel-step.js'
+import { liveStep, dayClock } from './panel-step.js'
 import { statusText, whyText, todoArgs } from './panel-commands.js'
 import { renderPane } from './panel-pane.js'
-import { candy as nextCandy, SETTLE_MS as NEXT_SETTLE_MS } from './panel-next.js'
+import { freshKey } from './panel-next.js'
+import { fresh as freshLook, freshArrive, freshSee } from './panel-candy.js'
+import { readArgv, settingArgv, settingsState, settingsSig } from './panel-settings.js'
 import { stateColor } from './panel-palette.js'
 import { SITES, turnPending } from './panel-sites.js'
 import { motionOf, spriteFrame, encodeCells, confettiFrames, sweepFrames, wrappedModel, celebration } from './panel-candy.js'
@@ -28,10 +30,29 @@ const TICK_MS = 2000
 // A project holding .vbw/runtime/test-mode is a VBW test session (R64): it plays no
 // audio and keeps its choices under test.* keys, never the user's.
 const TEST_MARK = '/.vbw/runtime/test-mode'
-const keys = (test) => ({ closed: (test ? 'test.' : '') + 'vbw-panel.closed', sound: (test ? 'test.' : '') + 'vbw-panel.sound', nextSeen: (test ? 'test.' : '') + 'vbw-panel.next-seen', seen: (test ? 'test.' : '') + 'vbw-panel.seen', needSeen: (test ? 'test.' : '') + 'vbw-panel.need-seen', helpersSeen: (test ? 'test.' : '') + 'vbw-panel.helpers-seen' })
-// One of the plugin's shipped sounds (assets/audio/<character>/), picked at random
-// for each request for the user; with none shipped, the panel is silent.
-const pick = () => (SOUNDS.length ? { asset: SOUNDS[Math.floor(Math.random() * SOUNDS.length)] } : null)
+// The store keys of the panel's choices. A real-app test session (TEST_MARK) keeps them
+// under test keys of its own project, so it never touches the user's choices and one
+// scenario's choices (a pane closed on purpose) never reach the next scenario's project.
+const projectTag = (root) => {
+  let h = 5381
+  for (let i = 0; i < root.length; i++) h = ((h * 33) ^ root.charCodeAt(i)) >>> 0
+  return h.toString(36)
+}
+const keys = (testRoot) => {
+  const p = typeof testRoot === 'string' ? 'test.' + projectTag(testRoot) + '.' : ''
+  return { closed: p + 'vbw-panel.closed', nextSeen: p + 'vbw-panel.next-seen', seen: p + 'vbw-panel.seen', needSeen: p + 'vbw-panel.need-seen', needNotified: p + 'vbw-panel.need-notified', helpersSeen: p + 'vbw-panel.helpers-seen', refusalsSeen: p + 'vbw-panel.refusals-seen' }
+}
+// The sound for a request for the user: the clone setting `sound` (docs/config.md) is
+// `off`, `default` (any shipped voice) or a folder under assets/audio/; panel-sounds.js's
+// soundFor picks the clip. With none shipped, the panel is silent.
+const soundFor = sounds.soundFor
+const pick = (st) => {
+  const c = soundFor(st.soundChoice)
+  return typeof c === 'string' ? { asset: c } : isObj(c) ? c : null
+}
+// The clone setting as the kernel defines it: a missing file or key, damaged JSON or a
+// value that is not a string is `default`.
+const soundChoice = (clone) => (isObj(clone) && typeof clone.sound === 'string' && clone.sound ? clone.sound : 'default')
 const isObj = (x) => x !== null && typeof x === 'object' && !Array.isArray(x)
 const num = (x) => typeof x === 'number' && Number.isFinite(x)
 // VBW's workflows, as /vbw:vibe launches them (Workflow name 'vbw:<kind>').
@@ -90,13 +111,14 @@ function parse(text) {
 // What the panel knows: the last good state of its files, the live run, what is drawn, what is asked.
 function fresh() {
   return {
-    live: false, born: {}, timer: null, busy: false, question: null, sound: true, keys: keys(false), silent: false, wouldPlay: 0,
+    live: false, registered: false, born: {}, timer: null, busy: false, question: null, sound: true, soundChoice: 'default', soundSig: undefined, settingsPath: null, keys: keys(false), silent: false, wouldPlay: 0,
     record: null, next: null, history: null, cost: null, health: null, auto: null, stepsPath: null, steps: null, shown: '', seen: {}, sized: false,
     root: null, sessionId: null, holder: null, registry: null, stored: null, configDir: null, sessionDir: null, runRef: null, run: null, feed: {}, finder: {}, toolRuns: {}, leases: [],
     tab: 'now', phase: null, check: null, agent: null, suggested: null, before: null, memo: {}, notice: null,
-    lastRec: null, crews: {}, anim: null, animBusy: false, frameNo: 0, commsId: null, nextFileAt: null, questionAt: null, helpersSeen: {},
+    lastRec: null, crews: {}, anim: null, animBusy: false, frameNo: 0, commsId: null, nextFileAt: null, questionAt: null, helpersSeen: {}, refusalsSeen: {},
     sprites: null, burst: null, sweep: null, cheer: null, wrapped: null, nextSeen: null, nextAt: null, nextAnim: null,
-    seenNext: null, needSeen: null, proving: null, stamps: {}, stepNote: null, step: null,
+    seenNext: null, needSeen: null, needNotified: null, proving: null, stamps: {}, stepNote: null, step: null, open: {},
+    fresh: {}, settings: null,
   }
 }
 
@@ -104,12 +126,13 @@ function fresh() {
 // written, so a gate is dated by the file and answered by the record that followed it.
 // A message keeps the time it began saying what it says (st.stamps): the first pass
 // reads the dated sentences bare, the second draws them all, each with its [HH:MM].
-const STAMPED = ['estimate-step', 'estimate-milestone']
+const STAMPED = ['estimate-milestone']
 const bare = (t) => String(t).replace(/^\[\d\d:\d\d\] /, '')
 function view(st, now) {
   const input = {
     record: st.record, next: st.next, nextAt: st.nextFileAt, question: st.question, questionAt: st.questionAt,
     health: st.health, now, cost: st.cost, steps: st.steps, step: st.step, proving: st.proving !== null, holder: st.holder,
+    refusals: isObj(st.run) ? st.run.refusals : null,
   }
   const proving = st.proving && num(st.proving.at) ? st.proving.at : undefined
   const first = datedRows({ ...input, stamps: { proving } })
@@ -147,6 +170,12 @@ const runCost = (st) => {
 // is marked until it is pressed, opened, or its tab is opened.
 const needNow = (st) => liveNeed({ record: st.record, next: st.next, nextAt: st.nextFileAt, question: st.question, questionAt: st.questionAt, health: st.health })
 const needId = (n) => n.key + '@' + String(n.at)
+// The fresh marks drawn (panel-candy.js): the recommendation's while it is unseen, dated by
+// when the panel saw it arrive, and this session's finished runs and changed settings.
+const freshMarks = (st) => {
+  const key = freshKey(recOf(st))
+  return key && unseenNext(st) ? { [key]: num(st.nextAt) ? st.nextAt : 0, ...st.fresh } : st.fresh
+}
 const unseenNext = (st) => {
   const rec = recOf(st)
   return isObj(rec) && typeof rec.at === 'string' && rec.at !== '' && rec.at !== st.seenNext
@@ -161,9 +190,14 @@ const commsStamp = (st, now) => (id, text) => {
   else m.seen = now
   return c[id].at
 }
+// The refusals the agents of the last run reported (panel-feed.js); the newest one
+// not yet seen goes on Comms until the Now tab is shown (seen(), 'refusals').
+const runRefusals = (st) => (isObj(st.run) && Array.isArray(st.run.refusals) ? st.run.refusals.filter((r) => isObj(r) && typeof r.id === 'string') : [])
+const refusalNow = (st) => runRefusals(st).filter((r) => !st.refusalsSeen[r.id]).reduce((a, r) => (!a || (num(r.at) ? r.at : 0) >= (num(a.at) ? a.at : 0) ? r : a), null)
 const stage = (st, now, props) => {
   const need = needNow(st)
   return stageModel({
+    refusal: refusalNow(st),
     stamp: commsStamp(st, now),
     run: st.run, next: st.next, step: st.step, now, health: st.health, cost: runCost(st), motion: motion(st),
     need, fresh: need !== null && needId(need) !== st.needSeen,
@@ -236,6 +270,19 @@ async function stepsPath($, root) {
 // This session's folder, where Claude Code writes its workflow runs: the Claude
 // config folder `dir` (as tools/resolve-claude-dir.sh finds it), the project's folder
 // (its path, every other character a dash) and the session id. Null when unknown.
+// The project of a session started in DIR, found as the kernel finds it (vbw_git_root):
+// the nearest folder at or above DIR that holds .git (a folder, or the file of a linked
+// worktree or a submodule), never above /; DIR itself when none does (hooks/project.sh).
+async function projectOf($, dir) {
+  let d = dir.replace(/\/+$/, '')
+  for (;;) {
+    if (await $.fs.exists(d + '/.git')) return d || '/'
+    const i = d.lastIndexOf('/')
+    if (i < 0) return dir
+    d = d.slice(0, i)
+  }
+}
+
 function sessionDir(dir, root, id) {
   if (typeof id !== 'string' || !/^[A-Za-z0-9_-]+$/.test(id)) return null
   return dir ? dir + '/projects/' + root.replace(/[^A-Za-z0-9]/g, '-') + '/' + id : null
@@ -293,7 +340,10 @@ function trackLeases(st) {
   const l = isObj(st.record) && isObj(st.record.lease) ? st.record.lease : null
   const key = l ? String(l.run ?? '') + '@' + String(l.started_at ?? '') : null
   const open = openLease(st)
-  if (open && open.key !== key) open.costEnd = st.cost
+  if (open && open.key !== key) {
+    open.costEnd = st.cost
+    st.fresh = freshArrive(st.fresh, 'timeline:run:' + open.key, 0) // drawn as the word alone: no motion, no time
+  }
   if (key && (!open || open.key !== key)) {
     const at = Date.parse(l.started_at)
     st.leases.push({ key, kind: String(l.kind || 'run'), startedAt: Number.isFinite(at) ? at : null, costStart: st.cost })
@@ -341,11 +391,11 @@ const runsSeen = (st) => [
 // in Comms (full motion); all checks green, the sweep over Proof (full) and a
 // line in Comms (full and calm); a ship, the pane on VBW Wrapped (any motion:
 // it is information). The first snapshot is not news.
-// The proof's own time as HH:MM (when it was recorded), else now.
+// The proof's own time (when it was recorded, its day named when not today), else now.
 const proofTime = (st, now) => {
   const ev = isObj(st.record) && isObj(st.record.evidence) ? st.record.evidence : null
   const at = ev ? Date.parse(ev.at) : NaN
-  return clock(Number.isFinite(at) ? at : now)
+  return dayClock(Number.isFinite(at) ? at : now, now)
 }
 async function celebrate($, st, now) {
   const before = st.lastRec
@@ -427,14 +477,41 @@ async function gather($, st) {
     await refresh($, st, st.stepsPath, 'history')
     st.steps = isObj(st.history) && Array.isArray(st.history.steps) ? st.history.steps : null
   }
+  await readSound($, st)
   await readUsage($, st)
   await readHolder($, st)
   trackLeases(st)
   await feed($, st)
 }
 
-// Call the user, once: the needs-you sound and a native notification, both only while the
-// sound is on, neither in a test session. A missing player or $.ui.notify is silent.
+// The sound choice, from the clone's settings.json in the git directory (only the kernel
+// changes it: `vbw config set sound`); a damaged or missing file reads as `default`.
+async function readSound($, st) {
+  if (!st.settingsPath) return
+  let sig = null
+  try {
+    const f = await $.fs.stat(st.settingsPath)
+    sig = f.size + ':' + f.mtimeMs
+  } catch {
+    sig = null
+  }
+  if (sig !== st.soundSig) {
+    st.soundSig = sig
+    let v = null
+    try {
+      v = sig === null ? null : JSON.parse(await $.fs.read(st.settingsPath))
+    } catch {
+      v = null
+    }
+    st.soundChoice = soundChoice(v)
+  }
+  st.sound = st.soundChoice !== 'off'
+}
+
+// Call the user, once: the needs-you sound (`clip`) and a native notification (`text`), both
+// only while the sound is on, the notification only while motion is not off, neither in a
+// test session. Claude Code has no notification setting of VBW's own: `motion` is the
+// switch (docs/panel.md). A missing player or $.ui.notify is silent.
 async function call($, st, text, clip) {
   if (!st.sound) return
   if (st.silent) {
@@ -448,6 +525,7 @@ async function call($, st, text, clip) {
       // no file or no player: nothing to say
     }
   }
+  if (!text || motion(st) === 'off') return
   try {
     await $.ui.notify(text, { title: 'VBW' })
   } catch {
@@ -455,11 +533,31 @@ async function call($, st, text, clip) {
   }
 }
 
-// Claude Code's question menu just opened: one clip and one notification naming what VBW
-// needs (the need standing besides the question, else just a question).
+// The need now standing, marked as notified (kept in the user's store, so a restart does
+// not raise it again): true when it had not been notified yet.
+async function firstCall($, st, need) {
+  const id = needId(need)
+  if (id === st.needNotified) return false
+  st.needNotified = id
+  await keep($, st.keys.needNotified, id)
+  return true
+}
+
+// VBW starts waiting for the person (the needs-you line appears): one notification, once
+// per need, never on a redraw. A question has its own call, with Claude Code's menu.
+async function noteNeed($, st) {
+  const need = needNow(st)
+  if (!need || need.kind === 'question') return
+  if (await firstCall($, st, need)) await call($, st, need.text, null)
+}
+
+// Claude Code's question menu just opened: one clip, and one notification naming what VBW
+// needs (the need standing besides the question, else just a question) unless that need
+// was already notified when it appeared.
 async function callForQuestion($, st) {
   const need = liveNeed({ record: st.record, next: st.next, nextAt: st.nextFileAt, health: st.health })
-  await call($, st, need ? need.text : 'VBW has a question for you.', pick())
+  const text = need ? ((await firstCall($, st, need)) ? need.text : null) : 'VBW has a question for you.'
+  await call($, st, text, pick(st))
 }
 
 // An approve gate puts /vbw:approve in the prompt's suggestion, once; the person sends it.
@@ -478,7 +576,7 @@ async function suggest($, st) {
 
 const cheering = (st, now) => (st.cheer && st.cheer.until > now ? st.cheer.text : null)
 const recOf = (st) => (isObj(st.record) ? st.record.recommendation : undefined)
-const signature = (st, v, now) => JSON.stringify([v, st.sound, recOf(st), unseenNext(st), st.needSeen,  nextCandy({ motion: motion(st), arrivedAt: st.nextAt, now }), stage(st, now), st.run, st.auto, st.leases.length, st.tab, st.phase, st.check, st.agent, st.tab === 'sessions' ? st.registry : null,
+const signature = (st, v, now) => JSON.stringify([v, st.sound, recOf(st), unseenNext(st), st.needSeen,  freshLook({ marks: freshMarks(st), key: freshKey(recOf(st)), motion: motion(st), now }), settingsSig(st.settings, now), Object.keys(st.fresh), stage(st, now), st.run, st.auto, st.leases.length, st.tab, st.phase, st.check, st.agent, st.open, st.tab === 'sessions' ? st.registry : null,
   cheering(st, now), !!st.burst, !!st.sweep])
 
 // Remember when each agent first showed; at full motion a new row flashes for a
@@ -490,8 +588,8 @@ async function noteBorn($, st, now) {
 }
 
 // A recommendation with a written time not seen before (kept in the user's store, so
-// a restart does not replay it) starts the What's next candy: one redraw per frame
-// until it settles (panel-next.js), only with full motion.
+// a restart does not replay it) starts the What's next motion: one redraw per frame
+// until it is seen (panel-candy.js fresh), only with full motion.
 async function noteRecommendation($, st, now) {
   const rec = recOf(st)
   const at = isObj(rec) && typeof rec.at === 'string' && rec.at ? rec.at : null
@@ -509,7 +607,7 @@ async function noteRecommendation($, st, now) {
     try {
       const t = await $.clock.now()
       await redrawIfChanged($, st, false, t)
-      if (t - st.nextAt >= NEXT_SETTLE_MS && st.nextAnim) {
+      if ((!unseenNext(st) || motion(st) !== 'full') && st.nextAnim) {
         st.nextAnim.cancel()
         st.nextAnim = null
       }
@@ -540,6 +638,7 @@ async function tick($, st) {
     const now = await $.clock.now()
     await celebrate($, st, now)
     await noteRecommendation($, st, now)
+    await noteNeed($, st)
     for (const k of ['burst', 'sweep']) if (st[k] && !st[k].site && now - st[k].at > AFTER_MS) st[k] = null
     await redrawIfChanged($, st, false, now)
   } catch {
@@ -549,19 +648,28 @@ async function tick($, st) {
   }
 }
 
-// Switch the sound and keep the choice in the user's store; the panel redraws.
+// Switch the sound: the kernel keeps the choice (`vbw config set sound off|default`), the
+// panel reads it back and redraws. Null when it changed, else the kernel's refusal, and the
+// sound stays as it was.
 async function setSound($, st, on) {
-  st.sound = on
+  let refusal = null
   try {
-    await $.store.set(st.keys.sound, on)
+    const r = await $.process.run([$.plugin.root + '/bin/vbw', 'config', 'set', 'sound', on ? 'default' : 'off'], { cwd: st.root })
+    if (isObj(r) && r.exitCode === 0) {
+      st.soundChoice = on ? 'default' : 'off'
+      st.sound = on
+      st.soundSig = undefined
+      await readSound($, st)
+    } else refusal = String((isObj(r) && (r.stderr || r.stdout)) || '').trim().split('\n')[0] || 'vbw config failed'
   } catch {
-    // the choice holds for this session
+    refusal = 'VBW could not run vbw config here'
   }
   try {
     await redrawIfChanged($, st)
   } catch {
     // the next tick draws it
   }
+  return refusal
 }
 
 // A quarter of the terminal, never under 40 columns (R82).
@@ -603,11 +711,19 @@ async function openByPerson($, st, extra) {
 // The user has seen these: the recommendation (kept in the user's store, so a restart
 // keeps it seen) and the needs-you line (until the gate changes).
 async function seen($, st, what) {
+  for (const tab of ['timeline', 'settings']) if (what.includes(tab)) st.fresh = freshSee(st.fresh, tab + ':')
   if (what.includes('need')) {
     const n = needNow(st)
     if (n) {
       st.needSeen = needId(n)
       await keep($, st.keys.needSeen, st.needSeen)
+    }
+  }
+  if (what.includes('refusals')) {
+    const fresh = runRefusals(st).filter((r) => !st.refusalsSeen[r.id])
+    if (fresh.length) {
+      for (const r of fresh) st.refusalsSeen[r.id] = true
+      await keep($, st.keys.refusalsSeen, Object.keys(st.refusalsSeen).slice(-100))
     }
   }
   const rec = recOf(st)
@@ -652,8 +768,10 @@ async function act($, st, a) {
     }
     if (a.open === 'mission') {
       st.tab = typeof a.tab === 'string' ? a.tab : 'now'
-      if (st.tab === 'now') await seen($, st, ['next', 'need'])
+      if (st.tab === 'now') await seen($, st, ['next', 'need', 'refusals'])
       if (st.tab === 'sessions') await readHolder($, st)
+      if (st.tab === 'timeline' || st.tab === 'settings') await seen($, st, [st.tab])
+      if (st.tab === 'settings') await settings($, st, null)
       if (typeof a.agent === 'string') {
         st.agent = a.agent
         await seeHelper($, st, a.agent) // opened in Mission Control: a failed helper counts as seen
@@ -665,15 +783,45 @@ async function act($, st, a) {
     }
     else if (a.tab === 'plan' && typeof a.phase === 'string') st.phase = a.phase
     else if (typeof a.check === 'string') st.check = st.check === a.check ? null : a.check
+    // Show or hide one thing a press opens in place (a refusal's whole text, a plan's files).
+    else if (typeof a.toggle === 'string') st.open = { ...st.open, [a.toggle]: !st.open[a.toggle] }
+    else if (isObj(a.setting)) await settings($, st, a.setting)
     else if (typeof a.show === 'string') {
       st.tab = a.show
-      if (a.show === 'now') await seen($, st, ['next', 'need'])
+      if (a.show === 'now') await seen($, st, ['next', 'need', 'refusals'])
       if (a.show === 'sessions') await readHolder($, st) // shown at once, not at the next tick
+      if (a.show === 'timeline' || a.show === 'settings') await seen($, st, [a.show])
+      if (a.show === 'settings') await settings($, st, null) // read at once, not at the next tick
     }
     else return
     await redrawIfChanged($, st, true)
   } catch {
     // the press does nothing
+  }
+}
+
+// The Settings tab (panel-settings.js): `choice` ({ key, value }) runs the kernel's own
+// command for it, then the tab reads `vbw config`, `vbw statusline status`, `vbw interview
+// --json`, `vbw workflows status` and this chat's `vbw auto status` again; a change
+// that took is fresh on the tab, and its ✓ saved flash is redrawn away after about 2 s.
+async function settings($, st, choice) {
+  const run = async (argv) => {
+    try {
+      return await $.process.run([$.plugin.root + '/bin/vbw', ...argv], { cwd: st.root })
+    } catch {
+      return null
+    }
+  }
+  const argv = choice ? settingArgv(choice, st.sessionId) : null
+  if (choice && !argv) return
+  const result = argv ? await run(argv) : null
+  const reads = await Promise.all(readArgv(st.sessionId).map(run))
+  const now = await $.clock.now()
+  st.settings = settingsState({ before: st.settings, choice, result, reads, now })
+  if (result && result.exitCode === 0) {
+    st.fresh = freshArrive(st.fresh, 'settings:' + choice.key, now)
+    if (choice.key === 'sound') await readSound($, st)
+    $.clock.after(2100, () => redrawIfChanged($, st).catch(() => {}))
   }
 }
 
@@ -787,6 +935,18 @@ async function comms($, st, e) {
 // session's /vbw:vibe sets the project up mid-session). No timer before that.
 async function begin($, st) {
   if (st.live || st.unsupported === true) return
+  try {
+    await start($, st)
+  } catch (err) {
+    // A failure while starting (a store not ready yet) leaves nothing half-started: no
+    // timer, not live, so the next prompt, question or workflow starts it again.
+    st.live = false
+    if (st.timer && st.timer.cancel) st.timer.cancel()
+    st.timer = null
+    throw err
+  }
+}
+async function start($, st) {
   if (st.unsupported !== false) {
     const ver = await $.session.version()
     const v = isObj(ver) ? ver.version : ver
@@ -794,13 +954,16 @@ async function begin($, st) {
     if (st.unsupported) return
     st.comms = supports(v, COMMS_MIN_VERSION)
   }
-  const root = await $.session.root()
-  if (typeof root !== 'string' || !(await $.fs.exists(root + '/.vbw/record.json'))) return
+  const dir = await $.session.root()
+  if (typeof dir !== 'string') return
+  const root = await projectOf($, dir)
+  if (!(await $.fs.exists(root + '/.vbw/record.json'))) return
   st.live = true
   st.root = root
   st.silent = await $.fs.exists(root + TEST_MARK)
-  st.keys = keys(st.silent)
+  st.keys = keys(st.silent ? root : null)
   st.stepsPath = await stepsPath($, root)
+  st.settingsPath = st.stepsPath ? st.stepsPath.replace(/steps\.json$/, 'settings.json') : null
   try {
     st.sessionId = await $.session.id()
   } catch {
@@ -808,10 +971,10 @@ async function begin($, st) {
   }
   // The config folder holds this session's folder and the list of chats: found once.
   st.configDir = await configDir($)
-  st.sessionDir = sessionDir(st.configDir, root, st.sessionId)
+  // Claude Code names the session's folder after the folder the session started in.
+  st.sessionDir = sessionDir(st.configDir, dir, st.sessionId)
   await gather($, st)
   st.lastRec = st.record
-  st.sound = (await $.store.get(st.keys.sound)) !== false
   const stored = await $.store.get(st.keys.nextSeen)
   st.nextSeen = typeof stored === 'string' ? stored : null
   const kept = await $.store.get(st.keys.seen)
@@ -820,14 +983,20 @@ async function begin($, st) {
   st.needSeen = typeof needKept === 'string' ? needKept : null
   const helpersKept = await $.store.get(st.keys.helpersSeen)
   if (Array.isArray(helpersKept)) for (const id of helpersKept) if (typeof id === 'string') st.helpersSeen[id] = true
+  const refusalsKept = await $.store.get(st.keys.refusalsSeen)
+  if (Array.isArray(refusalsKept)) for (const id of refusalsKept) if (typeof id === 'string') st.refusalsSeen[id] = true
+  const notified = await $.store.get(st.keys.needNotified)
+  st.needNotified = typeof notified === 'string' ? notified : null
   const now = await $.clock.now()
   await noteRecommendation($, st, now)
+  await noteNeed($, st)
   const v0 = view(st, now)
   await suggest($, st)
   st.shown = signature(st, v0, now)
   if (st.timer && st.timer.cancel) st.timer.cancel()
   st.timer = $.clock.every(TICK_MS, () => tick($, st))
-  for (const [name, description] of COMMANDS) $.command.register({ name, description, immediate: true })
+  if (!st.registered) for (const [name, description] of COMMANDS) $.command.register({ name, description, immediate: true })
+  st.registered = true
   if ((await $.store.get(st.keys.closed)) !== true) await open($)
 }
 async function wake($, st) {
@@ -837,6 +1006,13 @@ async function wake($, st) {
     // the panel stays out of the way
   }
 }
+
+// A gating hook that fails is skipped by Claude Code and its `.catch` is asked. Ours let the
+// event go on as if the panel were not there, which is also what Claude Code does without one;
+// a command that fails says so in plain words instead of "unknown command". Claude Code names
+// the failed hook itself, so nothing is logged here. None of them throws.
+const passOn = ($, e, next) => next(e)
+const failedText = (name) => '/' + name + ' did not work just now. The rest of VBW is not affected.'
 
 export function register(on) {
   const st = fresh()
@@ -852,29 +1028,29 @@ export function register(on) {
     const w = isObj(e) && isObj(e.presentation) ? e.presentation.columns : null
     await openByPerson($, st, cols(w) ? { columns: quarter(w), focus: true } : { focus: true })
     return { text: 'Mission Control is open.' }
-  })
+  }).catch(() => ({ text: failedText('vbw-panel') }))
 
   on('command.run', { command: 'vbw-sound' }, async ($, e, next) => {
     if (!st.live) return next(e)
     const word = String(e.args ?? '').trim().toLowerCase()
-    if (word === '' || word === 'on' || word === 'off') await setSound($, st, word === '' ? !st.sound : word === 'on')
-    return { text: "The 'needs you' sound is " + (st.sound ? 'on' : 'off') + '.' }
-  })
+    const refused = word === '' || word === 'on' || word === 'off' ? await setSound($, st, word === '' ? !st.sound : word === 'on') : null
+    return { text: (refused ? 'VBW could not change the sound: ' + refused + '. ' : '') + "The 'needs you' sound is " + (st.sound ? 'on' : 'off') + '.' }
+  }).catch(() => ({ text: failedText('vbw-sound') }))
 
   on('command.run', { command: 'vbw-status' }, async ($, e, next) => {
     if (!st.live) return next(e)
     return { text: statusText(await facts($, st)) }
-  })
+  }).catch(() => ({ text: failedText('vbw-status') }))
 
   on('command.run', { command: 'vbw-why' }, async ($, e, next) => {
     if (!st.live) return next(e)
     return { text: whyText(await facts($, st)) }
-  })
+  }).catch(() => ({ text: failedText('vbw-why') }))
 
   on('command.run', { command: 'vbw-todo' }, async ($, e, next) => {
     if (!st.live) return next(e)
     return { text: await todo($, st, e.args) }
-  })
+  }).catch(() => ({ text: failedText('vbw-todo') }))
 
   // Remember a close made by the user only; every close is passed on.
   on('ui.close', async ($, e, next) => {
@@ -886,7 +1062,7 @@ export function register(on) {
       }
     }
     return next(e)
-  })
+  }).catch(passOn)
 
   // A question to the user is a need while it is open.
   on('tool.call', { tool: 'AskUserQuestion' }, async ($, e, next) => {
@@ -911,6 +1087,16 @@ export function register(on) {
         // nothing to redraw
       }
     }
+  }).catch(async ($, e, next) => {
+    // The question went on without the panel noticing its end: it is no longer open as far as the panel knows.
+    st.question = null
+    st.questionAt = null
+    try {
+      await redrawIfChanged($, st)
+    } catch {
+      // the next tick draws it
+    }
+    return next(e)
   })
 
   // A VBW workflow launched by this session (main loop): its run id and folder
@@ -931,14 +1117,14 @@ export function register(on) {
       // the run is found by its lease instead
     }
     return out
-  })
+  }).catch(passOn)
 
   // The record as a turn found it: the turn receipt says what moved.
   on('prompt.submit', async ($, e, next) => {
     if (!st.live) await wake($, st)
     if (st.live) st.before = st.record
     return next(e)
-  })
+  }).catch(passOn)
 
   // Mission Control: drawn as Claude Code's own pane example does, from $.ui.resolve(e)
   // and h(). Only this pane's drawings reach here.
@@ -957,7 +1143,7 @@ export function register(on) {
       const cells = st.sweep && st.tab === 'proof' && ui.Raster ? drawn(st.sweep, width, PANE) : null
       if (cells) animate($, st)
       const sweep = cells ? { cols: st.sweep.cols, cells } : null
-      return renderPane(ui, { st, v, now, width, sweep, registry: st.registry, stored: st.stored, holder: st.holder, recommendation: recOf(st), unseen: unseenNext(st), motion: motion(st), arrivedAt: st.nextAt, wrapped: st.wrapped, scroll: isObj(e.props) ? e.props.scroll : null, portrait: $.plugin.root + '/assets/portrait.png' }, {
+      return renderPane(ui, { st, v, now, width, sweep, registry: st.registry, stored: st.stored, holder: st.holder, recommendation: recOf(st), fresh: freshMarks(st), motion: motion(st), wrapped: st.wrapped, scroll: isObj(e.props) ? e.props.scroll : null, portrait: $.plugin.root + '/assets/portrait.png' }, {
         act: (a) => act($, st, a),
         sound: () => setSound($, st, !st.sound),
       })

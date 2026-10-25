@@ -7,6 +7,8 @@ import { pathToFileURL } from 'node:url'
 import { PLUGIN, record, next, lease, deepFreeze } from './helpers/fake-mod.mjs'
 
 const cmd = await import(pathToFileURL(PLUGIN + '/hooks/panel-commands.js').href)
+// /vbw-why says the local time (Europe/Zurich, UTC+02:00 in October), its day named when not today.
+process.env.TZ = 'Europe/Zurich'
 const NOW = Date.parse('2026-10-05T15:00:00Z')
 const SID = '7f3a9c21-55aa-4d2e-9b1c-0123456789ab'
 const REQS = [['R1', 'M9', 'proven'], ['R2', 'M9', 'open'], ['R3', 'M9', 'open']]
@@ -39,13 +41,13 @@ test('/vbw-status without a project says so in one line and never throws', () =>
 test('/vbw-why: a run held by this session names it, its short id, when it started, its kind and how many files it may write', () => {
   const l = lease('build', Date.parse('2026-10-05T14:52:00Z'), { session: SID, files: ['a.js', 'b.js', 'c.js'] })
   const s = cmd.whyText({ record: rec({ lease: l }), next: next({ action: 'run' }), now: NOW, sessionId: SID })
-  assert.equal(lines(s)[0], 'A build run is open, held by this session (7f3a9c21) since 14:52 UTC (8 min ago); its agents may write 3 files.')
+  assert.equal(lines(s)[0], 'A build run is open, held by this session (7f3a9c21) since 16:52 (8 min ago); its agents may write 3 files.')
 })
 
 test('/vbw-why: a run of another session says so and to wait, never to end it', () => {
   const l = lease('qa', NOW - 30000, { session: SID, files: [] })
   const s = cmd.whyText({ record: rec({ lease: l }), next: next({ action: 'run' }), now: NOW, sessionId: 'other-session' })
-  assert.match(s, /^A qa run is open, held by another session \(7f3a9c21\) since 14:59 UTC \(just started\); its agents write no files\./)
+  assert.match(s, /^A qa run is open, held by another session \(7f3a9c21\) since 16:59 \(just started\); its agents write no files\./)
   assert.match(s, /wait/i)
   assert.doesNotMatch(s, /run end|end it/i)
 })

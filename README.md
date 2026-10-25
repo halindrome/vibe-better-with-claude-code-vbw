@@ -31,6 +31,8 @@
 <a href="#documentation">Docs</a>
 </p>
 
+<p align="center"><img src="assets/mission-control-settings.png" alt="VBW's Mission Control panel beside a Claude Code chat: six tabs (Now, Plan, Proof, Timeline, Sessions, Settings), here Settings, where every VBW setting is one click: the model and the effort of each helper in its role's colour, how VBW talks to you, autonomy, the autonomous run and rigor. Under the prompt, the VBW status line shows the project, its milestone, progress and state." width="900"/></p>
+
 ## What Is This?
 
 > **Platform:** macOS and Linux. Windows is not supported natively: VBW runs on bash. On Windows, run Claude Code inside [WSL](https://learn.microsoft.com/en-us/windows/wsl/install).
@@ -311,7 +313,7 @@ Full reference: [docs/workflows.md](docs/workflows.md).
 
 ## Night shift
 
-`/vbw:loop` works through todo items you name while you are away: for each it plans, builds, proves and ships on its own, approving only a contract that is exactly the item you named. You set a spend ceiling, or choose none on purpose; a ceiling needs the cost figures of the VBW status line. An item that fails twice is reverted with `git revert` and parked, and the loop moves on; a `[human]` requirement waits for you. An item that runs past its time budget (twice the usual time of items of its size) stops the loop before the item's next step, with its work kept. The loop stops at the ceiling, at the end of the list, or on `vbw loop stop`, and leaves `.vbw/loop-report.md`: what shipped, what was parked and why, what it cost. Details: [docs/loop.md](docs/loop.md).
+`/vbw:loop` works through todo items you name while you are away: for each it plans, builds, proves and ships on its own, approving only a contract that is exactly the item you named. You set a spend ceiling, or choose none on purpose; a ceiling needs the cost figures of the VBW status line. An item that fails twice is reverted with `git revert` and parked, and the loop moves on; a `[human]` requirement waits for you. An item that runs past its time budget (twice the usual time of items of its size; time the loop was stopped or its session was gone does not count) stops the loop before the item's next step, with its work kept. The loop stops at the ceiling, at the end of the list, or on `vbw loop stop`, and leaves `.vbw/loop-report.md`: what shipped, what was parked and why, what it cost. Details: [docs/loop.md](docs/loop.md).
 
 The promise: nothing is approved without a record of who approved it, and nothing the loop does leaves the project. The loop never pushes, releases, publishes or deploys; every ship is a local commit for you to review.
 
@@ -349,7 +351,8 @@ Approval, checking and shipping always stop for you, whatever the preset. Autono
 | Setting | Values | What it does |
 | :--- | :--- | :--- |
 | `profile` | `quality` / `balanced` / `budget` | Which models the agents run on |
-| `model.<role>` | `opus` / `sonnet` / `haiku` / a model id / `default` | Override one agent. QA never runs on Haiku: whatever judges your work doesn't get the cheap seat |
+| `model.<role>` | `fable` / `opus` / `sonnet` / `haiku` / a model id / `default` | Override one agent. QA never runs on Haiku: whatever judges your work doesn't get the cheap seat |
+| `effort.<role>` | `low` / `medium` / `high` / `xhigh` / `max` / `default` | How hard one agent thinks at every step, over the profile's choice. Teammates need VBW 2.1.13 or newer once one is set |
 | `autonomy` | `guided` / `balanced` / `hands-off` | How much `/vbw:vibe` does on its own. You can also say it to `/vbw:vibe` in words ("use guided autonomy", "ask me before each step", "do not ask, just go") and it is recorded before the first step |
 | `autonomy_cap` | a number | Steps one autonomous run takes before stopping. `/vbw:loop` steps are not counted: its ceiling is its cap |
 | `rigor` | `auto` / `express` / `standard` / `deep` | How thorough each phase is: sized to the work (`auto`, the default) or forced |
@@ -357,6 +360,7 @@ Approval, checking and shipping always stop for you, whatever the preset. Autono
 | `command_timeout` | `1` to `86400` seconds | How long the project's own commands may run in a proof. Default: 3600 |
 | `check_budget` | `1` to `86400` seconds | A test unit slower than this is named over budget in the proof's summary. Reported, never enforced. Default: 120 |
 | `motion` | `full` / `calm` / `off` / `default` | Panel animation; `default` follows your interview level |
+| `sound` | `off` / `arnold` / `charlize` / `darth` / `default` | The panel's "needs you" sound: which voice, or none; `default` picks among all. Your own choice in this clone, not shared through git |
 | status line | `vbw statusline on` / `off` | The status line |
 
 Your own session keeps the model you chose with `/model`; it must be Sonnet, Opus or Fable for auto mode.
@@ -490,6 +494,7 @@ These describe VBW 1.x, not VBW 2. VBW 1 ran every capability as a shell script 
 | [docs/costs.md](docs/costs.md) | What each run and each milestone cost (`vbw show costs`) |
 | [docs/statusline.md](docs/statusline.md), [docs/panel.md](docs/panel.md) | The status line and the panel |
 | [docs/diagnostics.md](docs/diagnostics.md) | `vbw report` for bug reports, and `vbw rtk` |
+| [docs/parallel-sessions.md](docs/parallel-sessions.md) | Several Claude Code sessions on one project: who holds the run, what to do, what is shared |
 | [docs/update.md](docs/update.md) | Updating VBW, auto-update, and the "what changed" offer |
 | [docs/tools.md](docs/tools.md) | Finding the best tools for your project (nothing installed without your approval) |
 | [docs/convert.md](docs/convert.md) | Coming from an earlier VBW |

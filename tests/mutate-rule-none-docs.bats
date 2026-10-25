@@ -45,6 +45,11 @@ section_states() { section "$1" "$2" | grep -Eiq -- "$3" || { echo "${1##*/} '$2
   section_states "$DOCS/workflows.md" "## The mutation check" '(reads the project through git|through git)'
 }
 
+@test "R203: the docs state the limit beside the rule: a check that only tests whether a plan file exists is not detected" {
+  section_states "$DOCS/workflows.md" "## The mutation check" 'only +tests +whether +a +(plan +)?file +exists.*not +detected'
+  section_states "$DOCS/proof.md" "### The mutation check" 'only +tests +whether +a +(plan +)?file +exists.*not +detected'
+}
+
 @test "R203: docs/proof.md says a rule whose check judges only the record is recorded --none after the kernel verifies its read list, and that the command may run the check once" {
   section_states "$DOCS/proof.md" "### The mutation check" '--none'
   section_states "$DOCS/proof.md" "### The mutation check" '(record|decision).*--none|--none.*(record|decision)'

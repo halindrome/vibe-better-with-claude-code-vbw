@@ -6,10 +6,15 @@
 LOOP_USAGE="usage: vbw loop start [--session ID] ITEM... --ceiling USD [--finish-item] | --no-ceiling   |   vbw loop stop   |   vbw loop status [--json]"
 LOOP_FORMS="choose one: --ceiling USD (stop at the next step), --ceiling USD --finish-item, or --no-ceiling"
 # LOOP_TIME_JQ (T156): hm, seconds as "4h05m"; took($l), an item's seconds from its open to its ship or
-# park, else to the loop's end, else to now.
+# park, else to the loop's end, else to now, less its away seconds: the time the loop was not working on
+# it. resumed($from), the item stepped again after the loop stopped (it ended, its session was gone, a
+# turn failed at $from, a number or null): the time since its last step, or since $from when later, is
+# added to away, and its last step is now.
 # shellcheck disable=SC2034 # used by the loop step and the report, which this file sources
 LOOP_TIME_JQ='def hm: floor | "\(. / 3600 | floor)h\(. % 3600 / 60 | floor | tostring | if length < 2 then "0" + . else . end)m";
-  def took($l): ((.at // $l.ended.at) | if . then fromdateiso8601 else now end) - (.opened_at | fromdateiso8601) | floor;'
+  def took($l): ((.at // $l.ended.at) | if . then fromdateiso8601 else now end) - (.opened_at | fromdateiso8601) - (.away // 0) | floor;
+  def resumed($from): ((.stepped_at // .opened_at) | fromdateiso8601) as $last | ([$last, ($from // $last)] | max) as $f
+    | .away = ((.away // 0) + ([0, now - $f] | max | floor)) | .stepped_at = (now | floor | todate);'
 
 cmd_loop() {
   local sub="${1:-}"
@@ -91,7 +96,7 @@ loop_start() {
   if [ "$none" = 0 ] && [ -z "$ceiling" ]; then vbw_usage_error "a loop needs a ceiling choice: $LOOP_FORMS"; fi
   if [ "$none" = 1 ] && [ "$finish" = 1 ]; then vbw_usage_error "--finish-item goes with --ceiling USD: $LOOP_FORMS"; fi
   if [ -n "$ceiling" ]; then
-    printf '%s' "$ceiling" | grep -Eq '^[0-9]+(\.[0-9]+)?$' && jq -ne --argjson c "$ceiling" '$c > 0' > /dev/null \
+    printf '%s' "$ceiling" | grep -E '^[0-9]+(\.[0-9]+)?$' > /dev/null && jq -ne --argjson c "$ceiling" '$c > 0' > /dev/null \
       || vbw_usage_error "--ceiling needs a positive number of dollars, not '$ceiling': $LOOP_FORMS"
   fi
   vbw_require_project
@@ -118,9 +123,30 @@ loop_start() {
     [ -z "$session" ] || ! printf '%s' "$rec" | jq -e --arg s "$session" '.loop.session == $s' > /dev/null || loop_mark "$session"
     vbw_die "a loop is already on. Next: run vbw loop status to see it, or vbw loop stop to end it (twice when it is already stopping and its session is gone)"
   fi
-  printf '%s' "$rec" | jq -e '.milestone.status != "shipped" and (. as $r | .milestone.id as $m
-      | any($r.requirements[]; .milestone == $m and ((.proof == "human" and (.id as $i | any($r.phases[]; .milestone != $m and any(.reqs[]; . == $i)))) | not)))' > /dev/null \
-    && vbw_die "$(printf '%s' "$rec" | jq -r .milestone.id) has requirements and is not shipped. Next: finish or ship it first (vbw next): each item gets its own milestone"
+  # The item an ended loop left in progress in the current milestone (stopped by you, its ceiling, a
+  # refusal, or a session that was gone) resumes when named: first, with its milestone, work, cost
+  # baseline, retries, time and budget, and the time since its last step left out of its time. One
+  # that worked past its budget is not resumed. Unnamed, it holds the milestone.
+  local resume why
+  resume=$(printf '%s' "$rec" | jq -r '.milestone as $m | select($m.status == "active")
+    | [(.loop.items // [])[] | select(.status == "in_progress" and .milestone == $m.id)][0].id // empty')
+  if [ -n "$resume" ]; then
+    case "$seen" in
+      *" $resume "*) ;;
+      *) vbw_die "$(printf '%s' "$rec" | jq -r .milestone.id) holds $resume, in progress when the last loop ended. Next: name $resume first to resume it, or finish it with /vbw:vibe" ;;
+    esac
+    built=$(printf '%s' "$rec" | jq -c --arg i "$resume" --argjson rest "$built" "$LOOP_TIME_JQ"'.loop as $l
+      | [[$l.items[] | select(.id == $i)][0] | resumed(if .stepped_at == null then $l.ended.at | fromdateiso8601 else null end)]
+        + [$rest[] | select(.id != $i)]')
+    why=$(printf '%s' "$built" | jq -r "$LOOP_TIME_JQ"'.[0] | select(.budget != null and .opened_at != null and took({}) > .budget.seconds)
+      | "\(.id) has worked \(took({}) | hm) of a \(.budget.seconds | hm) time budget (\(.budget.basis)), so a loop stops it before its next step"')
+    [ -z "$why" ] || vbw_die "$why. Next: finish it with /vbw:vibe"
+    list=$(printf '%s' "$built" | jq -r 'map(.id) | join(", ")')
+  else
+    printf '%s' "$rec" | jq -e '.milestone.status != "shipped" and (. as $r | .milestone.id as $m
+        | any($r.requirements[]; .milestone == $m and ((.proof == "human" and (.id as $i | any($r.phases[]; .milestone != $m and any(.reqs[]; . == $i)))) | not)))' > /dev/null \
+      && vbw_die "$(printf '%s' "$rec" | jq -r .milestone.id) has requirements and is not shipped. Next: finish or ship it first (vbw next): each item gets its own milestone"
+  fi
   # Every known session's current figures are the loop's baseline.
   local base
   base=$(loop_figures_now)

@@ -7,7 +7,7 @@ VBW plans and builds with: `/vbw:vibe` turns them on (`vbw workflows on`) unless
 the user disabled them on purpose.
 
 ```
-[VBW] expenses │ M1 First milestone │ ▓▓▓▓▓▓▓░░░ 4/6 done │ ▶ build P1.2, P2.1 · 1 of 2 · until 14:20 │ ⟳ auto 3/25
+[VBW] expenses │ M1 First milestone │ ▓▓▓▓▓▓▓░░░ 4/6 done │ ● working: building P1.2, P2.1 · 1 of 2 · 8 min, until around 14:20 │ ⟳ auto 3/25
 Agents ● dev P1.2 sonnet  ● dev P2.1 sonnet
 Context ▓▓▓░░░░░░░ 31% 62K/200K │ Tokens 2 in 195 out │ Cache 93% hit 3.8K write 55.5K read │ Cost $1.42 │ +303 −12
 Limits 5h ▓▓░░░░░░░░ 23% (resets 2h13m) │ 7d ▓▓▓▓░░░░░░ 41% (resets 3d)
@@ -15,24 +15,34 @@ Sonnet 5.5 │ 10m22s (API 5m55s) │ main │ VBW 2.0.6 │ CC 2.1.286
 ```
 
 1. **VBW:** the project, the milestone, a progress bar of requirements proven
-   or accepted, and what is happening: a step in progress with what it is doing and when it should end
-   (`▶ build P1.2, P2.1 · 1 of 2 · until 14:20`; a background proof:
-   `▶ proving 12 of 40 checks · until 14:20`, counting up; an end on another day
-   reads `until tomorrow 00:20`). A step with parts past its time reads
-   `until 14:35, later than usual`; one without reads `until 14:20, 6 min late`.
-   With fewer than 3 finished steps of the kind there is no time: `▶ build P1.2,
-   P2.1 · 1 of 2`. The status line reads the time from the running step's note
-   and never works it out itself (see [Time left](panel.md#time-left)). It shows
-   the step's time only; the milestone's end is Mission Control's and the chat
-   message's, never the status line's. While a run is open, the cell ends with who holds it:
-   `▶ build P1.2, P2.1 · 1 of 2 · until 14:20 · leading` in the chat that holds
-   the run, `· held by <name>` in any other chat, the name (from `/rename`) cut to 20
-   characters with `…`. With no name known the cell shows the first 8 characters of the session id, and with a lease that has no session
-   there is nothing after the step. Escape sequences in a name are removed.
-   Other states: a step that needs
-   the user (`needs you: approve`), or the next step (`next: prove`, from the
-   last `vbw next`). `⟳ auto 3/25` while this session's autonomous run is armed (another session's is not shown). Outside a
-   VBW project: `/vbw:vibe to start` (this line, then lines 3 to 5).
+   or accepted, and one state, in the colours of Mission Control's Now tab:
+   - `● working: building P1.2, P2.1 · 1 of 2 · 8 min, until around 14:20`
+     (the panel accent, violet): a step is running, what it is doing, its parts done, how long it has
+     run (from a minute on) and when it should end. A background proof reads
+     `● working: proving 12 of 40 checks · 3 min, until around 14:20`, counting
+     up; an end on another day reads `until around tomorrow 00:20`. A step with
+     parts past its time reads `until around 14:35, later than usual`; one
+     without reads `until around 14:20, 6 min late`. With fewer than 3 finished
+     steps of the kind there is no end time: `● working: building P1.2, P2.1 ·
+     1 of 2 · 8 min`. The status line reads the time from the running step's note
+     and never works it out itself (see [Time left](panel.md#time-left)). It shows
+     the step's time only; the milestone's end is Mission Control's and the chat
+     message's, never the status line's. While a run is open, the cell ends with
+     who holds it: `· leading` in the chat that holds the run, `· held by <name>`
+     in any other chat, the name (from `/rename`) cut to 20 characters with `…`.
+     With no name known the cell shows the first 8 characters of the session id,
+     and with a lease that has no session there is nothing after the step.
+     Escape sequences in a name are removed. Agents working with no run open read
+     `● working: 2 agents`.
+   - `⚑ needs you: approve · since yesterday 21:38` (amber): a step needs the
+     user, and since when (the day is named when it is not today); without a
+     time on the last `vbw next`, the since is left out.
+   - `✓ idle: M2 shipped 15:04` (green) once the milestone has shipped, and
+     `✓ idle: prove is next` (from the last `vbw next`) otherwise.
+
+   `⟳ auto 3/25` follows while this session's autonomous run is armed (another
+   session's is not shown). Outside a VBW project: `/vbw:vibe to start` (this
+   line, then lines 3 to 5).
 2. **Agents or team** (VBW projects, Claude Code before 2.1.287 only): while agents work, each one in its role's
    colour (architect magenta, lead blue, dev green, qa yellow, scout cyan,
    debugger red, docs pink) with its label and model. Otherwise the team: each role's model from the profile and
@@ -62,9 +72,18 @@ The setting also asks Claude Code to re-run the status line every 5 seconds
 run's time and its working agents stay current while nothing else happens.
 A run is budgeted at 60 ms (no network, no git process).
 
-The setting changed with this version. `vbw statusline on`, and a session that
-starts in a VBW project, update a setting made by an older VBW (or by VBW 1) in
-place, keeping the refresh interval and the saved status line. `vbw statusline
+The setting is one object for both lines, so `vbw statusline on` keeps the
+`padding` and the `refreshInterval` of a status line you had before, and writes
+them into it. A line without an interval gets VBW's 5 seconds. An interval you
+set stays yours, which means VBW's line then refreshes at that rate too. In a
+project where VBW is off, your earlier line runs with the padding you gave it and,
+when you gave it an interval, at that interval; without one it runs at the
+5-second refresh, as often as VBW's own line would.
+
+`vbw statusline on`, and a session that starts in a VBW project, update a
+setting made by an older VBW (or by VBW 1) in place, keeping the refresh
+interval and the saved status line, and giving it the saved line's padding when
+it has none. `vbw statusline
 status` says when the setting is an older one, and `vbw doctor` flags it with
 `vbw statusline on` as the fix.
 
@@ -96,6 +115,17 @@ above).
 
 VBW's script only says "off" (it exits with code 3). The setting itself then
 runs the earlier status line with the same input; VBW never runs it.
+
+The off path is the cheapest of the status line's paths. The setting starts one
+bash, which runs the installed script inside itself, and that script starts one
+jq: it reads your settings file, the project's two settings files (when the
+session runs in the project, which is nearly always) and Claude Code's JSON
+together, and starts no other process before it says "off". On a session
+that loaded a working tree (`claude --plugin-dir`) it also reads the session's
+record, with no jq. `tools/bench-hooks.sh` measures VBW's own CPU on this path as
+`status line (VBW off)`: the whole call minus one bash, one jq and one sh
+startup and the earlier status line itself, which are the platform's and yours.
+The limit is 10 ms (`VBW_HANDBACK_BUDGET_MS`).
 
 Only a setting made by this version can hand back. If `vbw doctor` says the
 status line was set by an older VBW, run `vbw statusline on` to update it.
@@ -138,6 +168,8 @@ status line still renders. It never writes `.vbw/record.json`.
   empty list: the stored name from the glance, else the 8 characters of the id.
   `tools/bench-hooks.sh` measures the status line with a lease open and a list
   on disk, within the same 60 ms.
+- Started in a subfolder, it shows the project that folder is in: the nearest
+  folder up that holds `.git`, the same project the kernel and the guards use.
 - No network, no git process (the branch is read from
   `.git/HEAD`, also in linked worktrees). The one thing it writes is the cost side
   file below, never the record.
@@ -145,5 +177,9 @@ status line still renders. It never writes `.vbw/record.json`.
   render) and never fails: a bad render prints `[VBW] status line unavailable`.
 - Exit 3 is the hand-back signal: the script prints nothing and exits 3 where
   VBW is turned off. `tools/bench-hooks.sh` measures it as `status line (VBW
-  off)`, within the same 60 ms.
+  off)`, judged on VBW's own CPU within 10 ms (see above).
+- The script runs on its own (`bash vbw-statusline.sh`) and inside the setting's
+  bash (sourced in a subshell of it, which saves a bash start on every render).
+  Its exit status is its answer in both, and it finds its own folder from
+  `BASH_SOURCE`, not `$0`.
 - `NO_COLOR` turns the colors off.

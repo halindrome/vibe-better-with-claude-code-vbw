@@ -17,7 +17,7 @@
 # This is the one place VBW looks into the plugin cache (standards
 # test exception, build plan K4).
 
-VBW_STATUSLINE_CMD='sid=; _s=; for _d in "${CLAUDE_CONFIG_DIR:-}" "$HOME/.config/claude-code" "$HOME/.claude"; do [ -z "$_d" ] && continue; f=; p=; if [ -z "$_s" ] && [ -d "$_d/vbw/sessions" ]; then _s=1; sid=$(printf %s "$i" | jq -r '"'"'.session_id // empty'"'"' 2>/dev/null); case "$sid" in *[!A-Za-z0-9_-]*) sid= ;; esac; fi; [ -z "$sid" ] || { read -r p < "$_d/vbw/sessions/$sid"; } 2>/dev/null || p=; if [ -n "$p" ] && [ -f "$p/.claude-plugin/plugin.json" ] && [ -f "$p/scripts/vbw-statusline.sh" ]; then f=$p/scripts/vbw-statusline.sh; else set -- "$_d"/plugins/cache/vbw-marketplace/vbw/*/scripts/vbw-statusline.sh; if [ $# -eq 1 ]; then f=$1; else f=$(ls -1 "$@" 2>/dev/null | sort -V | tail -1 || true); fi; fi; if [ -f "$f" ]; then printf %s "$i" | bash "$f"; rc=$?; [ "$rc" -eq 3 ] && break; exit "$rc"; fi; done'
+VBW_STATUSLINE_CMD='sid=; _s=; for _d in "${CLAUDE_CONFIG_DIR:-}" "$HOME/.config/claude-code" "$HOME/.claude"; do [ -z "$_d" ] && continue; f=; p=; if [ -z "$_s" ] && [ -d "$_d/vbw/sessions" ]; then _s=1; sid=$(printf %s "$i" | jq -r '"'"'.session_id // empty'"'"' 2>/dev/null); case "$sid" in *[!A-Za-z0-9_-]*) sid= ;; esac; fi; [ -z "$sid" ] || { read -r p < "$_d/vbw/sessions/$sid"; } 2>/dev/null || p=; if [ -n "$p" ] && [ -f "$p/.claude-plugin/plugin.json" ] && [ -f "$p/scripts/vbw-statusline.sh" ]; then f=$p/scripts/vbw-statusline.sh; else set -- "$_d"/plugins/cache/vbw-marketplace/vbw/*/scripts/vbw-statusline.sh; if [ $# -eq 1 ]; then f=$1; else f=$(ls -1 "$@" 2>/dev/null | sort -V | tail -1 || true); fi; fi; if [ -f "$f" ]; then printf %s "$i" | { . "$f"; }; rc=$?; [ "$rc" -eq 3 ] && break; exit "$rc"; fi; done'
 
 # statusline_quote TEXT: TEXT as one single-quoted shell word.
 statusline_quote() {
@@ -64,7 +64,7 @@ cmd_statusline() {
   case "$sub" in
     status)
       if [ -z "$current" ]; then printf 'off: no status line is set (vbw statusline on)\n'
-      elif printf '%s' "$current" | grep -q 'vbw-statusline\.sh'; then
+      elif printf '%s' "$current" | grep 'vbw-statusline\.sh' > /dev/null; then
         if [ "$current" != "$want" ]; then printf 'on: an older VBW status line (vbw statusline on updates it)\n'
         elif statusline_refreshes "$settings"; then printf 'on: the VBW status line\n'
         else printf 'on: the VBW status line, refreshed on events only (vbw statusline on adds the 5-second refresh)\n'
@@ -73,12 +73,17 @@ cmd_statusline() {
       fi
       ;;
     on)
-      if printf '%s' "$current" | grep -q 'vbw-statusline\.sh'; then
+      if printf '%s' "$current" | grep 'vbw-statusline\.sh' > /dev/null; then
         # Set by an older VBW: rewrite only its command, keep the interval
-        # (5 when missing) and every other field; the current one stays as is.
-        if [ "$current" != "$want" ] || ! statusline_refreshes "$settings"; then
+        # (5 when missing) and every other field, and give it the padding of the
+        # saved earlier status line when it has none; the current one stays as is.
+        if [ "$current" != "$want" ] || ! statusline_refreshes "$settings" || statusline_lacks_padding "$settings"; then
+          local prev=(--argjson prev '[]')
+          [ ! -f "$(statusline_backup)" ] || prev=(--slurpfile prev "$(statusline_backup)")
           statusline_write "$settings" \
-            '.statusLine |= if type == "object" then .command = $cmd | .refreshInterval = (if (.refreshInterval | type) == "number" then .refreshInterval else 5 end) else {type: "command", command: $cmd, refreshInterval: 5} end'
+            '.statusLine |= if type == "object" then .command = $cmd | .refreshInterval = (if (.refreshInterval | type) == "number" then .refreshInterval else 5 end)
+              | if (.padding | type) != "number" and ($prev[0] | type == "object" and (.padding | type) == "number") then .padding = $prev[0].padding else . end
+              else {type: "command", command: $cmd, refreshInterval: 5} end' "${prev[@]}"
         fi
         printf 'on: the VBW status line\n'
         return 0
@@ -88,8 +93,12 @@ cmd_statusline() {
         jq '.statusLine' "$settings" > "$(statusline_backup)"
       fi
       # Claude Code redraws the status line on events only; the interval
-      # (seconds) keeps run times and working agents current between them.
-      statusline_write "$settings" '.statusLine = {type: "command", command: $cmd, refreshInterval: 5}'
+      # (seconds) keeps run times and working agents current between them. The
+      # setting is one object for both lines, so the user's own padding and
+      # interval stay: where VBW is off, the earlier line runs the way they set it.
+      statusline_write "$settings" '(.statusLine | if type == "object" then . else {} end) as $prev
+        | .statusLine = ({type: "command", command: $cmd, refreshInterval: (if ($prev.refreshInterval | type) == "number" then $prev.refreshInterval else 5 end)}
+          + (if ($prev.padding | type) == "number" then {padding: $prev.padding} else {} end))'
       if [ -n "$current" ]; then
         printf 'on: the VBW status line replaced yours, which is saved (vbw statusline off brings it back)\n'
       else
@@ -97,7 +106,7 @@ cmd_statusline() {
       fi
       ;;
     off)
-      if printf '%s' "$current" | grep -q 'vbw-statusline\.sh'; then
+      if printf '%s' "$current" | grep 'vbw-statusline\.sh' > /dev/null; then
         local backup
         backup=$(statusline_backup)
         if [ -f "$backup" ]; then
@@ -119,6 +128,14 @@ cmd_statusline() {
 # 5 seconds, or one the user chose, which stays theirs).
 statusline_refreshes() {
   jq -e '.statusLine | type == "object" and (.refreshInterval | type) == "number"' "$1" > /dev/null 2>&1
+}
+
+# statusline_lacks_padding SETTINGS: VBW's status line has no padding while the
+# saved earlier status line has one.
+statusline_lacks_padding() {
+  [ -f "$(statusline_backup)" ] || return 1
+  jq -e --slurpfile prev "$(statusline_backup)" '(.statusLine | type == "object" and (.padding | type) != "number")
+    and ($prev[0] | type == "object" and (.padding | type) == "number")' "$1" > /dev/null 2>&1
 }
 
 # Where the user's own status line is kept while VBW's is on.

@@ -39,3 +39,19 @@ load helper
   grep -q 'code and a `.vbw/` file together' "$REPO_ROOT/docs/loop.md"
   grep -q 'does not revert cleanly' "$REPO_ROOT/docs/loop.md"
 }
+
+@test "T156: docs/loop.md says the budget is set from the plan's road, once, with a floor, and the basis names which was used" {
+  local f="$REPO_ROOT/docs/loop.md"
+  tr '\n' ' ' < "$f" | grep -Eq 'From the plan\..*twice the time so far plus +that road, at least 30 minutes.*set once' || { echo "docs/loop.md lacks the plan rule"; false; }
+  tr '\n' ' ' < "$f" | grep -Eq 'The basis says which of the three below was used' || { echo "docs/loop.md lacks the basis"; false; }
+  grep -qF 'planned: true' "$REPO_ROOT/docs/record.md" || grep -qF '`planned: true`' "$REPO_ROOT/docs/record.md" || { echo "docs/record.md lacks planned"; false; }
+}
+
+@test "T156: docs/loop.md says what counts as the item's time and how an item resumes; docs/record.md names stepped_at and away" {
+  local f="$REPO_ROOT/docs/loop.md"
+  tr '\n' ' ' < "$f" | grep -Eq 'What counts as the item.s time\.\*\* Only the time the loop is working on it' || { echo "docs/loop.md lacks what counts"; false; }
+  tr '\n' ' ' < "$f" | grep -Eq 'from the loop.s last step on the item until the step that resumes +it' || { echo "docs/loop.md lacks the stopped stretch"; false; }
+  grep -qF 'Resuming an item' "$f" || { echo "docs/loop.md lacks resuming"; false; }
+  grep -qF 'StopFailure' "$f" || { echo "docs/loop.md lacks the StopFailure hook"; false; }
+  grep -qF '`stepped_at`' "$REPO_ROOT/docs/record.md" && grep -qF '`away`' "$REPO_ROOT/docs/record.md" || { echo "docs/record.md lacks stepped_at or away"; false; }
+}

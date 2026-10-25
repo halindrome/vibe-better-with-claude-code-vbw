@@ -1,0 +1,28 @@
+{
+  "scenario": "fixchecks",
+  "fixture": "greet.sh built and proven, its phase standard and QA not yet run; the requirement also states several names, one greeting line each, which greet.sh does not do and the approved check does not test; the user types /vbw:vibe and approves by the choice",
+  "cost_usd": 0.68,
+  "evidence_level": "L3",
+  "at": "2026-10-24T04:53:16Z",
+  "passed": true,
+  "facts": {
+    "first_qa_verdict": "fail",
+    "fix_source": "qa",
+    "fix_check_commits": 1,
+    "fix_commits_carry_req_trailer": true,
+    "check_commit_only_check_files": true,
+    "code_through_plan": true,
+    "approvals": 1,
+    "questions": 1,
+    "fix_rounds": 1,
+    "regression_case_in_check": true
+  },
+  "not_tested": [
+    "a fix of a failing check (proof source) that edits a check file",
+    "a project-command fix",
+    "the answer Not yet or the user's own words at the approval",
+    "more than one fix round",
+    "a project larger than the greet.sh fixture",
+    "the wording of what VBW tells the user (read by a person)"
+  ]
+}

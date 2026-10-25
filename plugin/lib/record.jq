@@ -1,8 +1,9 @@
 # The definition of .vbw/record.json (docs/record.md). Format 4 (D232) is what every write produces:
-# schema 4 and protected, the sorted list of every file a check protects, each once ([] without
-# checks), so a guard reads the list without reading through the checks (R150). The older formats
-# stay valid until their next write: schema 1, 2 when a check is alone, 3 when a todo is sorted or
-# a recommendation is stored; they carry no protected field.
+# schema 4 (5 while settings.efforts holds a helper's chosen effort) and protected, the sorted
+# list of every file a check protects, each once ([] without checks), so a guard reads the list
+# without reading through the checks (R150). The older formats stay valid until their next write:
+# schema 1, 2 when a check is alone, 3 when a todo is sorted or a recommendation is stored; they
+# carry no protected field.
 # Input: the record. Output: a JSON array of violation messages; [] = valid.
 
 def nonempty: type == "string" and length > 0;
@@ -31,7 +32,7 @@ def session_figures: type == "object"
                and (.at | iso) and (del(.at) | figures));
 def strings_array: type == "array" and all(.[]; type == "string");
 def loop_item: type == "object"
-  and (keys - ["id","text","proof","status","milestone","req","head","baseline","retried","reverts","left","cost","reason","at","opened_at","budget"] == [])
+  and (keys - ["id","text","proof","status","milestone","req","head","baseline","retried","reverts","left","cost","reason","at","opened_at","stepped_at","away","budget"] == [])
   and (.id | type == "string" and test("^T[0-9]+$")) and (.text | nonempty)
   and (.proof | one_of(["auto","human"])) and (.status | one_of(["waiting","in_progress","shipped","parked"]))
   and ((has("milestone") | not) or (.milestone | type == "string" and test("^M[0-9]+$")))
@@ -46,7 +47,10 @@ def loop_item: type == "object"
   and ((has("reason") | not) or (.reason | nonempty))
   and ((has("at") | not) or (.at | iso))
   and ((has("opened_at") | not) or (.opened_at | iso))
-  and ((has("budget") | not) or (.budget | type == "object" and (keys | sort) == ["basis","seconds"]
+  and ((has("stepped_at") | not) or (.stepped_at | iso))
+  and ((has("away") | not) or (.away | type == "number" and . == floor and . >= 0))
+  and ((has("budget") | not) or (.budget | type == "object" and (keys - ["planned"] | sort) == ["basis","seconds"]
+                                 and ((has("planned") | not) or .planned == true)
                                  and (.seconds | type == "number" and . > 0) and (.basis | nonempty)));
 
 # One recorded break of a plan (vbw mutate): a rule or a task K with what was broken,
@@ -100,11 +104,14 @@ if type != "object" then ["record must be a JSON object"] else
 | ([($r.shipped // [])[]?.id] + [($r.parked // [])[]?.id] + [$r.milestone.id?]) as $milestones
 | ($plans | map({key: .id, value: (.after // [])}) | from_entries) as $graph
 | [
-    ( select(($r | has("protected") | not) and $r.schema == 4)
-      | "protected is missing: a schema-4 record must carry the protected field" ),
-    ( select(($r | has("protected")) and $r.schema != 4)
-      | "protected is only for a schema-4 record" ),
-    ( select(($r | has("protected") | not) and $r.schema != 4
+    ( select(($r | has("protected") | not) and ($r.schema == 4 or $r.schema == 5))
+      | "protected is missing: a schema-4 or schema-5 record must carry the protected field" ),
+    ( select(($r | has("protected")) and $r.schema != 4 and $r.schema != 5)
+      | "protected is only for a schema-4 or schema-5 record" ),
+    ( select((($r.settings // {}) | type) == "object" and (($r.settings.efforts // null) != null) != ($r.schema == 5))
+      | if $r.schema == 5 then "schema 5 is only for a record with settings.efforts; without them the schema is 4"
+        else "settings.efforts needs schema 5, so a VBW that reads only up to schema 4 asks for an update" end ),
+    ( select(($r | has("protected") | not) and $r.schema != 4 and $r.schema != 5
              and $r.schema != (if ($r | has("recommendation")) or ((($r.todos // []) | type) == "array" and any(($r.todos // [])[]?; type == "object" and (has("sort") or has("size")))) then 3
                                elif (($r.checks // []) | type) == "array" and any(($r.checks // [])[]?; type == "object" and .alone == true) then 2 else 1 end))
       | "schema must be 3 when a todo is sorted or a recommendation is stored; schema must be 2 when a check is alone, else 1" ),
@@ -200,11 +207,14 @@ if type != "object" then ["record must be a JSON object"] else
         ( . as $q | select(.rules | type == "array") | .rules[]
           | select(type != "object" or ((.text | nonempty) | not)) | "\($q.id) has a rule without text" ),
         ( . as $q | select(.rules | type == "array") | .rules[] | select(type == "object")
-          | ( keys[] | select(one_of(["text","check","plan"]) | not) | "\($q.id) has a rule with an unknown field: \(.)" ),
-            ( . as $x | select(any($checks[]; .id == $x.check and .req == $q.id) | not)
+          | ( keys[] | select(one_of(["text","check","plan","retired"]) | not) | "\($q.id) has a rule with an unknown field: \(.)" ),
+            # A retired rule (T168) keeps its place, words and reason; the check and plan it named may be gone.
+            ( . as $x | select(has("retired") and ((.retired | nonempty) | not))
+              | "\($q.id) rule \"\($x.text)\" is retired without a reason" ),
+            ( . as $x | select((has("retired") | not) and (any($checks[]; .id == $x.check and .req == $q.id) | not))
               | "\($q.id) rule \"\($x.text)\" names \($x.check), which is not a check of \($q.id)" ),
             # The plan that builds the rule's code (T152): one that serves the requirement.
-            ( . as $x | select(has("plan") and (any($plans[]; .id == $x.plan and any(.reqs[]?; . == $q.id)) | not))
+            ( . as $x | select(has("plan") and (has("retired") | not) and (any($plans[]; .id == $x.plan and any(.reqs[]?; . == $q.id)) | not))
               | "\($q.id) rule \"\($x.text)\" names plan \($x.plan), which is not a plan of \($q.id)" ) ),
         ( . as $q | select((.milestone | one_of($milestones)) | not) | "\(.id) belongs to unknown milestone \(.milestone)" ),
         ( select((.text | nonempty) | not) | "\(.id) needs non-empty text" ),
@@ -312,7 +322,12 @@ if type != "object" then ["record must be a JSON object"] else
           ( select(has("motion") and (.motion | one_of(["full","calm","off"]) | not)) | "settings.motion must be full, calm or off" ),
           ( select(has("command_timeout") and ((.command_timeout | int_in(1; 86400)) | not)) | "settings.command_timeout must be a whole number from 1 to 86400" ),
           ( select(has("check_budget") and ((.check_budget | int_in(1; 86400)) | not)) | "settings.check_budget must be a whole number from 1 to 86400" ),
-          ( keys[] | select(one_of(["profile","autonomy","autonomy_cap","models","rigor","motion","command_timeout","check_budget"]) | not) | "settings has an unknown key: \(.)" ),
+          ( keys[] | select(one_of(["profile","autonomy","autonomy_cap","models","efforts","rigor","motion","command_timeout","check_budget"]) | not) | "settings has an unknown key: \(.)" ),
+          ( select(has("efforts")) | .efforts
+            | if type != "object" or length == 0 then "settings.efforts must be an object naming at least one role" else
+                to_entries[] | select((.key | one_of(["architect","lead","dev","qa","scout","debugger","docs"])) and (.value | one_of(["low","medium","high","xhigh","max"])) | not)
+                | "settings.efforts.\(.key) must name a role (architect, lead, dev, qa, scout, debugger, docs) and low, medium, high, xhigh or max"
+              end ),
           ( select(has("models")) | .models
             | if type != "object" then "settings.models must be an object" else
                 to_entries[] | select((.key | one_of(["architect","lead","dev","qa","scout","debugger","docs","planner","critic","builder"])) and (.value | nonempty) | not)
@@ -389,7 +404,7 @@ if type != "object" then ["record must be a JSON object"] else
           ( select((has("items") and has("ceiling") and has("session") and has("started_at") and has("baseline")) | not)
             | "loop needs items, ceiling, session, started_at and baseline" ),
           ( select(has("items") and ((.items | type == "array" and length > 0 and all(.[]; loop_item)) | not))
-            | "loop.items must be a non-empty array of {id: T<n>, text, proof: auto|human, status: waiting|in_progress|shipped|parked, and optionally milestone, head, baseline, retried, reverts, cost, reason, at, opened_at, budget: {seconds, basis}}" ),
+            | "loop.items must be a non-empty array of {id: T<n>, text, proof: auto|human, status: waiting|in_progress|shipped|parked, and optionally milestone, head, baseline, retried, reverts, cost, reason, at, opened_at, stepped_at, away (whole seconds), budget: {seconds, basis, planned?}}" ),
           ( select(has("items") and (.items | type == "array") and ((.items | map(.id? // null) | length) != (.items | map(.id? // null) | unique | length)))
             | "loop.items names an item twice" ),
           ( select(has("ceiling") and (.ceiling != null) and ((.ceiling | type == "object" and (keys | sort) == ["finish_item","usd"]

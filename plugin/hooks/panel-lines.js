@@ -1,16 +1,17 @@
 // VBW's one-line surfaces and transcript rows (mods_4_vbw.md §2, §3.4, §3.5):
 // the spinner suffix, the hint tail, the footer modes, the startup notice, the
-// question header, the turn receipt, the Workflow run card, the run receipt and
-// the `vbw` row intentions. Pure: data in, one string out, or null to leave the
+// question header, the turn receipt, the Workflow run card, the run receipt, the
+// refusal line and the `vbw` row intentions. Pure: data in, one string out, or null to leave the
 // engine's own line. Never throws, never changes its input, no `$` here.
 
-import { liveNeed } from './panel-view.js'
+import { liveNeed, GATE_COMMANDS, shortRefusal, refusedBy } from './panel-view.js'
+import { REFUSED_MARK } from './panel-palette.js'
+import { dayClock } from './panel-step.js'
 
 const isObj = (x) => x !== null && typeof x === 'object' && !Array.isArray(x)
 const arr = (x) => (Array.isArray(x) ? x.filter(isObj) : [])
 const WORKFLOWS = ['planning', 'building', 'fixing', 'verifying', 'mapping', 'researching', 'investigating', 'tooling']
 const PROFILES = { quality: 'careful', balanced: 'standard', budget: 'fast' }
-const GATE_COMMANDS = { approve: '/vbw:approve', accept: '/vbw:verify', convert: '/vbw:convert' }
 
 const isProject = (rec) => isObj(rec) && isObj(rec.milestone) && typeof rec.milestone.id === 'string' && rec.milestone.id !== ''
 const live = (run) => isObj(run) && run.status === 'running' && typeof run.kind === 'string' && run.kind !== ''
@@ -130,13 +131,13 @@ export function turnReceipt(input) {
 
 // The Workflow tool row of a VBW run, as a run card.
 export function workflowCard(input) {
-  const { input: wi, run } = isObj(input) ? input : {}
+  const { input: wi, run, now } = isObj(input) ? input : {}
   if (!isObj(wi)) return null
   const meta = typeof wi.script === 'string' ? /meta\s*=\s*\{[^}]*?\bname\s*:\s*['"]([^'"]+)['"]/.exec(wi.script) : null
   const kind = vbwKind(wi.name, false) || vbwKind(wi.workflowName, false) || vbwKind(meta && meta[1], false)
   if (!kind) return null
   const mine = isObj(run) && run.kind === kind && Number.isFinite(run.startedAt)
-  const started = mine ? ' · started ' + new Date(run.startedAt).toTimeString().slice(0, 5) : ''
+  const started = mine ? ' · started ' + dayClock(run.startedAt, now) : ''
   return 'VBW ' + kind + started + (mine && run.status !== 'running' ? ' · finished' : ' · [p] watch live')
 }
 
@@ -219,6 +220,14 @@ export function vbwRowIntent(input) {
   const text = two ? two(a.slice(2)) : one ? one(a.slice(1)) : a.slice(0, 2).join(' ')
   return 'VBW · ' + text
 }
+
+// A refusal of the run model (panel-feed.js) as Comms says it, without its time:
+// '⊘ VBW refused · <by>: <its first clause>' (what was refused); null for none.
+export function refusalLine(r) {
+  const s = isObj(r) ? shortRefusal(r.text) : null
+  return s ? REFUSED_MARK + ' VBW refused · ' + refusedBy(r) + s.clause : null
+}
+
 
 // A diff shown on .vbw/record.json, as what changed.
 export function recordDiffIntent(diffText, holder) {

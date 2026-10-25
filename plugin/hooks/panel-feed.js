@@ -202,10 +202,25 @@ export function runModel(input) {
     const endedAt = !final || status === 'running' ? null : num(final.startTime) !== null && dur !== null ? final.startTime + dur : time(final.timestamp)
     const titles = (final && Array.isArray(final.phases) ? final.phases : []).map((p) => str(isObj(p) && p.title)).filter(Boolean)
     const phases = titles.length ? titles : seen
-    return { runId, kind: str(o.kind) || str(final && final.workflowName) || null, phase, phases, startedAt, endedAt, status, agents }
+    return { runId, kind: str(o.kind) || str(final && final.workflowName) || null, phase, phases, startedAt, endedAt, status, agents, refusals: refusalsOf(agents, results) }
   } catch {
     return null
   }
+}
+
+// The refusals the agents reported in their results (the workflow schemas' `refused`,
+// docs/workflows.md): [{id, by, at, text}], each text verbatim, `by` the agent's role and
+// label, `at` when the agent ended; in the agents' order.
+function refusalsOf(agents, results) {
+  const out = []
+  for (const a of agents) {
+    const r = results[a.id] && isObj(results[a.id].result) ? results[a.id].result.refused : null
+    if (!Array.isArray(r)) continue
+    r.forEach((text, i) => {
+      if (typeof text === 'string' && text.trim()) out.push({ id: a.id + '#' + i, by: [a.role, a.label].filter(Boolean).join(' '), at: a.endedAt ?? a.lastSeenAt, text })
+    })
+  }
+  return out
 }
 
 function agentModel(id, meta, tx, start, res, prog, runStatus, now) {

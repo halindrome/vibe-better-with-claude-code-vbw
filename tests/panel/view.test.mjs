@@ -181,7 +181,7 @@ test('a record without a next step still shows the milestone and progress', () =
   assert.equal(v.need, null)
 })
 
-test('the dated rows (panel.js dates them before drawing) are the need and the estimates exactly as the view says them', () => {
+test("the dated rows (panel.js dates them before drawing) are the need and the milestone's estimate exactly as the view says them", () => {
   const note = (over) => ({ kind: 'build', run: 'build-1', doing: 'building P44.1', end: iso(NOW + 12 * 60000), ...over })
   const road = { end: iso(NOW + 3 * 3600000), say: 'the milestone ends around 18:00' }
   const inputs = [
@@ -192,13 +192,34 @@ test('the dated rows (panel.js dates them before drawing) are the need and the e
     { record: record({ lease: lease('build', NOW - 300000) }), next: next({ road }), step: note({ parts: { done: 1, total: 2 } }) },
     { record: record({ lease: lease('build', NOW - 300000) }), next: next({ road: { basis: 'fewer than 3 milestones.' } }), step: note({ end: null }) },
     { record: record(), next: next({ road }), stamps: { 'estimate-milestone': NOW - 120000 } },
-    { record: record({ lease: lease('build', NOW - 300000) }), step: note({ parts: {}, late: true }), stamps: { 'estimate-step': NOW - 60000, proving: NOW - 1000 } },
+    { record: record({ lease: lease('build', NOW - 300000) }), step: note({ parts: {}, late: true }), stamps: { proving: NOW - 1000 } },
   ]
   for (const input of inputs) {
     const v = show(input)
     assert.deepEqual(view.datedRows({ now: NOW, ...input }), { need: v.need, rows: v.rows.filter((r) => r.id.startsWith('estimate-')) }, JSON.stringify(input))
   }
-  assert.ok(inputs.some((input) => show(input).rows.filter((r) => r.id.startsWith('estimate-')).length === 2), 'a case with both estimates')
+  assert.ok(inputs.some((input) => show(input).rows.some((r) => r.id === 'estimate-milestone')), 'a case with the milestone estimate')
+  assert.ok(inputs.every((input) => !show(input).rows.some((r) => r.id === 'estimate-step')), "the step's end time is the box's, not a row")
+})
+
+// 6.3: the last run's refusals stay readable on the Now tab (docs/panel.md, Refusals).
+test('the run\'s refusals are Now rows before the need, each with its time and its first line, the whole text kept for a press; the newest five', () => {
+  const said = 'vbw: apply refused: plan P1.1 is started\nNext: put it back as the record has it (vbw show plan P1.1)'
+  const refusals = Array.from({ length: 7 }, (_, i) => ({ id: 'a#' + i, by: 'dev P1.' + i, at: NOW - (7 - i) * 60000, text: said }))
+  const v = show({ record: record(), next: next(), refusals: deepFreeze(refusals) })
+  const rows = v.rows.filter((r) => r.id.startsWith('refused:'))
+  assert.deepEqual(rows.map((r) => r.id), ['refused:a#2', 'refused:a#3', 'refused:a#4', 'refused:a#5', 'refused:a#6'])
+  const hhmm = (ms) => { const d = new Date(ms); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0') }
+  assert.deepEqual(rows[4], { id: 'refused:a#6', term: 'refused', files: 0, more: null,
+    text: '[' + hhmm(NOW - 60000) + '] ⊘ VBW refused, dev P1.6: vbw: apply refused: plan P1.1 is started',
+    full: 'vbw: apply refused: plan P1.1 is started Next: put it back as the record has it (vbw show plan P1.1)' })
+  const ids = v.rows.map((r) => r.id)
+  assert.equal(ids.indexOf('need'), ids.length - 1, 'the need stays last')
+  assert.equal(ids.indexOf('refused:a#6'), ids.length - 2)
+  for (const bad of [undefined, 'x', [null, { text: '' }, { id: 'b', text: 5 }]]) {
+    assert.deepEqual(show({ record: record(), next: next(), refusals: bad }).rows.filter((r) => r.id.startsWith('refused:')), [], String(bad))
+  }
+  assert.equal(show({ record: record(), next: next(), refusals: [{ id: 'c', by: 'lead', text: 'vbw: x' }] }).rows.find((r) => r.id === 'refused:c').text, '⊘ VBW refused, lead: vbw: x', 'no time, no stamp')
 })
 
 test('building the view changes nothing in its input', () => {

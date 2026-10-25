@@ -20,6 +20,8 @@
 . "$VBW_LIB/unittime.sh"
 # shellcheck source=delivered.sh
 . "$VBW_LIB/delivered.sh"
+# shellcheck source=history.sh
+. "$VBW_LIB/history.sh"
 
 VBW_FIX_CAP=3
 
@@ -62,10 +64,10 @@ cmd_prove() {
   if printf '%s' "$PROOFREUSE_STORE" | jq -e '(.runs | length) == 0' > /dev/null; then WHY_CHECKS='{}' WHY_COMMANDS='{}'; fi
   slots_release vbw:plan
   at=$(vbw_now)
-  # The marker stays until the evidence is recorded: a proof cut short reuses nothing next time.
-  : > "$(proofreuse_marker)" || vbw_die "cannot write $(proofreuse_marker)"
   head=$(vbw_head_tree) || vbw_die "cannot fingerprint the committed code"
   prooftime_step planning
+  # What is about to run and why, before the first unit starts (R202).
+  prove_plan_line "$record" "$causes"
   checks='{}' commands='{}'
   if [ ${#TODO_CHECKS[@]} -gt 0 ] || [ "$TODO_COMMANDS" != '[]' ] || [ ${#TF_TODO[@]} -gt 0 ]; then
     n=${#TODO_CHECKS[@]}
@@ -152,7 +154,6 @@ cmd_prove() {
   record_update '.evidence.record = $fp | .evidence.own = $own' --arg fp "$fp" --argjson own "$own"
   vbw_guard_drop "$evf"
   vbw_guard_drop "$curf"
-  rm -f "$(proofreuse_marker)"
   # The evidence is part of the plan of record: commit it, so a proof never
   # leaves VBW's own file modified in the user's working tree.
   record_commit "chore(vbw): proof $(jq -r 'if .evidence.passed then "passed" else "not passed" end' "$VBW_RECORD")"
@@ -189,13 +190,43 @@ prove_commands() {
   printf '%s' "$res" | jq -c --slurpfile s <(printf '%s' "$skipped") 'with_entries(.key |= ltrimstr("cmd-")) + $s[0]'
 }
 
+# prove_plan_object RECORD CAUSES: the plan (TODO_*, REUSE_*, WHY_*, TF_*) and the
+# proof's causes (lines of text) as an evidence-shaped object, {checks, commands,
+# test_files, causes}, for the report's own counting and ranking (prooftime.sh):
+# a unit to run carries its reason, a reused one is marked reused, a held check
+# waits. Plan data reaches jq by file.
+prove_plan_object() {
+  jq -n --slurpfile tc <(printf '%s\0' ${TODO_CHECKS[@]+"${TODO_CHECKS[@]}"} | jq -Rsc 'split("\u0000") | map(select(length > 0))') \
+    --slurpfile held <(printf '%s\n' "${CHECK_HELD:-}" | jq -Rsc 'split("\n") | map(select(length > 0))') \
+    --slurpfile cm <(proofsteps_command_names "$1" "$TODO_COMMANDS" | proofsteps_names) \
+    --slurpfile tf <(printf '%s\0' ${TF_TODO[@]+"${TF_TODO[@]}"} | jq -Rsc 'split("\u0000") | map(select(length > 0))') \
+    --slurpfile wc <(printf '%s' "$WHY_CHECKS") --slurpfile wm <(printf '%s' "$WHY_COMMANDS") --slurpfile wf <(printf '%s' "$TF_WHY") \
+    --slurpfile rc <(printf '%s' "$REUSE_CHECKS") --slurpfile rm <(printf '%s' "$REUSE_COMMANDS") --slurpfile rf <(printf '%s' "$TF_REUSE") \
+    --slurpfile cz <(printf '%s' "$2" | jq -Rsc 'split("\n") | map(select(length > 0))') '
+    def todo($names; $why; $skip): $names | map({key: ., value: (if $skip | index(.) then {status: "waiting"} else {status: "pass"} + (if $why[.] then {why: $why[.]} else {} end) end)}) | from_entries;
+    def reused($m): $m | map_values({status: "pass", reused: true});
+    {checks: (todo($tc[0]; $wc[0]; $held[0]) + reused($rc[0])),
+     commands: (todo($cm[0]; $wm[0]; []) + reused($rm[0])),
+     test_files: (todo($tf[0]; $wf[0]; []) + reused($rf[0])),
+     causes: $cz[0]}'
+}
+
+# prove_plan_line RECORD CAUSES: the opening line, in the form of the closing one
+# in the future tense, "run again: N of M units; top reasons: ...": the report
+# line of prooftime_lines over the plan, so both lines count and rank alike.
+prove_plan_line() {
+  local line
+  line=$(prove_plan_object "$@" | prooftime_lines | tail -n 1) || return 0
+  vbw_out '%s\n' "run${line#ran}"
+}
+
 # prove_unit_names RECORD: the names of the units this proof runs (check:ID,
 # file:PATH, command:NAME), as a JSON array: what prove_units counts.
 prove_unit_names() {
   local c
   {
     for c in ${TODO_CHECKS[@]+"${TODO_CHECKS[@]}"}; do
-      printf '%s\n' "${CHECK_HELD:-}" | grep -qx -- "$c" || printf 'check:%s\n' "$c"
+      printf '%s\n' "${CHECK_HELD:-}" | grep -x -- "$c" > /dev/null || printf 'check:%s\n' "$c"
     done
     for c in ${TF_TODO[@]+"${TF_TODO[@]}"}; do printf 'file:%s\n' "$c"; done
     proofsteps_command_names "$1" "$TODO_COMMANDS" | sed 's/^/command:/'
@@ -207,7 +238,7 @@ prove_unit_names() {
 prove_units() {
   local c n=0
   for c in ${TODO_CHECKS[@]+"${TODO_CHECKS[@]}"}; do
-    printf '%s\n' "${CHECK_HELD:-}" | grep -qx -- "$c" || n=$((n + 1))
+    printf '%s\n' "${CHECK_HELD:-}" | grep -x -- "$c" > /dev/null || n=$((n + 1))
   done
   printf '%s\n' "$((n + $(proofsteps_commands "$1" "$TODO_COMMANDS") + ${#TF_TODO[@]}))"
 }
@@ -295,10 +326,12 @@ PROVE_SCOPE_JQ='$c[0] as $c | $no[0] as $no | $park[0] as $park | $rec[0] as $r
      undone: ([.cleared[], ($judge[] | select($park[.h] != null) | {commit: .h, plan: .p, by: $park[.h]})] | map(select($files[.plan] != null)))}'
 
 # prove_scope RECORD: {scope: the violations, undone: the cleared commits [{commit, plan, by}]}.
-# The walk stops at the oldest commit with a VBW-Plan trailer: nothing older can be judged or
-# clear one that is, so a long history from before VBW costs one plain listing.
+# It walks only the record's own history (history.sh): plan ids restart with a new record, so a
+# commit older than the record is never judged as today's plan of the same id. The walk stops at
+# the oldest commit with a VBW-Plan trailer: nothing older can be judged or clear one that is, so
+# a long history from before VBW costs one plain listing.
 prove_scope() {
-  local dir r sha n hi hj more known=' '
+  local dir r sha n hi hj more known=' ' HISTORY_ARGS
   # shellcheck source=cmd-commit.sh
   . "$VBW_LIB/cmd-commit.sh"
   mkdir -p "$VBW_RUNTIME" || vbw_die "cannot create $VBW_RUNTIME"
@@ -314,10 +347,11 @@ prove_scope() {
   done < <(printf '%s' "$1" | jq -r '(.loop.items // [])[].reverts[]?')
   jq -R -s -c 'reduce (split("\n")[] | select(length > 0) | split(" ")) as $p ({}; if has($p[0]) then . else .[$p[0]] = $p[1] end)' "$dir/park" > "$dir/park.json"
   # How far back the first commit with a trailer lies, in the same order as the walk below.
-  n=$(git log -z --topo-order --format='%x1f%(trailers:key=VBW-Plan,valueonly)' 2> /dev/null \
+  history_args
+  n=$(git log -z --topo-order --format='%x1f%(trailers:key=VBW-Plan,valueonly)' "${HISTORY_ARGS[@]}" 2> /dev/null \
     | jq -R -s 'split("\u0000") | map(ltrimstr("\n") | ltrimstr("\u001f") != "") | (rindex(true) // -1) + 1') || n=0
   if [ "${n:-0}" -gt 0 ]; then
-    git log -z --topo-order --no-renames --raw --no-abbrev --max-count="$n" --format='%H%x1f%(trailers:key=VBW-Plan,valueonly)' > "$dir/log" 2> /dev/null || : > "$dir/log"
+    git log -z --topo-order --no-renames --raw --no-abbrev --max-count="$n" --format='%H%x1f%(trailers:key=VBW-Plan,valueonly)' "${HISTORY_ARGS[@]}" > "$dir/log" 2> /dev/null || : > "$dir/log"
   else
     : > "$dir/log"
   fi
@@ -348,10 +382,10 @@ prove_scope() {
 prove_summary() {
   jq -r --rawfile causes <(printf '%s' "$1") --arg own "$(jq -c '.evidence' "$VBW_RECORD" | prooftime_lines)" --argjson d "$VBW_COMMAND_TIMEOUT" --argjson cb "$VBW_CHECK_BUDGET" \
     "$UNITTIME_DEFS$DELIVERED_DEFS"'(.settings.command_timeout // $d) as $limit | (.settings.check_budget // $cb) as $budget | .evidence as $e
-    | ($e.checks | to_entries[] | "  \(.key) \(.value.status)\(if .value.status == "fail" then " (exit \(.value.exit))" else "" end) \(.value.seconds)s\(if .value.reused then " reused (proof of \(.value.at))" elif .value.why then " ran: \(.value.why)" else "" end)"
+    | ($e.checks | to_entries[] | "  \(.key) \(.value.status)\(if .value.status == "fail" then " (exit \(.value.exit))" else "" end) \(.value.seconds | sec)s\(if .value.reused then " reused (proof of \(.value.at))" elif .value.why then " ran: \(.value.why)" else "" end)"
         + (if .value.status == "pass" then "" else ": " + (.value.tail | split("\n") | last // "") end)),
-      ($e.commands | to_entries[] | select(.value.of_files | not) | "  \(.key) \(.value.status)\(if .value.status == "skipped" then ": not approved" else " \(.value.seconds)s\(if .value.reused then " reused (proof of \(.value.at))" elif .value.why then " ran: \(.value.why)" else "" end)" end)"),
-      (($e.test_files // {}) | to_entries[] | "  \(.key) \(.value.status)\(if .value.status == "fail" then " (exit \(.value.exit))" else "" end) \(.value.seconds)s\(if .value.reused then " reused (proof of \(.value.at))" elif .value.why then " ran: \(.value.why)" else "" end)"
+      ($e.commands | to_entries[] | select(.value.of_files | not) | "  \(.key) \(.value.status)\(if .value.status == "skipped" then ": not approved" else " \(.value.seconds | sec)s\(if .value.reused then " reused (proof of \(.value.at))" elif .value.why then " ran: \(.value.why)" else "" end)" end)"),
+      (($e.test_files // {}) | to_entries[] | "  \(.key) \(.value.status)\(if .value.status == "fail" then " (exit \(.value.exit))" else "" end) \(.value.seconds | sec)s\(if .value.reused then " reused (proof of \(.value.at))" elif .value.why then " ran: \(.value.why)" else "" end)"
         + (if .value.status == "pass" then "" else ": " + (.value.tail | split("\n") | last // "") end)),
       ([$causes | split("\n")[] | select(length > 0)] as $c
         | if ($c | length) == 1 then "  ran everything: \($c[0])"

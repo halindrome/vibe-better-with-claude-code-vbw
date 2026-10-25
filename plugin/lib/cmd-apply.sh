@@ -26,6 +26,12 @@
 # the one-plan rule for express judge only the phases that have not started. A new
 # phase may cover a requirement a started phase covers (R157).
 # vbw apply --patch < DOC: only plans, checks and rules, merged by id (R80).
+# A rule's address is Rn.k, its place among requirement Rn's rules (T168). A patch's
+# rule may name one instead of req and text: {rule, text?, check?, plan?} rewords it
+# (the fields given replace the rule's), {rule, retire: REASON} retires it. Any
+# requirement's rule can be reached, a shipped milestone's too. A retired rule stays
+# in its place with "retired": REASON, so no other address moves; it is owed no
+# mutation break and judged by nothing, and every later apply keeps it where it is.
 # vbw apply --add < DOC: new phases with their plans, checks and rules (R116),
 # appended to the milestone; a phase id it already has, a requirement any
 # phase covers (in any milestone) or that belongs to another milestone, or a
@@ -62,6 +68,17 @@ FOREIGN_REQS_JQ='def foreign_reqs($r; $m; $p; $scope; $mode):
          | "\($q) belongs to milestone \(.milestone): \($mode) takes requirements of this milestone")];
 '
 
+# The rules' jq helpers (T168). rule_edit($ops; $a): the rule at address $a as the
+# patch's address entries leave it. place($old; $live): a requirement's new rules,
+# each retired rule of $old in its place and $live, the live rules, in the other
+# places in order, then the rest of $live after them.
+RULES_JQ='def rule_edit($ops; $a): ([$ops[] | select(.rule == $a)][0]) as $o
+    | if $o == null then . elif $o | has("retire") then . + {retired: $o.retire} else . + ($o | del(.rule)) end;
+  def place($old; $live): reduce $old[] as $x ({out: [], live: $live};
+      if $x | has("retired") then .out += [$x] elif (.live | length) > 0 then .out += [.live[0]] | .live |= .[1:] else . end)
+    | .out + .live;
+'
+
 # apply_refuse MESSAGE: every refusal names the mode it came from (R156).
 # apply_next MESSAGE: the one next step of the kind of refusal MESSAGE is. Messages of the
 # record's own validation (an unknown requirement, a duplicate id, ...) take the last arm.
@@ -73,6 +90,11 @@ apply_next() {
     "no .vbw/spec.md"*) echo "restore .vbw/spec.md (git checkout -- .vbw/spec.md), then send the document again" ;;
     "apply needs a JSON object"*) echo "pipe one JSON object into vbw apply: {\"phases\": [], \"plans\": [], \"checks\": []}" ;;
     "apply needs phases"*) echo "give phases, plans and checks as arrays, and rules as [{req, text, check, plan?}] if present" ;;
+    "a rule address ("*) echo "send the reword or retire as a patch of its own: vbw apply --patch with {\"rules\": [{\"rule\": \"Rn.k\", ...}]}" ;;
+    "a rule address takes"*) echo "give {\"rule\": \"Rn.k\", \"text\": \"the new words\"} (check and plan may change too) to reword a rule, or {\"rule\": \"Rn.k\", \"retire\": \"why\"} to retire it" ;;
+    *" has no rule "*) echo "name a rule by its place among its requirement's rules: vbw show req Rn lists them as Rn.k" ;;
+    *"a retired rule stays as it is"*) echo "leave the retired rule as it is; add a new rule with {req, text, check} for the behaviour that stands now" ;;
+    *"a patch changes each rule once"*) echo "keep one entry per rule address in the patch" ;;
     *"is already a phase"*) echo "give the new phase an unused id, or change the existing phase with a full apply" ;;
     *"is already a plan"* | *"is already a check"*) echo "give it an unused id, or change the existing one with vbw apply --patch" ;;
     *"whose work has not started"*) echo "change that phase with a full apply (vbw apply); add a phase beside it only once its work has started" ;;
@@ -125,7 +147,7 @@ cmd_apply() {
   case "${1:-}" in --patch) patch=true; MODE_NAME="--patch"; shift ;; --add) add=true; MODE_NAME="--add"; shift ;; esac
   [ $# -eq 0 ] || vbw_usage_error "usage: vbw apply < plan.json (full apply) | vbw apply --add < doc.json | vbw apply --patch < doc.json"
   vbw_require_project
-  local doc record problem merged filter hypo tiers judged one pdoc='{}' df tf pf ids p form=null
+  local doc record problem merged filter hypo tiers judged one pdoc='{}' df tf pf of ids p form=null ops='[]' addr
   doc=$(cat)
   if printf '%s' "$doc" | jq -e 'type == "object" and has("test_files")' > /dev/null 2>&1; then
     form=$(printf '%s' "$doc" | jq -c '.test_files')
@@ -138,6 +160,11 @@ cmd_apply() {
     [ -f "$VBW_DIR/spec.md" ] || apply_refuse "no .vbw/spec.md to write the test-file form into"
     doc=$(printf '%s' "$doc" | jq -c 'del(.test_files)')
   fi
+  # A rule address (T168) reaches a rule already in the record: only a patch takes one.
+  addr=$(printf '%s' "$doc" | jq -r 'if type == "object" and (.rules | type) == "array"
+      then [.rules[] | objects | select(has("rule")) | .rule | tostring][0] // empty else empty end' 2> /dev/null) || addr=''
+  [ -z "$addr" ] || [ "$patch" = true ] \
+    || apply_refuse "a rule address ($addr) is for vbw apply --patch: a full apply and --add take rules as {req, text, check, plan?}"
   if [ "$add" = true ]; then
     # --add: new phases with their plans, checks and rules, appended to the milestone;
     # every existing item stays as it is, its tier included; the rigor floor and the
@@ -172,15 +199,33 @@ cmd_apply() {
             + (if (.proposed // .tier) != null then {tier: (.proposed // .tier)} else {} end)), $p.phases[]],
          plans: ([.plans[] | select(.phase as $x | any($ph[]; .id == $x)) | with_entries(select(.key | IN("id", "phase", "title", "reqs", "files", "after", "tasks", "role")))] + $p.plans),
          checks: ([.checks[] | select(.req as $x | any($rq[]; .id == $x))] + $p.checks),
-         rules: ([$rq[] | .id as $q | (.rules // [])[] | {req: $q, text, check} + (if has("plan") then {plan} else {} end)] + $p.rules)}') \
+         rules: ([$rq[] | .id as $q | (.rules // [])[] | select(has("retired") | not) | {req: $q, text, check} + (if has("plan") then {plan} else {} end)] + $p.rules)}') \
       || apply_internal "cannot merge the added phases"
   elif [ "$patch" = true ]; then
     # --patch: plans, checks and rules to change, merged by id (rules by requirement and text)
     # into the milestone; the merged whole then meets every rule a full apply does.
     printf '%s' "$doc" | jq -e 'type == "object" and (has("phases") | not)' > /dev/null 2>&1 \
       || apply_refuse "a patch carries plans, checks and rules, never phases: change phases with a full apply"
-    pdoc=$(printf '%s' "$doc" | jq -c '{plans: (.plans // []), checks: (.checks // []), rules: (.rules // [])}')
-    doc=$(record_read | jq -c --slurpfile f_p <(printf '%s' "$pdoc") '$f_p[0] as $p | .milestone.id as $m
+    # The rules named by address (T168), judged before anything is merged.
+    ops=$(printf '%s' "$doc" | jq -c '[(.rules // [])[]? | objects | select(has("rule"))]' 2> /dev/null) || ops='[]'
+    problem=$(printf '%s' "$ops" | jq -r '[.[] | select(((.rule | type == "string" and test("^R[0-9]+\\.[1-9][0-9]*$")) | not)
+        or (if has("retire") then (keys | sort) != ["retire", "rule"] or ((.retire | type == "string" and length > 0) | not)
+            else (keys - ["rule", "text", "check", "plan"]) != [] or (keys | length) < 2 or any(del(.rule)[]; (type == "string" and length > 0) | not) end))]
+      | if length > 0 then "a rule address takes {rule: \"Rn.k\", text?, check?, plan?} to reword a rule, or {rule: \"Rn.k\", retire: REASON} to retire it; \(.[0] | tojson) is neither" else empty end')
+    [ -z "$problem" ] || apply_refuse "$problem"
+    problem=$(record_read | jq -r --slurpfile f_o <(printf '%s' "$ops") '. as $r | $f_o[0] as $ops
+      | [($ops | group_by(.rule)[] | select(length > 1) | "\(.[0].rule) is named twice: a patch changes each rule once"),
+         ($ops[] | .rule as $a | ($a | capture("^(?<q>R[0-9]+)\\.(?<k>[0-9]+)$")) as $c | ($c.k | tonumber) as $k
+           | ([$r.requirements[] | select(.id == $c.q)][0]) as $rq | (($rq.rules // []) | length) as $n
+           | if $rq == null then "\($c.q) has no rule \($a) (there is no requirement \($c.q))"
+             elif $k > $n then "\($c.q) has no rule \($a) (it has \(if $n == 0 then "none" else $n end))"
+             elif ($rq.rules[$k - 1] | has("retired")) then "\($a) is retired (\($rq.rules[$k - 1].retired)): a retired rule stays as it is"
+             else empty end)]
+      | .[0] // empty') || apply_internal "cannot read the rule addresses"
+    [ -z "$problem" ] || apply_refuse "$problem"
+    pdoc=$(printf '%s' "$doc" | jq -c '{plans: (.plans // []), checks: (.checks // []), rules: (if (.rules | type) == "array" then [.rules[] | select((type == "object" and has("rule")) | not)] else .rules // [] end)}')
+    # The milestone's live rules as the addresses leave them, then the rules by words merged in.
+    doc=$(record_read | jq -c --slurpfile f_p <(printf '%s' "$pdoc") --slurpfile f_o <(printf '%s' "$ops") "$RULES_JQ"'$f_p[0] as $p | $f_o[0] as $ops | .milestone.id as $m
       | ([.phases[] | select(.milestone == $m)]) as $ph
       | ([.requirements[] | select(.milestone == $m)]) as $rq
       | def merge($old; $new; $keys): [$old[] | . as $o | ([$new[] | select(. as $n | $keys | all(. as $k | $n[$k] == $o[$k]))][0]) // $o]
@@ -189,7 +234,8 @@ cmd_apply() {
           + (if (.proposed // .tier) != null then {tier: (.proposed // .tier)} else {} end)],
        plans: merge([.plans[] | select(.phase as $x | any($ph[]; .id == $x)) | with_entries(select(.key | IN("id", "phase", "title", "reqs", "files", "after", "tasks", "role")))]; $p.plans; ["id"]),
        checks: merge([.checks[] | select(.req as $x | any($rq[]; .id == $x))]; $p.checks; ["id"]),
-       rules: merge([$rq[] | .id as $q | (.rules // [])[] | {req: $q, text, check} + (if has("plan") then {plan} else {} end)]; $p.rules; ["req", "text"])}') \
+       rules: merge([$rq[] | .id as $q | (.rules // []) | to_entries[] | .key as $k | .value | rule_edit($ops; "\($q).\($k + 1)")
+           | select(has("retired") | not) | {req: $q, text, check} + (if has("plan") then {plan} else {} end)]; $p.rules; ["req", "text"])}') \
       || apply_internal "cannot merge the patch"
   fi
   printf '%s' "$doc" | jq -e 'type == "object"' > /dev/null 2>&1 || apply_refuse "apply needs a JSON object on stdin"
@@ -237,8 +283,9 @@ cmd_apply() {
           elif ($o.reqs | sort) != ($n.reqs | sort) then "\($n.id) has work started: its requirements stay \($o.reqs | join(", "))" else empty end)
       ] | .[0] // empty')
   [ -z "$problem" ] || apply_refuse "$problem"
-  problem=$(printf '%s' "$record" | jq -r --slurpfile f_d <(printf '%s' "$doc") --slurpfile f_p <(printf '%s' "$pdoc") --argjson add "$add" "$VBW_JQ_DEFS"'$f_d[0] as $d | select($d | has("rules"))
-    | . as $r | $d.rules as $rules | ([$f_p[0].phases[]?.reqs[]] | unique) as $newreqs
+  # A requirement's rules in the record count when live: not retired, nor retired by this patch (T168).
+  problem=$(printf '%s' "$record" | jq -r --slurpfile f_d <(printf '%s' "$doc") --slurpfile f_p <(printf '%s' "$pdoc") --slurpfile f_o <(printf '%s' "$ops") --argjson add "$add" "$VBW_JQ_DEFS$RULES_JQ"'$f_d[0] as $d | select($d | has("rules"))
+    | . as $r | $d.rules as $rules | $f_o[0] as $ops | ([$f_p[0].phases[]?.reqs[]] | unique) as $newreqs
     | [($rules[] | . as $x | select(any($r.requirements[]; .id == $x.req and .proof == "human"))
         | "the rule \"\($x.text)\" is for \($x.req), a [human] requirement: only [auto] requirements list rules"),
        ($rules[] | . as $x | select(any($d.checks[]; .id == $x.check and .req == $x.req) | not)
@@ -247,7 +294,8 @@ cmd_apply() {
           and any($d.phases[].reqs[]; . == $q.id) and (($add | not) or ($newreqs | index($q.id) != null))
           and ($r.phases | any(.milestone == $r.milestone.id and any(.reqs[]; . == $q.id)
                 and (((.escalations // []) != []) or (.id as $i | $r.plans | any(.phase == $i and .status != "planned")))) | not)
-          and ((($rules | any(.req == $q.id)) or ((.rules // []) | length > 0)) | not))
+          and ((($rules | any(.req == $q.id))
+                or ([(.rules // []) | to_entries[] | .key as $k | .value | rule_edit($ops; "\($q.id).\($k + 1)") | select(has("retired") | not)] | length > 0)) | not))
         | "\(.id) lists no rules: list each condition, edge and error case its text states, with the check that tests it (rules)")]
     | .[0] // empty')
   [ -z "$problem" ] || apply_refuse "$problem"
@@ -286,7 +334,8 @@ cmd_apply() {
   vbw_scratch df "$doc"
   vbw_scratch tf "$tiers"
   vbw_scratch pf "$pdoc"
-  filter='$f_d[0] as $d | $f_tiers[0] as $tiers | $f_pd[0] as $pd | .milestone.id as $m
+  vbw_scratch of "$ops"
+  filter="$RULES_JQ"'$f_d[0] as $d | $f_tiers[0] as $tiers | $f_pd[0] as $pd | $f_ops[0] as $ops | .milestone.id as $m
     | ([.phases[] | select(.milestone == $m) | .id]) as $mine
     | ([.requirements[] | select(.milestone == $m) | .id]) as $myreqs
     | (.plans | map({key: .id, value: .status}) | from_entries) as $status
@@ -324,22 +373,26 @@ cmd_apply() {
         else [(.plans[] | select(.phase as $p | any($mine[]; . == $p) | not)), $np[]] end)
     | .checks = (if $patch or $add then [$c0[] | . as $o | ([$pd.checks[] | select(.id == $o.id)][0]) // $o] + [$pd.checks[] | select(.id as $i | $c0 | any(.id == $i) | not)]
         else [($c0[] | select(.req as $q | any($myreqs[]; . == $q) | not)), $d.checks[]] end)
+    # The rules named by address first (T168), then the live rules laid around the retired ones.
+    | .requirements |= map(.id as $q | if (.rules | type) == "array"
+        then .rules = [.rules | to_entries[] | .key as $k | .value | rule_edit($ops; "\($q).\($k + 1)")] else . end)
     | if $d | has("rules") then .requirements |= map(. as $q
-        | if any($d.rules[]; .req == $q.id) then .rules = [$d.rules[] | select(.req == $q.id) | {text, check} + (if has("plan") then {plan} else {} end)] else . end)
+        | if any($d.rules[]; .req == $q.id) then .rules = place($q.rules // []; [$d.rules[] | select(.req == $q.id) | {text, check} + (if has("plan") then {plan} else {} end)]) else . end)
       else . end'
   # The merged record is checked here, so a violation names the mode too; record_update checks it again.
   merged=$(mktemp "$VBW_RUNTIME/apply.XXXXXX") || vbw_die "cannot create a temporary file in $VBW_RUNTIME"$'\n'"Next: check that $VBW_RUNTIME exists and can be written to, then run vbw apply again"
   vbw_guard_add file "$merged"
-  jq "$filter | .protected = ([(.checks // [])[]? | objects | .files? | arrays | .[] | strings] | unique)" --slurpfile f_d "$df" --slurpfile f_tiers "$tf" --slurpfile f_pd "$pf" --argjson patch "$patch" --argjson add "$add" --arg mode "$(printf '%s' "$record" | jq -r '.settings.rigor // "auto"')" "$VBW_RECORD" > "$merged" 2> /dev/null \
+  jq "$filter | .protected = ([(.checks // [])[]? | objects | .files? | arrays | .[] | strings] | unique)" --slurpfile f_d "$df" --slurpfile f_tiers "$tf" --slurpfile f_pd "$pf" --slurpfile f_ops "$of" --argjson patch "$patch" --argjson add "$add" --arg mode "$(printf '%s' "$record" | jq -r '.settings.rigor // "auto"')" "$VBW_RECORD" > "$merged" 2> /dev/null \
     || apply_internal "cannot merge the plan into the record"
   problem=$(record_violation "$merged") || true
   rm -f "$merged"
   vbw_guard_drop "$merged"
   [ -z "$problem" ] || apply_refuse "$problem"
-  record_update "$filter" --slurpfile f_d "$df" --slurpfile f_tiers "$tf" --slurpfile f_pd "$pf" --argjson patch "$patch" --argjson add "$add" --arg mode "$(printf '%s' "$record" | jq -r '.settings.rigor // "auto"')"
+  record_update "$filter" --slurpfile f_d "$df" --slurpfile f_tiers "$tf" --slurpfile f_pd "$pf" --slurpfile f_ops "$of" --argjson patch "$patch" --argjson add "$add" --arg mode "$(printf '%s' "$record" | jq -r '.settings.rigor // "auto"')"
   vbw_guard_drop "$df"
   vbw_guard_drop "$tf"
   vbw_guard_drop "$pf"
+  vbw_guard_drop "$of"
   jq -r '.milestone.id as $m | ([.phases[] | select(.milestone == $m) | .id]) as $mine
     | "applied \($mine | length) phases, \([.plans[] | select(.phase as $p | any($mine[]; . == $p))] | length) plans, \(.checks | length) checks in all"' "$VBW_RECORD"
   [ "$form" = null ] || apply_write_test_files "$form"

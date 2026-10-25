@@ -169,6 +169,42 @@ snapshot() { find "$PROJECT" -type f -exec cksum {} + | sort; }
   [ ! -e "$PROJECT/.vbw/runtime" ]
 }
 
+# jq_calls_of_render: how many jq processes one render starts (a counting jq in front on PATH).
+jq_calls_of_render() {
+  local real
+  real=$(command -v jq)
+  mkdir -p "$TEST_ROOT/count"
+  printf '#!/bin/sh\necho x >> "%s/calls"\nexec "%s" "$@"\n' "$TEST_ROOT/count" "$real" > "$TEST_ROOT/count/jq"
+  chmod +x "$TEST_ROOT/count/jq"
+  rm -f "$TEST_ROOT/count/calls"
+  cc_json | PATH="$TEST_ROOT/count:$PATH" NO_COLOR=1 bash "$SL" > "$TEST_ROOT/count/out" || true
+  if [ -f "$TEST_ROOT/count/calls" ]; then wc -l < "$TEST_ROOT/count/calls" | tr -d ' '; else echo 0; fi
+}
+
+@test "R184: where the session runs in the project and the project's file turns VBW off, the verdict costs one jq" {
+  vbw_in "$PROJECT/.claude/settings.local.json" false
+  printf '{"theme": "dark", "enabledPlugins": {"other@market": true}}\n' > "$USER_SETTINGS"
+  local n
+  n=$(jq_calls_of_render)
+  [ "$n" = 1 ] || {
+    echo "the hand-back started $n jq processes, expected 1"
+    false
+  }
+  hidden
+}
+
+@test "R184: the project Claude Code names decides, not the folder the status line runs in" {
+  local other="$TEST_ROOT/other"
+  mkdir -p "$other"
+  git -C "$other" init -q
+  vbw_in "$PROJECT/.claude/settings.json" false
+  # Running in the off project, the input names a project that says nothing: VBW is on.
+  DIR="$other" shown
+  # Running in a project that says nothing, the input names the off project: VBW is off.
+  cd "$other"
+  DIR="$PROJECT" hidden
+}
+
 @test "R184: the script never runs the saved earlier status line, nor any command from the settings (D356)" {
   local mark="$TEST_ROOT/ran"
   jq -n --arg c "touch '$mark.saved'" '{type: "command", command: $c}' > "$CLAUDE_CONFIG_DIR/vbw-statusline-previous.json"

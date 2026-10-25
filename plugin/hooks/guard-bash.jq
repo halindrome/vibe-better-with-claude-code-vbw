@@ -244,7 +244,7 @@ def foreign_run($g):
   holder_name($g.foreign; foreign_stored_name($g.foreign); null) as $holder
   | (.out[], (select(.cmd | test("^(cp|mv|tee|rm)$")) | .args[]), (select(.cmd == "sed" and any(.args[]; test("^-[A-Za-z]*i"))) | .args[]))
   | select(startswith("-") | not)
-  | project_path($g.hook.cwd // $root; $root) | foreign_denial($g.foreign; $holder);
+  | project_path(session_dir($g); $root) | foreign_denial($g.foreign; $holder);
 
 # Outside a run, every rule needs one of these words in the raw command,
 # wherever it appears (strings and heredocs included), so a command without any

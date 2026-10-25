@@ -5,6 +5,30 @@ export const meta = {
   phases: [{ title: 'Fix', detail: 'a Dev per group of fixes; groups have disjoint files' }],
 }
 
+// Kernel refusals reach the user as written (docs/workflows.md, "Refusals reach the user"):
+// every agent schema requires refused, and the result carries them all, each named by
+// the agent that saw it, so the router shows them word for word.
+const REFUSED = {
+  type: 'array',
+  description: 'Each refusal VBW gave you: a vbw command that refused (it exited non-zero with a message starting "vbw:") or a tool call a guard blocked (a reason starting "VBW guard:"), each copied verbatim and whole, through its Next: line; [] when none',
+  items: { type: 'string' },
+}
+// The project folder (args.root: vbw next --json or vbw root). A session started in a subfolder
+// starts its agents there, so each agent is told where the project's paths are.
+const projectRoot = (args && typeof args === 'object' && typeof args.root === 'string' && args.root) || ''
+const where = projectRoot ? `\n\nThe project folder is ${projectRoot}. Every path VBW names (plan and check files, .vbw/...) is relative to it, whatever folder you start in: give file tools and shell redirects absolute paths under it, and run other shell commands from it (cd "${projectRoot}" && ...).` : ''
+const refused = []
+const ask = async (prompt, o) => {
+  const r = await agent(prompt + where, o)
+  for (const text of r && Array.isArray(r.refused) ? r.refused : []) {
+    if (typeof text !== 'string' || !text.trim()) continue
+    refused.push({ by: o.label, text })
+    log(`${o.label} was refused: ${text}`)
+  }
+  return r
+}
+const reply = o => Object.assign(o, { refused })
+
 // args: {groups: [["F1", "F3"], ["F2"]], models?: {dev?}, rigor?: {P1: {tier, models}}} (docs/workflows.md).
 // Fixes in one group share files, so one Dev works them together.
 const groups = ((args && args.groups) || []).filter(g => Array.isArray(g) && g.length > 0)
@@ -27,9 +51,10 @@ const effortOf = (role, step) => {
   const e = table[role] && typeof table[role] === 'object' ? table[role][step] : null
   return e ? { effort: e } : {}
 }
-if (groups.length === 0) return { results: [], error: 'no fix groups given: pass args.groups from vbw next --json (detail.groups)' }
+if (groups.length === 0) return reply({ results: [], error: 'no fix groups given: pass args.groups from vbw next --json (detail.groups)' })
 
 const FIXDONE_PROPS = {
+  refused: REFUSED,
   fixdone: { type: 'string', enum: ['ran', 'failed'] },
   closed: { type: 'array', items: { type: 'string' } },
   open: { type: 'array', items: { type: 'object', required: ['fix', 'reason'], properties: { fix: { type: 'string' }, reason: { type: 'string' } } } },
@@ -37,19 +62,20 @@ const FIXDONE_PROPS = {
 }
 const CLOSE_RESULT = {
   type: 'object',
-  required: ['fixdone', 'closed', 'open', 'approval', 'ended', 'recorded', 'report'],
+  required: ['fixdone', 'closed', 'open', 'approval', 'ended', 'recorded', 'report', 'refused'],
   properties: Object.assign({ ended: { type: 'boolean' }, recorded: { type: 'boolean' }, report: { type: 'string' } }, FIXDONE_PROPS),
 }
 const ALONE_RESULT = {
   type: 'object',
-  required: ['fixdone', 'closed', 'open', 'approval', 'report'],
+  required: ['fixdone', 'closed', 'open', 'approval', 'report', 'refused'],
   properties: Object.assign({ report: { type: 'string' } }, FIXDONE_PROPS),
 }
 
 const FIX_RESULT = {
   type: 'object',
-  required: ['status', 'summary', 'notes'],
+  required: ['status', 'summary', 'notes', 'refused'],
   properties: {
+    refused: REFUSED,
     status: { type: 'string', enum: ['done', 'blocked'] },
     summary: { type: 'string' },
     notes: { type: 'array', items: { type: 'string' } },
@@ -68,7 +94,7 @@ const closeRun = async (ids, fixCmd) => {
   const confirm = sh(`vbw run confirm ${ids.join(' ')}`)
   const end = sh('vbw run end')
   const first = fixCmd ? `First run ${fixCmd}. ${WAIT} ` : ''
-  const done = await agent(`Close this VBW run (your own instructions, Close a run, allow it). ${first}Then run ${confirm} (it exits 1 when some fixes were not recorded), then, whatever it said, run ${end}. ${FIXDONE_ANSWER}${fixCmd ? '' : ' (no fix is to be closed: answer "ran" with empty lists)'}, ended (run end succeeded), recorded (confirm exited 0) and report (the lines for what was not recorded, else "all recorded; run ended"). Change nothing else.${voice}`,
+  const done = await ask(`Close this VBW run (your own instructions, Close a run, allow it). ${first}Then run ${confirm} (it exits 1 when some fixes were not recorded), then, whatever it said, run ${end}. ${FIXDONE_ANSWER}${fixCmd ? '' : ' (no fix is to be closed: answer "ran" with empty lists)'}, ended (run end succeeded), recorded (confirm exited 0) and report (the lines for what was not recorded, else "all recorded; run ended"). Change nothing else.${voice}`,
     Object.assign({ agentType: 'vbw:lead', label: 'close run', schema: CLOSE_RESULT }, { model: CLOSE_MODEL }, effortOf('lead', 'close')))
   if (!done) log(`the closing agent stopped: run by hand: ${fixCmd ? fixCmd + ' ; then ' : ''}${confirm} ; then ${end}`)
   else {
@@ -80,7 +106,7 @@ const closeRun = async (ids, fixCmd) => {
 }
 // Without a session there is no closing Lead: an agent of its own runs the round's vbw fix done.
 const fixDoneAlone = async fixCmd => {
-  const done = await agent(`Close the fixes of this VBW round (your own instructions, Close a run, allow it). Run ${fixCmd}. ${WAIT} ${FIXDONE_ANSWER}, and report (what it printed for fixes left open). Change nothing else.${voice}`,
+  const done = await ask(`Close the fixes of this VBW round (your own instructions, Close a run, allow it). Run ${fixCmd}. ${WAIT} ${FIXDONE_ANSWER}, and report (what it printed for fixes left open). Change nothing else.${voice}`,
     Object.assign({ agentType: 'vbw:lead', label: 'fix done', schema: ALONE_RESULT }, { model: CLOSE_MODEL }, effortOf('lead', 'close')))
   if (!done) log(`the fix done agent stopped: run by hand: ${fixCmd}`)
   return done
@@ -93,7 +119,7 @@ const SINCE = 'vbw show decisions --since-approval (decisions recorded after the
 // A fix a QA finding opened is a gap in the tests too: the Dev adds the regression test (R160).
 const QA_TEST = ' If a fix came from a QA finding (its source says qa), first write a test that fails while the problem exists: a case in the existing check file of the finding\'s requirement, or, only when it has none, a new test file registered with vbw fix check FIX (a check document on stdin); commit it with the fix. Edits to an approved check file of the finding\'s requirement wait for one approval by the user before the proof: say so in notes, never approve.'
 const results = await pipeline(groups, ids =>
-  agent(ids.length === 1
+  ask(ids.length === 1
     ? `Fix VBW fix item ${ids[0]}. Start with: vbw show fix ${ids[0]}; then ${SINCE}${NO_SUITE}${QA_TEST}${voice}`
     : `Fix VBW fix items ${ids.join(', ')} together: they touch the same files and may share one cause. Start with: ${ids.map(id => `vbw show fix ${id}`).join('; ')}; then ${SINCE}${NO_SUITE}${QA_TEST}${voice}`,
     Object.assign({ agentType: 'vbw:dev', label: ids.join('+'), phase: 'Fix', schema: FIX_RESULT },
@@ -123,4 +149,4 @@ const approval = fd && fixCmd && Array.isArray(fd.approval) ? fd.approval.filter
 if (approval.length) log(`the user's approval comes next: check files wait for it (${approval.join(', ')}), so vbw fix done ran no check; vbw next asks, then vbw prove runs every check`)
 const fixdone = { command: fixCmd || null, closed, open, left_out: leftOut, approval }
 const complete = interrupted === 0 && !failed && (!session || Boolean(confirmation && confirmation.recorded && confirmation.ended))
-return confirmation ? { results: out, complete, fixdone, confirmation } : { results: out, complete, fixdone }
+return reply(confirmation ? { results: out, complete, fixdone, confirmation } : { results: out, complete, fixdone })

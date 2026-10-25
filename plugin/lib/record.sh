@@ -8,10 +8,19 @@ VBW_LOCK_STALE_SECONDS=30
 VBW_LOCK_HELD_SECONDS=600
 
 # Print the first violation of FILE (empty output = valid). Status 1 if invalid.
+# A file that is not JSON is "unparseable JSON"; JSON the validator cannot even
+# walk (a field of the wrong type: .milestone a number) is named as such, with
+# jq's own words, never mistaken for a broken file.
 record_violation() {
-  local out
+  local out why
   if ! out=$(jq -c --slurpfile interview "$VBW_LIB/interview.json" -f "$VBW_LIB/record.jq" "$1" 2>/dev/null); then
-    printf 'unparseable JSON\n'
+    if jq empty "$1" > /dev/null 2>&1; then
+      why=$(jq -c --slurpfile interview "$VBW_LIB/interview.json" -f "$VBW_LIB/record.jq" "$1" 2>&1 > /dev/null | head -n 1)
+      why=${why#jq: error*: }
+      printf 'a field has the wrong type (%s)\n' "${why:-the validator stopped}"
+    else
+      printf 'unparseable JSON\n'
+    fi
     return 1
   fi
   [ "$out" = "[]" ] && return 0
@@ -19,11 +28,14 @@ record_violation() {
   return 1
 }
 
-# Schemas 1 to 4 are read. Every record this VBW writes is format 4 (D232): schema
-# 4, with the protected field (the sorted list of every file a check protects) near
-# its top, so the guards never read the checks (R150). Records of schemas 1 to 3
-# written by an older VBW are read and become format 4 on their next write.
-VBW_SCHEMA_MAX=4
+# Schemas 1 to 5 are read. Every record this VBW writes is format 4 (D232): the
+# protected field (the sorted list of every file a check protects) near its top, so
+# the guards never read the checks (R150); its schema is 4, or 5 while it holds a
+# helper's chosen effort (settings.efforts), so a VBW that reads only up to schema 4
+# says the project needs a newer VBW instead of calling the record corrupt. Records
+# of schemas 1 to 3 written by an older VBW are read and become format 4 on their
+# next write.
+VBW_SCHEMA_MAX=5
 
 # The schema of the record at FILE when it is a number above the highest this
 # VBW reads (written by a newer VBW); empty and status 1 otherwise. A
@@ -57,7 +69,7 @@ record_glance_write() {
   if jq -c --rawfile h <(cat "$VBW_RUNTIME/holder.json" 2> /dev/null || true) '.milestone.id as $m | {schema, lease}
       + (if has("protected") then {protected} else {} end)
       + {loop: (.loop | if type == "object" then {session, started_at, ended} else null end),
-      project, milestone, settings,
+      project, milestone, settings, shipped: [(.shipped // [])[] | select(.id == $m)],
       requirements: [.requirements[]? | select(.milestone == $m)],
       plans: [.plans[]? | select(.status == "building")],
       holder: (($h | try fromjson catch null) as $f
@@ -218,6 +230,34 @@ vbw_lock_dir() {
   mkdir "$1" 2> /dev/null && vbw_lock_create "$1/pid"
 }
 
+# vbw_lock_takeover OWNERFILE OWNER: take over a lock whose owner file OWNERFILE
+# (the lock file itself, or DIR/pid of a lock folder) names OWNER, a process
+# that is gone (empty: an owner that never wrote its id). Two runs that find the
+# same dead owner must not both win, and neither may remove a lock a third run
+# took over in between, so the file is never deleted where it stands: it is
+# renamed (atomic: one of the runs gets it), the renamed file is checked to name
+# OWNER still, and only then deleted and the lock claimed by the exclusive
+# create. A file that names someone else was a fresh lock taken in between: it
+# is linked back at once and the lock stays with its new owner. Returns 0 holding
+# the lock, 1 when it does not.
+vbw_lock_takeover() {
+  local old="$1.old.$$"
+  if [ ! -e "$1" ]; then
+    # A lock folder whose owner never wrote its id: the exclusive create decides.
+    [ -z "$2" ] && [ -d "${1%/*}" ] && vbw_lock_create "$1"
+    return
+  fi
+  mv "$1" "$old" 2> /dev/null || return 1
+  if [ "$(vbw_lock_holder "$old")" = "$2" ]; then
+    rm -f "$old"
+    vbw_lock_create "$1"
+  else
+    ln "$old" "$1" 2> /dev/null || true
+    rm -f "$old"
+    return 1
+  fi
+}
+
 # vbw_lock_remove LOCK: remove a lock file, or a lock directory an older VBW left.
 vbw_lock_remove() {
   rm -f "$1" 2> /dev/null || rmdir "$1" 2> /dev/null || true
@@ -264,16 +304,16 @@ record_update() {
   v=$(record_violation "$VBW_RECORD") || vbw_die "record is corrupt: $v ($VBW_RECORD)" 3
   tmp=$(mktemp "$VBW_RUNTIME/record.XXXXXX") || vbw_die "cannot create a temporary file in $VBW_RUNTIME"
   vbw_guard_add file "$tmp"
-  # Every write produces format 4 (D232, R150): schema 4 and protected, the sorted
-  # list of every string in the checks' files, each once ([] without checks or
-  # files). Key order: schema, lease, protected, checks, then the rest, so the
-  # guards read the beginning of the file alone (R149, R150). An older record
-  # (schema 1 to 3) becomes format 4 here.
+  # Every write produces format 4 (D232, R150): schema 4 (5 while settings.efforts
+  # is set) and protected, the sorted list of every string in the checks' files,
+  # each once ([] without checks or files). Key order: schema, lease, protected,
+  # checks, then the rest, so the guards read the beginning of the file alone (R149,
+  # R150). An older record (schema 1 to 3) becomes format 4 here.
   jq "$@" "$filter
-    | {schema: 4, lease: (.lease // null),
+    | {schema: (if (.settings.efforts // null) != null then 5 else 4 end), lease: (.lease // null),
        protected: ([(.checks // [])[]? | objects | .files? | arrays | .[] | strings] | unique)}
       + (if has(\"checks\") then {checks} else {checks: []} end) + del(.schema, .lease, .protected, .checks)" "$VBW_RECORD" > "$tmp" 2>/dev/null || vbw_die "internal error: record update failed"
-  v=$(record_violation "$tmp") || vbw_die "refused: $v"
+  v=$(record_violation "$tmp") || vbw_die "refused: $v"$'\n'"Next: nothing was written; give the command a valid value (the line above names what would break), or run vbw doctor if the record itself is damaged"
   # The new record's time goes one second back, the old glance goes, and the
   # new glance is written after the record: it is strictly newer than the record
   # (even in whole seconds), a failed glance write leaves no glance that looks
@@ -365,8 +405,9 @@ def waves($m): . as $r
 # each (R188, T152, T174), as [{req, n, text}] (n: the rule'"'"'s number in its requirement).
 # At a standard or deep phase: every rule of an [auto] requirement with a check that $p
 # completes (no other open plan serves it), and every rule that names $p. None at
-# express or in a phase without a tier. vbw plan done (plan_missing_breaks) and the
-# expected time of a build (steps.sh, road.jq) both count these.
+# express or in a phase without a tier, and never a retired rule (T168), whose place
+# still counts in n. vbw plan done (plan_missing_breaks) and the expected time of a
+# build (steps.sh, road.jq) both count these.
 def owed_rules($p): . as $r | ([.plans[] | select(.id == $p)][0]) as $pl
   | ([$r.phases[] | select(.id == $pl.phase)][0].tier // "") as $tier
   | if $pl == null or ($tier | IN("standard", "deep") | not) then [] else
@@ -374,6 +415,6 @@ def owed_rules($p): . as $r | ([.plans[] | select(.id == $p)][0]) as $pl
         | (all($r.plans[]; .id == $p or .status == "done" or (any(.reqs[]; . == $q) | not))) as $completes
         | select(any($r.checks[]; .req == $q))
         | ($r.requirements[] | select(.id == $q and .proof == "auto")) as $rq
-        | ($rq.rules // []) | to_entries[] | select($completes or .value.plan == $p)
+        | ($rq.rules // []) | to_entries[] | select((.value | has("retired") | not) and ($completes or .value.plan == $p))
         | {req: $q, n: (.key + 1), text: .value.text}] end;
 '"$(cat "$VBW_LIB/rigor-defs.jq")"

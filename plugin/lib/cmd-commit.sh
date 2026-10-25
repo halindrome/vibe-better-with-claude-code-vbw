@@ -26,7 +26,7 @@ cmd_commit() {
   [ $# -ge 2 ] || vbw_usage_error "usage: vbw commit PLAN MESSAGE [FILE...]"
   local plan="$1" msg="$2"
   shift 2
-  printf '%s' "$msg" | grep -Eq "$VBW_COMMIT_RE" \
+  printf '%s' "$msg" | grep -E "$VBW_COMMIT_RE" > /dev/null \
     || vbw_usage_error "commit message must be 'type(scope): description' (types: feat fix docs style refactor perf test build ci chore revert)"
   vbw_require_project
   local record reqs
@@ -108,7 +108,7 @@ cmd_commit_fix() {
   [ $# -ge 3 ] || vbw_usage_error "usage: vbw commit --fix FIX MESSAGE FILE..."
   local fix="$1" msg="$2" f changed=() req=""
   shift 2
-  printf '%s' "$msg" | grep -Eq "$VBW_COMMIT_RE" || vbw_usage_error "commit message must be 'type(scope): description'"
+  printf '%s' "$msg" | grep -E "$VBW_COMMIT_RE" > /dev/null || vbw_usage_error "commit message must be 'type(scope): description'"
   vbw_require_project
   local record
   record=$(record_read)

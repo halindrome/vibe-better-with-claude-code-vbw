@@ -38,6 +38,14 @@ say() { printf '%s' "$output" | jq -r '.systemMessage // empty'; }
   [ -n "$(say)" ]
 }
 
+@test "R61: in a session started in a subfolder of the project, Approve approves the contract the question named" {
+  mkdir -p "Sub Folder With Spaces"
+  HOOK_PROJECT_DIR="$PROJECT/Sub Folder With Spaces" run answer_hook "$Q" "Approve"
+  [ "$status" -eq 0 ]
+  [ "$(contract_state)" = "approved" ] || { echo "$output"; false; }
+  [ "$(approved_count)" = "1" ]
+}
+
 @test "R61: the answer may come as a list of answers as well as a map from question to answer" {
   jq -nc --arg q "$Q" --arg d "$PROJECT" '{hook_event_name: "PostToolUse", session_id: "s1", cwd: $d, tool_name: "AskUserQuestion",
     tool_input: {question: $q}, tool_response: {answers: ["Approve"]}}' > "$TEST_ROOT/in.json"

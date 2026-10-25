@@ -1,8 +1,8 @@
 #!/usr/bin/env bats
 # R119 (L1): in the balanced profile the Lead also runs on Opus, and every role
 # other than the Architect and the Lead runs on Sonnet: in vbw config models, in
-# the planning workflow started with those models, in the panel's team table
-# and in the documents that describe the profile. The quality and budget
+# the planning workflow started with those models (the panel's Settings tab shows
+# vbw config's own lines) and in the documents that describe the profile. The quality and budget
 # profiles keep their models, and a user's own per-role model still wins.
 
 load helper
@@ -60,20 +60,6 @@ teardown() { vbw_teardown; }
   "$VBW" config set model.lead default > /dev/null
   vbw_run config models
   printf '%s' "$output" | jq -e '.lead == "opus"' || { echo "$output"; false; }
-}
-
-@test "R119: the panel's team table matches plugin/lib/profiles.json and shows the Lead on Opus" {
-  command -v node > /dev/null || skip "node is not installed"
-  local out
-  out=$(cd "$PLUGIN_ROOT/hooks" && node --input-type=module -e '
-    import { teamModel } from "./panel-mission-record.js"
-    const out = {}
-    for (const p of ["quality", "balanced", "budget"]) {
-      const m = teamModel({ record: { settings: { profile: p } } })
-      out[p] = Object.fromEntries(m.rows.map((r) => [r.role, r.model]))
-    }
-    process.stdout.write(JSON.stringify(out))')
-  printf '%s' "$out" | jq -e --slurpfile lib "$PROFILES" --argjson b "$BALANCED" '. == $lib[0] and .balanced == $b' || { echo "$out"; false; }
 }
 
 @test "R119: README, the config and profile skills and docs/record.md show the Lead on Opus in balanced" {

@@ -8,11 +8,16 @@
 #   - refresh, state changed: a file changed, is read, and the panel redraws;
 #   - step, a running step: the kernel's note changed, is read and Mission Control draws it;
 #   - render, Comms and Mission Control: five helpers at work, both drawn on each refresh.
-# The stand-in's own work is inside the numbers, so they are an upper bound.
-# Measured on a developer Mac (node 22): about 0.02 ms and 0.04 ms. The budget
-# is VBW_PANEL_BUDGET_MS per refresh (default 0.5, about 12x headroom for a
-# loaded machine); a real regression (reading every file on every tick, a
-# subprocess, a redraw per tick) costs several times more than that.
+# The stand-in's own work is inside the numbers, so they are an upper bound: about
+# 40 percent of a render figure (by a profile) is the stand-in's and the test's file writes. Each case is
+# warmed up for 1000 refreshes (V8 compiles the panel in the first hundreds, on
+# threads that count as CPU) and reported as the median of 5 windows, so one
+# garbage collection counts once. VBW_BENCH_WARM=20 measures a freshly loaded panel.
+# Measured 2026-10-24 on an Apple M1 Max (node 22.22, load 4 to 6 from other work):
+# tick 0.04 to 0.07 ms, refresh 0.11 to 0.14 ms, render 0.22 to 0.32 ms. The budget
+# is VBW_PANEL_BUDGET_MS per refresh (default 0.5, a margin for a loaded machine);
+# a real regression (reading every file on every tick, a subprocess, a redraw per
+# tick) costs several times more than that.
 # CI sets a looser value for its slower machines. Needs node; skips without it.
 set -euo pipefail
 

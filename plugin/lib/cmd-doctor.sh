@@ -66,8 +66,8 @@ doctor_tools() {
 # while it still holds a VBW plugin, else the plugin of this kernel. The vbw on
 # PATH should be that plugin's.
 doctor_path() {
-  local loaded=$VBW_PLUGIN rec on_path pv lv
-  rec=$(head -n 1 "$(vbw_claude_dir)/vbw/sessions/${CLAUDE_CODE_SESSION_ID:-none}" 2> /dev/null || true)
+  local loaded=$VBW_PLUGIN rec="" recfile on_path pv lv
+  recfile=$(sessions_record_path "${CLAUDE_CODE_SESSION_ID:-}") && rec=$(head -n 1 "$recfile" 2> /dev/null || true)
   [ -z "$rec" ] || [ ! -f "$rec/.claude-plugin/plugin.json" ] || loaded=$rec
   lv=$(jq -r '.version // "unknown"' "$loaded/.claude-plugin/plugin.json" 2> /dev/null || echo unknown)
   if ! on_path=$(command -v vbw 2> /dev/null) || [ -z "$on_path" ]; then
@@ -188,7 +188,7 @@ doctor_statusline() {
   local state
   state=$(cmd_statusline status 2> /dev/null)
   case "$state" in
-    *"an older VBW status line"*) doctor_line warn "the VBW status line was set by an older VBW (it cannot hand back to your earlier status line)" "vbw statusline on" ;;
+    *"an older VBW status line"*) doctor_line warn "the VBW status line was set by an older VBW" "vbw statusline on" ;;
     *"refreshed on events only"*) doctor_line warn "the VBW status line refreshes on events only, so it can look frozen while a workflow runs" "vbw statusline on" ;;
     on:*) doctor_line ok "VBW status line" ;;
     *) doctor_line warn "the VBW status line is not on" "vbw statusline on" ;;

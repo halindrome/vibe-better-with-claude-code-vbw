@@ -19,7 +19,7 @@ const UI = { Box: EL('Box'), Text: EL('Text'), Button: EL('Button') }
 const NOW = Date.parse('2026-10-05T15:00:00Z')
 const S = 1000
 const ROLES = ['architect', 'lead', 'dev', 'qa', 'scout', 'debugger', 'docs']
-const TABS = ['now', 'plan', 'proof', 'timeline', 'decisions', 'team', 'sessions', 'costs']
+const TABS = ['now', 'plan', 'proof', 'timeline', 'sessions', 'settings']
 
 const reqs = (done, total) => Array.from({ length: total }, (_, i) => ({ id: 'R' + (i + 1), text: 'R' + (i + 1) + ' holds', proof: 'auto', status: i < done ? 'proven' : 'open', milestone: 'M9' }))
 const steps = (kind, secs) => secs.map((s, i) => ({ kind, run: kind + '-' + i, seconds: s, started_at: new Date(NOW - 1e7 - i * 1e5).toISOString(), ended_at: new Date(NOW - 1e7 - i * 1e5 + s * 1000).toISOString() }))
@@ -55,21 +55,23 @@ test('progress is green, the estimate amber and the cost in the accent colour, e
   const tree = pane.renderPane(UI, input(v), on)
   const row = (id) => v.rows.find((r) => r.id === id)
   assert.match(row('progress').text, /2 of 5 requirements done/)
-  assert.match(row('estimate-step').text, /about 5 min, until around \d\d:\d\d/)
+  assert.match(v.box.step.end, /about 5 min, until around \d\d:\d\d/)
   assert.match(row('cost').text, /\$1\.42/)
-  for (const [id, colour] of [['progress', P.PROGRESS], ['estimate-step', P.ESTIMATE], ['estimate-milestone', P.ESTIMATE], ['cost', P.ACCENT]]) {
-    const hit = sentence(tree, row(id).text)
-    assert.equal(hit.length, 1, id + ' is drawn once, as one piece of text')
-    assert.equal(hit[0].props.color, colour, id)
+  for (const [text, colour, what] of [[row('progress').text, P.PROGRESS, 'progress'], [v.box.step.end, P.ESTIMATE, 'the step in the box'], [row('estimate-milestone').text, P.ESTIMATE, 'the milestone'], [row('cost').text, P.ACCENT, 'cost']]) {
+    const hit = sentence(tree, text)
+    assert.equal(hit.length, 1, what + ' is drawn once, as one piece of text')
+    assert.equal(hit[0].props.color, colour, what)
   }
 })
 
-test('a need of the user is yellow; with nothing needed the line is plain', () => {
+test("a need of the user is the box's amber sentence, drawn once; with nothing needed the line is plain", () => {
   const needing = view.panelView({ record: record(), next: next({ action: 'approve', gate: true }), now: NOW, cost: 1, steps: [] })
   assert.ok(needing.need)
   const t1 = pane.renderPane(UI, input(needing), on)
-  const need = needing.rows.find((r) => r.id === 'need')
-  assert.equal(sentence(t1, need.text)[0].props.color, P.NEED)
+  const hit = sentence(t1, needing.need.text)
+  assert.equal(hit.length, 1, 'the need sentence is drawn once: in the box, not again below')
+  assert.equal(hit[0].props.color, P.NEED)
+  assert.equal(needing.box.state.text, needing.need.text)
 
   const quiet = view.panelView({ record: record(), next: next(), now: NOW, cost: 1, steps: [] })
   assert.equal(quiet.need, null)
@@ -84,20 +86,22 @@ test('a sentence with no value in it stays plain: no requirements, no estimate b
   const tree = pane.renderPane(UI, input(v), on)
   const row = (id) => v.rows.find((r) => r.id === id)
   assert.match(row('progress').text, /No requirements/)
-  assert.match(row('estimate-step').text, /No end time yet/)
+  assert.match(v.box.step.end, /No end time yet/)
   assert.match(row('cost').text, /not available/)
-  for (const id of ['progress', 'estimate-step', 'cost']) {
-    const hit = sentence(tree, row(id).text)
-    assert.equal(hit.length, 1, id)
-    assert.equal(hit[0].props.color, undefined, id + ' has no value to colour')
+  for (const [text, what] of [[row('progress').text, 'progress'], [v.box.step.end, 'the step'], [row('cost').text, 'cost']]) {
+    const hit = sentence(tree, text)
+    assert.equal(hit.length, 1, what)
+    assert.equal(hit[0].props.color, undefined, what + ' has no value to colour')
   }
 })
 
-test('the milestone and doing sentences keep their colour (none), and every term stays dim', () => {
+test('the milestone sentence keeps its colour (none), and every term drawn stays dim', () => {
   const v = view.panelView({ record: busy(), next: next({ action: 'run' }), now: NOW, cost: 1.42, steps: HISTORY })
   const tree = pane.renderPane(UI, input(v), on)
-  for (const id of ['milestone', 'doing']) assert.equal(sentence(tree, v.rows.find((r) => r.id === id).text)[0].props.color, undefined, id)
-  for (const r of v.rows) assert.ok(texts(tree).some((t) => t.text === r.term && t.props.dimColor === true), r.term + ' is dim')
+  assert.equal(sentence(tree, v.rows.find((r) => r.id === 'milestone').text)[0].props.color, undefined)
+  // What VBW is doing is the box's state sentence, not a row of its own: it is not drawn twice.
+  assert.equal(sentence(tree, v.rows.find((r) => r.id === 'doing').text).length, 0, 'the doing sentence is not drawn below the box')
+  for (const r of v.rows.filter((x) => x.id !== 'doing')) assert.ok(texts(tree).some((t) => t.text === r.term && t.props.dimColor === true), r.term + ' is dim')
 })
 
 // --- the tabs stay on top -------------------------------------------------------
@@ -115,7 +119,7 @@ test('the tabs are the first thing in the pane, whatever the tab, however long i
   for (const tab of TABS) {
     for (const offset of [0, 7, 500]) {
       const tree = pane.renderPane(UI, longInput(tab, { offset, bodyRows: 30 }), on)
-      assert.equal(tabsIn(tree.children[0]).length, 8, tab + ' at ' + offset + ': all eight tabs open the pane')
+      assert.equal(tabsIn(tree.children[0]).length, 6, tab + ' at ' + offset + ': all six tabs open the pane')
       assert.equal(tabsIn(find(tree, (n) => n.props && n.props.key === 'body') || { children: [] }).length, 0, tab + ': the tabs are not inside what scrolls')
     }
   }
@@ -139,6 +143,6 @@ test('scrolling still moves the content: the body shows other rows at another of
 
 test('without a scroll hint the pane still draws its tabs and its content', () => {
   const tree = pane.renderPane(UI, longInput('now'), on)
-  assert.equal(tabsIn(tree).length, 8)
+  assert.equal(tabsIn(tree).length, 6)
   assert.ok(texts(tree).length > 20)
 })

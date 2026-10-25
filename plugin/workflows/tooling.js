@@ -5,6 +5,30 @@ export const meta = {
   phases: [{ title: 'Scout', detail: 'a Scout per angle, in parallel' }],
 }
 
+// Kernel refusals reach the user as written (docs/workflows.md, "Refusals reach the user"):
+// every agent schema requires refused, and the result carries them all, each named by
+// the agent that saw it, so the router shows them word for word.
+const REFUSED = {
+  type: 'array',
+  description: 'Each refusal VBW gave you: a vbw command that refused (it exited non-zero with a message starting "vbw:") or a tool call a guard blocked (a reason starting "VBW guard:"), each copied verbatim and whole, through its Next: line; [] when none',
+  items: { type: 'string' },
+}
+// The project folder (args.root: vbw next --json or vbw root). A session started in a subfolder
+// starts its agents there, so each agent is told where the project's paths are.
+const projectRoot = (args && typeof args === 'object' && typeof args.root === 'string' && args.root) || ''
+const where = projectRoot ? `\n\nThe project folder is ${projectRoot}. Every path VBW names (plan and check files, .vbw/...) is relative to it, whatever folder you start in: give file tools and shell redirects absolute paths under it, and run other shell commands from it (cd "${projectRoot}" && ...).` : ''
+const refused = []
+const ask = async (prompt, o) => {
+  const r = await agent(prompt + where, o)
+  for (const text of r && Array.isArray(r.refused) ? r.refused : []) {
+    if (typeof text !== 'string' || !text.trim()) continue
+    refused.push({ by: o.label, text })
+    log(`${o.label} was refused: ${text}`)
+  }
+  return r
+}
+const reply = o => Object.assign(o, { refused })
+
 // args: {stack: "...", profile?: {level, depth, involvement}, models?: {scout?}}.
 const stack = args && typeof args === 'object' && typeof args.stack === 'string' ? args.stack.trim() : ''
 const models = (args && typeof args === 'object' && args.models) || {}
@@ -28,8 +52,9 @@ const ANGLES = [
 
 const PICKS = {
   type: 'object',
-  required: ['picks'],
+  required: ['picks', 'refused'],
   properties: {
+    refused: REFUSED,
     picks: {
       type: 'array',
       items: {
@@ -52,12 +77,12 @@ const PER_ANGLE = 2
 const TOTAL = 6
 
 if (!stack) {
-  return { picks: [], missing: [], note: 'The project\'s stack is not known yet, so no tool search was started. Say what is being built and run it again.' }
+  return reply({ picks: [], missing: [], note: 'The project\'s stack is not known yet, so no tool search was started. Say what is being built and run it again.' })
 }
 
 phase('Scout')
 const found = await Promise.all(ANGLES.map(a =>
-  agent(`Find the current best-in-class options for one angle of this project: ${a.ask}.\n\nProject stack: ${stack}\n\nReturn at most ${PER_ANGLE} picks, each with what it is, why it fits this stack, one or more source links (https), and its origin: "respected-open-source" only for a well-known, actively maintained open-source project, otherwise "other". Prefer current, widely used options. Install nothing and change nothing.${voice}`,
+  ask(`Find the current best-in-class options for one angle of this project: ${a.ask}.\n\nProject stack: ${stack}\n\nReturn at most ${PER_ANGLE} picks, each with what it is, why it fits this stack, one or more source links (https), and its origin: "respected-open-source" only for a well-known, actively maintained open-source project, otherwise "other". Prefer current, widely used options. Install nothing and change nothing.${voice}`,
     Object.assign({ agentType: 'vbw:scout', label: `scout ${a.key}`, phase: 'Scout', schema: PICKS }, model, effortOf('scout', 'survey')))
     .catch(() => null)))
 
@@ -83,4 +108,4 @@ picks = picks.sort((x, y) => Number(y.trusted) - Number(x.trusted)).slice(0, TOT
 if (missing.length > 0) log(`no picks for: ${missing.join(', ')}`)
 const result = { picks, missing }
 if (picks.length === 0) result.note = 'No tools could be found right now. Nothing was installed; you can run the search again later.'
-return result
+return reply(result)

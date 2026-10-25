@@ -111,10 +111,16 @@ code_grep() {
   local test_='^[[:space:]]*\[ ([^]$`;&|()<>]|'"$exp"')* \][[:space:]]*(;|&&|\|\|)'
   # The one program-free limit allowed first: the shell's own CPU-time limit (R165).
   local limit='^[[:space:]]*ulimit -t [0-9]+( 2>/dev/null)?[[:space:]]*;'
+  # The one loop allowed, exactly this text: the walk up to the project (the nearest
+  # folder holding .git, as hooks/project.sh and the kernel find it), [ ] tests and
+  # parameter expansion only.
+  local walk=' while [ "$p" != / ] && [ -n "$p" ] && [ ! -e "$p/.git" ]; do case "$p" in */*) p="${p%/*}"; p="${p:-/}" ;; *) p=/ ;; esac; done;'
   [ -f "$hooks" ] || return 0
   while IFS= read -r cmd; do
     rest=$cmd
-    while [[ "$rest" =~ $assign || "$rest" =~ $test_ || "$rest" =~ $limit ]]; do rest=${rest#"${BASH_REMATCH[0]}"}; done
+    while [[ "$rest" =~ $assign || "$rest" =~ $test_ || "$rest" =~ $limit || "$rest" == "$walk"* ]]; do
+      if [[ "$rest" == "$walk"* ]]; then rest=${rest#"$walk"}; else rest=${rest#"${BASH_REMATCH[0]}"}; fi
+    done
     rest=${rest#"${rest%%[![:space:]]*}"}
     [[ "$rest" == "jq "* ]] || { echo "PreToolUse hook must be jq itself (only shell variable assignments and [ ] tests may come before it; no interpreter startup): $cmd"; false; }
     # It ends in || true, or in the fail-closed handler (R165): a failing guard
@@ -155,4 +161,56 @@ code_grep() {
   run bash "$REPO_ROOT/tools/check-private-words.sh" tracked
   [ "$status" -ne 3 ] || skip "$output"
   [ "$status" -eq 0 ] || { echo "files that name a private project:"; echo "$output"; false; }
+}
+
+@test "no shell code pipes into a quiet grep: grep -q stops early, and under pipefail the producer's SIGPIPE fails the pipeline (tools/check-pipefail-grep.sh)" {
+  run bash "$REPO_ROOT/tools/check-pipefail-grep.sh" "$PLUGIN_ROOT" "$REPO_ROOT/tools"
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+}
+
+@test "self-test: the pipefail rule refuses each quiet grep after a pipe, whatever the producer, naming its line, and passes every form that reads to the end" {
+  local d line n=0
+  d=$(mktemp -d "${BATS_TEST_TMPDIR:?}/plant.XXXXXX")
+  # Each line is refused, whatever the quiet option looks like.
+  for line in \
+    "printf '%s' \"\$s\" | grep -q 'x'" \
+    "if printf '%s\n' \"\$s\" | grep -Eq 'a|b'; then :; fi" \
+    "echo \"\$s\" | grep -qi x" \
+    "printf '%s' \"\$s\" | grep -E -q x" \
+    "printf '%s' \"\$s\" | grep --quiet x" \
+    "ok && ! printf '%s' \"\$s\" | grep -qxF -- \"\$f\"" \
+    "printf '%s' \"\$s\" | command grep -q x" \
+    "jq . f | grep -q x" \
+    "if screen | grep -q 'Ready'; then :; fi" \
+    "screen | cut -c1-120 | grep -qE 'a b' || return 1" \
+    "./test.sh | grep -qx 'TESTS PASS'"; do
+    n=$((n + 1))
+    printf '#!/usr/bin/env bash\n# planted\n\n%s\n' "$line" > "$d/p$n.sh"
+    run bash "$REPO_ROOT/tools/check-pipefail-grep.sh" "$d"
+    [ "$status" -eq 1 ] || { echo "not refused: $line"; false; }
+    [[ "$output" == *"p$n.sh:4:"* ]] || { echo "no line named for: $line: $output"; false; }
+    rm "$d/p$n.sh"
+  done
+  # Each of these passes: grep reads to the end, reads no pipe, or no code at all.
+  for line in \
+    "printf '%s' \"\$s\" | grep 'x' > /dev/null" \
+    "printf '%s' \"\$s\" | grep -c x" \
+    "grep -q x <<< \"\$s\"" \
+    "grep -q x file" \
+    "# printf '%s' \"\$s\" | grep -q x" \
+    "printf '%s' \"\$s\" | grep -e q"; do
+    printf '#!/usr/bin/env bash\n# planted\n\n%s\n' "$line" > "$d/ok.sh"
+    run bash "$REPO_ROOT/tools/check-pipefail-grep.sh" "$d"
+    [ "$status" -eq 0 ] || { echo "refused: $line: $output"; false; }
+  done
+  rm "$d/ok.sh"
+  # bin/vbw has no .sh name and is read too.
+  mkdir -p "$d/bin"
+  printf 'printf "%%s" "$s" | grep -q x\n' > "$d/bin/vbw"
+  run bash "$REPO_ROOT/tools/check-pipefail-grep.sh" "$d"
+  [ "$status" -eq 1 ] || { echo "bin/vbw was not read: $output"; false; }
+  run bash "$REPO_ROOT/tools/check-pipefail-grep.sh" "$d/nothing"
+  [ "$status" -eq 2 ]
+  run bash "$REPO_ROOT/tools/check-pipefail-grep.sh"
+  [ "$status" -eq 2 ]
 }

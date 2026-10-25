@@ -2,13 +2,18 @@
 # R191, phase P149 (L1): a proof (vbw prove, and the proof inside vbw fix done)
 # records every unit it ran (a check, a test file, a project command) with that
 # unit's own seconds, as units [{name, seconds}] beside its parts in the step
-# history. A proof's expected time is the sum of its units' last recorded seconds
-# (runs.json, the per-check store in the clone's git folder; a unit never run
-# before counts as the median of the known ones), times the median ratio of wall
-# time to summed unit time over the latest 10 proofs that recorded units, rounded:
-# parallel lanes and this machine's load are learned, not assumed. Without that
-# basis the proofs that recorded only parts still give today's time per unit; with
-# fewer than 3 finished proofs there is no time.
+# history. A proof's expected time is the sum of its units' costs times the
+# learned ratio, rounded. A unit's cost is the fastest it ran in the latest 10
+# proofs that recorded units or in its last recorded run (runs.json, the
+# per-check store in the clone's git folder): a busy day's slow run never sets
+# the promise, and a proof that runs late moves its end as it goes. The ratio is
+# those proofs' total wall time over their total unit time, so one proof of two
+# units cannot skew it: parallel lanes and this machine's load are learned, not
+# assumed. A unit never run before counts as the median of the known ones.
+# Without that basis the proofs that recorded only parts still give today's
+# time per unit; with fewer than 3 finished proofs there is no time. The
+# proof's sentence ends with the reason most of its units run again, so a long
+# proof says why before anyone waits for it (R202): "; top reason: <reason> (N units)".
 
 load helper
 load step-helper
@@ -59,7 +64,9 @@ step_of() { "$VBW" next --json | jq -c '.step'; }
     | $slow >= 2 and $fast < $slow and .seconds >= $slow' || { cat "$STEPS"; false; }
 }
 
-@test "R191: a proof's expected time is the sum of its units' last recorded seconds, times the learned ratio, rounded" {
+@test "R191: a proof's expected time is its units' costs times the learned ratio, rounded" {
+  # The store's last runs: 10, 20, 30, 40 s; three proofs timed C1 at 40 and C2 at 60 for 150 s of wall:
+  # the ratio is 450 / 300 = 1.5, the costs stay the fastest (10, 20, 30, 40): 100 s times 1.5.
   runs_seed '{"check:C1": 10, "check:C2": 20, "check:C3": 30, "check:C4": 40}'
   hist_proof '[{"name": "check:C1", "seconds": 40}, {"name": "check:C2", "seconds": 60}]' 150 3
   local s
@@ -67,7 +74,36 @@ step_of() { "$VBW" next --json | jq -c '.step'; }
   printf '%s' "$s" | jq -e '.kind == "proof" and .parts == 4 and .seconds == 150 and (.say | startswith("Proving 4 checks: about 3 min"))' || { echo "$s"; false; }
 }
 
-@test "R191: a proof of its own sizes its note by its units' recorded seconds, the learned ratio and the median for an unknown unit" {
+@test "R202: a proof's sentence ends with the reason most of its units run again, and the answer carries it" {
+  runs_seed '{"check:C1": 10, "check:C2": 20, "check:C3": 30, "check:C4": 40}'
+  hist_proof '[{"name": "check:C1", "seconds": 40}, {"name": "check:C2", "seconds": 60}]' 150 3
+  local s
+  s=$(step_of)
+  printf '%s' "$s" | jq -e '.why.count == 4 and (.why.reason | type == "string" and length > 0)
+    and (.why.reason as $r | .say | endswith("; top reason: \($r) (4 units)"))' || { echo "$s"; false; }
+  # Cached or not, the same answer. The sentence's clock time is the moment's own ("until around
+  # 12:58"): two calls a second apart can straddle a minute, so it is left out of the comparison.
+  local same='[(.say | sub("until around [0-9]{2}:[0-9]{2}"; "until around HH:MM")), .why]'
+  [ "$(step_of | jq -c "$same")" = "$(printf '%s' "$s" | jq -c "$same")" ] || { step_of; false; }
+}
+
+@test "T173: a proof that stayed open for hours is left out of the learned ratio: 8 times the median of its kind and size" {
+  runs_seed '{"check:C1": 10, "check:C2": 20, "check:C3": 30, "check:C4": 40}'
+  hist_proof '[{"name": "check:C1", "seconds": 40}, {"name": "check:C2", "seconds": 60}]' 150 3
+  # One proof left open overnight (11 h for the same two units): pooled in, the ratio would be 101.
+  hist_proof '[{"name": "check:C1", "seconds": 40}, {"name": "check:C2", "seconds": 60}]' 40000 1
+  step_of | jq -e '.kind == "proof" and .seconds == 150' || { step_of; false; }
+}
+
+@test "R191: a unit's cost is the fastest it ran in the latest 10 proofs or in its last recorded run, never a slower one" {
+  # C1's last run took 100 s on a busy machine, its proofs 10 s; C2 ran 20 s last, 50 s in its proofs:
+  # costs 10 + 20 + 30 + 40 = 100 s, ratio 180 / 180 = 1. Summing the last runs would promise 190 s.
+  runs_seed '{"check:C1": 100, "check:C2": 20, "check:C3": 30, "check:C4": 40}'
+  hist_proof '[{"name": "check:C1", "seconds": 10}, {"name": "check:C2", "seconds": 50}]' 60 3
+  step_of | jq -e '.kind == "proof" and .seconds == 100' || { step_of; false; }
+}
+
+@test "R191: a proof of its own sizes its note by its units' costs, the learned ratio and the median for an unknown unit" {
   # C1..C3 are known (10, 20, 30 s), C4 never ran: it counts as 20, so 80 s times the ratio 1.5.
   runs_seed '{"check:C1": 10, "check:C2": 20, "check:C3": 30}'
   hist_proof '[{"name": "check:C1", "seconds": 40}, {"name": "check:C2", "seconds": 60}]' 150 3
@@ -91,14 +127,17 @@ step_of() { "$VBW" next --json | jq -c '.step'; }
   jq -e '.kind == "fix" and .parts == {done: 1, total: 2} and .proof == null and (.doing | startswith("fixing"))' "$NOTE" || { cat "$NOTE"; false; }
 }
 
-@test "R191: the ratio is the median over the latest 10 proofs that recorded units" {
+@test "R191: the ratio is the latest 10 proofs' total wall time over their total unit time, so a small proof cannot skew it" {
+  # Three proofs of one 100 s unit took 100, 200 and 500 s: 800 / 300. Costs 10 + 20 + 30 + 40 = 100 s: 267 s
+  # (the median ratio, 2, would say 200). Then a proof of one 1 s unit took 50 s (a ratio of 50 on its own):
+  # the ratio moves to 850 / 301, and C1's cost to its fastest, 1 s: 91 s times 2.824 = 257 s.
   runs_seed '{"check:C1": 10, "check:C2": 20, "check:C3": 30, "check:C4": 40}'
   hist_proof '[{"name": "check:C1", "seconds": 100}]' 100 1
   hist_proof '[{"name": "check:C1", "seconds": 100}]' 200 1
   hist_proof '[{"name": "check:C1", "seconds": 100}]' 500 1
-  step_of | jq -e '.kind == "proof" and .seconds == 200' || { step_of; false; }
-  hist_proof '[{"name": "check:C1", "seconds": 100}]' 250 1
-  step_of | jq -e '.kind == "proof" and .seconds == 225' || { step_of; false; }
+  step_of | jq -e '.kind == "proof" and .seconds == 267' || { step_of; false; }
+  hist_proof '[{"name": "check:C1", "seconds": 1}]' 50 1
+  step_of | jq -e '.kind == "proof" and .seconds == 257' || { step_of; false; }
 }
 
 @test "R191: a unit never run before counts as the median of this proof's known units" {
@@ -114,5 +153,5 @@ step_of() { "$VBW" next --json | jq -c '.step'; }
   runs_seed '{"check:C1": 10, "check:C2": 20, "check:C3": 30, "check:C4": 40}'
   hist_proof '[{"name": "check:C1", "seconds": 40}]' 60 2
   step_of | jq -e '.kind == "proof" and .seconds == null and .end == null
-    and .say == "Proving 4 checks: no end time yet (VBW has timed fewer than 3 steps like this here)"' || { step_of; false; }
+    and .say == "Proving 4 checks: no end time yet (VBW has timed fewer than 3 steps like this here); top reason: no read list (4 units)"' || { step_of; false; }
 }

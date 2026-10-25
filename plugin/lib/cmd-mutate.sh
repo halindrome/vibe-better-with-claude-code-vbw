@@ -72,7 +72,7 @@ mutate_rule_none() {
   PROOFREUSE_STORE=$(proofreuse_store_read)
   tree=$(vbw_head_tree) || vbw_die "cannot fingerprint the committed code"
   fp=$(proofreuse_check_fp "$record" "$check")
-  if proofreuse_current "check:$check" "$fp" "$tree" > /dev/null; then
+  if proofreuse_current "check:$check" "$fp" "$tree" "$record" > /dev/null; then
     :
   else
     noreads=$(reads_probe "$VBW_RUNTIME" 2>&1) || true
@@ -111,7 +111,7 @@ mutate_rule_none() {
                 + (if ($di | length) > 0 then (if ($fi | length) > 0 then " and lists " else " lists " end) + ($di | join(", ")) else "" end)
                 + (if ($stars | length) > 0 then "; " + ($stars | join(", ")) + (if ($stars | length) == 1 then " covers" else " cover" end) + " every file" else "" end)
                 + ": break the rule in that code instead")}
-          else {ok: "\($k) recorded: \($id) read \(plural($rd | length; "file")) and \(plural($dr | length; "folder")), none of them of \($q)'"'"'s plans (\($pl | map(.id) | join(", ")))"} end
+          else {ok: "\($k) recorded: \($id) read \(plural($rd | length; "file")) and \(plural($dr | length; "folder")), none of them of \($q)'"'"'s plans (\($pl | map(.id) | join(", "))); a check that only tests whether a plan file exists is not detected"} end
       end')
   if [ "$(printf '%s' "$verdict" | jq 'has("refuse")')" = true ]; then
     vbw_die "$(printf '%s' "$verdict" | jq -r .refuse)"
@@ -179,8 +179,12 @@ cmd_mutate() {
   else
     printf '%s' "$record" | jq -e --arg p "$plan" --arg q "$req" '.plans[] | select(.id == $p) | .reqs | index($q) != null' > /dev/null \
       || vbw_die "$plan does not serve $req: choose a rule of a requirement it serves (vbw show plan $plan)"
-    ruledoc=$(printf '%s' "$record" | jq -c --arg q "$req" --argjson k "$rk" '.requirements[] | select(.id == $q) | (.rules // []) | if $k >= 1 then (.[$k - 1] // empty | {req: $q, text, check}) else empty end')
+    ruledoc=$(printf '%s' "$record" | jq -c --arg q "$req" --argjson k "$rk" '.requirements[] | select(.id == $q) | (.rules // []) | if $k >= 1 then (.[$k - 1] // empty | {req: $q, text, check} + (if has("retired") then {retired} else {} end)) else empty end')
     [ -n "$ruledoc" ] || vbw_die "$req has no rule $rk: vbw show plan $plan lists the rules, numbered"
+    # A retired rule (T168) keeps its address but is owed nothing.
+    if printf '%s' "$ruledoc" | jq -e 'has("retired")' > /dev/null; then
+      vbw_die "$target is retired ($(printf '%s' "$ruledoc" | jq -r .retired)): it is owed no break"$'\n'"Next: break the plan's live rules (vbw show plan $plan lists them)"
+    fi
     check=$(printf '%s' "$ruledoc" | jq -r '.check')
   fi
   if [ "$nonef" = 1 ] && [ "$kind" = rule ]; then
@@ -209,7 +213,7 @@ cmd_mutate() {
       (.plans[] | select(.id == $p).reqs) as $q
       | [.plans[] | select(.id != $p and .status != "done") | .reqs[]] as $others
       | [$q[] | select(. as $r | $others | index($r) == null)] as $done
-      | [.requirements[] | .id as $r | (.rules // [])[] | select(.plan == $p or ($done | index($r) != null)) | .check] | unique')
+      | [.requirements[] | .id as $r | (.rules // [])[] | select((has("retired") | not) and (.plan == $p or ($done | index($r) != null))) | .check] | unique')
     if [ "$owed" != '[]' ]; then
       ids=$owed
     else

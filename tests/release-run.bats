@@ -257,13 +257,46 @@ tests/timed-speed.bats'
   }
 }
 
+# has_clock FILE: whether a line of FILE that is not a comment reads a clock: bash's
+# SECONDS, the wall clock in seconds or finer (date +%s, %N, gdate), or a high-resolution
+# timer (Time::HiRes, EPOCHREALTIME, Python's time.time and perf_counter,
+# Node's hrtime, Date.now and performance.now).
+has_clock() {
+  [ "$(grep -vE '^[[:space:]]*#' "$1" | grep -cE '(^|[^A-Za-z_])(SECONDS|EPOCHREALTIME)|date .*%[sN]|gdate|Time::HiRes|time\.time|perf_counter|hrtime|Date\.now|performance\.now')" -gt 0 ]
+}
+
+@test "R152: the clock rule sees every kind of timer a test file could read, and passes comments and plain words" {
+  printf 'x=$SECONDS\n' > "$TEST_ROOT/a"
+  printf 't=$(date +%%s)\n' > "$TEST_ROOT/b"
+  printf 'n=$(date +%%s%%N)\n' > "$TEST_ROOT/c"
+  printf 'n=$(gdate +%%N)\n' > "$TEST_ROOT/d"
+  printf "now() { perl -MTime::HiRes=time -e 'print time'; }\n" > "$TEST_ROOT/e"
+  printf 't=$EPOCHREALTIME\n' > "$TEST_ROOT/f"
+  printf "t=\$(python3 -c 'import time; print(time.perf_counter())')\n" > "$TEST_ROOT/h"
+  local f
+  for f in a b c d e f h; do
+    has_clock "$TEST_ROOT/$f" || {
+      echo "not seen: $(cat "$TEST_ROOT/$f")"
+      false
+    }
+  done
+  printf '# a comment about SECONDS and Time::HiRes\nsecs=2\nsleep "$secs"\nnow=$(date +%%Y)\nstamp=$(jq -n "now | todate")\n' > "$TEST_ROOT/ok"
+  ! has_clock "$TEST_ROOT/ok" || {
+    echo "a comment or a plain word was taken for a clock"
+    false
+  }
+}
+
 @test "R152: no test file of the default run measures a duration; the timed tests live in tests/timed-*.bats" {
   cd "$REPO_ROOT"
   local f bad=""
   for f in tests/*.bats; do
     case "$f" in tests/timed-* | tests/release-run.bats) continue ;; esac
-    # A duration: bash's SECONDS clock or the wall clock in seconds.
-    if grep -vE '^[[:space:]]*#' "$f" | grep -qwE 'SECONDS|date \+%s'; then bad="$bad $f(clock)"; fi
+    # Two files read a high-resolution clock only to put the starts and ends of checks in
+    # order (no limit is judged on a duration): the overlap of checks that must not overlap.
+    case "$f" in tests/check-alone-runner.bats | tests/fix-many.bats) ;; *)
+      if has_clock "$f"; then bad="$bad $f(clock)"; fi ;;
+    esac
     # A speed benchmark judged at its real limit: every run of one sets the
     # limit on the same line. tests/bench-limits.bats checks the limit logic
     # itself, with 100 ms of extra work against 20 ms.
@@ -272,7 +305,6 @@ tests/timed-speed.bats'
     if grep -E 'bash +"?\$(BENCH|\{?REPO_ROOT\}?/tools/bench-|BATS_TEST_DIRNAME/\.\./tools/bench-)' "$f" \
       | grep -qv '_BUDGET_MS='; then bad="$bad $f(benchmark)"; fi
   done
-  ! grep -q 'Time::HiRes' tests/proof-stale-links.bats || bad="$bad tests/proof-stale-links.bats(clock)"
   [ -z "$bad" ] || {
     echo "default-run test files that measure a duration:$bad"
     false

@@ -123,7 +123,7 @@ overlaps() {
   wait "$p2"
   [ "$(t C4 start)" != "" ]
   awk -v a="$(t C2 start)" -v b="$(t C2 end)" -v c="$(t C4 start)" -v d="$(t C4 end)" 'BEGIN { exit !(a < d && c < b) }'
-  grep -Eq '^C2 pass [0-9]+s$' "$TEST_ROOT/o1"
+  grep -Eq '^C2 pass [0-9.]+s$' "$TEST_ROOT/o1"
 }
 
 @test "vbw prove holds the exclusion too" {

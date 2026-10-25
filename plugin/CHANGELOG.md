@@ -1,5 +1,254 @@
 # Changelog
 
+## [2.1.13] - 2026-10-25
+
+### Added
+
+- **Choose how hard each helper thinks.** Settings has a new Effort heading
+  with one row per helper: `low`, `medium`, `high`, `xhigh`, `max`, or
+  `default` to keep the profile's choice. For example, the architect at
+  `max` while the docs helper stays light, without changing the whole
+  profile. From the command line: `vbw config set effort.dev high`.
+
+### Changed
+
+- **A project with a chosen effort needs VBW 2.1.13 or newer for everyone
+  on it.** The choice is shared through git like the model choices. A
+  teammate on an older VBW is asked to update VBW instead of being told the
+  project is damaged. Projects without one are not affected.
+
+### Fixed
+
+- **A setting's name keeps its gap in Settings** when its choices are wide
+  ("your level" no longer runs into its first choice).
+- **Proofs reuse earlier results correctly on the night the clocks go back.**
+  During the hour that happens twice, a proof could lose track of which files
+  each check read, and ran every check again; on some Linux systems it could
+  not record them at all.
+
+## [2.1.12] - 2026-10-24
+
+### Added
+
+- **Change how VBW talks to you from Mission Control.** The Settings tab now
+  holds your interview answers, with one click each: your level, the wording
+  and who makes the decisions, plus whether they stay private to you or are
+  shared with your team through git. The first interview still asks them;
+  Settings lets you change your mind later.
+- **Turn the autonomous run on or off for this chat** from Settings. While it
+  runs, the row says which step of how many.
+- **See at a glance whether Dynamic workflows are on.** VBW plans and builds
+  with them. Settings shows them on in green, or in amber with a `turn on`
+  button when Claude Code is left to decide. When they were turned off on
+  purpose, Settings says so and leaves that choice to you.
+
+## [2.1.11] - 2026-10-24
+
+### Added
+
+- **Mission Control has six tabs: Now, Plan, Proof, Timeline, Sessions and
+  Settings.** Everything is colour coded: each helper by its role, each state
+  by its colour. Plan shows the phases with their progress and the decisions
+  made. Proof shows every check, passed, failing or running. Timeline shows
+  each run with its cost. Each What's next item is one button.
+- **Change any VBW setting with a click.** The Settings tab lists every setting
+  under four headings: Models, How VBW works, Checks, and Look and sound. The
+  current choice is lit; click another and it is saved at once, with
+  `✓ saved`. Numbers have `−` and `+`. Each helper's model can be Fable, Opus,
+  Sonnet or Haiku (QA never Haiku).
+- **Choose the "needs you" sound, or turn it off.** Pick a voice or `off` in
+  Settings, or with `vbw config set sound`. The choice is your own copy of the
+  project's, never shared through git.
+- **A notification when VBW starts waiting for you,** so you can work elsewhere.
+- **Something new is marked until you have seen it:** a changed setting, a
+  finished run, a new refusal.
+- **The status line shows one coloured state:** `● working`, `⚑ needs you` with
+  since when, or `✓ idle`.
+- **A guide to running several chats on one project:** `docs/parallel-sessions.md`.
+
+### Fixed
+
+- **VBW works in a chat started in a subfolder of the project.** The panel
+  stayed closed and the guards stayed off when Claude Code was started inside
+  a folder of the project rather than at its top. The panel, the guards, the
+  approval hooks and the helpers now find the project from any of its folders.
+- **Every time the panel shows names its day** when it is not today.
+- **Refusals in the panel are one short line;** a click shows the whole text.
+
+## [2.1.10] - 2026-10-24
+
+### Fixed
+
+- **A loop item's time counts only while the loop works on it.** The time
+  budget used the clock since the item opened, so a night with the loop
+  stopped, a session that dropped or a turn that ended on an API error could
+  stop a healthy item. That time is now left out. Two pauses Claude Code does
+  not report still count: a turn you interrupt with Esc, and a computer asleep
+  during a step; stop the loop with `/vbw:loop stop` before you leave.
+- **`/vbw:loop THE_ITEM` resumes a stopped item.** It was refused because the
+  item's milestone was not shipped. It now picks the item up where the loop
+  left it, with its budget and its time so far. An item stopped because it
+  spent its whole budget is not resumed: finish it with `/vbw:vibe`.
+- **A run that lost the shared slot store no longer leaves a slot held** for
+  other runs once the store works again.
+- **Checks start a little sooner after each other.** Handing over the proof's
+  gate costs two processes instead of seven.
+
+## [2.1.9] - 2026-10-24
+
+### Fixed
+
+- **A damaged record is reported as what it is.** A record that was valid
+  JSON but had a field of the wrong type (a number where a name belongs) was
+  reported as unparseable JSON. VBW now says a field has the wrong type, with
+  jq's own description of it.
+
+### Changed
+
+- **Four more features are now checked in real Claude Code sessions, driven
+  as a user**: two chats on one project (the holder's name shown and never
+  written to the record or git), a task break judged by the plan's own rules,
+  a fix that commits its own check files with one approval, and a failing
+  check's full output kept and named by `vbw show fix`.
+- The guards' documented cost per call is brought up to date: VBW's own CPU
+  is about 4 to 5 ms for a file edit and 10 to 13 ms for a Bash command.
+
+## [2.1.8] - 2026-10-24
+
+### Changed
+
+- **Mission Control's Now box tells you the whole step**: what VBW is doing,
+  when it started and when it should end. When VBW needs you, it shows the one
+  sentence that says what for, the command to type and since when, and the
+  Now tab says each fact once.
+- **The status line is faster in projects where VBW is off.** Handing back to
+  your earlier status line now costs one shell and one `jq` instead of two of
+  each, and `vbw statusline on` keeps that line's padding and refresh interval.
+
+### Fixed
+
+- **Mission Control no longer stops working after a failed start.** It tries
+  again on your next prompt, question or run. The docs and `/vbw:panel` now
+  say when Claude Code opens the pane by itself: in a window at least 144
+  columns wide, or 110 once you have opened it yourself.
+- **A failing panel hook can no longer leave "VBW has a question for you" on
+  screen.** Every hook that waits on the panel now lets the event through
+  when it fails.
+
+## [2.1.7] - 2026-10-24
+
+### Added
+
+- **Approved rules can be reworded or retired.** When later work changes what
+  an earlier requirement said, the Lead can now name the old rule by its
+  address (`R1.2`, as `vbw show req R1` numbers them) and give it new words or
+  retire it with a reason, in any milestone, a shipped one included. Before,
+  new wording only added a second rule beside the stale one. The change goes
+  through your approval like any other contract change, and a retired rule
+  stays visible with its reason.
+- **You see every refusal, not only Claude.** When a guard blocks a call, you
+  get a one-line message from Claude Code beside the reason Claude reads. When
+  VBW refuses something inside a workflow, the agent reports it word for word,
+  and Comms and Mission Control show it in amber with its time and next step.
+
+### Fixed
+
+- **QA no longer calls interleaved phases a cycle.** Phases whose plans build
+  on each other in both directions are legitimate; QA now notes them, and
+  still reports a real cycle between plans as a problem.
+- **A setting you state in words at the start of a new project is kept.**
+  Saying "work guided" before the project existed could be lost, because the
+  setting was written before `vbw init` and refused. VBW now records it right
+  after the project is set up.
+
+## [2.1.6] - 2026-10-24
+
+### Changed
+
+- **Heavy test commands share the computer's cores.** When several checks run
+  side by side, each check's command now gets its share of the cores through
+  the settings build tools read (`CARGO_BUILD_JOBS`, `GOMAXPROCS`,
+  `MAKEFLAGS=-jN`); a check that runs alone gets every core. A project whose
+  checks each started a full parallel build no longer runs many such builds
+  at once. Values you already set are kept.
+
+### Fixed
+
+- **Two runs no longer write the proof's step times at the same moment.** The
+  lock around that note could be taken from a run still writing it, after a
+  few seconds' wait; it is now taken over only from a run that has died.
+
+## [2.1.5] - 2026-10-24
+
+### Changed
+
+- **A long proof says why before you wait for it.** The proof's first line
+  counts the checks that run again and names the main reasons, and VBW's
+  sentence for the proof step ends with the top one, so you know at once
+  whether a proof will take a minute or an hour.
+- **A loop item's time budget follows its planned work.** The budget was set
+  from the size label guessed before planning. Once the road is planned, the
+  budget is twice the time spent so far plus the planned road, at least 30
+  minutes, and the loop's report names what it was based on.
+- **Unit times are measured to a tenth of a second**, so quick checks no
+  longer all read "0 s" or "1 s".
+- **`vbw mutate --none` names what it cannot see**: a check that only tests
+  whether a plan's file exists is not caught by it.
+
+### Fixed
+
+- **Time estimates no longer absorb a run left open overnight.** A step that
+  sat idle for hours counted as work and could ruin the build and proof
+  estimates for days. A step far longer than its kind usually takes is now left
+  out of the estimates.
+- **Runs that share the computer hand slots and locks over faster and more
+  safely.** A lock left by a run that died is taken over by exactly one run, a
+  folder that refuses new files is reported at once instead of after 30
+  seconds, and a freed slot still goes to the waiting run that holds the
+  fewest.
+
+## [2.1.4] - 2026-10-23
+
+### Fixed
+
+- **Commits from an earlier roadmap no longer block the proof.** A project that
+  started a new VBW record (after VBW 1, or after removing `.vbw/`) has older
+  commits whose trailers name plan ids the new record uses again. The proof
+  judged them against today's plans, reported them as out of scope and listed
+  their files as delivered work changed by hand, and nothing short of rewriting
+  history cleared it. VBW now reads only the record's own history: the commits
+  made since `.vbw/record.json` was first committed. The same rule applies to
+  `vbw plan done` (an old commit no longer counts as a plan's commit), to the
+  commits `vbw show` lists for a requirement and to the loop's report. Nothing
+  to do: the next proof judges only your record's commits.
+
+## [2.1.3] - 2026-10-23
+
+### Fixed
+
+- **A new or deleted file no longer re-runs every check.** When a file was
+  added or deleted that no recorded check run had read or listed the folder
+  of, the proof ran everything, "because a check could now see a different set
+  of files". No check could: a check sees a file by listing its folder (VBW
+  records the listing), by reading it, or through git (always re-run). Two
+  images added to a README cost a full check run of every unit. Such a file
+  now re-runs only the units that could see it, as every other change does,
+  and the checks of the requirement whose plans list it: a check may test
+  whether a path exists without opening it, and the contract knows what each
+  requirement's plans deliver. A path outside those plans that a check only
+  tests for is the documented limit it always was.
+- **A proof cut short no longer re-runs every check next time.** An
+  interrupted proof saves nothing, or complete per-unit results, so the next
+  proof reuses what the read lists allow, as if the interrupted one had not
+  run. The unfinished-proof marker file is gone.
+- **Proof time estimates no longer inherit a busy day.** The estimate summed
+  each unit's last recorded seconds, taken under whatever load the machine had,
+  and multiplied by the median wall-to-unit ratio, which one 3-unit proof could
+  pull to 22. It promised 200 minutes for a proof that takes about 45. Each
+  unit now counts the fastest it ran in the latest 10 proofs or in its last
+  run, and the ratio is those proofs' total wall time over their total unit
+  time; a proof that runs late still moves its end as it goes.
+
 ## [2.1.2] - 2026-10-23
 
 ### Fixed

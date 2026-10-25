@@ -4,7 +4,7 @@
 // rows than scroll.bodyRows, on any tab or VBW Wrapped; where that size is not
 // reported (inline, the main screen) it is capped at a fixed height and ends
 // with '+N more · open Mission Control'. Its tabs sit in whole rows (R199): on
-// every tab, at 100, 64, 60, 50 and 40 body columns, each of the eight names
+// every tab, at 100, 64, 60, 50 and 40 body columns, each of the six names
 // appears whole as '[ Name ]' on one line, no line is wider than the pane, and
 // the head draws the rows the pane clips the body for. Comms stays within its
 // maxRows in every mode (crew, needs-you line, a live step note, celebration,
@@ -16,10 +16,10 @@ import { record, next, lease, find, ROOT, T0 } from '../helpers/fake-mod.mjs'
 import { TICK, writeCrew, working, building } from './helpers/crew.mjs'
 import { screen, widest } from './helpers/screen.mjs'
 
-const TABS = ['now', 'plan', 'proof', 'timeline', 'decisions', 'team', 'sessions', 'costs']
+const TABS = ['now', 'plan', 'proof', 'timeline', 'sessions', 'settings']
 // id, full name, short name
 const NAMES = [['now', 'Now', 'Now'], ['plan', 'Plan', 'Plan'], ['proof', 'Proof', 'Proof'], ['timeline', 'Timeline', 'Time'],
-  ['decisions', 'Decisions', 'Log'], ['team', 'Team', 'Team'], ['sessions', 'Sessions', 'Sess'], ['costs', 'Costs', 'Cost']]
+  ['sessions', 'Sessions', 'Sess'], ['settings', 'Settings', 'Set']]
 const WIDTHS = [100, 64, 60, 50, 40]
 const MORE = /^\+\d+ more · open Mission Control$/
 const iso = (ms) => new Date(ms).toISOString().replace(/\.\d+Z$/, 'Z')
@@ -88,13 +88,13 @@ test("where Claude Code reports no height, Mission Control is capped at a fixed 
 test('a short Mission Control without a reported height has no fold line', async () => {
   const { h } = await building([], { profile: 'balanced', motion: 'calm' })
   h.project(record())
-  await h.press('tab-decisions')
+  await h.press('tab-sessions')
   await h.advance(TICK)
   const lines = screen(await inline(h, 80), 80)
   assert.ok(!lines.some((l) => MORE.test(l.trim())), lines.join('\n'))
 })
 
-test('on every tab at 100, 64, 60, 50 and 40 body columns each of the eight tab names is whole as [ Name ] on one line, no line is wider than the pane, and the head draws the rows the body is clipped for', async () => {
+test('on every tab at 100, 64, 60, 50 and 40 body columns each of the six tab names is whole as [ Name ] on one line, no line is wider than the pane, and the head draws the rows the body is clipped for', async () => {
   const { h } = await crowded()
   for (const tab of TABS) {
     await h.press('tab-' + tab)

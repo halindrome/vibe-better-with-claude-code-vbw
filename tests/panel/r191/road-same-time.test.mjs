@@ -73,7 +73,7 @@ test('one note, one moment: the step HH:MM is identical in the status line, Comm
     const line = lines.split('\n')[0]
     const at = Date.now()
     const mission = view.panelView({ record: rec, next: nx, now: at, cost: 1, steps: [], step: note })
-    const missionText = mission.rows.map((r) => r.text).join('\n')
+    const missionText = [mission.box.step && mission.box.step.text, mission.box.step && mission.box.step.end, ...mission.rows.map((r) => r.text)].join('\n')
     const commsModel = stage.stageModel({ step: note, now: at, columns: 100, maxRows: 8 })
     const commsText = commsModel ? collect(stage.renderStage(UI, commsModel)).join('\n') : ''
     const want = hhmm(end)

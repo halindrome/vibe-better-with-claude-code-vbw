@@ -5,6 +5,30 @@ export const meta = {
   phases: [{ title: 'Build', detail: 'a Dev (or Docs) per plan; disjoint files' }],
 }
 
+// Kernel refusals reach the user as written (docs/workflows.md, "Refusals reach the user"):
+// every agent schema requires refused, and the result carries them all, each named by
+// the agent that saw it, so the router shows them word for word.
+const REFUSED = {
+  type: 'array',
+  description: 'Each refusal VBW gave you: a vbw command that refused (it exited non-zero with a message starting "vbw:") or a tool call a guard blocked (a reason starting "VBW guard:"), each copied verbatim and whole, through its Next: line; [] when none',
+  items: { type: 'string' },
+}
+// The project folder (args.root: vbw next --json or vbw root). A session started in a subfolder
+// starts its agents there, so each agent is told where the project's paths are.
+const projectRoot = (args && typeof args === 'object' && typeof args.root === 'string' && args.root) || ''
+const where = projectRoot ? `\n\nThe project folder is ${projectRoot}. Every path VBW names (plan and check files, .vbw/...) is relative to it, whatever folder you start in: give file tools and shell redirects absolute paths under it, and run other shell commands from it (cd "${projectRoot}" && ...).` : ''
+const refused = []
+const ask = async (prompt, o) => {
+  const r = await agent(prompt + where, o)
+  for (const text of r && Array.isArray(r.refused) ? r.refused : []) {
+    if (typeof text !== 'string' || !text.trim()) continue
+    refused.push({ by: o.label, text })
+    log(`${o.label} was refused: ${text}`)
+  }
+  return r
+}
+const reply = o => Object.assign(o, { refused })
+
 // args: {plans: ["P1.1", ...], docs?: ["P2.1"], effort?: {dev?: {build}, docs?: {build}, lead?: {close}}, models?: {dev?, docs?; models.lead is not used for closing}, rigor?: {P1: {models, tier}}} (docs/workflows.md).
 // docs: the plans the Lead marked as documentation, built by the Docs agent.
 const plans = (args && args.plans) || []
@@ -24,12 +48,13 @@ const effortOf = (role, step) => {
   const e = table[role] && typeof table[role] === 'object' ? table[role][step] : null
   return e ? { effort: e } : {}
 }
-if (plans.length === 0) return { results: [], error: 'no plans given: pass args.plans from vbw next --json' }
+if (plans.length === 0) return reply({ results: [], error: 'no plans given: pass args.plans from vbw next --json' })
 
 const CLOSE_RESULT = {
   type: 'object',
-  required: ['ended', 'recorded', 'report'],
+  required: ['ended', 'recorded', 'report', 'refused'],
   properties: {
+    refused: REFUSED,
     ended: { type: 'boolean' },
     recorded: { type: 'boolean' },
     report: { type: 'string' },
@@ -38,8 +63,9 @@ const CLOSE_RESULT = {
 
 const BUILD_RESULT = {
   type: 'object',
-  required: ['status', 'summary', 'notes'],
+  required: ['status', 'summary', 'notes', 'refused'],
   properties: {
+    refused: REFUSED,
     status: { type: 'string', enum: ['done', 'blocked'] },
     summary: { type: 'string' },
     notes: { type: 'array', items: { type: 'string' } },
@@ -54,7 +80,7 @@ const closeRun = async ids => {
   const sh = c => `VBW_SESSION_ID=${session} ${c}`
   const confirm = sh(`vbw run confirm ${ids.join(' ')}`)
   const end = sh('vbw run end')
-  const done = await agent(`Close this VBW run (your own instructions, Close a run, allow it). Run ${confirm} (it exits 1 when some plans were not recorded), then, whatever it said, run ${end}. Answer ended (run end succeeded), recorded (confirm exited 0) and report (the lines for what was not recorded, else "all recorded; run ended"). Change nothing else.${voice}`,
+  const done = await ask(`Close this VBW run (your own instructions, Close a run, allow it). Run ${confirm} (it exits 1 when some plans were not recorded), then, whatever it said, run ${end}. Answer ended (run end succeeded), recorded (confirm exited 0) and report (the lines for what was not recorded, else "all recorded; run ended"). Change nothing else.${voice}`,
     Object.assign({ agentType: 'vbw:lead', label: 'close run', schema: CLOSE_RESULT }, { model: CLOSE_MODEL }, effortOf('lead', 'close')))
   if (!done) log(`the closing agent stopped: run by hand: ${confirm} ; then ${end}`)
   else {
@@ -75,7 +101,7 @@ const results = await pipeline(plans, id => {
   const m = (cell && cell.models && cell.models[role]) || models[role]
   const tier = cell && cell.tier
   const mutate = tier === 'standard' || tier === 'deep' ? ` This plan's rigor tier: ${tier}. Do the mutation step of your instructions before vbw plan done.` : ''
-  return agent(`Execute VBW plan ${id}. Start with: vbw show plan ${id}; then ${SINCE}${mutate}${voice}`,
+  return ask(`Execute VBW plan ${id}. Start with: vbw show plan ${id}; then ${SINCE}${mutate}${voice}`,
     Object.assign({ agentType: `vbw:${role}`, label: `${role} ${id}`, phase: 'Build', schema: BUILD_RESULT },
       m ? { model: m } : {}, effortOf(role, 'build')))
 })
@@ -89,4 +115,4 @@ const interrupted = out.filter(r => r.status === 'interrupted').length
 if (interrupted > 0) log(`${interrupted} agents stopped before reporting; their plans return to the next wave`)
 const confirmation = await closeRun(plans)
 const complete = interrupted === 0 && (!session || Boolean(confirmation && confirmation.recorded && confirmation.ended))
-return confirmation ? { results: out, complete, confirmation } : { results: out, complete }
+return reply(confirmation ? { results: out, complete, confirmation } : { results: out, complete })

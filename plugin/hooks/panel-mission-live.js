@@ -1,13 +1,12 @@
-// Mission Control's live tabs (mods_4_vbw.md §3.3): Now (the workflow as phase
-// columns of agent cards), Timeline (agent lanes on the run clock, past steps as
-// a sparkline against the R58 median) and Costs (cost per run, "about"). Pure:
+// Mission Control's live tabs (mods_4_vbw.md §3.3): Now (the crew: one row per
+// helper at work), Timeline (agent lanes on the run clock, past steps as
+// a sparkline against the R58 median) and the Now box's drawing (its model is panel-view.js's). Pure:
 // the run model in, plain models out, trees built with h(); never throws.
 
 import { estimate, MIN_STEPS } from './panel-estimate.js'
-import { clock } from './panel-view.js'
 import { stepWords } from './panel-step.js'
 import { newMark } from './panel-next.js'
-import { roleColor, stateColor, ACCENT, STATE_MARKS, STATE_WORDS } from './panel-palette.js'
+import { roleColor, stateColor, ACCENT, NEED, PROGRESS, ESTIMATE, STATE_MARKS, STATE_WORDS } from './panel-palette.js'
 
 const isObj = (x) => x !== null && typeof x === 'object' && !Array.isArray(x)
 const num = (x) => typeof x === 'number' && Number.isFinite(x)
@@ -27,9 +26,7 @@ const paletteState = (state) => (state === 'working' ? 'running' : state)
 // A run kind and the step kind its finished leases are recorded under (steps.json).
 const STEP_KIND = { planning: 'plan', building: 'build', verifying: 'qa', fixing: 'fix', mapping: 'map' }
 const BARS = '▁▂▃▄▅▆▇█'
-const ACTIVITY_MAX = 40
 
-const clip = (s, n) => (s.length > n ? s.slice(0, n - 1) + '…' : s)
 const roleOf = (a) => (ROLES.includes(a.role) ? a.role : 'agent')
 const titleOf = (a) => [str(a.role) || 'agent', str(a.label)].filter(Boolean).join(' ')
 const agentsOf = (run) =>
@@ -61,39 +58,44 @@ function stateOf(a, run) {
   return ended && (s === 'working' || s === 'quiet') ? 'cut' : s
 }
 
-// The column an agent belongs to: its workflow phase, else the phase in its label (P55.1 -> P55).
-function phaseOf(a) {
-  if (str(a.phase)) return a.phase
-  const m = /^(P\d+)/.exec(str(a.label))
-  return m ? m[1] : 'Agents'
+// The crew of the Now tab (2.1.11: Team folds into Now): one row per helper still at
+// work, `role label  ● doing · 2 min 10 s`, the longest-running first. A finished
+// helper leaves at once (Timeline keeps the history); a failed one stays first, in
+// red with its reason, until it is seen (opened or pressed), as on Comms. When the run
+// has ended only those failures stay. `width` (columns) cuts the doing text, never the
+// name, the mark or the time.
+const crewState = (a, running) => {
+  const s = STATES.includes(a.state) ? a.state : 'quiet'
+  if (s === 'failed') return 'failed'
+  return running && s !== 'done' && s !== 'cut' ? s : null
 }
 
-const phaseName = (p) => (typeof p === 'string' ? p : isObj(p) ? str(p.title) || str(p.name) : '')
-
-export const nowModel = safe(({ run, now, selected, seen, motion }) => {
+export const nowModel = safe(({ run, now, selected, seen, motion, width }) => {
   if (!validRun(run)) return null
   const opened = new Set(Array.isArray(seen) ? seen : [])
   const t = num(now) ? now : Date.now()
+  const running = str(run.status) === '' || run.status === 'running'
   const agents = agentsOf(run)
-  const order = (Array.isArray(run.phases) ? run.phases : []).map(phaseName).filter(Boolean)
-  for (const a of agents) if (!order.includes(phaseOf(a))) order.push(phaseOf(a))
-  const card = (a) => {
-    const state = stateOf(a, run)
-    // When it started while it works; when it ended once it is done, failed or cut off.
-    const at = state === 'working' || !num(a.endedAt) ? a.startedAt : a.endedAt
+  const row = (a) => {
+    const state = crewState(a, running)
+    const p = paletteState(state)
+    const act = isObj(a.activity) && str(a.activity.text) ? a.activity.text : ''
+    const doing = state === 'failed' ? str(a.result) || STATE_WORDS.failed : state === 'quiet' ? STATE_WORDS.quiet : act || STATE_WORDS[p]
+    const start = num(a.startedAt) ? a.startedAt : t
+    const end = state === 'failed' && num(a.endedAt) ? a.endedAt : t
     return {
-      at: clock(at),
-      id: a.id, title: titleOf(a), role: roleOf(a), roleColor: roleColor(roleOf(a)), state, frame: roleColor(roleOf(a)),
-      mark: STATE_MARKS[paletteState(state)], word: STATE_WORDS[paletteState(state)], stateColor: stateColor(paletteState(state)),
-      activity: isObj(a.activity) && str(a.activity.text) ? clip(a.activity.text, ACTIVITY_MAX) : null,
-      tool: isObj(a.activity) && a.activity.kind === 'tool',
-      tokens: tokens(a.tokens), selected: a.id === selected, action: { select: a.id },
-      fresh: state === 'failed' && !opened.has(a.id), motion,
+      id: a.id, title: titleOf(a), role: roleOf(a), roleColor: roleColor(roleOf(a)), state,
+      mark: STATE_MARKS[p], word: STATE_WORDS[p], stateColor: stateColor(p),
+      doing, tool: state === 'working' && Boolean(act) && a.activity.kind === 'tool', elapsed: duration(end - start),
+      selected: a.id === selected, action: { select: a.id }, fresh: state === 'failed', motion,
     }
   }
-  const columns = order
-    .map((title) => ({ title, cards: agents.filter((a) => phaseOf(a) === title).map(card) }))
-    .filter((c) => c.cards.length)
+  const rows = agents.filter((a) => {
+    const s = crewState(a, running)
+    return s !== null && !(s === 'failed' && opened.has(a.id))
+  }).map(row)
+  // Failures first (they wait for you), then the longest-running first (agentsOf orders by start).
+  rows.sort((x, y) => (x.state === 'failed' ? 0 : 1) - (y.state === 'failed' ? 0 : 1))
   const sel = agents.find((a) => a.id === selected)
   const detail = sel ? {
     id: sel.id, label: titleOf(sel), role: roleOf(sel), model: str(sel.model) || null,
@@ -102,9 +104,41 @@ export const nowModel = safe(({ run, now, selected, seen, motion }) => {
     elapsed: num(sel.startedAt) ? duration((num(sel.endedAt) ? sel.endedAt : t) - sel.startedAt) : null,
   } : null
   const end = num(run.endedAt) ? run.endedAt : t
-  const header = { kind: str(run.kind) || 'run', status: str(run.status) || 'running', elapsed: num(run.startedAt) ? duration(end - run.startedAt) : null }
-  return { header, columns, detail }
+  const header = { kind: str(run.kind) || 'run', status: str(run.status) || 'running', elapsed: num(run.startedAt) ? duration(end - run.startedAt) : null, done: agents.filter((a) => a.state === 'done').length }
+  return { header, rows, started: agents.length > 0, width: num(width) && width > 0 ? Math.floor(width) : null, detail }
 })
+
+// The parts strip: one cell a part (scaled to `room` cells when there are more), done in the
+// progress colour, the rest dim, then 'N of M done'.
+function partsStrip(ui, parts, room) {
+  const cellsWide = Math.max(1, Math.min(parts.total, room))
+  const done = Math.round((parts.done / parts.total) * cellsWide)
+  return h(ui.Box, { key: 'parts', flexDirection: 'row' },
+    h(ui.Text, { key: 'done', color: PROGRESS }, '▰'.repeat(done)),
+    h(ui.Text, { key: 'left', dimColor: true }, '▱'.repeat(cellsWide - done)),
+    h(ui.Text, { key: 'figure' }, ' ' + parts.done + ' of ' + parts.total + ' done'))
+}
+
+// options: { width (the pane's columns), labels (the dim one-word terms; true unless false) }.
+export function renderNowBox(ui, box, options) {
+  if (!isObj(box) || !isObj(box.state)) return null
+  const o = isObj(options) ? options : {}
+  const labels = o.labels !== false
+  const inner = Math.max(10, (num(o.width) ? Math.floor(o.width) : 50) - 4)
+  const figure = box.parts ? (' ' + box.parts.done + ' of ' + box.parts.total + ' done').length : 0
+  const term = (t, key) => (labels && t ? h(ui.Text, { key, dimColor: true }, t) : null)
+  return h(ui.Box, { key: 'now-box', flexDirection: 'column', borderStyle: 'round', paddingX: 1, marginBottom: 1 },
+    h(ui.Text, { key: 'state', bold: true, color: box.state.need ? NEED : undefined }, String(box.state.text)),
+    box.command ? h(ui.Text, { key: 'command' }, 'Type ' + box.command + '.') : null,
+    box.step && box.step.text ? h(ui.Text, { key: 'step' }, String(box.step.text)) : null,
+    box.parts ? partsStrip(ui, box.parts, Math.min(40, inner - figure)) : null,
+    box.step && box.step.end ? h(ui.Text, { key: 'end', color: box.step.timed ? ESTIMATE : undefined }, String(box.step.end)) : null,
+    box.milestone ? h(ui.Text, { key: 'milestone', color: box.milestone.known ? ESTIMATE : undefined }, box.milestone.text) : null,
+    box.milestone && box.milestone.basis ? h(ui.Text, { key: 'basis', dimColor: true }, box.milestone.basis) : null,
+    box.milestone ? term(box.milestone.term, 'milestone-term') : null,
+    h(ui.Text, { key: 'cost', color: box.cost.known ? ACCENT : undefined }, box.cost.text),
+    term(box.cost.term, 'cost-term'))
+}
 
 // Past steps of this run's kind as bars, the median (R58, via estimate) and the bar nearest it.
 function sparkOf(steps, kind, now) {
@@ -159,66 +193,43 @@ export const timelineModel = safe(({ run, now, steps, step, width }) => {
   return { width: w, lanes, spark: sparkOf(history, kind, t), left: leftOf(run, step, t) }
 })
 
-const cents = (x) => Math.round(x * 1e4) / 1e4
-const usd = (x) => '$' + x.toFixed(2)
-
-// runs: [{kind, startedAt, costStart, costEnd}]; a run still open costs up to the session cost now.
-export const costsModel = safe(({ runs, sessionCost, width }) => {
-  const w = num(width) ? Math.max(1, Math.floor(width)) : 30
-  const session = num(sessionCost) ? sessionCost : null
-  const seen = {}
-  const rows = (Array.isArray(runs) ? runs : []).flatMap((r) => {
-    if (!isObj(r) || !str(r.kind) || !num(r.costStart)) return []
-    const endCost = num(r.costEnd) ? r.costEnd : session
-    if (endCost === null || endCost < r.costStart) return []
-    seen[r.kind] = (seen[r.kind] || 0) + 1
-    const cost = cents(endCost - r.costStart)
-    return [{ kind: r.kind, name: r.kind + ' ' + seen[r.kind], startedAt: num(r.startedAt) ? r.startedAt : null, cost, text: 'about ' + usd(cost), bar: 0 }]
-  })
-  const max = Math.max(0, ...rows.map((r) => r.cost))
-  for (const r of rows) r.bar = max > 0 && r.cost > 0 ? Math.max(1, Math.round((r.cost / max) * w)) : 0
-  const kinds = []
-  for (const r of rows) {
-    let k = kinds.find((x) => x.kind === r.kind)
-    if (!k) kinds.push((k = { kind: r.kind, runs: 0, cost: 0, text: '' }))
-    k.runs++
-    k.cost = cents(k.cost + r.cost)
-    k.text = 'about ' + usd(k.cost)
-  }
-  kinds.sort((x, y) => y.cost - x.cost)
-  return { runs: rows, kinds, session: session === null ? 'The session cost is not available.' : 'This session: ' + usd(session), width: w }
-})
-
 // ---- Renders: ui = $.ui.resolve(e); `act` receives a card's action when it is pressed.
 
 const NO_RUN = 'No VBW workflow runs in this session right now.'
 const empty = (ui, text) => h(ui.Box, { flexDirection: 'column' }, h(ui.Text, { dimColor: true }, text))
 
-// A tool intention is its verb in the role colour and the object dimmed; anything else is dimmed whole.
-function activityLine(ui, c) {
-  const i = c.tool ? c.activity.indexOf(' ') : -1
-  if (!c.tool) return h(ui.Text, { dimColor: true }, c.activity)
-  if (i < 0) return h(ui.Text, { color: c.roleColor }, c.activity)
-  return h(ui.Box, { flexDirection: 'row' },
-    h(ui.Text, { color: c.roleColor }, c.activity.slice(0, i)), h(ui.Text, { dimColor: true }, c.activity.slice(i)))
+const cells = (x) => [...x].length
+const cutTo = (x, n) => (cells(x) <= n ? x : n <= 0 ? '' : [...x].slice(0, n - 1).join('') + '…')
+
+// What a helper does: a tool intention is its verb in the role colour and the object
+// dimmed; a failure is red, anything else dimmed whole. Cut to `room` cells.
+function doingLine(ui, r, room) {
+  const text = cutTo(r.doing, room)
+  if (r.state === 'failed') return [h(ui.Text, { key: 'doing', color: r.stateColor }, text)]
+  const i = r.tool ? text.indexOf(' ') : -1
+  if (!r.tool) return [h(ui.Text, { key: 'doing', dimColor: true }, text)]
+  if (i < 0) return [h(ui.Text, { key: 'doing', color: r.roleColor }, text)]
+  return [h(ui.Text, { key: 'verb', color: r.roleColor }, text.slice(0, i)), h(ui.Text, { key: 'object', dimColor: true }, text.slice(i))]
 }
 
+// The crew: the header line, then one row per helper; a press on a row selects it.
 export function renderNow(ui, model, act) {
-  if (!isObj(model) || !Array.isArray(model.columns)) return empty(ui, NO_RUN)
+  if (!isObj(model) || !Array.isArray(model.rows)) return empty(ui, NO_RUN)
   const hd = model.header || {}
-  const header = [hd.kind, hd.status, hd.elapsed].filter(Boolean).join(' · ')
-  const card = (c) =>
-    h(ui.Box, { key: 'card-box:' + c.id, flexDirection: 'column', borderStyle: 'round', borderColor: c.frame, paddingX: 1 },
-      h(ui.Button, { key: 'card:' + c.id, label: c.title, plain: true, onPress: () => { if (typeof act === 'function') act(c.action) } }),
-      h(ui.Box, { flexDirection: 'row' },
-        c.at ? h(ui.Text, { dimColor: true }, '[' + c.at + '] ') : null,
-        h(ui.Text, { color: c.stateColor }, c.mark + ' ' + c.word),
-        c.fresh ? newMark(ui.Text, c.motion) : null),
-      c.activity ? activityLine(ui, c) : null,
-      c.tokens ? h(ui.Text, { dimColor: true }, c.tokens) : null)
-  const columns = model.columns.map((col) =>
-    h(ui.Box, { key: 'col:' + col.title, flexDirection: 'column', marginRight: 1 },
-      h(ui.Text, { bold: true }, col.title), ...col.cards.map(card)))
+  const header = [hd.kind, hd.status, hd.elapsed, hd.done ? hd.done + ' done' : ''].filter(Boolean).join(' · ')
+  const nameW = Math.min(16, Math.max(0, ...model.rows.map((r) => cells(r.title))))
+  const row = (r) => {
+    const name = cutTo(r.title, nameW).padEnd(nameW) + '  '
+    const tail = ' · ' + r.elapsed
+    const room = model.width ? model.width - cells(name) - 2 - cells(tail) - (r.fresh ? 4 : 0) : Infinity
+    return h(ui.Box, { key: 'crew:' + r.id, flexDirection: 'row' },
+      h(ui.Button, { key: 'crew-name:' + r.id, plain: true, onPress: () => { if (typeof act === 'function') act(r.action) } },
+        h(ui.Text, { color: r.roleColor, bold: r.selected }, name)),
+      h(ui.Text, { key: 'mark', color: r.stateColor }, r.mark + ' '),
+      ...doingLine(ui, r, room),
+      h(ui.Text, { key: 'time', dimColor: true }, tail),
+      r.fresh ? newMark(ui.Text, r.motion) : null)
+  }
   const d = model.detail
   const detail = isObj(d)
     ? h(ui.Box, { flexDirection: 'column', marginTop: 1 },
@@ -228,10 +239,27 @@ export function renderNow(ui, model, act) {
       d.activity ? h(ui.Text, null, 'Doing: ' + d.activity) : null,
       d.result ? h(ui.Text, null, 'Result: ' + d.result) : null)
     : null
+  const none = model.started ? 'No helper is at work right now.' : 'No helper has started yet.'
   return h(ui.Box, { flexDirection: 'column' },
     h(ui.Text, { bold: true }, header),
-    columns.length ? h(ui.Box, { key: 'columns', flexDirection: 'row', flexWrap: 'wrap' }, ...columns) : h(ui.Text, { dimColor: true }, 'No agents have started yet.'),
+    ...(model.rows.length ? model.rows.map(row) : [h(ui.Text, { dimColor: true }, none)]),
     detail)
+}
+
+// A refusal row of the Now tab (panel-lines.js refusalRow): the short amber line, then
+// dimmed `· N files in this run`, then [ show ] when there is more to read; `open`, the
+// whole text under it and [ hide ]. A press asks act({ toggle: id }) (panel.js keeps st.open[id]); the term under it.
+export function renderRefusal(ui, row, open, act) {
+  if (!isObj(row) || !str(row.text)) return null
+  const press = () => { if (typeof act === 'function') act({ toggle: row.id }) }
+  return h(ui.Box, { key: row.id, flexDirection: 'column', marginBottom: 1 },
+    h(ui.Box, { key: 'line', flexDirection: 'row' },
+      h(ui.Text, { key: 'text', color: NEED }, row.text),
+      row.more ? h(ui.Text, { key: 'more', dimColor: true }, ' ' + row.more) : null,
+      row.full ? h(ui.Text, { key: 'gap' }, ' ') : null,
+      row.full ? h(ui.Button, { key: 'show:' + row.id, label: open ? 'hide' : 'show', onPress: press }) : null),
+    open && row.full ? h(ui.Text, { key: 'full', color: NEED }, row.full) : null,
+    h(ui.Text, { key: 'term', dimColor: true }, str(row.term) || 'refused'))
 }
 
 export function renderTimeline(ui, model) {
@@ -253,16 +281,4 @@ export function renderTimeline(ui, model) {
     ...(model.lanes.length ? model.lanes.map(lane) : [h(ui.Text, { dimColor: true }, 'No agents have started yet.')]),
     spark,
     model.left ? h(ui.Text, null, model.left) : null)
-}
-
-export function renderCosts(ui, model) {
-  if (!isObj(model) || !Array.isArray(model.runs)) return empty(ui, 'No cost to show yet.')
-  const nameW = Math.max(4, ...model.runs.map((r) => r.name.length))
-  return h(ui.Box, { flexDirection: 'column' },
-    ...(model.runs.length
-      ? model.runs.map((r, i) => h(ui.Box, { key: 'cost:' + i },
-        h(ui.Text, null, r.name.padEnd(nameW + 1)), h(ui.Text, { color: ACCENT }, '█'.repeat(r.bar)), h(ui.Text, { dimColor: true }, ' ' + r.text)))
-      : [h(ui.Text, { dimColor: true }, 'No VBW run has finished in this session yet.')]),
-    ...model.kinds.map((k) => h(ui.Text, null, k.kind + ' (' + k.runs + (k.runs === 1 ? ' run' : ' runs') + '): ' + k.text)),
-    h(ui.Text, { bold: true }, model.session))
 }

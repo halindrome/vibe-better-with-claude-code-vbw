@@ -5,6 +5,13 @@ on:
   push:
     branches: [main]
 
+# A newer push to a pull request cancels the run it replaces: only the latest
+# commit of a pull request is the gate. A push to main is its own group (its run
+# id), so no run of main is ever cancelled.
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
+
 jobs:
   test:
     name: Tests (${{ matrix.name }}${{ matrix.shard && format(', shard {0} of 4', matrix.shard) || '' }})

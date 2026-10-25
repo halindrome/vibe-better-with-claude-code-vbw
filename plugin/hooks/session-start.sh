@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
-# SessionStart: in a VBW project (the session's project directory holds
-# .vbw/record.json, as for the guard), tell the model where the project stands
-# and what comes next, in one line. Started in a subdirectory of a VBW project:
-# say that the guards are off. Never a resume directive (ledger D289).
+# SessionStart: in a VBW project (the project of the session's folder, found as
+# the guards and the kernel find it, holds .vbw/record.json), tell the model
+# where the project stands and what comes next, in one line. Started in a
+# subfolder of the project: also name the project folder, which VBW's paths are
+# relative to. Never a resume directive (ledger D289).
 #
 # Also, in every session: remove VBW 1's command copies (build plan K15). And in a
 # VBW project, after VBW was updated: offer /vbw:whats-new once (docs/update.md).
@@ -11,7 +12,10 @@
 # reload notice below needs jq too): end quietly, like the per-tool-call hooks.
 command -v jq > /dev/null 2>&1 || exit 0
 
-root=${CLAUDE_PROJECT_DIR:-$PWD}
+dir=${CLAUDE_PROJECT_DIR:-$PWD}
+# shellcheck source-path=SCRIPTDIR source=project.sh
+. "${0%/*}/project.sh"
+vbw_project_of "$dir"
 vbw="${0%/*}/../bin/vbw"
 
 # VBW 1 copied its commands to <claude-dir>/commands/vbw/. User commands take
@@ -73,6 +77,14 @@ input=""
 IFS= read -r -t 1 input || true
 sid=$(printf '%s' "$input" | jq -r '.session_id // "" | if test("^[A-Za-z0-9_-]+$") then . else "" end' 2> /dev/null || true)
 
+# The loop's own session resumed (T156; source resume): its earlier process was gone and nothing drove
+# the loop. An away mark, unless one is there, tells the loop's next step to leave the time since the
+# item's last step out of the item's time (docs/loop.md, The time budget).
+if [ -n "$sid" ] && [ -f "$root/.vbw/runtime/loop.$sid" ] && [ ! -e "$root/.vbw/runtime/loop-away.$sid" ] \
+  && [ "$(printf '%s' "$input" | jq -r '.source // empty' 2> /dev/null || true)" = resume ]; then
+  { : > "$root/.vbw/runtime/loop-away.$sid"; } 2> /dev/null || true
+fi
+
 # A loaded copy puts its own bin/ first on PATH for the session (the env file
 # is read before each Bash tool command; one line, quoted for sh, bash and zsh)
 # and records its folder for the session id (the status line and doctor read
@@ -117,6 +129,7 @@ if [ -f "$root/.vbw/record.json" ]; then
     esac
     state=$(jq -r '"\(.project.name) · \(.milestone.id) \(.milestone.title) (\(.milestone.status))"' "$root/.vbw/runtime/glance.json" 2> /dev/null || true)
     context="${context}VBW project ($state). Next: $next. Continue with /vbw:vibe. The vbw command is on PATH (vbw help); this session's kernel is ${kernel}${kversion:+ (version $kversion)}."
+    [ "${dir%/}" = "${root%/}" ] || context="${context} This session started in ${dir#"${root%/}"/}, a subfolder of the project at $root: VBW's paths (.vbw/, plan files) are relative to $root."
     # After an update (docs/update.md), offer /vbw:whats-new once. No network
     # call: the plugin's version is compared with the highest version this
     # clone's sessions have seen, kept in the clone's git folder (shared by its
@@ -140,11 +153,6 @@ if [ -f "$root/.vbw/record.json" ]; then
   fi
 elif [ -d "$root/.vbw-planning" ]; then
   context="${context}This project has a VBW 1 plan (.vbw-planning/). Tell the user once: VBW 2 leaves it untouched, and /vbw:vibe or /vbw:convert brings it into VBW 2 through a few questions."
-else
-  top=$(git -C "$root" rev-parse --show-toplevel 2> /dev/null || true)
-  if [ -n "$top" ] && [ -f "$top/.vbw/record.json" ]; then
-    context="${context}This session started inside the VBW project at $top, not at its root, so the VBW guards are off. Tell the user to start Claude Code at $top."
-  fi
 fi
 
 # The copies were loaded before this hook ran, so this session still has them:

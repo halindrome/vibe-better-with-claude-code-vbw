@@ -28,8 +28,10 @@
 # the statusLine setting `vbw statusline on` writes, run as Claude Code runs it
 # (sh -c, in a project whose .claude/settings.json turns the plugin off, the status
 # line JSON on stdin), with the bench's plugin in a Claude config folder of the
-# bench's own and a small earlier status line saved first. It is judged against the
-# same limit, and the bench fails if the earlier status line's marker did not show.
+# bench's own and a small earlier status line saved first. VBW's own cost is the
+# whole call minus the same earlier status line run on its own by the same shells
+# (what the user would pay without VBW), judged against VBW_HANDBACK_BUDGET_MS
+# (default 10); the bench fails if the earlier status line's marker did not show.
 # A session that loaded the plugin (R185) is measured on 'status line (loaded copy)':
 # the bench's plugin's SessionStart hook starts a session the way claude --plugin-dir
 # does (the plugin data folder of a vbw@inline copy), a stand-in installed release
@@ -49,6 +51,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 BUDGET_MS="${VBW_HOOK_BUDGET_MS:-20}"
 STATUS_MS="${VBW_STATUSLINE_BUDGET_MS:-60}"
+HANDBACK_MS="${VBW_HANDBACK_BUDGET_MS:-10}"
 RUNS="${VBW_BENCH_RUNS:-100}"
 PLUGIN="${VBW_BENCH_PLUGIN_ROOT:-$ROOT/plugin}"
 GUARD_INPUTS="git npm big interp read answer"
@@ -304,9 +307,9 @@ statusline() {
       {kind: "build", run: "build-1", session: "bench", pid: null, started_at: s(-300), ids: ["P1.1", "P1.2"], doing: "building P1.1, P1.2",
        parts: {done: 1, total: 2}, proof: null, first_end: s(720), end: s(720), late: false}' > "$dir/.vbw/runtime/step.json"
     first=$(CLAUDE_CONFIG_DIR="$cfg" NO_COLOR=1 bash "$PLUGIN/scripts/vbw-statusline.sh" < "$work/statusline.json" 2> /dev/null | head -n 1) || first=""
-    # The end is 12 minutes away, so after 23:48 the line says "until tomorrow HH:MM".
+    # The end is 12 minutes away, so after 23:48 the line says "until around tomorrow HH:MM".
     case "$first" in
-      *"1 of 2 · until "[0-9][0-9]:[0-9][0-9]* | *"1 of 2 · until tomorrow "[0-9][0-9]:[0-9][0-9]*) ;;
+      *"1 of 2 · "*" min, until around "[0-9][0-9]:[0-9][0-9]* | *"1 of 2 · "*" min, until around tomorrow "[0-9][0-9]:[0-9][0-9]*) ;;
       *)
         printf 'status line%s: the step was not shown, so the measure left it out\n' "$label" >&2
         status=1 ;;
@@ -331,7 +334,7 @@ statusline() {
 
 # handback: the setting of `vbw statusline on` in a project that turns VBW off.
 handback() {
-  local proj="$work/off-project" cfg="$work/off-config" cmd total line out
+  local proj="$work/off-project" cfg="$work/off-config" cmd base shell total own line out
   selected 'status line (VBW off)' || return 0
   mkdir -p "$proj/.claude" "$cfg/plugins/cache/vbw-marketplace/vbw"
   git -C "$proj" init -q
@@ -350,9 +353,16 @@ handback() {
     status=1
     return 0
   fi
-  read -r _ total < <(cpu_pair "$work/handback.json" true "$cmd")
-  line=$(printf 'status line (VBW off): %s ms CPU per call; budget %s ms' "$total" "$STATUS_MS")
-  if perl -e 'exit($ARGV[0] <= $ARGV[1] ? 0 : 1)' -- "$total" "$STATUS_MS"; then
+  # The platform's part of the hand-back, which VBW cannot remove: one bash for
+  # the setting, one jq to read the settings and the input, one sh to run the
+  # earlier command text (D356), and the earlier status line itself. VBW's own
+  # cost is the call minus that.
+  printf "sh '%s'\n" "$work/earlier.sh" > "$work/earlier-setting.sh"
+  base="cd '$proj' && bash -c : && jq -n empty && sh -c : && sh '$work/earlier-setting.sh'"
+  read -r shell total < <(cpu_pair "$work/handback.json" "$base" "$cmd")
+  own=$(perl -e 'printf "%.1f", $ARGV[1] - $ARGV[0]' -- "$shell" "$total")
+  line=$(printf 'status line (VBW off): %s ms own CPU per call (a bash, a jq and a sh startup and the earlier status line: %s ms); budget %s ms' "$own" "$shell" "$HANDBACK_MS")
+  if perl -e 'exit($ARGV[0] <= $ARGV[1] ? 0 : 1)' -- "$own" "$HANDBACK_MS"; then
     printf '%s\n' "$line"
   else
     printf '%s: OVER\n' "$line" >&2

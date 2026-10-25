@@ -72,10 +72,10 @@ export const SITES = {
   },
   // The Workflow row of a VBW run as a run card; a `vbw` command's row as what VBW
   // did (its result row below stays the engine's).
-  ToolUse: (st, e) => {
+  ToolUse: (st, e, now) => {
     const p = props(e)
     if (p.isErrored) return null
-    if (p.tool === 'Workflow') return textOr(workflowCard({ input: p.input, run: st.run }))
+    if (p.tool === 'Workflow') return textOr(workflowCard({ input: p.input, run: st.run, now }))
     if (p.tool === 'Edit' || p.tool === 'MultiEdit' || p.tool === 'Write') return p.isExpanded ? null : textOr(recordEditIntent({ tool: p.tool, input: p.input }, st.holder))
     return textOr(p.tool === 'Bash' && isObj(p.input) ? vbwRowIntent({ command: p.input.command }) : null)
   },

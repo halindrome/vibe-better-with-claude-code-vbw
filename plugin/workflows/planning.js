@@ -9,6 +9,30 @@ export const meta = {
   ],
 }
 
+// Kernel refusals reach the user as written (docs/workflows.md, "Refusals reach the user"):
+// every agent schema requires refused, and the result carries them all, each named by
+// the agent that saw it, so the router shows them word for word.
+const REFUSED = {
+  type: 'array',
+  description: 'Each refusal VBW gave you: a vbw command that refused (it exited non-zero with a message starting "vbw:") or a tool call a guard blocked (a reason starting "VBW guard:"), each copied verbatim and whole, through its Next: line; [] when none',
+  items: { type: 'string' },
+}
+// The project folder (args.root: vbw next --json or vbw root). A session started in a subfolder
+// starts its agents there, so each agent is told where the project's paths are.
+const projectRoot = (args && typeof args === 'object' && typeof args.root === 'string' && args.root) || ''
+const where = projectRoot ? `\n\nThe project folder is ${projectRoot}. Every path VBW names (plan and check files, .vbw/...) is relative to it, whatever folder you start in: give file tools and shell redirects absolute paths under it, and run other shell commands from it (cd "${projectRoot}" && ...).` : ''
+const refused = []
+const ask = async (prompt, o) => {
+  const r = await agent(prompt + where, o)
+  for (const text of r && Array.isArray(r.refused) ? r.refused : []) {
+    if (typeof text !== 'string' || !text.trim()) continue
+    refused.push({ by: o.label, text })
+    log(`${o.label} was refused: ${text}`)
+  }
+  return r
+}
+const reply = o => Object.assign(o, { refused })
+
 // args: {requirements, models?: {architect?, lead?}, decided?: true, effort?, next_phase?} (docs/workflows.md).
 // decided: the user has just answered this round's questions; plan now.
 // effort: {<role>: {<step>: level}} from vbw next --json; used only when it is an object, else agents run as before.
@@ -39,8 +63,9 @@ const numbering = nextPhase ? ` Number the new phases from P${nextPhase}, in ord
 
 const CLOSE_RESULT = {
   type: 'object',
-  required: ['ended', 'recorded', 'report'],
+  required: ['ended', 'recorded', 'report', 'refused'],
   properties: {
+    refused: REFUSED,
     ended: { type: 'boolean' },
     recorded: { type: 'boolean' },
     report: { type: 'string' },
@@ -48,8 +73,9 @@ const CLOSE_RESULT = {
 }
 const DECISIONS = {
   type: 'object',
-  required: ['decisions'],
+  required: ['decisions', 'refused'],
   properties: {
+    refused: REFUSED,
     decisions: {
       type: 'array',
       maxItems: 4,
@@ -77,8 +103,9 @@ const DECISIONS = {
 }
 const SCOPE = {
   type: 'object',
-  required: ['phases', 'notes'],
+  required: ['phases', 'notes', 'refused'],
   properties: {
+    refused: REFUSED,
     phases: {
       type: 'array',
       minItems: 1,
@@ -100,8 +127,9 @@ const SCOPE = {
 }
 const PLAN_RESULT = {
   type: 'object',
-  required: ['applied', 'summary', 'blockers'],
+  required: ['applied', 'summary', 'blockers', 'refused'],
   properties: {
+    refused: REFUSED,
     applied: { type: 'boolean' },
     summary: { type: 'string' },
     blockers: { type: 'array', items: { type: 'string' } },
@@ -116,7 +144,7 @@ const closeRun = async (phaseIds = []) => {
   if (!session) return null
   const end = `VBW_SESSION_ID=${session} vbw run end`
   const check = phaseIds.length === 0 ? '' : `First check that each planned phase has plans: ${phaseIds.map(id => `vbw show phase ${id}`).join('; ')}. `
-  const done = await agent(`Close this VBW run (your own instructions, Close a run, allow it). ${check}Then, whatever you found, run ${end}. Answer ended (run end succeeded), recorded (${phaseIds.length === 0 ? 'true' : 'every phase has plans'}) and report (${phaseIds.length === 0 ? 'what it printed' : 'name each phase without plans, else "all recorded; run ended"'}). Change nothing else.${voice}`,
+  const done = await ask(`Close this VBW run (your own instructions, Close a run, allow it). ${check}Then, whatever you found, run ${end}. Answer ended (run end succeeded), recorded (${phaseIds.length === 0 ? 'true' : 'every phase has plans'}) and report (${phaseIds.length === 0 ? 'what it printed' : 'name each phase without plans, else "all recorded; run ended"'}). Change nothing else.${voice}`,
     Object.assign({ agentType: 'vbw:lead', label: 'close run', schema: CLOSE_RESULT }, { model: CLOSE_MODEL }, effortFor('lead', 'close')))
   if (!done) log(`the closing agent stopped: run by hand: ${end}`)
   else {
@@ -131,45 +159,45 @@ const closeRun = async (phaseIds = []) => {
 // with decided: true, so each planning round asks at most once.
 if (!reqs || reqs.length === 0) {
   await closeRun()
-  return { status: 'blocked', summary: 'planning needs the requirements of this milestone (args.requirements, from vbw next --json) and got none', blockers: [], notes: [] }
+  return reply({ status: 'blocked', summary: 'planning needs the requirements of this milestone (args.requirements, from vbw next --json) and got none', blockers: [], notes: [] })
 }
 
 if (!decided) {
   phase('Decide')
-  const found = await agent(`Job 1: find the decisions this VBW project needs from its user before planning. Change nothing.${reqList}${voice}`,
+  const found = await ask(`Job 1: find the decisions this VBW project needs from its user before planning. Change nothing.${reqList}${voice}`,
     opts('architect', 'decide', { schema: DECISIONS, label: 'architect (decide)', phase: 'Decide' }))
   const open = (found && found.decisions) || []
   if (open.length > 0) {
     log(`${open.length} decision(s) for the user before planning`)
     await closeRun()
-    return { status: 'needs_decisions', decisions: open }
+    return reply({ status: 'needs_decisions', decisions: open })
   }
 }
 
 phase('Scope')
-const scope = await agent(`Job 2: scope the current milestone into phases, each with a goal and goal-backward success criteria. Change nothing.${numbering}${reqList}${voice}`,
+const scope = await ask(`Job 2: scope the current milestone into phases, each with a goal and goal-backward success criteria. Change nothing.${numbering}${reqList}${voice}`,
   opts('architect', 'scope', { schema: SCOPE, label: 'architect (scope)', phase: 'Scope' }))
 if (!scope || !scope.phases || scope.phases.length === 0) {
   await closeRun()
-  return { status: 'blocked', summary: 'the Architect could not scope the milestone', blockers: [], notes: [] }
+  return reply({ status: 'blocked', summary: 'the Architect could not scope the milestone', blockers: [], notes: [] })
 }
 
 phase('Plan')
-const plan = await agent(`Plan these phases: research, decompose them into plans with tasks, write the checks, self-review, and apply with vbw apply. The kernel computes a rigor floor per phase from its signals and refuses a lower tier. Use these phases exactly as given, tier included:\n\n${JSON.stringify(scope.phases)}${voice}`,
+const plan = await ask(`Plan these phases: research, decompose them into plans with tasks, write the checks, self-review, and apply with vbw apply. The kernel computes a rigor floor per phase from its signals and refuses a lower tier. Use these phases exactly as given, tier included:\n\n${JSON.stringify(scope.phases)}${voice}`,
   opts('lead', 'plan', { schema: PLAN_RESULT, phase: 'Plan' }))
 if (!plan || !plan.applied) {
   await closeRun()
-  return { status: 'blocked', summary: plan ? plan.summary : 'the Lead did not finish', blockers: plan ? plan.blockers : [], notes: scope.notes }
+  return reply({ status: 'blocked', summary: plan ? plan.summary : 'the Lead did not finish', blockers: plan ? plan.blockers : [], notes: scope.notes })
 }
 
 const closed = await closeRun(scope.phases.map(p => p.id))
 if (closed && !closed.recorded) {
-  return { status: 'blocked', summary: `planning is not complete: ${closed.report}`, blockers: plan.blockers, notes: scope.notes }
+  return reply({ status: 'blocked', summary: `planning is not complete: ${closed.report}`, blockers: plan.blockers, notes: scope.notes })
 }
-return {
+return reply({
   status: 'planned',
   summary: plan.summary,
   blockers: plan.blockers,
   choices: plan.choices || [],
   notes: scope.notes,
-}
+})

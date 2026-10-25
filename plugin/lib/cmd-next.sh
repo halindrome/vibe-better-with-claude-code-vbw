@@ -22,7 +22,7 @@ next_holder() {
   [ -z "$sid" ] || holder_display "$sid"
 }
 
-# qa_state RECORD [DIGESTS]: lib/qa.jq's answer (closure, recheck, standing, problems).
+# qa_state RECORD [DIGESTS]: lib/qa.jq's answer (closure, recheck, standing, interleaved, problems).
 # The one judgment of whether a pass stands; a pass of another fingerprint
 # version is first fingerprinted again at its own commit (qa_settle).
 qa_state() {
@@ -70,7 +70,7 @@ next_answer() {
   # A plan that names a plan or phase that is not there cannot be judged.
   printf '%s' "$qa" | jq -e '.problems | any(.[]; contains("does not exist")) | not' > /dev/null || vbw_die "$(printf '%s' "$qa" | jq -r '.problems | join("; ")')"
   # The profile's effort table; a wrong table stops here, before any answer.
-  effort=$(effort_table "$(printf '%s' "$record" | jq -r '.settings.profile')") || exit 1
+  effort=$(effort_table "$(printf '%s' "$record" | jq -r '.settings.profile')" "$(printf '%s' "$record" | jq -c '.settings.efforts // null')") || exit 1
   profile=$(interview_effective "$record")
   holder=$(next_holder "$record")
   # The last answer (a gate's since) and, while not approved, the last approved contract (a re-approval).
@@ -105,7 +105,15 @@ cmd_next() {
   # The status line shows the last answer (docs/statusline.md).
   printf '%s\n' "$next" > "$VBW_RUNTIME/next.json.$$" && mv "$VBW_RUNTIME/next.json.$$" "$VBW_RUNTIME/next.json"
   if [ "${1:-}" = "--json" ]; then
-    printf '%s\n' "$next"
+    # The project folder (vbw root), for the workflows' args: agents of a session started in a
+    # subfolder work there. Only in the command's answer: the kept one, and what a caller inside
+    # the kernel builds from it (the loop's step note), hold no path, so a copy of the project
+    # never points back at it.
+    if [ "${FUNCNAME[1]:-main}" = main ]; then
+      printf '%s\n' "$next" | jq -c --arg root "$VBW_ROOT" '. + {root: $root}'
+    else
+      printf '%s\n' "$next"
+    fi
   else
     printf '%s\n' "$next" | jq -r '"\(.action)\(if .gate then " (needs you)" else "" end): \(.instruction)"'
   fi

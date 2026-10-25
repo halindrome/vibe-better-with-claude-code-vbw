@@ -5,14 +5,14 @@
 # the command again; QA verdicts and shipping accept that proof. What counts is
 # what the command read, never the kind of file: a documentation or fixture
 # file the test command read makes it run, and a code file it read does too.
-# A changed command, a failed or quick-only earlier result, nothing committed
-# since the proof (D173) and an unfinished proof all make it run. vbw prove
-# --full reuses nothing. Checks and commands run on the committed code, so
-# uncommitted changes make nothing run. Each check and command logs its own
-# name to $RANLOG when it really runs, so a reused result shows as a missing
-# line. Pinned once elsewhere, for every unit alike: nothing committed since
-# the proof (proof-cause-tree.bats), an unfinished proof (proof-causes.bats),
-# --full (proof-quick.bats), uncommitted changes (proof-selective.bats). L1.
+# A changed command, a failed or quick-only earlier result and nothing committed
+# since the proof (D173) all make it run. vbw prove --full reuses nothing.
+# Checks and commands run on the committed code, so uncommitted changes make
+# nothing run. Each check and command logs its own name to $RANLOG when it
+# really runs, so a reused result shows as a missing line. Pinned once
+# elsewhere, for every unit alike: nothing committed since the proof
+# (proof-cause-tree.bats), --full (proof-quick.bats), uncommitted changes
+# (proof-selective.bats). L1.
 
 load helper
 load fixture-helper

@@ -8,9 +8,33 @@ export const meta = {
   ],
 }
 
+// Kernel refusals reach the user as written (docs/workflows.md, "Refusals reach the user"):
+// every agent schema requires refused, and the result carries them all, each named by
+// the agent that saw it, so the router shows them word for word.
+const REFUSED = {
+  type: 'array',
+  description: 'Each refusal VBW gave you: a vbw command that refused (it exited non-zero with a message starting "vbw:") or a tool call a guard blocked (a reason starting "VBW guard:"), each copied verbatim and whole, through its Next: line; [] when none',
+  items: { type: 'string' },
+}
+// The project folder (args.root: vbw next --json or vbw root). A session started in a subfolder
+// starts its agents there, so each agent is told where the project's paths are.
+const projectRoot = (args && typeof args === 'object' && typeof args.root === 'string' && args.root) || ''
+const where = projectRoot ? `\n\nThe project folder is ${projectRoot}. Every path VBW names (plan and check files, .vbw/...) is relative to it, whatever folder you start in: give file tools and shell redirects absolute paths under it, and run other shell commands from it (cd "${projectRoot}" && ...).` : ''
+const refused = []
+const ask = async (prompt, o) => {
+  const r = await agent(prompt + where, o)
+  for (const text of r && Array.isArray(r.refused) ? r.refused : []) {
+    if (typeof text !== 'string' || !text.trim()) continue
+    refused.push({ by: o.label, text })
+    log(`${o.label} was refused: ${text}`)
+  }
+  return r
+}
+const reply = o => Object.assign(o, { refused })
+
 // args: {question: "...", models?: {scout?}}, or the question as a plain string.
 const question = typeof args === 'string' ? args : args && args.question
-if (!question) return { error: 'no question given: pass args.question' }
+if (!question) return reply({ error: 'no question given: pass args.question' })
 const models = (args && typeof args === 'object' && args.models) || {}
 const model = models.scout ? { model: models.scout } : {}
 // The effort the profile gives a role and step (args.effort, from vbw next --json): the option
@@ -34,8 +58,9 @@ const ANGLES = [
 
 const FINDINGS = {
   type: 'object',
-  required: ['findings', 'confidence'],
+  required: ['findings', 'confidence', 'refused'],
   properties: {
+    refused: REFUSED,
     findings: {
       type: 'array',
       items: {
@@ -50,13 +75,13 @@ const FINDINGS = {
 
 const ANSWER = {
   type: 'object',
-  required: ['answer'],
-  properties: { answer: { type: 'string' } },
+  required: ['answer', 'refused'],
+  properties: { refused: REFUSED, answer: { type: 'string' } },
 }
 
 phase('Research')
 const found = await parallel(ANGLES.map(a => () =>
-  agent(`Research this question from one angle.\n\nQuestion: ${question}\n\nYour angle: ${a.ask}${voice}`,
+  ask(`Research this question from one angle.\n\nQuestion: ${question}\n\nYour angle: ${a.ask}${voice}`,
     Object.assign({ agentType: 'vbw:scout', label: `scout ${a.key}`, phase: 'Research', schema: FINDINGS }, model, effortOf('scout', 'survey')))))
 
 const evidence = ANGLES.map((a, i) => ({ angle: a.key, report: found[i] }))
@@ -64,7 +89,7 @@ const missing = evidence.filter(e => !e.report || e.report.findings.length === 0
 if (missing.length > 0) log(`no findings for: ${missing.join(', ')}`)
 
 phase('Answer')
-const answer = await agent(`Weigh these findings into one answer to the question, in plain words: what is true, the options with their trade-offs, your recommendation for this project, the sources (with links), and what could not be confirmed. Prefer primary and recent sources. Change nothing.\n\nQuestion: ${question}\n\nFindings: ${JSON.stringify(evidence)}${voice}`,
+const answer = await ask(`Weigh these findings into one answer to the question, in plain words: what is true, the options with their trade-offs, your recommendation for this project, the sources (with links), and what could not be confirmed. Prefer primary and recent sources. Change nothing.\n\nQuestion: ${question}\n\nFindings: ${JSON.stringify(evidence)}${voice}`,
   Object.assign({ agentType: 'vbw:scout', label: 'scout answer', phase: 'Answer', schema: ANSWER }, model, effortOf('scout', 'merge')))
 
-return { answer: answer ? answer.answer : null, missing }
+return reply({ answer: answer ? answer.answer : null, missing })

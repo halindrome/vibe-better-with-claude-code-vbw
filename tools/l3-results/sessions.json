@@ -1,0 +1,25 @@
+{
+  "scenario": "sessions",
+  "fixture": "greet.sh, one phase and plan approved by the user before the session; rigor standard; chat A is named with /rename and starts the build; chat B, a second Claude Code session on the same folder, asks /vbw:vibe while the run is open",
+  "cost_usd": 0.4654,
+  "evidence_level": "L3",
+  "at": "2026-10-24T16:04:32Z",
+  "passed": true,
+  "facts": {
+    "chat_name": "l3-holder-chat",
+    "registry_name_matches": true,
+    "holder_file_names_chat": true,
+    "other_chat_told_name": true,
+    "statusline_held_by": true,
+    "panel_resume_line": true,
+    "name_not_in_record_or_git": true,
+    "holder_cleared_at_end": true
+  },
+  "not_tested": [
+    "the Sessions tab and Comms as drawn on screen (the tab's rows are the panel's own function run on the real list, the status line is its script run for chat B, not the second chat's window)",
+    "a chat renamed while the run is open (the name is set before the build)",
+    "a chat that was closed while it held the run",
+    "more than two chats on the project",
+    "Claude Code versions other than the one that ran"
+  ]
+}

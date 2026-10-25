@@ -72,12 +72,19 @@ vbw_guard_run() {
 }
 
 # vbw_guard_drop PATH: clean up one registered path now (file or lock dir);
-# when nothing is left, the traps are removed again.
+# when nothing is left, the traps are removed again. A file or an empty lock
+# folder costs one process (the gate's lock and place are given back between
+# one unit and the next, T180); a registered tree is opened up, then removed.
 vbw_guard_drop() {
-  local p keep=()
-  for p in ${VBW_GUARD_DIRS[@]+"${VBW_GUARD_DIRS[@]}"}; do [ "$p" != "$1" ] || { chmod -R u+rwx "$1" 2>/dev/null; rm -rf "$1" 2>/dev/null; } || true; done
-  rm -f "$1" 2>/dev/null || true
-  rmdir "$1" 2>/dev/null || true
+  local p keep=() tree=''
+  for p in ${VBW_GUARD_DIRS[@]+"${VBW_GUARD_DIRS[@]}"}; do [ "$p" != "$1" ] || tree=1; done
+  if [ -n "$tree" ]; then
+    { chmod -R u+rwx "$1"; rm -rf "$1"; } 2>/dev/null || true
+  elif [ -d "$1" ] && [ ! -L "$1" ]; then
+    rmdir "$1" 2>/dev/null || true
+  elif [ -e "$1" ] || [ -L "$1" ]; then
+    rm -f "$1" 2>/dev/null || true
+  fi
   for p in ${VBW_GUARD_FILES[@]+"${VBW_GUARD_FILES[@]}"}; do [ "$p" = "$1" ] || keep+=("$p"); done
   VBW_GUARD_FILES=(${keep[@]+"${keep[@]}"})
   keep=()
@@ -109,7 +116,9 @@ vbw_now() {
 # This clone's own settings: $(git-common-dir)/vbw/settings.json (shared by the
 # clone's worktrees, never in the shared record). Today: check_jobs, how many
 # checks run at the same time (1 to 64; 1 is sequential). Without a setting
-# the machine decides: three quarters of its processor cores.
+# the machine decides: three quarters of its processor cores. And sound, the
+# panel's "needs you" voice: "off" or a folder name under assets/audio/ (the
+# panel reads {"sound": "<value>"} from this file; unset means any voice).
 vbw_clone_settings_file() {
   local common
   common=$(git rev-parse --path-format=absolute --git-common-dir 2> /dev/null) || vbw_die "not a git repository"
@@ -188,8 +197,9 @@ vbw_check_jobs_source() {
   if [ -n "$n" ]; then printf 'set\n'; else printf 'machine default\n'; fi
 }
 
-# vbw_check_jobs_set N|default: atomic, locked change of check_jobs.
-vbw_check_jobs_set() {
+# vbw_clone_setting_set KEY JSON|default: atomic, locked change of one key of
+# this clone's settings file; "default" removes the key, JSON is the new value.
+vbw_clone_setting_set() {
   local file tmp lock
   file=$(vbw_clone_settings_file)
   mkdir -p "${file%/*}"
@@ -198,14 +208,19 @@ vbw_check_jobs_set() {
   [ -f "$file" ] || printf '{}\n' > "$file"
   tmp=$(mktemp "${file%/*}/settings.XXXXXX") || vbw_die "cannot write ${file%/*}"
   vbw_guard_add file "$tmp"
-  if [ "$1" = default ]; then
-    jq 'del(.check_jobs)' "$file" > "$tmp" 2> /dev/null
+  if [ "$2" = default ]; then
+    jq --arg k "$1" 'del(.[$k])' "$file" > "$tmp" 2> /dev/null
   else
-    jq --argjson n "$1" '.check_jobs = $n' "$file" > "$tmp" 2> /dev/null
+    jq --arg k "$1" --argjson n "$2" '.[$k] = $n' "$file" > "$tmp" 2> /dev/null
   fi || vbw_die "this clone's settings file is damaged ($file); delete it and set again"
   mv "$tmp" "$file"
   vbw_guard_drop "$tmp"
   vbw_guard_drop "$lock"
+}
+
+# vbw_check_jobs_set N|default: atomic, locked change of check_jobs.
+vbw_check_jobs_set() {
+  vbw_clone_setting_set check_jobs "$1"
 }
 
 # Absolute path of the enclosing git repository, or die.
@@ -308,16 +323,17 @@ vbw_mtime_newest() {
 # vbw_stamp_newer DIR FILE...: gives each FILE (a path under DIR) a modification
 # time one second later than the newest file under DIR, build output included. The
 # time comes from the files' times, never from the clock, so it holds when a file is
-# stamped ahead of now. A missing FILE is left missing.
+# stamped ahead of now. A missing FILE is left missing. The stamp is written and read
+# in UTC: a local one in the hour a clock change repeats names two moments.
 vbw_stamp_newer() {
   local dir="$1" newest t f stamp
   shift
   newest=$(vbw_mtime_newest "$dir")
   case "$newest" in "" | *[!0-9]*) newest=0 ;; esac
   t=$((newest + 1))
-  stamp=$(date -d "@$t" +%Y%m%d%H%M.%S 2> /dev/null) || stamp=$(date -r "$t" +%Y%m%d%H%M.%S 2> /dev/null) || return 0
+  stamp=$(TZ=UTC0 date -d "@$t" +%Y%m%d%H%M.%S 2> /dev/null) || stamp=$(TZ=UTC0 date -r "$t" +%Y%m%d%H%M.%S 2> /dev/null) || return 0
   for f in "$@"; do
-    if [ -e "$dir/$f" ] || [ -L "$dir/$f" ]; then touch -h -t "$stamp" "$dir/$f" 2> /dev/null || touch -t "$stamp" "$dir/$f" 2> /dev/null || true; fi
+    if [ -e "$dir/$f" ] || [ -L "$dir/$f" ]; then TZ=UTC0 touch -h -t "$stamp" "$dir/$f" 2> /dev/null || TZ=UTC0 touch -t "$stamp" "$dir/$f" 2> /dev/null || true; fi
   done
 }
 

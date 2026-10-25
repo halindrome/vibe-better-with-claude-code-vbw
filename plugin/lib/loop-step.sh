@@ -84,7 +84,7 @@ loop_end() {
   record_update '.loop.ended = {at: $at, reason: $r}' --arg at "$(vbw_now)" --arg r "$1"
   # The Stop hook's mark goes with the loop (T150): the hook is silent again.
   s=$(jq -r '.loop.session // empty' "$VBW_RECORD")
-  [[ ! "$s" =~ ^[A-Za-z0-9_-]+$ ]] || rm -f "$VBW_RUNTIME/loop.$s"
+  [[ ! "$s" =~ ^[A-Za-z0-9_-]+$ ]] || rm -f "$VBW_RUNTIME/loop.$s" "$VBW_RUNTIME/loop-away.$s"
   loop_commit_report "chore(vbw): loop ended"
   loop_ended_answer "$(record_read)"
 }
@@ -137,7 +137,8 @@ loop_kernel() {
 # size: small 2h, medium 4h, large 8h; an item with no size is medium. Twice the median: an item taking
 # more than twice the usual time of its size is grinding (T74 ran 16 hours). Three: one or two times are
 # not a usual time. The defaults are about twice this project's own loop items when T156 was built
-# (small 14-99 minutes, medium 69-287). The time is wall-clock: a spend count can over-count (T140).
+# (small 14-99 minutes, medium 69-287). The time is wall-clock while the loop works on the item (took,
+# less its away time, loop_item_seen): a spend count can over-count (T140).
 loop_item_budget() {
   jq -c --arg i "$1" "$LOOP_TIME_JQ"'def norm: [splits("\\s+") | select(length > 0)] | join(" ");
     . as $r | ([.todos[] | select(.id == $i)][0].size // "medium") as $z
@@ -151,15 +152,55 @@ loop_item_budget() {
       else {seconds: {small: 7200, medium: 14400, large: 28800}[$z], basis: "the default for a \($z) item, fewer than 3 shipped \($z) items timed"} end' "$VBW_RECORD"
 }
 
+# loop_item_rebudget ITEM NEXT: once, when the item has been planned and the step history times every
+# piece of its road (the road with seconds, and rounds once the work is planned), the item's budget
+# becomes twice the time so far plus that road, at least 30 minutes: the label is a guess made before
+# planning, the road is the kernel's own estimate of this plan from this project's history. Marked
+# planned, so it is set once; the road shrinks as the work is done, and a budget that followed it would
+# never be spent. Without a timed road the budget the item was opened with stays. The road is computed
+# here (a caller inside the kernel gets none in vbw next's answer, cmd_next).
+loop_item_rebudget() {
+  local road b
+  jq -e --arg i "$1" '[.loop.items[] | select(.id == $i)][0] | . != null and .opened_at != null and (.budget.planned | not)' "$VBW_RECORD" > /dev/null || return 0
+  road=$(step_road "$(record_read)" "$2" "") || return 0
+  [ -n "$road" ] || return 0
+  b=$(jq -nc --slurpfile road <(printf '%s' "$road") --slurpfile r "$VBW_RECORD" --arg i "$1" "$LOOP_TIME_JQ"'
+    ([$r[0].loop.items[] | select(.id == $i)][0]) as $it
+    | $road[0] as $road
+    | select($road != null and ($road.seconds | type) == "number" and $road.seconds > 0 and (($road.rounds // {}) | length) > 0)
+    | ($it | took($r[0].loop)) as $el
+    | {seconds: ([1800, (2 * ($el + $road.seconds) | floor)] | max), planned: true,
+       basis: "twice the time so far (\($el | hm)) and the road ahead (\($road.seconds | hm)), from this project'"'"'s step history"}') || return 0
+  [ -z "$b" ] || record_update '(.loop.items[] | select(.id == $i)).budget = $b' --arg i "$1" --argjson b "$b"
+}
+
 # loop_over_budget ITEM STEP: the reason to stop (printed, status 0) when the item has run past its time
 # budget, or status 1. The reason says where the item stands: the step, its time, its budget, its spend.
 loop_over_budget() {
   local spend
-  jq -e --arg i "$1" '[.loop.items[] | select(.id == $i)][0]
-    | .budget != null and .opened_at != null and now - (.opened_at | fromdateiso8601) > .budget.seconds' "$VBW_RECORD" > /dev/null || return 1
+  jq -e --arg i "$1" "$LOOP_TIME_JQ"'.loop as $l | [$l.items[] | select(.id == $i)][0]
+    | .budget != null and .opened_at != null and took($l) > .budget.seconds' "$VBW_RECORD" > /dev/null || return 1
   spend=$(loop_spend "$VBW_RECORD" "$1")
   jq -r --arg i "$1" --arg a "$2" --argjson s "$spend" "$LOOP_USD_JQ$LOOP_TIME_JQ"'.loop as $l | [$l.items[] | select(.id == $i)][0]
     | "time budget spent: item \($i) stopped before step \($a) after \(took($l) | hm) of a \(.budget.seconds | hm) budget (\(.budget.basis)), \(if $s == null then "spend unknown" else "\($s.usd | usd) spent" end); its work is kept in \(.milestone)"' "$VBW_RECORD"
+}
+
+# loop_item_seen ITEM: the loop steps the item in progress now, so its last step (stepped_at) is now.
+# The loop's session's away mark says the loop was not working on it since then: its session was
+# resumed after its process was gone (hooks/session-start.sh: an empty mark, since the item's last
+# step) or a turn ended on an API error (hooks/stop.sh: the time it failed). That time is added to the
+# item's away seconds, left out of its time (docs/loop.md, The time budget), and the mark goes.
+loop_item_seen() {
+  local s from=""
+  s=$(jq -r '.loop.session // empty' "$VBW_RECORD")
+  if [[ "$s" =~ ^[A-Za-z0-9_-]+$ ]] && [ -f "$VBW_RUNTIME/loop-away.$s" ]; then
+    IFS= read -r from < "$VBW_RUNTIME/loop-away.$s" || true
+    record_update "$LOOP_TIME_JQ"'(.loop.items[] | select(.id == $i)) |= resumed($f | if test("^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$") then fromdateiso8601 else null end)' \
+      --arg i "$1" --arg f "$from"
+    rm -f "$VBW_RUNTIME/loop-away.$s"
+  else
+    record_update '(.loop.items[] | select(.id == $i)).stepped_at = $at' --arg i "$1" --arg at "$(vbw_now)"
+  fi
 }
 
 # loop_open_item RECORD ITEM: opens the item's milestone (started when the current one is shipped or
@@ -191,7 +232,7 @@ loop_open_item() {
   base=$(loop_figures_now)
   budget=$(loop_item_budget "$id")
   record_update '(.loop.items[] | select(.id == $i)) |= (.status = "in_progress" | .milestone = $m | .head = $h | .baseline = $b
-      | .opened_at = $at | .budget = $bud | if $q == "" then . else .req = $q end)
+      | .opened_at = $at | .stepped_at = $at | .budget = $bud | if $q == "" then . else .req = $q end)
     | (.todos[] | select(.id == $i)).status = "in_progress"' --arg i "$id" --arg m "$m" --arg h "$head" --argjson b "$base" --arg q "$q" \
     --arg at "$(vbw_now)" --argjson bud "$budget"
   loop_commit "$id" open
@@ -200,7 +241,7 @@ loop_open_item() {
 # loop_ship_item ITEM: vbw ship, then the item shipped with its own cost and its backlog entry done.
 loop_ship_item() {
   local id=$1 cost why
-  if ! why=$(loop_kernel cmd_ship); then loop_end "the ship was refused: $why (item $id, step ship)"; return 1; fi
+  if ! why=$(loop_kernel cmd_ship); then loop_end "the ship was refused: $why (item $id, step ship). Next: run /vbw:vibe to take $id to its ship, then /vbw:loop for the items left"; return 1; fi
   cost=$(loop_spend "$VBW_RECORD" "$id" | jq -c 'if . == null then null else del(.sessions) end')
   record_update '(.loop.items[] | select(.id == $i)) |= (.status = "shipped" | .cost = $c | .at = $at)
     | (.todos[] | select(.id == $i)).status = "done"' --arg i "$id" --argjson c "$cost" --arg at "$(vbw_now)"
@@ -253,6 +294,8 @@ loop_step() {
   # shellcheck source=cmd-plan.sh
   . "$VBW_LIB/cmd-plan.sh"
   local rec next cur waiting action why n
+  cur=$(jq -r '[.loop.items[] | select(.status == "in_progress")][0].id // empty' "$VBW_RECORD")
+  [ -z "$cur" ] || loop_item_seen "$cur"
   while :; do
     rec=$(record_read)
     if printf '%s' "$rec" | jq -e --arg s "$(vbw_session)" '.lease != null and (.lease.session == null or .lease.session == $s)' > /dev/null; then
@@ -297,6 +340,7 @@ loop_step() {
     fi
     # The item's time budget (T156): past it, the loop ends before this step (after a delegated approval) and the work stays. Accept
     # (a skip) and ship, the kernel's own last steps of an item, are never stopped.
+    loop_item_rebudget "$cur" "$next"
     case "$action" in accept | ship) ;; *) if why=$(loop_over_budget "$cur" "$action"); then loop_end "$why"; return 0; fi ;; esac
     case "$action" in
       accept)

@@ -10,7 +10,9 @@
 #            plan: {reqs}; qa: [{id, tier}]; proof: {units: [name]}
 # Output: one integer (seconds), or nothing when the history gives no basis.
 # Every list is the latest 10 by the history's order; an even count takes the
-# mean of the two middle values; fewer than 3 samples never make a basis.
+# mean of the two middle values; fewer than 3 samples never make a basis. A step
+# that took more than 8 times the median seconds per part of its kind (idle time:
+# a run left open overnight) is left out first, while 3 steps remain (T173).
 #
 # A build wave waits for its slowest plan (T174): each plan is timed at the
 # quantile 0.75^(1/n) of its unit's seconds (n: the wave's plans), the time 3
@@ -18,6 +20,13 @@
 # lone plan, 0.87 for two, 0.91 for three. A plan's unit of work is a task or a
 # break (a rule it owes the mutation check), so its work is its tasks plus its
 # breaks; the history from before breaks were recorded counts per task.
+#
+# A proof takes its units' costs times the learned ratio. The latest 10 proofs
+# that recorded units give the ratio, their total wall time over their total
+# unit time (one proof of two units cannot skew it), and each unit's fastest
+# seconds among them; the store's last run joins that minimum, so a busy day's
+# slow run never sets the promise (a proof that runs late moves its end, D424).
+# A unit never run counts as the median of the known costs.
 
 def median: sort | length as $n
   | if $n == 0 then empty
@@ -31,11 +40,23 @@ def quantile($q): sort | length as $n
 def latest: .[-10:];
 def num: type == "number" and . >= 0;
 def basis: if length >= 3 then median else empty end;
+# A step's size for the idle test (T173): its parts, else its requirements or phases, else 1.
+def span: if (.parts | type) == "number" and .parts > 0 then .parts
+  elif (.reqs | type) == "number" and .reqs > 0 then .reqs
+  elif (.phases | type) == "array" and (.phases | length) > 0 then (.phases | length)
+  else 1 end;
+# Idle time is not work (T173): the history keeps only when a step started and ended, so a
+# run left open overnight or waiting is recorded at its whole length. A step that took more
+# than 8 times the median seconds per unit of size of its kind is left out, when at least
+# 3 steps remain; the median itself needs no such care.
+def awake: if length < 3 then .
+  else (map(.seconds / span) | median) as $m
+    | if $m > 0 then (map(select(.seconds / span <= 8 * $m)) as $k | if ($k | length) >= 3 then $k else . end) else . end end;
 
 $size[0] as $size
 | ($h[0] | if type == "object" and (.steps | type) == "array" then [.steps[] | select(type == "object")] else [] end) as $steps
 | (if $kind == "build" and ($size | type) == "array" and ($size | length) > 0 then pow(0.75; 1 / ($size | length)) else 0.75 end) as $q
-| def of($k): [$steps[] | select(.kind == $k and (.seconds | num))];
+| def of($k): [$steps[] | select(.kind == $k and (.seconds | num))] | awake;
   def withparts: map(select((.parts | type) == "number" and .parts > 0));
 
   # A plan unit: one finished plan of a build, with its tier, tasks, breaks and seconds.
@@ -90,15 +111,19 @@ $size[0] as $size
       else of("qa") | latest | map(.seconds) | basis end;
 
   def proof:
-    ( [ of("proof")[] | select((.units | type) == "array" and (.units | length) > 0) ] | latest
-      | map(([.units[] | select(type == "object" and (.seconds | num)) | .seconds] | add) as $sum
-            | if $sum != null and $sum > 0 then .seconds / $sum else empty end) ) as $ratios
-    | ( if ($ratios | length) >= 3 then
+    ( [ of("proof")[] | select((.units | type) == "array" and (.units | length) > 0)
+        | {seconds, units: [.units[] | select(type == "object" and (.name | type) == "string" and (.seconds | num))]}
+        | select(([.units[].seconds] | add // 0) > 0) ] | latest ) as $hist
+    | ( if ($hist | length) >= 3 then
           ($runs[0] | if type == "object" and (.runs | type) == "object" then .runs else {} end) as $store
-          | [ $size.units[]? | $store[.] | select(type == "object" and (.seconds | num)) | .seconds ] as $known
+          | (($hist | map(.seconds) | add) / ($hist | map([.units[].seconds] | add) | add)) as $ratio
+          | (reduce ($hist[].units[]) as $u ({}; .[$u.name] = ([.[$u.name], $u.seconds] | map(select(. != null)) | min))) as $fast
+          | def cost: . as $n | [$fast[$n], ($store[$n] | if type == "object" and (.seconds | num) then .seconds else null end)]
+              | map(select(. != null)) | if length > 0 then min else null end;
+          [ $size.units[]? | cost | select(. != null) ] as $known
           | if ($known | length) == 0 then empty
             else ($known | median) as $m
-              | ([ $size.units[]? | ($store[.] | if type == "object" and (.seconds | num) then .seconds else $m end) ] | add) * ($ratios | median)
+              | ([ $size.units[]? | cost // $m ] | add) * $ratio
             end
         else empty end )
       // ( of("proof") | withparts | latest

@@ -7,6 +7,30 @@ export const meta = {
   ],
 }
 
+// Kernel refusals reach the user as written (docs/workflows.md, "Refusals reach the user"):
+// every agent schema requires refused, and the result carries them all, each named by
+// the agent that saw it, so the router shows them word for word.
+const REFUSED = {
+  type: 'array',
+  description: 'Each refusal VBW gave you: a vbw command that refused (it exited non-zero with a message starting "vbw:") or a tool call a guard blocked (a reason starting "VBW guard:"), each copied verbatim and whole, through its Next: line; [] when none',
+  items: { type: 'string' },
+}
+// The project folder (args.root: vbw next --json or vbw root). A session started in a subfolder
+// starts its agents there, so each agent is told where the project's paths are.
+const projectRoot = (args && typeof args === 'object' && typeof args.root === 'string' && args.root) || ''
+const where = projectRoot ? `\n\nThe project folder is ${projectRoot}. Every path VBW names (plan and check files, .vbw/...) is relative to it, whatever folder you start in: give file tools and shell redirects absolute paths under it, and run other shell commands from it (cd "${projectRoot}" && ...).` : ''
+const refused = []
+const ask = async (prompt, o) => {
+  const r = await agent(prompt + where, o)
+  for (const text of r && Array.isArray(r.refused) ? r.refused : []) {
+    if (typeof text !== 'string' || !text.trim()) continue
+    refused.push({ by: o.label, text })
+    log(`${o.label} was refused: ${text}`)
+  }
+  return r
+}
+const reply = o => Object.assign(o, { refused })
+
 // args: {summary: vbw triage --json, declined: [text], models?: {architect?}, effort?, profile?}.
 // Returns {recommendation: {top, runners}}, {recommendation: {empty: true}} or {error}.
 const a = (args && typeof args === 'object') ? args : {}
@@ -20,13 +44,14 @@ const effort = table.architect && typeof table.architect === 'object' ? table.ar
 const profile = (args && args.profile) || {}
 const voice = `\n\nThe user's level: ${profile.level || 'small scripts or no-code'}. Explanation depth: ${profile.depth || 'plain with technical terms explained'}. Involvement: ${profile.involvement || 'options with a recommendation'}. Write whatever the user will read at that level and depth.`
 
-if (open.length === 0 && todos.length === 0) return { recommendation: { empty: true } }
+if (open.length === 0 && todos.length === 0) return reply({ recommendation: { empty: true } })
 // source is a backlog id (T4) or requirement id (R7). The pattern also refuses an empty string, which would make `vbw recommend` refuse the whole recommendation. A pick without a source is still passed on without one.
 
 const SCHEMA = {
   type: 'object',
-  required: ['top', 'runners'],
+  required: ['top', 'runners', 'refused'],
   properties: {
+    refused: REFUSED,
     top: {
       type: 'object',
       required: ['text', 'reason', 'size'],
@@ -55,11 +80,11 @@ const opts = Object.assign({ agentType: 'vbw:architect', label: 'architect recom
   models.architect ? { model: models.architect } : {}, effort ? { effort } : {})
 let got = null
 try {
-  got = await agent(`Job: what's next. Recommend what to do next from the record only: one top pick with a one-sentence reason and a size (small, medium or large), and up to two runners-up with sizes. Read \`vbw show decisions\` and follow every decision. Never pick work of a shipped milestone and never pick a declined suggestion. Name each pick's source (the T or R id below) when it has one. Invent nothing.\n\nOpen requirements:\n${reqLines}\n\nBacklog (sort and size):\n${todoLines}\n\nDeclined suggestions:\n${declinedLines}${voice}`, opts)
+  got = await ask(`Job: what's next. Recommend what to do next from the record only: one top pick with a one-sentence reason and a size (small, medium or large), and up to two runners-up with sizes. Read \`vbw show decisions\` and follow every decision. Never pick work of a shipped milestone and never pick a declined suggestion. Name each pick's source (the T or R id below) when it has one. Invent nothing.\n\nOpen requirements:\n${reqLines}\n\nBacklog (sort and size):\n${todoLines}\n\nDeclined suggestions:\n${declinedLines}${voice}`, opts)
 } catch (e) {
-  return { error: `the Architect could not recommend: ${e && e.message ? e.message : e}` }
+  return reply({ error: `the Architect could not recommend: ${e && e.message ? e.message : e}` })
 }
-if (!got || !got.top) return { error: 'the Architect returned no recommendation' }
+if (!got || !got.top) return reply({ error: 'the Architect returned no recommendation' })
 // The kernel refuses a pick with a field it does not know, so keep only the declared fields.
 const keep = (pick, fields) => {
   const o = {}
@@ -67,4 +92,4 @@ const keep = (pick, fields) => {
   return o
 }
 const runners = Array.isArray(got.runners) ? got.runners.slice(0, 2).map(r => keep(r, ['text', 'size', 'source'])) : []
-return { recommendation: { top: keep(got.top, ['text', 'reason', 'size', 'source']), runners } }
+return reply({ recommendation: { top: keep(got.top, ['text', 'reason', 'size', 'source']), runners } })

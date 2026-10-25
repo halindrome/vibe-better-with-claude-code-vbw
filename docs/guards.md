@@ -12,6 +12,13 @@ example `Next: leave src/x.js as it is; report that the plan needs it, so the
 plan can be replanned with vbw apply`. The list of refusal kinds and their next
 steps is in docs/workflows.md ("Every refusal and its next step").
 
+Every block reaches you as well as Claude. The whole reason goes to Claude;
+beside it you see one line, the reason's first line (what was refused and
+why), for example `VBW guard blocked this call: .vbw/record.json is written
+only by vbw (vbw help lists the commands)`. The `Next:` step is addressed to
+Claude and stays in the reason. You see the line even when Claude finds
+another way a moment later, so a refusal never passes unseen.
+
 **Everywhere** (any project, VBW or not):
 
 | Call | Why |
@@ -120,8 +127,15 @@ It reports what is wrong (for example `jq` missing) with the fix for each item
 (docs/diagnostics.md). Fix it, then ask Claude to retry. If you cannot fix it
 and want the run gone, `vbw run end` closes it (docs/workflows.md).
 
-**In VBW projects** (the session's project directory, `$CLAUDE_PROJECT_DIR`,
-holds `.vbw/record.json`; a corrupt record still counts):
+**In VBW projects** (the session's project holds `.vbw/record.json`; a corrupt
+record still counts). Every part of VBW finds the project the way the kernel
+does: the top folder of the git repository, which is the nearest folder at or
+above the session's folder (`$CLAUDE_PROJECT_DIR`) that holds `.git`, never a
+folder above it. A session started in a subfolder of a VBW project is guarded
+exactly as one started at its top folder; a git repository inside the project
+(a submodule, a nested clone) is a project of its own. A path in a tool call
+that is not absolute is read from the session's working folder, as the tool
+reads it, and "outside the project" means outside that top folder:
 
 | Call | Why |
 |---|---|
@@ -179,10 +193,10 @@ each one to the exact JSON.
 
 | Answer | Sent by | What Claude Code does |
 |---|---|---|
-| `deny`, reason starting `VBW guard:` | the Bash and file guards | Blocks the tool call and shows Claude the reason, so it can choose another way |
+| `deny`, reason starting `VBW guard:`, with a message for you (`systemMessage`) beside it | the Bash and file guards | Blocks the tool call and shows Claude the reason, so it can choose another way; shows you the reason's first line, starting `VBW guard blocked this call:` |
 | `ask`, with a rewritten question (`updatedInput`) | the approval-menu hook on `AskUserQuestion` | Shows the rewritten question to you; you answer it |
 | Added context (`additionalContext`) | SessionStart; the approval-answer hook | Adds the text for Claude to read |
-| A message for the user (`systemMessage`) | SessionStart (project made by a newer VBW, or VBW 2 just removed old VBW 1 command copies and you must reload); the approval-answer hook | Shows you the message |
+| A message for the user (`systemMessage`) | SessionStart (project made by a newer VBW, or VBW 2 just removed old VBW 1 command copies and you must reload); the approval-answer hook; the Bash and file guards, beside every `deny` | Shows you the message |
 | No answer (no output, exit 0) | every hook, when it has nothing to say | Goes on as it normally would: your permission settings and prompts decide |
 
 ### No hook ever answers allow
@@ -250,9 +264,11 @@ A command that contains none of the words any rule needs (`rm`, `git`, `vbw`,
   pins both.
 - **Budget:** VBW's own cost (the hook's CPU time minus that of the platform's
   `sh -c jq` startup) is at most 20 ms per call, judged for each guard alone,
-  measured by `tools/bench-hooks.sh` before every test run, including on a
-  20 KB heredoc command. CPU time, so waiting for a busy machine never counts.
-  On an idle Mac: file tools about 2 ms, Bash about 5 to 7 ms. A real slowdown
+  measured by `tools/bench-hooks.sh` in the release run (CI runs it on every
+  pull request), including on a 20 KB heredoc command. CPU time, so waiting for
+  a busy machine never counts. Measured in October 2026 (an M1 Max Mac and
+  GitHub's macOS runners): the file guard about 4 to 5 ms, the Bash guard about
+  10 to 13 ms, the answer hook about 1 ms. A real slowdown
   (an added subprocess costs several ms) still shows. When the machine is too
   busy to measure (starting the shell and jq alone takes longer than 20 ms),
   the benchmark reports that the machine is busy, judges nothing and does not
@@ -263,10 +279,13 @@ A command that contains none of the words any rule needs (`rm`, `git`, `vbw`,
 In a VBW project, one line of context: the project state and what comes next.
 The hook runs `vbw next` once, never `vbw status`, and reads the project line
 from the glance that command refreshes.
-Started in a subdirectory of a VBW project, it says the guards are off and
-where to start instead. It never injects resume directives (ledger D289). It
+Started in a subfolder of a VBW project, the line also names the project
+folder, which VBW's paths (`.vbw/`, plan files) are relative to. It never
+injects resume directives (ledger D289). It
 writes only for a copy loaded with `claude --plugin-dir`: a PATH line in the
 file Claude Code provides for it (`CLAUDE_ENV_FILE`), and the session record
-below.
+below; and, in the project, when the session that runs a loop is resumed, the
+loop's away mark (`.vbw/runtime/loop-away.SESSION`, docs/loop.md), so the time
+its session was gone is not counted against the item's time budget.
 
 VBW's one read outside the project is Claude Code's list of chats in `<claude-config-dir>/sessions/`, read for the name of the chat that holds a run and never written (docs/workflows.md). VBW itself writes nothing outside the project except three things: the slot store (`<claude-config-dir>/vbw/slots.json`, the computer-wide limit in docs/proof.md); the session record of a `--plugin-dir` session (`<claude-config-dir>/vbw/sessions/<session id>`, one line naming the loaded plugin folder, read by the status line and `vbw doctor`; records older than 7 days are removed, and an installed copy removes its own session's record; D364); and the user's `settings.json`.

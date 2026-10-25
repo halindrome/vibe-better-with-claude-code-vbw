@@ -10,6 +10,7 @@ effort: low
 ```!
 "${CLAUDE_PLUGIN_ROOT}/bin/vbw" triage --json 2>&1 || true
 "${CLAUDE_PLUGIN_ROOT}/bin/vbw" config models 2>&1 || true
+"${CLAUDE_PLUGIN_ROOT}/bin/vbw" root 2>&1 || true
 "${CLAUDE_PLUGIN_ROOT}/bin/vbw" config effort 2>&1 || true
 "${CLAUDE_PLUGIN_ROOT}/bin/vbw" suggest list 2>&1 || true
 "${CLAUDE_PLUGIN_ROOT}/bin/vbw" interview 2>&1 || true
@@ -20,7 +21,7 @@ Above: the open requirements and backlog (`summary`), the models, the effort tab
 ## Steps
 
 1. The summary shows a run is open (`run` is not null): say so in one line and do not start. Stop here.
-2. Otherwise run Workflow `vbw:recommending` with args `{"summary": <the triage JSON>, "declined": <declined suggestion texts>, "models": ..., "effort": ..., "profile": <the interview answers>}`. It starts no run.
+2. Otherwise run Workflow `vbw:recommending` with args `{"summary": <the triage JSON>, "declined": <declined suggestion texts>, "models": ..., "effort": ..., "profile": <the interview answers>, "root": <the folder vbw root printed>}`. It starts no run.
 3. Pipe its `recommendation` (JSON) to `vbw recommend`.
 4. Show the what's-next part of `vbw status`.
 

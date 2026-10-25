@@ -87,6 +87,17 @@ teardown() { vbw_teardown; }
   [[ "$output" == *"record is corrupt"* ]]
 }
 
+@test "a record that parses but has a field of the wrong type is named so, never as unparseable JSON" {
+  vbw_git_project
+  vbw_run init
+  jq '.milestone = 5' .vbw/record.json > "$TEST_ROOT/typed.json" && cp "$TEST_ROOT/typed.json" .vbw/record.json
+  vbw_run status
+  [ "$status" -eq 3 ]
+  [[ "$output" == *"record is corrupt"* ]] || { echo "$output"; false; }
+  [[ "$output" != *"unparseable JSON"* ]] || { echo "$output"; false; }
+  [[ "$output" == *"wrong type"* ]] || { echo "$output"; false; }
+}
+
 @test "commands outside a VBW project say so" {
   vbw_git_project
   vbw_run status
@@ -133,7 +144,15 @@ teardown() { vbw_teardown; }
   cd src/deep
   vbw_run todo add "from below"
   [ "$status" -eq 0 ]
+  # The project folder, for the skills and workflows of a session started down here.
+  local top
+  top=$(cd "$PROJECT" && pwd -P)
+  vbw_run root
+  [ "$status" -eq 0 ] && [ "$output" = "$top" ] || { echo "$output"; false; }
+  [ "$("$VBW" next --json < /dev/null | jq -r .root)" = "$top" ]
+  # The answer kept for the status line holds no path: a copy of the project never points back.
   cd "$PROJECT"
+  jq -e 'has("root") | not' .vbw/runtime/next.json
   [ "$(jq -r '.todos[0].text' .vbw/record.json)" = "from below" ]
 }
 

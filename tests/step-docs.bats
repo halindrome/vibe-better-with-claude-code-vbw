@@ -55,7 +55,7 @@ section() { sed -n '/^## Time left/,/^## /p' "$PANEL" | sed '$d'; }
 }
 
 @test "R190: the status line docs show the step with its clock time, the proof count and the late cases" {
-  grep -qE 'until [0-9]{2}:[0-9]{2}' "$STATUSLINE" || { echo "docs/statusline.md has no 'until HH:MM'"; false; }
+  grep -qE 'until around [0-9]{2}:[0-9]{2}' "$STATUSLINE" || { echo "docs/statusline.md has no 'until around HH:MM'"; false; }
   grep -qE 'proving [0-9]+ of [0-9]+ checks' "$STATUSLINE" || { echo "no background proof example"; false; }
   grep -qi 'later than usual' "$STATUSLINE" || { echo "no 'later than usual'"; false; }
   grep -qE '[0-9]+ min late' "$STATUSLINE" || { echo "no 'N min late'"; false; }
@@ -68,4 +68,14 @@ section() { sed -n '/^## Time left/,/^## /p' "$PANEL" | sed '$d'; }
 @test "R190: docs/next.md describes the step vbw next --json carries" {
   grep -qF 'step.say' "$NEXT" || grep -qF '"say"' "$NEXT" || { echo "docs/next.md does not describe step.say"; false; }
   grep -qiE 'no end time yet' "$NEXT" || { echo "docs/next.md does not show the no-basis sentence"; false; }
+  # A proof's step carries the reason most units run again (R202), and its sentence ends with it.
+  grep -qF '"reason": "plugin/lib/core.sh changed"' "$NEXT" || { echo "docs/next.md does not show step.why"; false; }
+  grep -qF '; top reason: ' "$NEXT" || { echo "docs/next.md does not show the sentence's top reason"; false; }
+}
+
+@test "T173: docs/panel.md says a step far longer than its kind and size is left out of the estimates, and what that cannot catch" {
+  local doc="$REPO_ROOT/docs/panel.md"
+  tr '\n' ' ' < "$doc" | grep -Eq 'Idle time is not work.*more than 8 times the median seconds per part' || { echo "docs/panel.md does not state the idle rule"; false; }
+  tr '\n' ' ' < "$doc" | grep -Eq 'A wait shorter than that +still counts' || { echo "docs/panel.md does not state what the rule cannot catch"; false; }
+  ! grep -qF 'Time estimates absorb idle time' "$REPO_ROOT/docs/known-issues.md" || { echo "the fixed entry is still listed"; false; }
 }

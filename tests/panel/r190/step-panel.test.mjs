@@ -163,8 +163,9 @@ test('the time keeps the estimate colour; a sentence with no time stays plain', 
   })
   const on = { act: () => {}, sound: () => {} }
   const colour = (v, id) => {
-    const row = v.rows.find((r) => r.id === id)
-    assert.ok(row, 'no ' + id + ' row')
+    // The step's end time is the box's second step line; the rest are rows.
+    const row = id === 'step-end' ? { text: v.box.step && v.box.step.end } : v.rows.find((r) => r.id === id)
+    assert.ok(row && row.text, 'no ' + id + ' sentence')
     let hit
     walk(pane.renderPane(UI, input(v), on), (n) => {
       if (!hit && n.type === 'Text' && n.children.filter((c) => typeof c === 'string').join('') === row.text) hit = n
@@ -173,11 +174,11 @@ test('the time keeps the estimate colour; a sentence with no time stays plain', 
     return [row.text, hit.props.color]
   }
   const timed = view.panelView({ record: busy, next: next({ action: 'run' }), now: NOW, cost: 1.42, steps: [], step: note() })
-  const [text, c] = colour(timed, 'estimate-step')
+  const [text, c] = colour(timed, 'step-end')
   assert.ok(text.includes('until around ' + hhmm(END)), text)
   assert.equal(c, P.ESTIMATE)
   const none = view.panelView({ record: busy, next: next({ action: 'run' }), now: NOW, cost: 1.42, steps: [], step: note({ first_end: null, end: null }) })
-  const [plain, nc] = colour(none, 'estimate-step')
+  const [plain, nc] = colour(none, 'step-end')
   assert.match(plain, /No end time yet/)
   assert.equal(nc, undefined)
 })

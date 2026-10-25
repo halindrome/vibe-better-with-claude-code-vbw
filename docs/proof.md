@@ -128,6 +128,18 @@ their results take VBW one step each, however many checks there are. Checks
 that share a resource and are not marked `alone` (a database, a fixed port) can
 disturb each other: mark them `alone`, or set `check_jobs` to 1.
 
+#### Cores per unit
+
+Build-and-test commands such as `cargo test`, `make` and `go test` each use
+every core unless told otherwise, so several of them side by side overload the
+machine. VBW tells each unit its share: the processor cores divided by the
+units this run puts side by side (`check_jobs`, under the computer-wide limit
+below), at least 1; a check marked `alone` gets every core. The share reaches
+the unit's command through `CARGO_BUILD_JOBS`, `GOMAXPROCS` and `MAKEFLAGS`
+(`-jN`). A variable your environment already sets is passed on unchanged, so
+`MAKEFLAGS=-j2 claude` keeps your own choice. When the core count cannot be
+read, nothing is set.
+
 ### The computer-wide limit
 
 VBW as a whole never runs more than the machine limit at once: three quarters
@@ -162,14 +174,28 @@ down the runs giving slots back. A run that waits
 prints `waited ... for other VBW runs on this computer`. Waiting changes
 nothing else: the same result as without it, and a timeout counts from when its command really starts.
 
-If a run is killed, the next run takes over its slots. Ctrl-C gives them back
-at once. A lock left by a dead process is taken over too.
+Every change of the store is one short step under a lock file next to it
+(`slots.lock`), and a step spends little: one `jq` run, one rename and the
+lock's removal, with no pause unless another run holds the lock. A run that
+finds the lock held retries after 10 ms and waits a little longer each time,
+up to a tenth of a second, so slots do not sit idle between one unit and the
+next.
 
-If the store cannot be written (a read-only folder, the Claude Code sandbox)
-or is damaged, the run goes on under `check_jobs` alone and prints
-`the computer-wide limit was not in force` with the reason (at the start, or
-once at the end when the store failed in the middle of the run). A store lock
-held by a live process is waited for, however long.
+If a run is killed, the next run takes over its slots. Ctrl-C gives them back
+at once. A lock left by a dead process is taken over too, by renaming its owner
+file: when two runs find the same dead owner, one of them gets the lock and the
+other waits for it, and neither ever removes a lock another run has just taken.
+
+If the store cannot be written (a read-only folder, a full disk, the Claude
+Code sandbox) or is damaged, the run goes on under `check_jobs` alone and
+prints `the computer-wide limit was not in force` with the reason (at the
+start, or once at the end when the store failed in the middle of the run, also
+when it failed in the last step that saves the proof). A unit that loses the
+store while it waits or holds a slot leaves no slot behind: as soon as the
+store can be written again, the run's next change of it removes that unit's
+place, so no other run is handed a slot nobody uses. A folder that reports
+itself writable but refuses a new file is recognised at once, not after a long
+wait. A store lock held by a live process is waited for, however long.
 
 ### Checks that run alone
 
@@ -333,19 +359,31 @@ states, paired with the check that tests it. The Lead lists them with
 is meant to cover, not only that checks exist.
 
 `vbw show contract` is the approval screen. Each `auto` requirement shows its
-rules with their checks:
+rules, each by its address `Rn.k` (its place among the requirement's rules),
+with their checks:
 
 ```text
 R1 [auto] A customer can pay once
-  rule: A payment succeeds -> C1
-  rule: Paying twice is refused -> C2
+  rule R1.1: A payment succeeds -> C1
+  rule R1.2 retired: Paying twice is refused (R4 lets a customer pay twice)
+  rule R1.3: A refused card is named -> C2
 ```
 
 - `vbw approve` refuses an `auto` requirement whose rules are pending
-  (`rules: []`): `R1 has no rules listed (vbw apply with rules)`.
-- Rules are part of the contract hash: adding, removing or re-pointing a rule
-  needs re-approval, and `vbw show contract --changes` lists it as
-  `added rule`, `removed rule` or `changed rule`.
+  (`rules: []`, or every rule retired): `R1 has no rules listed (vbw apply with rules)`.
+- A rule is reworded or retired by its address with `vbw apply --patch`
+  (docs/workflows.md), in any milestone, a shipped one included. A retired
+  rule stays in the record, in its place, with its reason: no other rule's
+  address moves, the mutation check owes it no break, `vbw show plan` leaves it
+  out of the plan's rules and `vbw mutate` refuses its address. Retire a rule
+  whose behaviour a newer requirement replaced, so the old rule no longer
+  contradicts the new one.
+- Rules are part of the contract hash, retired ones and their reasons
+  included: adding, removing, rewording, retiring, moving or re-pointing a rule
+  needs re-approval, and `vbw show contract --changes` lists it by its
+  address as `added rule`, `removed rule`, `reworded rule`, `retired rule`,
+  `moved rule` or `changed rule`, for example
+  `retired rule R1.2: Paying twice is refused (R4 lets a customer pay twice)`.
 - When a requirement's text or proof changes, `vbw spec sync` resets its rules
   to pending, so the Lead restates them.
 - A requirement approved before rules existed (no requirement has a `rules`
@@ -399,7 +437,10 @@ it limits that check only, and `command_timeout` does not change it.
 ### Unit time and the budget per unit
 
 Every check, project command and test file of a proof is a unit, and the
-evidence keeps the seconds each one took when it last ran. VBW reports that
+evidence keeps the seconds each one took when it last ran, to a tenth of a
+second (the shell's own timer reads the unit's wall time; a record written with
+whole seconds reads as before). Reports print tenths under 10 s (`C1 pass 0.4s`)
+and whole seconds from 10 s (`tests/import.bats 140 s`). VBW reports that
 time so a slow or growing test suite is seen early. It never fails or stops a
 proof for it: a busy machine never fails a proof.
 
@@ -547,8 +588,10 @@ form in `.vbw/spec.md`.
    A check whose last pass is still valid for the files it read is reused, not
    run again ([Reusing results in `vbw prove`](#reusing-results-in-vbw-prove)).
    Then it removes the copy, also when interrupted.
-4. Scope: every commit with a `VBW-Plan:` trailer naming a plan of the current
-   milestone must change only that plan's files. A shipped milestone's commits
+4. Scope: every commit of the record's own history
+   ([Whose commits VBW judges](#whose-commits-vbw-judges)) with a `VBW-Plan:`
+   trailer naming a plan of the current milestone must change only that plan's
+   files. A shipped milestone's commits
    were judged by its own proofs and are not judged again, nor are the commits
    a park undid (their `git revert` is in the loop's `reverts`): their changes
    are gone, even when git had to merge the revert over a later change.
@@ -570,7 +613,7 @@ form in `.vbw/spec.md`.
    `scope: abc123456789 (P163.2) undone by def123456789, not judged`.
    The check reads the history as a plain listing plus a bounded raw walk: a
    fixed 2 git processes plus one per undone pair, however long the history.
-   The listing finds the oldest commit with a trailer, the walk reads each
+   The listing finds the record's oldest commit with a trailer, the walk reads each
    commit's file changes back to it, and each pair found costs one ancestry
    check (does the undo descend from its original?). Each revert a park
    recorded adds one more, to read which commit it undid.
@@ -584,10 +627,26 @@ form in `.vbw/spec.md`.
 6. Writes the evidence and updates requirements and fixes in one atomic record
    update, then prints a one-screen summary. Exit 0 only when everything passed.
 
+### Whose commits VBW judges
+
+VBW's trailers (`VBW-Plan:`, `VBW-Fix:`, `VBW-Req:`) carry bare ids, and ids
+start again when a project starts a new record: a roadmap retired with VBW 1,
+or a record removed and made again, left commits whose trailers name ids the new
+record uses again. Such a commit is not one of today's plans' commits. So every
+reader of the trailers (the scope check, delivered files, `vbw plan done`'s
+"the plan has a commit", the commits `vbw show` lists for a requirement, the
+loop's report) reads only the record's own history: the commits after the
+newest commit that added `.vbw/record.json`. The record is in git before any
+plan can commit, because `vbw approve` commits it and a build needs an approved
+contract. A project whose record was never committed keeps its whole history.
+One limit: an older branch merged in after the record was born is part of its
+history, because git has it after the record's first commit.
+
 ### Delivered files
 
-A plan delivers the files its own commits added or changed (the commits whose
-`VBW-Plan:` trailer names it). A check can pass while such a file is gone: no
+A plan delivers the files its own commits added or changed (the commits of the
+record's own history whose `VBW-Plan:` trailer names it,
+[Whose commits VBW judges](#whose-commits-vbw-judges)). A check can pass while such a file is gone: no
 check reads `NOTES.md`, so deleting it by hand after the build breaks nothing a
 check sees. So the proof checks each plan of the current milestone with git:
 
@@ -614,7 +673,7 @@ and `by` lists the commits after it that changed the file outside any plan. A
 change made by a merge alone lists none.
 
 The check costs a fixed few processes, however long the history and however
-many files. git lists the history once to find the oldest commit that names a
+many files. git lists the record's own history once to find the oldest commit that names a
 plan of the current milestone, walks the file changes back to it once, reads the
 park's reverts once (only when there are any), and lists `HEAD` once for the
 files found. A proof recorded before this check existed lists no deviations.
@@ -648,7 +707,7 @@ naming the file, then record the verdict again.
 `vbw prove` does not run VBW's own timed speed checks (the hook, status line
 and panel benchmarks, and the test files named `tests/timed-*.bats`), so a busy
 machine never fails or delays a proof. They run once per release, in
-`bash tools/test.sh --release`: in CI and before a push. `bash tools/test.sh`
+`bash tools/test.sh --release`, which CI runs on every pull request. `bash tools/test.sh`
 without `--release` runs the same lint and tests the proof runs, without them.
 
 ### Full and partial proofs: `vbw prove --full`
@@ -838,6 +897,10 @@ read list and nothing on it has changed since that pass.
 - A file on its read list was changed, deleted or renamed.
 - A file or a sub-folder was added to or removed from a folder on its read list
   (a sub-folder appears with its first file and vanishes with its last).
+- A file of its requirement's plans was added or deleted, whether or not the
+  check read it: a check may test whether a path exists without opening it,
+  and the contract says what each requirement's plans deliver (a plan's file
+  entry is a path, a folder ending in `/`, or `*`).
 - Its last result failed (fail, timeout or lost).
 - It never passed: it is new, or no earlier proof ran it.
 - It has no read list (for example, the earlier run recorded none).
@@ -920,6 +983,18 @@ When nothing ran, both lines still print:
 ran again: 0 of 52 units; top reasons: none
 ```
 
+**Before the first unit runs.** `vbw prove` prints the same count in the future
+tense as its first line, from the plan (the reuse rule and the whole-proof
+causes), so a long proof says why before anyone waits for it:
+
+```text
+run again: 52 of 52 units; top reasons: plugin/lib/core.sh changed (41), definition changed (7), never passed (4)
+```
+
+It counts and ranks the reasons exactly as the closing line does. `vbw next
+--json` carries the top reason as `step.why` and ends the proof's `step.say`
+with it ([the step](next.md#the-step)).
+
 The steps stay in the evidence as `evidence.own` and the whole-proof causes as
 `evidence.causes` (docs/record.md). `vbw show evidence` prints them.
 
@@ -928,7 +1003,9 @@ Other things to know:
 - An uncommitted change in the working folder does not make a check run again,
   and is never counted as proven: the proof reads only the committed code.
   Commit the work, then run `vbw prove`.
-- An interrupted proof recorded no evidence, so the next proof runs every check.
+- A proof cut short (interrupted, or unable to write the record) recorded no
+  evidence and saved nothing, or runs as complete as any proof's: the next proof
+  reuses what the read lists allow, as if the cut-short one had not run.
 - Project commands and test files follow the same rule. `vbw prove` reuses the test command's
   passing result when nothing it read changed; a command runs again only when its
   approved argv or time limit changed, a file it read changed, or its last result
@@ -961,26 +1038,30 @@ The causes, with the text the summary shows:
 
 | What happened | Message |
 |---|---|
-| A file was added that no recorded run read and no recorded run listed its folder | `src/new.txt was added, and no recorded run read it or listed its folder` |
-| A file was deleted under the same condition | `src/old.txt was deleted, and no recorded run read it or listed its folder` |
-| More than three such files (a vendored library, for example): one cause, with their count and the first three paths in path order | `3000 files were added, and no recorded run read them or listed their folders: vendor/a.c, vendor/b.c, vendor/c.c and 2997 more` (`were deleted`, or `were added or deleted (N added, M deleted)`) |
 | The file system cannot record which files are read | `this file system does not record which files are read` |
 | The clone has no earlier recorded run | `this clone has no earlier recorded run` |
-| The last proof was cut short | `the last proof was cut short` |
 | `vbw prove --full` | `vbw prove --full` |
 | Nothing was committed since the last passing proof (`vbw prove` only; `vbw fix done` reuses that proof): the project's files are the tree the last passing proof recorded (`evidence.tree`), the committed code is the tree it ran on (`evidence.head`), the record is as that proof left it (its fingerprint without the evidence is `evidence.record`: a decision, a verdict or a backlog item recorded since is a change, and the proof reuses by read lists), and the record's last proof passed | `nothing was committed since the last passing proof` |
 
-A content change to a file no recorded run read runs nothing: it affects
-nothing that was run. An added or deleted file no recorded run saw (none read
-it or listed its folder, and every recorded run predates it) runs everything,
-because a check could now see a different set of files. An addition or deletion
-that some recorded run already ran with is not unseen: the proof that ran it
-judged it. A file whose own folder appeared or vanished with it (the first file
-of a new sub-folder, the last file of one) is seen through the nearest folder
-above it that a recorded run listed: that listing gained or lost an entry, so
-the run that listed it runs again and nothing else does. A changed approved command, single-file form or list of test files
-is no cause either: each unit re-runs by its own definition
-([Reusing results](#reusing-results-in-vbw-prove)).
+A change to the project's files is never a cause: each unit's own read list
+decides, with the contract's ties for a check. A content change to a file no
+recorded run read runs nothing: it affects nothing that was run. An added or
+deleted file re-runs the units that listed its folder or read it, and the
+checks of the requirement whose plans list it, nothing else: a run that listed
+the folder recorded the names inside it, so the changed listing re-runs that
+run; a file whose own folder appeared or vanished with it (the first file of a
+new sub-folder, the last file of one) is seen through the nearest folder above
+it that a run listed; a check may test whether a path exists without opening
+it, so the files its requirement's plans deliver re-run it when they appear or
+vanish, read or not; a unit that reads the project through git always runs
+again. A file added to or deleted from a folder no run listed, that no run read
+and no plan of a check's requirement lists, runs nothing: no run could have
+seen it, and the contract ties nothing to it. A changed approved
+command, single-file form or list of test files is no cause either: each unit
+re-runs by its own definition ([Reusing results](#reusing-results-in-vbw-prove)).
+A proof cut short (interrupted, or unable to write the record) is no cause: it
+saved nothing, or runs as complete as any proof's, so the next proof reuses
+what the read lists allow, as if the cut-short one had not run.
 
 Every summary, full or not, prints both counts:
 
@@ -998,7 +1079,9 @@ They read `checks: N ran, M reused` and `test files: N ran, M reused`. After
   and the clock. A check that depends on them can pass from reuse after they
   changed.
 - A check that only looks whether a file exists, or at its size, without
-  opening it, does not put that file on its read list.
+  opening it or listing its folder, does not put that file on its read list: a
+  change to that file does not run the check again, and neither does its
+  addition or deletion unless a plan of the check's requirement lists it.
 - Reads through git always run again. Any git command whose working directory
   is inside the project counts, even one that reads nothing of the project
   (`git config --global` run from the project folder): git opens the
@@ -1209,7 +1292,9 @@ suite therefore pays for the checks a break needs, not for every check.
   --none REASON` after the kernel verifies the check's read list against the
   files of the requirement's plans: the list must name none of them. The command
   may run the check once in a clean copy of the committed code, with read
-  tracking on, and records that run in the store as a proof would. `vbw plan
+  tracking on, and records that run in the store as a proof would. A check that
+  only tests whether a plan file exists, without opening it, never reads that
+  file: such a check is not detected, and the accepting line says so. `vbw plan
   done` counts such a rule covered.
 
 The broken file, and its restore, get a fresh modification time, newer than

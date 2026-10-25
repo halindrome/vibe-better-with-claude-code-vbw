@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# The contract (docs/proof.md): requirements, checks, plans without their
-# status, the saved test results folders and the test file form when the spec
-# names them, and the
-# contents of every check's files. Approved = its hash has
-# consent in the clone's git directory.
+# The contract (docs/proof.md): requirements with their rules (a retired rule
+# and its reason included, so rewording or retiring one needs approval again),
+# checks, plans without their status, the saved test results folders and the
+# test file form when the spec names them, and the contents of every check's
+# files. Approved = its hash has consent in the clone's git directory.
 
 # contract_hash RECORD_JSON: SHA-256 over a canonical rendering of the contract.
 # Each file contributes its path and its content digest ("missing" if absent).
@@ -66,7 +66,7 @@ contract_waiting() {
     d=missing
     [ ! -f "$VBW_ROOT/$f" ] || d=$(vbw_sha256 < "$VBW_ROOT/$f")
     if [ "$(jq -r --arg f "$f" '.files[$f] // "new"' "$old" 2> /dev/null)" != "$d" ] \
-      || printf '%s\n' "$held" | grep -qxF -- "$f"; then
+      || printf '%s\n' "$held" | grep -xF -- "$f" > /dev/null; then
       out="$out$f"$'\n'
     fi
   done < <(printf '%s' "$1" | jq -j '[.checks[].files // [] | .[]] | unique[] | . + "\u0000"')

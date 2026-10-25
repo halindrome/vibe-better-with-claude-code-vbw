@@ -40,10 +40,11 @@ setup() {
 teardown() { vbw_teardown; }
 teardown_file() { fixture_teardown; }
 
-# hm ISO: the local HH:MM of a UTC time, after "tomorrow " when it falls on another local day.
+# hm ISO: the local HH:MM of a UTC time as VBW words it: today bare, tomorrow, yesterday, else the weekday.
 hm() {
-  jq -nr --arg t "$1" '($t | fromdateiso8601) as $t | ([$t, now] | map(strflocaltime("%Y-%m-%d"))) as [$e, $d]
-    | (if $e == $d then "" elif $e > $d then "tomorrow " else "yesterday " end) + ($t | strflocaltime("%H:%M"))'
+  jq -nr --arg t "$1" '($t | fromdateiso8601) as $t | def day($e): $e | localtime | mktime / 86400 | floor;
+    (day($t) - day(now)) as $d
+    | (if $d == 0 then "" elif $d == 1 then "tomorrow " elif $d == -1 then "yesterday " else ($t | strflocaltime("%A ")) end) + ($t | strflocaltime("%H:%M"))'
 }
 
 @test "R191: the road adds the waves, their proofs, QA and the usual fix rounds; its sentence names the end and the rounds counted" {

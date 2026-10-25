@@ -63,7 +63,7 @@ violations_after() {
   run violations_after '.schema = 4'
   [[ "$output" == *"protected is missing"* ]]
   run violations_after '.protected = ["tests/pay.test.ts"]'
-  [[ "$output" == *"protected is only for a schema-4 record"* ]]
+  [[ "$output" == *"protected is only for a schema-4 or schema-5 record"* ]]
   run violations_after '.schema = 4 | .protected = ["tests/pay.test.ts"]'
   [ "$output" = "[]" ]
   run violations_after '.schema = 4 | .protected = []'
@@ -98,6 +98,16 @@ violations_after() {
   [ "$output" = "[]" ]
   run violations_after '.requirements[0].rules = []'
   [ "$output" = "[]" ]
+  # A retired rule (T168) keeps its words and reason; the check and plan it named may be gone.
+  run violations_after '.requirements[0].rules = [{text: "Paying works", check: "C9", plan: "P9.9", retired: "R1 changed"}]'
+  [ "$output" = "[]" ]
+}
+
+@test "rejects a retired rule without a reason" {
+  run violations_after '.requirements[0].rules = [{text: "Paying works", check: "C1", retired: ""}]'
+  [[ "$output" == *'R1 rule \"Paying works\" is retired without a reason'* ]] || { echo "$output"; false; }
+  run violations_after '.requirements[0].rules = [{text: "Paying works", check: "C1", retired: true}]'
+  [[ "$output" == *'R1 rule \"Paying works\" is retired without a reason'* ]]
 }
 
 @test "rejects rules that are malformed, unchecked, or on a [human] requirement" {

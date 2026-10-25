@@ -6,8 +6,8 @@
 # space) with TMPDIR set to an empty folder of the test, which must stay
 # empty. After every command, the large twin's .vbw/runtime holds only VBW's
 # kept state (the approved contract, the last next answer and the proof's
-# unit list next keeps, the status line glance, autonomy files, the
-# unfinished-proof marker, the check gate and kept check output) and its git
+# unit list next keeps, the status line glance, autonomy files, the check
+# gate and kept check output) and its git
 # directory's vbw folder only JSON state files
 # (clean_step, big-record-helper.bash). The commands that succeed are walked
 # in big-record-commands.bats, where every step is a clean step; this file

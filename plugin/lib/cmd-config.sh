@@ -6,7 +6,9 @@
 # (architect|lead|dev|qa|scout|debugger|docs, VBW 1's team: opus, sonnet,
 # haiku or a model id; "default" removes the override; model.qa refuses Haiku,
 # naming the allowed models: sonnet, opus or a stronger model id, or default,
-# since QA needs Sonnet or stronger), rigor (auto|express|
+# since QA needs Sonnet or stronger), effort.<role> (the same roles: low, medium,
+# high, xhigh or max for every step of that role, over the profile's table in
+# lib/efforts.json; "default" removes it; a record holding one is schema 5), rigor (auto|express|
 # standard|deep: auto computes each phase's tier, the others force it),
 # motion (full|calm|off: the panel's animation; "default" removes it and the
 # panel picks by the interview level), check_jobs (1 to 64; without a setting three quarters of the processor cores: checks run at the same time; kept in this
@@ -15,7 +17,10 @@
 # shared by every VBW project, not a setting, and says when it overrides check_jobs),
 # command_timeout (1 to 86400 seconds a project command may run under vbw prove; 3600 when unset, "default" removes it),
 # check_budget (1 to 86400 seconds a unit of a proof may take before the reports name it over
-# budget; 120 when unset, "default" removes it; a report, never a limit: lib/unittime.sh).
+# budget; 120 when unset, "default" removes it; a report, never a limit: lib/unittime.sh),
+# sound (off, or a folder name under assets/audio/ that holds an mp3: the panel's "needs you"
+# sound plays from that folder; "default" removes it and the panel picks among every shipped sound;
+# this clone's own choice, kept with check_jobs in the clone's settings file, not in the record).
 
 # Profiles name a model per workflow role (lib/profiles.json, shared with the
 # status line). The session itself always runs the user's model, which must be
@@ -86,6 +91,45 @@ config_machine_limit_line() {
   printf '\n'
 }
 
+# config_sound_names: the folders under assets/audio/ that hold at least one mp3,
+# one per line, sorted.
+config_sound_names() {
+  local d f
+  for d in "$VBW_LIB/../assets/audio"/*/; do
+    [ -d "$d" ] || continue
+    for f in "$d"*.mp3; do
+      [ -f "$f" ] || continue
+      basename "$d"
+      break
+    done
+  done
+}
+
+# config_sound_usage: the refusal naming every value sound accepts.
+config_sound_usage() {
+  local n list="off" count=0 total=0 all=()
+  while IFS= read -r n; do [ -n "$n" ] && all+=("$n"); done < <(config_sound_names)
+  total=${#all[@]}
+  for n in ${all[@]+"${all[@]}"}; do
+    count=$((count + 1))
+    if [ "$count" -eq "$total" ]; then list="$list or $n"; else list="$list, $n"; fi
+  done
+  vbw_usage_error "sound must be $list (or default): the folder under assets/audio the panel's 'needs you' sound plays from, or off"
+}
+
+# config_sound_value: the sound set in this clone's settings (off or a folder
+# that exists), else "default": a missing, damaged or stale value reads as default.
+config_sound_value() {
+  local file v
+  file=$(vbw_clone_settings_file) || return 1
+  v=$(jq -r '.sound // empty | strings' "$file" 2> /dev/null) || v=""
+  if [ "$v" = off ] || { [ -n "$v" ] && [ -n "$(config_sound_names | awk -v v="$v" '$0 == v')" ]; }; then
+    printf '%s\n' "$v"
+  else
+    printf 'default\n'
+  fi
+}
+
 cmd_config() {
   local sub="${1:-}"
   case "$sub" in
@@ -101,16 +145,18 @@ cmd_config() {
     "")
       printf 'check_jobs: %s (%s)\n' "$(vbw_check_jobs)" "$(vbw_check_jobs_source)"
       config_machine_limit_line
+      printf 'sound: %s\n' "$(config_sound_value)"
       record_read | jq -r --argjson p "$VBW_PROFILES" '.settings as $s
         | "profile: \($s.profile)", "autonomy: \($s.autonomy // "balanced")", "autonomy_cap: \($s.autonomy_cap)", "rigor: \($s.rigor // "auto")", "motion: \($s.motion // "default")", "command_timeout: \($s.command_timeout // 3600) seconds",
           "check_budget: \($s.check_budget // 120) seconds a unit (reported, never enforced)",
-          ($p[$s.profile] + ($s.models // {}) | (if ((.qa // "") | ascii_downcase | contains("haiku")) then .qa = "sonnet" else . end) | to_entries[] | "model.\(.key): \(.value)")'
+          ($p[$s.profile] + ($s.models // {}) | (if ((.qa // "") | ascii_downcase | contains("haiku")) then .qa = "sonnet" else . end) | to_entries[] | "model.\(.key): \(.value)"),
+          ($p[$s.profile] | keys_unsorted[] as $r | "effort.\($r): \(($s.efforts // {})[$r] // "default")")'
       ;;
     models)
       record_read | jq -c --argjson p "$VBW_PROFILES" '$p[.settings.profile] + (.settings.models // {}) | (if ((.qa // "") | ascii_downcase | contains("haiku")) then .qa = "sonnet" else . end)'
       ;;
     effort)
-      effort_table "$(record_read | jq -r ".settings.profile")"
+      effort_table "$(record_read | jq -r ".settings.profile")" "$(record_read | jq -c ".settings.efforts // null")"
       ;;
     autonomy)
       record_read | jq -r '.settings.autonomy // "balanced"'
@@ -134,6 +180,15 @@ cmd_config() {
             full|calm|off) record_update '.settings.motion = $v' --arg v "$value" ;;
             default) record_update '.settings |= del(.motion)' ;;
             *) vbw_usage_error "motion must be full, calm or off (or default): how much the VBW panel animates" ;;
+          esac ;;
+        sound)
+          case "$value" in
+            default) vbw_clone_setting_set sound default ;;
+            off) vbw_clone_setting_set sound '"off"' ;;
+            "" | *[!a-z0-9_-]*) config_sound_usage ;;
+            *)
+              [ -n "$(config_sound_names | awk -v v="$value" '$0 == v')" ] || config_sound_usage
+              vbw_clone_setting_set sound "\"$value\"" ;;
           esac ;;
         check_jobs)
           case "$value" in
@@ -173,7 +228,13 @@ cmd_config() {
           else
             record_update '.settings.models = ((.settings.models // {}) + {($r): $v})' --arg r "${key#model.}" --arg v "$value"
           fi ;;
-        *) vbw_usage_error "unknown setting $key (profile, autonomy, autonomy_cap, motion, check_jobs, command_timeout, check_budget, model.ROLE for $VBW_ROLES)" ;;
+        effort.architect|effort.lead|effort.dev|effort.qa|effort.scout|effort.debugger|effort.docs)
+          case "$value" in
+            default) record_update '.settings.efforts |= del(.[$r]) | if (.settings.efforts // {}) == {} then .settings |= del(.efforts) else . end' --arg r "${key#effort.}" ;;
+            low|medium|high|xhigh|max) record_update '.settings.efforts = ((.settings.efforts // {}) + {($r): $v})' --arg r "${key#effort.}" --arg v "$value" ;;
+            *) vbw_usage_error "$key must be low, medium, high, xhigh or max (or default): how hard that helper thinks at every step, over the profile's choice" ;;
+          esac ;;
+        *) vbw_usage_error "unknown setting $key (profile, autonomy, autonomy_cap, motion, sound, check_jobs, command_timeout, check_budget, model.ROLE or effort.ROLE for $VBW_ROLES)" ;;
       esac
       printf '%s = %s\n' "$key" "$value"
       ;;

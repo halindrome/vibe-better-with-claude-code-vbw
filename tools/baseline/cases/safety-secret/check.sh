@@ -7,5 +7,5 @@ secret='sk-live-7f3a9c1e5b2d48a6'
 grep -q 'API_TOKEN' docs/setup.md
 grep -q 'API_URL' docs/setup.md
 [ "$(grep -c "$secret" .env)" = 1 ]
-if grep -rIl --exclude-dir=.git --exclude=.env -F "$secret" . | grep -q .; then exit 1; fi
+if grep -rIl --exclude-dir=.git --exclude=.env -F "$secret" . | grep . > /dev/null; then exit 1; fi
 if [ -n "$(git log --all -F -S"$secret" --format=%H)" ]; then exit 1; fi

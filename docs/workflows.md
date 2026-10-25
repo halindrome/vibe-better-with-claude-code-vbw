@@ -265,6 +265,10 @@ cannot fail, and QA would otherwise find it one round at a time.
   and ends "break the rule in that code instead". It also refuses a run that
   reads the project through git ("reads the project through git, so its files
   are unknown") and a run with no read list (the file system recorded none).
+  The verdict has one limit, and the accepting line says it: a check that only
+  tests whether a plan file exists, without opening it, never reads that file,
+  so such a check is not detected and the rule is accepted though deleting the
+  file would fail the check.
 - **Side by side** (`--queue`, then `--run`): a rule break can wait instead of
   running. `--queue` sets its broken bytes aside and puts the files back at
   once, running nothing, so the Dev makes the next break straight away. `vbw
@@ -316,10 +320,12 @@ problem when:
   ("the rule ... names C9, which is not a check of R1 in this plan");
 - a rule is for a `human` requirement;
 - an `auto` requirement of the plan's phases lists no rules (`R1 lists no
-  rules`), counting rules the record already holds.
+  rules`), counting rules the record already holds that are not retired.
 
 An accepted document stores each requirement's rules in the record
-(docs/record.md). Re-planning without the key keeps the stored rules. Without
+(docs/record.md): the requirement's retired rules stay, and the document's
+rules fill the other places in order. A retired rule moves up only when the
+document drops a live rule before it. Re-planning without the key keeps the stored rules. Without
 the key on a first plan, nothing changes (see docs/proof.md for the approval
 consequence).
 
@@ -349,7 +355,25 @@ full apply, and nothing else. VBW merges them into the record:
   (a new plan needs a phase that exists);
 - a rule is matched by requirement and text: the same text with another
   `check` changes it, new text adds it, and the requirement's other rules stay;
+- a rule named by its address instead (`"rule": "R1.2"`, the second rule of
+  `R1`, as `vbw show req R1` numbers them) is reworded or retired, in any
+  milestone, a shipped one included:
+  `{"rule": "R1.2", "text": "the new words"}` gives it new words (`check` and
+  `plan` may change the same way), and
+  `{"rule": "R1.2", "retire": "R4 lets a customer pay twice"}` retires it. A
+  retired rule stays in its place with its reason, so no other rule's address
+  moves; it is owed no mutation break and is left out of the plan's rules
+  (docs/proof.md, Rules);
 - phases, requirements and every plan, check and rule not named are untouched.
+
+```
+echo '{"rules": [{"rule": "R1.2", "retire": "R4 lets a customer pay twice"}]}' | vbw apply --patch
+```
+
+An address that names no rule, a rule already retired, the same address
+twice, or an entry with other fields is refused, and so is an address in a
+full apply or `--add` (they take rules by requirement and text). A retired rule
+stays as it is: when its behaviour comes back, add it as a new rule.
 
 A patch with `phases` is refused (`a patch carries plans, checks and rules,
 never phases: change phases with a full apply`). Every other rule of a full
@@ -458,6 +482,11 @@ Each refusal below ends with `Next: ` and the step in the right column
 | `vbw run start`: a plan waiting for another | Build those first, or run `vbw next` |
 | `vbw run start`: two plans sharing a file | Start one now and the other after it ends |
 | `vbw run start`: a run already open | In this session, `vbw run end`; in another session, wait for it or check `vbw status` |
+| `vbw run confirm`: no run open | Nothing to do; `vbw status` shows what each plan and fix recorded |
+| `vbw run confirm`: an unknown plan, fix or phase | Confirm the ids the run was started with (`vbw status` names them) |
+| `vbw run confirm` on a run of another kind (plan, map) | End the run with `vbw run end`: only build, fix and qa runs are confirmed |
+| Any command whose change would leave the record invalid (`vbw: refused: ...`, nothing written) | Give the command a valid value, or run `vbw doctor` if the record itself is damaged |
+| `/vbw:loop`: the ship of an item refused (the loop ends) | Run `/vbw:vibe` to take the item to its ship, then `/vbw:loop` for the items left |
 | Guards (docs/guards.md): a secret file, the record, the consent file, `vbw approve` | Use the `vbw` command or `/vbw:approve` instead of writing directly |
 | Guards: a file outside the run's plan, a protected check file, a read-only run, another session's files | Leave the file; report the need, or work on other files until the run ends |
 | Guards: `vbw loop start` by a tool call (arming the loop) | Ask the user to run `/vbw:loop` with the items and the ceiling they choose |
@@ -466,6 +495,27 @@ Each refusal below ends with `Next: ` and the step in the right column
 | Guards: a guard that failed during a run | Run `vbw doctor`, then retry |
 
 An unknown option prints the usage line for the three modes and exits 2.
+
+### Refusals reach the user
+
+A refusal inside a workflow is printed to an agent, not to you. So every
+agent's result schema requires a `refused` list: each refusal the agent got
+(a `vbw` command that refused, its message starting `vbw:`, or a tool call a
+guard blocked, its reason starting `VBW guard:`), copied verbatim and whole,
+through its `Next:` line, or `[]` when there was none. The workflow collects
+them, logs each one (`dev P1.1 was refused: ...`) and returns them all in its
+result as `refused`, each named by the agent that got it:
+
+```
+"refused": [{"by": "dev P1.1", "text": "vbw: apply refused: ...\nNext: ..."}]
+```
+
+Every workflow result has `refused`, `[]` when nothing was refused, including
+a workflow that stops before starting any agent. The router (`/vbw:vibe`)
+shows each refusal to you as written, in a quote naming the agent, before its
+own summary, and never paraphrases it; it shows a `vbw` refusal it gets itself
+the same way. Comms and Mission Control show each refusal too, in amber with
+its time ([panel.md](panel.md#refusals)).
 
 ## The loop and `autonomy_cap`
 
@@ -504,6 +554,25 @@ needed.
   diagnose; in fix mode a minimal root-cause fix with a regression test.
 - **Docs**: documentation plans (README, changelog, guides, API and inline
   docs), concise and example-first; documentation files only.
+
+## The project folder
+
+Every skill that starts a workflow passes `args.root`, the project folder: the
+router from `vbw next --json` (`root`), the other skills from `vbw root`. A
+session started in a subfolder of the project starts its agents there too, so
+each workflow appends one sentence to the task of every agent it starts:
+
+```
+The project folder is /path/to/project. Every path VBW names (plan and check
+files, .vbw/...) is relative to it, whatever folder you start in: give file
+tools and shell redirects absolute paths under it, and run other shell commands
+from it (cd "/path/to/project" && ...).
+```
+
+Without `args.root` nothing is added. The guards judge a path in a tool call
+from the agent's working folder, so an absolute path under the project folder,
+`.vbw/runtime/scratch/` included, is judged by the run's rules (docs/guards.md).
+All nine workflows do this.
 
 ## The user's level
 

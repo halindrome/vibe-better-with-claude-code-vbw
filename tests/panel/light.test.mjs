@@ -33,25 +33,30 @@ async function busySession(h) {
   await h.advance(10000)
 }
 
-test('it only calls what a read-only panel needs: no network, no credentials, no processes', async () => {
+test('it only calls what a read-only panel needs: no network, no credentials, no process but the kernel', async () => {
   const h = await mount()
   await busySession(h)
   const used = h.names()
-  const extra = used.filter((n) => !ALLOWED.has(n))
+  const extra = used.filter((n) => !ALLOWED.has(n) && n !== 'process.run')
   assert.deepEqual(extra, [], 'calls outside the allowed set')
-  for (const n of used) assert.doesNotMatch(n, /^(http|mcp|model|process|settings|agent|tool|telemetry)\.|^prompt\.submit$/)
+  for (const n of used) assert.doesNotMatch(n, /^(http|mcp|model|settings|agent|tool|telemetry)\.|^process\.(?!run$)|^prompt\.submit$/)
+  // The one process is the plugin's own kernel, which writes what the panel changes (the sound switch).
+  for (const [argv] of h.callsOf('process.run')) assert.equal(argv[0], PLUGIN + '/bin/vbw', argv.join(' '))
+  assert.ok(h.callsOf('process.run').length > 0, 'the sound switch went to the kernel')
   // The environment is read for two names only, to find this session's folder.
   for (const [name] of h.callsOf('env.get')) assert.ok(['HOME', 'CLAUDE_CONFIG_DIR'].includes(name), name)
   assert.deepEqual(h.errors, [])
 })
 
-test('it reads only the project, and the clone cache of finished steps', async () => {
+test('it reads only the project, and the clone cache of finished steps and settings', async () => {
   const h = await mount()
   await busySession(h)
   const paths = [...h.callsOf('fs.read'), ...h.callsOf('fs.stat'), ...h.callsOf('fs.exists')].map((a) => a[0])
   assert.ok(paths.length > 0)
   for (const p of paths) {
     assert.ok(p.startsWith(ROOT + '/') || p === ROOT, 'outside the project: ' + p)
+    // The clone's own settings (the sound choice), never Claude Code's settings.json.
+    if (p === ROOT + '/.git/vbw/settings.json') continue
     assert.doesNotMatch(p, /credentials|settings\.json|\.env|\.ssh|\.claude/i, p)
   }
 })
@@ -177,11 +182,11 @@ const plain = (n) => (n && typeof n === 'object' && !Array.isArray(n) && 'type' 
 // Each case's drawings and its redraw count after each refresh, as one sha256.
 const PINNED = {
   tick: 'db362e790d4eba5e4d7f8b9078cad1aeef6b1bf583216186efdfe5cd9801e109',
-  refresh: '5797852ddcbfc7794c64d0d165a05298afa325da7cd5338ff12b35e40dacba8d',
-  glance: '2779bbb4209aa78b5eed08b914ac6dfd3dac788a69d687324db48edcd4e3d51f',
-  'whats-next': '260266d4f49492ef2a7db001485e1e3b65e9e310567ede5dcbdbd53836675324',
-  render: 'cc6e3fe25c3a4eb199afd1bd9f140dbc86b3f2f233ead0d540aed10fc0f8b14d',
-  step: '449da219e48bdd9a69865930c2053bf10fc69f84ad21b58e9c743836b4714fb9',
+  refresh: '52fa24b0e357416db49ab2863c1c010e4d45f8df1d18a2858e2a4c0ea7553803',
+  glance: '61b26813c48616dbc701eee6817b9e2e72433d1a1dc18c84607ad10d61988e2b',
+  'whats-next': '4f12c4d08279b2b6776e778850f3c933ca1dda3ba5463afbfdc76cd94638f42d',
+  render: '24b6d82f3552f60e23a7b5d65ae951851ddd753952450487fc0846c7b6aed60e',
+  step: '96972359cdfa933d62496f1605ef1d04161a00b7987b25afac7d46f56c9a333a',
 }
 
 test("the bench's cases draw what they drew: work done for speed changes no drawing and no redraw", async () => {

@@ -9,6 +9,8 @@
 . "$VBW_LIB/steps.sh"
 # shellcheck source=mutate-queue.sh
 . "$VBW_LIB/mutate-queue.sh"
+# shellcheck source=history.sh
+. "$VBW_LIB/history.sh"
 
 cmd_plan() {
   local sub="${1:-}" id="${2:-}"
@@ -108,11 +110,14 @@ plan_missing_breaks() {
       end'
 }
 
-# True when some commit carries "VBW-Plan: ID" (an exact token).
+# True when some commit of the record's own history (lib/history.sh) carries
+# "VBW-Plan: ID" (an exact token): an older commit naming the same id is an
+# old roadmap's, not this plan's.
 plan_has_commit() {
-  local line
+  local line HISTORY_ARGS=()
+  history_args
   while IFS= read -r line; do
     [ "$line" = "$1" ] && return 0
-  done < <(git -C "$VBW_ROOT" log --format='%(trailers:key=VBW-Plan,valueonly)' 2> /dev/null)
+  done < <(git -C "$VBW_ROOT" log --format='%(trailers:key=VBW-Plan,valueonly)' "${HISTORY_ARGS[@]}" 2> /dev/null)
   return 1
 }

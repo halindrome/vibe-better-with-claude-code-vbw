@@ -2,7 +2,7 @@
 // VBW workflow from its Workflow tool call (or finds it after a reload) and reads it
 // on the panel's timer; Comms, above the prompt, draws the crew, the one needs-you
 // line and the nudges, with buttons that only fill or open; the pane is Mission Control
-// with eight tabs. Driven through the stand-in for Claude Code's mods API (L1).
+// with six tabs. Driven through the stand-in for Claude Code's mods API (L1).
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { mount, record, next, lease, collect, find, walk, ROOT, T0 } from './helpers/fake-mod.mjs'
@@ -12,8 +12,8 @@ import { ENV, SESSION_DIR, RUN, RUN_DIR, ARCH, LEAD, writeRun, finish, launch, b
 const TEST_MODE = ROOT + '/.vbw/runtime/test-mode'
 const approve = () => next({ action: 'approve', gate: true })
 
-// WIDE: eight full tab names take two rows beside the portrait at 60 columns.
-const WIDE = { title: 'VBW', isFocused: false, bodyColumns: 60, placement: 'dock', scroll: { offset: 0, bodyRows: 30 }, view: {} }
+// WIDE: the six full tab names take one row beside the portrait at 80 columns.
+const WIDE = { title: 'VBW', isFocused: false, bodyColumns: 80, placement: 'dock', scroll: { offset: 0, bodyRows: 30 }, view: {} }
 const wide = (h) => { const render = h.render; h.render = (extra = {}) => render({ props: WIDE, ...extra }); return h }
 async function started(options = {}, rec = record(), nxt = next()) {
   const h = await mount({ env: ENV, ...options })
@@ -26,7 +26,8 @@ const texts = (tree) => collect(tree)
 const text = (tree) => texts(tree).join('\n')
 const buttons = (tree) => { const out = []; walk(tree, (n) => { if (n.type === 'Button') out.push(n) }); return out }
 const press = async (h, tree, label) => {
-  const b = buttons(tree).find((x) => x.props.label === label)
+  // A button is named by its label, or by its words when it holds Text (a crew row's name).
+  const b = buttons(tree).find((x) => (x.props.label ?? collect(x).join('').trim()) === label)
   assert.ok(b, 'no button ' + label + ' in ' + texts(tree).join(' | '))
   await b.props.onPress({ surface: 'terminal' })
   await h.settle()
@@ -183,22 +184,22 @@ test('motion: calm by default (a spinner), off in a test session and when the re
 
 // ---- Mission Control ----
 
-const TABS = ['Now', 'Plan', 'Proof', 'Timeline', 'Decisions', 'Team', 'Sessions', 'Costs']
+const TABS = ['Now', 'Plan', 'Proof', 'Timeline', 'Sessions', 'Settings']
 
-test('the pane is Mission Control: eight tabs, Now first with the panel rows and the sound switch', async () => {
+test('the pane is Mission Control: six tabs, Now first with the panel rows and the sound switch', async () => {
   const h = await started()
   const pane = await h.render()
   assert.deepEqual(buttons(pane).filter((b) => /^tab-/.test(b.props.key)).map((b) => b.props.label), TABS)
   const t = text(pane)
   assert.match(t, /Working on M9/)
   assert.match(t, /Sound is on/)
-  assert.match(t, /No VBW workflow runs/)
+  assert.doesNotMatch(t, /No VBW workflow runs/, 'the box says nothing runs; the Now tab does not say it again')
 })
 
-test('the tabs sit in whole rows: at 40 columns the short names on two rows and no portrait, at 50 the full names on two rows and no portrait, at 60 the full names on two rows beside the portrait', async () => {
+test('the tabs sit in whole rows: at 80 columns the six full names on one row beside the portrait, at 60 the short names on one row beside it, at 50 the full names on two rows beside it, at 40 on two rows without it', async () => {
   const h = await started()
   const FULL = TABS
-  const SHORT = ['Now', 'Plan', 'Proof', 'Time', 'Log', 'Team', 'Sess', 'Cost']
+  const SHORT = ['Now', 'Plan', 'Proof', 'Time', 'Sess', 'Set']
   const at = async (columns) => {
     const pane = await h.render({ props: { title: 'VBW', isFocused: false, bodyColumns: columns, placement: 'dock', scroll: { offset: 0, bodyRows: 30 }, view: {} } })
     const lines = screen(pane, columns)
@@ -208,32 +209,68 @@ test('the tabs sit in whole rows: at 40 columns the short names on two rows and 
     assert.ok(lines.every((l) => !/\[ [A-Za-z]*$|^[A-Za-z]* \]/.test(l.replace(/\[ [A-Za-z]+ \]/g, ''))), columns + ' columns: a cut name in ' + JSON.stringify(lines.slice(0, 4)))
     return { shown, rows, portrait: find(pane, (n) => n.type === 'Image') }
   }
-  const narrow = await at(40)
-  assert.deepEqual(narrow.shown, SHORT)
-  assert.equal(narrow.rows, 2)
-  assert.ok(!narrow.portrait, 'beside the portrait the short names would take three rows')
+  const wide80 = await at(80)
+  assert.deepEqual(wide80.shown, FULL)
+  assert.equal(wide80.rows, 1)
+  assert.ok(wide80.portrait, 'the portrait costs the tabs nothing at 80 columns')
   const mid = await at(50)
   assert.deepEqual(mid.shown, FULL)
   assert.equal(mid.rows, 2)
-  assert.ok(!mid.portrait, 'beside the portrait the full names would not fit two rows')
+  assert.ok(mid.portrait, 'beside the portrait the full names still take two rows at 50 columns')
   const wide60 = await at(60)
-  assert.deepEqual(wide60.shown, FULL)
-  assert.equal(wide60.rows, 2)
-  assert.ok(wide60.portrait, 'the portrait costs the tabs nothing at 60 columns')
+  assert.deepEqual(wide60.shown, SHORT, 'one row of short names beats two rows of full ones')
+  assert.equal(wide60.rows, 1)
+  assert.ok(wide60.portrait, 'the portrait costs the short names nothing at 60 columns')
+  const narrow = await at(40)
+  assert.deepEqual(narrow.shown, FULL)
+  assert.equal(narrow.rows, 2)
+  assert.ok(!narrow.portrait, 'beside the portrait the full names would take three rows')
 })
 
-test('each tab draws its view, and the choice holds across redraws', async () => {
-  const h = await started({}, record({ settings: { profile: 'quality' }, decisions: [{ id: 'D1', text: 'Which db? sqlite', at: '2026-10-01T00:00:00Z' }] }))
-  const want = { Plan: /P44 Cost/, Proof: /No checks are approved/, Timeline: /No VBW workflow runs/, Decisions: /sqlite/, Team: /Profile: quality/, Sessions: /No other chats are open on this project/, Costs: /This session: \$1\.42/ }
-  for (const [tab, re] of Object.entries(want)) {
+test('each tab draws its view, and the choice holds across redraws; the folded tabs keep their facts in their new homes', async () => {
+  // The kernel as the Settings tab reads it: `vbw config` and `vbw statusline status`.
+  const kernel = (argv) => (argv[1] === 'config' && argv.length === 2 ? { exitCode: 0, stdout: 'profile: quality\nmodel.architect: opus\n', stderr: '' }
+    : argv[1] === 'statusline' ? { exitCode: 0, stdout: 'off: no status line is set (vbw statusline on)\n', stderr: '' } : { exitCode: 2, stdout: '', stderr: 'vbw: usage\n' })
+  const h = await started({ process: kernel }, record({ settings: { profile: 'quality' }, decisions: [{ id: 'D1', text: 'Which db? sqlite', at: '2026-10-01T00:00:00Z' }] }))
+  // Decisions under Plan, the cost per run and the session total (Costs) in Timeline, the models (Team) in Settings.
+  const want = { Plan: [/P44 Cost/, /sqlite/], Proof: [/No checks are approved/], Timeline: [/No VBW workflow runs/, /This session: \$1\.42/], Sessions: [/No other chats are open on this project/], Settings: [/quality/, /architect/, /opus/] }
+  for (const [tab, res] of Object.entries(want)) {
     await press(h, await h.render(), tab)
-    assert.match(text(await h.render()), re, tab)
+    for (const re of res) assert.match(text(await h.render()), re, tab)
     await h.advance(4000)
-    assert.match(text(await h.render()), re, tab + ' after a tick')
+    for (const re of res) assert.match(text(await h.render()), re, tab + ' after a tick')
   }
 })
 
-test('Now: pressing an agent card shows its detail', async () => {
+test('Settings: a press runs the kernel command, the tab is read again, the row shows the new value and ✓ saved; a refusal shows the kernel\'s words', async () => {
+  let profile = 'balanced'
+  const ran = []
+  const kernel = (argv) => {
+    ran.push(argv.slice(1))
+    if (argv[1] === 'config' && argv.length === 2) return { exitCode: 0, stdout: 'profile: ' + profile + '\nautonomy_cap: 25\n', stderr: '' }
+    if (argv[1] === 'statusline') return { exitCode: 0, stdout: 'off: no status line is set\n', stderr: '' }
+    if (argv[2] === 'set' && argv[3] === 'profile') { profile = argv[4]; return { exitCode: 0, stdout: 'profile = ' + profile + '\n', stderr: '' } }
+    return { exitCode: 2, stdout: '', stderr: 'vbw: autonomy_cap must be a number of steps\n' }
+  }
+  const h = await started({ process: kernel })
+  await press(h, await h.render(), 'Settings')
+  const READS = [['config'], ['statusline', 'status'], ['interview', '--json'], ['workflows', 'status'], ['auto', 'status', 'sess-1']]
+  assert.deepEqual(ran, READS, 'opening the tab reads it at once, this chat\'s autonomous run by its session id')
+  ran.length = 0
+  await press(h, await h.render(), 'quality')
+  assert.deepEqual(ran, [['config', 'set', 'profile', 'quality'], ...READS])
+  let t = text(await h.render())
+  assert.match(t, /profile\s*\nquality\n\n● \nquality\n(.*\n)*✓ saved/)
+  assert.ok(h.calls.every((c) => c.name !== 'fs.write' || !/record\.json/.test(String(c.args[0]))), 'the tab never writes the record')
+  await h.advance(3000)
+  assert.doesNotMatch(text(await h.render()), /✓ saved/, 'the flash settles')
+  await press(h, await h.render(), '+')
+  t = text(await h.render())
+  assert.match(t, /autonomy_cap must be a number of steps/)
+  assert.match(t, /autonomy_cap\s*\n−\n25\n/, 'the value stays')
+})
+
+test('Now: pressing a helper of the crew shows its detail', async () => {
   const h = await started({}, record({ lease: lease('plan', T0) }), next({ action: 'run' }))
   writeRun(h, h.now())
   await launch(h)
@@ -253,14 +290,14 @@ test('a failed agent\'s details button opens Mission Control on that agent', asy
   assert.doesNotMatch(text(await band(h)), /architect/, 'opened in Mission Control: the failure leaves Comms')
 })
 
-test('Costs: each run costs the session cost moved while its lease was open', async () => {
+test('Timeline: each run costs the session cost moved while its lease was open', async () => {
   const h = await started({ usage: { cost: { usd: 1 } } })
   h.project(record({ lease: lease('plan', h.now()) }), next({ action: 'run' }))
   await h.advance(2000)
   h.setUsage({ cost: { usd: 3.5 } })
   h.project(record(), next())
   await h.advance(2000)
-  await press(h, await h.render(), 'Costs')
+  await press(h, await h.render(), 'Timeline')
   const t = text(await h.render())
   assert.match(t, /plan 1/)
   assert.match(t, /about \$2\.50/)
@@ -301,7 +338,11 @@ test('outside the project it reads only this session\'s own folder and Claude Co
   writeRun(h, h.now())
   await launch(h)
   await h.advance(6000)
+  // Finding the project asks only whether a folder above holds .git (the walk to the git
+  // top, as the kernel finds it); it reads nothing there.
+  const above = (p) => p.endsWith('/.git') && (p === '/.git' || ROOT.startsWith(p.slice(0, -5) + '/'))
   const paths = [...h.callsOf('fs.read'), ...h.callsOf('fs.stat'), ...h.callsOf('fs.exists'), ...h.callsOf('fs.list')].map((a) => a[0])
+    .filter((p) => !(above(p) && h.callsOf('fs.read').every((a) => a[0] !== p)))
   for (const p of paths) {
     // the Claude config folder here is ~/.claude (~/.config/claude-code is only probed)
     const chats = '/home/u/.claude/sessions'
