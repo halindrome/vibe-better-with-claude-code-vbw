@@ -167,8 +167,17 @@ function leftOf(run, step, now) {
   return words ? words.text : null
 }
 
+// A proof opens no workflow run: while one is live (the step note's kind prove), the
+// Timeline says so, with the checks done when the note counts them, and points to the Proof tab.
+function provingLine(step) {
+  if (!isObj(step) || step.kind !== 'prove') return null
+  const p = isObj(step.proof) ? step.proof : null
+  const counted = p && Number.isInteger(p.done) && Number.isInteger(p.total) && p.total > 0
+  return { idle: 'A proof is running' + (counted ? ': ' + p.done + ' of ' + p.total + ' checks done' : '') + '. The Proof tab shows each check.' }
+}
+
 export const timelineModel = safe(({ run, now, steps, step, width }) => {
-  if (!validRun(run)) return null
+  if (!validRun(run)) return provingLine(step)
   const t = num(now) ? now : Date.now()
   const w = num(width) ? Math.max(10, Math.floor(width)) : 40
   const start = num(run.startedAt) ? run.startedAt : t
@@ -263,6 +272,7 @@ export function renderRefusal(ui, row, open, act) {
 }
 
 export function renderTimeline(ui, model) {
+  if (isObj(model) && typeof model.idle === 'string') return empty(ui, model.idle)
   if (!isObj(model) || !Array.isArray(model.lanes)) return empty(ui, NO_RUN)
   const nameW = Math.min(16, Math.max(4, ...model.lanes.map((l) => l.name.length)))
   const lane = (l) =>
