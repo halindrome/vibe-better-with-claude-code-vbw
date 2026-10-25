@@ -23,6 +23,10 @@ After `build` and `fix`, the router runs `vbw prove` (deterministic, no agent);
 after a passing proof, QA verifies what the checks cannot (docs/proof.md). Then
 `vbw next` decides again. Approval, acceptance and shipping are human gates.
 
+A workflow returns one object to the session. When Claude Code keeps a large
+result saved to a file, the returned object sits under `result`: the session
+reads the field it needs with jq (`.result.map`, `.result.recommendation`).
+
 Each Dev and Docs prompt of `vbw:building` and `vbw:fixing` starts the agent
 on its plan or fix, then on `vbw show decisions --since-approval`: the
 decisions recorded after the latest approval of the contract. A decision there

@@ -183,3 +183,24 @@ test('renderTimeline and renderRuns draw lanes, sparkline and bars', () => {
   assert.ok(collect(renderTimeline(UI, null)).length > 0)
   assert.ok(collect(renderRuns(UI, null)).length > 0)
 })
+
+test('timelineModel: with no run, a live proof says it is running, checks done of total, and points to the Proof tab; anything else stays the empty line', () => {
+  const proving = { kind: 'prove', doing: 'proving 12 of 40 checks', proof: { done: 12, total: 40 } }
+  const m = timelineModel({ run: null, now: S, steps: [], step: proving, width: 40 })
+  assert.deepEqual(m, { idle: 'A proof is running: 12 of 40 checks done. The Proof tab shows each check.' })
+  assert.deepEqual(collect(renderTimeline(UI, m)), ['A proof is running: 12 of 40 checks done. The Proof tab shows each check.'])
+  const starting = timelineModel({ run: null, now: S, steps: [], step: { kind: 'prove', proof: null }, width: 40 })
+  assert.deepEqual(starting, { idle: 'A proof is running. The Proof tab shows each check.' })
+  for (const step of [null, { kind: 'build', parts: { done: 1, total: 2 } }, { kind: 'prove', proof: { done: 'x', total: 40 } }]) {
+    const none = timelineModel({ run: null, now: S, steps: [], step, width: 40 })
+    if (step && step.kind === 'prove') assert.deepEqual(none, { idle: 'A proof is running. The Proof tab shows each check.' })
+    else assert.equal(none, null)
+  }
+  assert.deepEqual(collect(renderTimeline(UI, null)), ['No VBW workflow runs in this session right now.'])
+})
+
+test('docs/panel.md says what the Timeline shows while a proof runs', async () => {
+  const { readFile } = await import('node:fs/promises')
+  const doc = await readFile(new URL('../../docs/panel.md', import.meta.url), 'utf8')
+  assert.match(doc.replace(/\s+/g, ' '), /A proof is running: 12 of 40 checks done\. The Proof tab shows each check\./)
+})

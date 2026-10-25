@@ -430,7 +430,9 @@ scroll it) to read the rest.
   a button for the last 20 lines.
 - **Timeline:** one lane per agent of the live run against the run's clock, the
   three slowest marked, and past steps of the same kind against their usual
-  time. Under it, **Runs this session**: each VBW run of this session on one
+  time. A proof runs no agents: while one runs, the Timeline says so, with the
+  checks done of the total (`A proof is running: 12 of 40 checks done. The Proof
+  tab shows each check.`). Under it, **Runs this session**: each VBW run of this session on one
   row, its time bar and time beside its cost bar and cost (the session cost
   added while the run was open, so "about"), the totals by kind when there is
   more than one kind, and the session total. The list starts with the session:

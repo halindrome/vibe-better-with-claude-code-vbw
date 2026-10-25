@@ -262,9 +262,10 @@ instructions, for example `CLAUDE.md`.
 
 **Express and QA.** An express phase skips QA when all its requirements are
 `auto` and its proof passes. It gets QA if it has a `human` requirement or has
-escalated, or if a file its plans delivered changed outside any plan and no
-decision of the user covers that change (docs/proof.md, Delivered files). At
-every QA depth, `quick` included, a pass is refused while such a file stands.
+escalated. A file its plans delivered that changed outside any plan goes to the
+user first, who keeps or restores it (docs/proof.md, Delivered files). At every
+QA depth, `quick` included, a pass is refused while such a file stands with no
+decision covering it.
 
 ## Forcing a tier
 

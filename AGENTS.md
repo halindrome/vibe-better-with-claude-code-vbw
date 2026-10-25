@@ -83,10 +83,10 @@ Direct push access to `swt-labs/vibe-better-with-claude-code-vbw`. Single `origi
 
 ### Branch Cleanup
 
-- **`fetch.prune`** is enabled — stale remote tracking refs are removed on every fetch.
-- **`git merged`**: custom alias that finds local branches fully merged into `origin/main` and removes them locally. Also prunes worktrees in `../<repo-name>-worktrees/` whose branches have been merged or whose PRs have been merged/closed. Safe to run anytime — skips `main` and `dev`.
-- **`git cleanup`**: fetches, prunes, and deletes local branches whose remote tracking branch is gone.
-- After a PR is merged, run `git merged` to clean up local branches and their worktrees.
+After a PR is merged:
+
+- `git fetch --prune origin` removes the remote-tracking refs of deleted branches.
+- `git branch --merged origin/main` lists the local branches merged into `main`. For each one (never `main` or `dev`), remove its worktree with `git worktree remove <path>`, then delete it with `git branch -d <branch>`.
 
 ### Worktrees
 
@@ -94,7 +94,7 @@ The issue-fix workflow uses git worktrees for parallel-safe issue work.
 
 - **Location**: `../<repo-name>-worktrees/<branch-name>/` (sibling directory, outside the repo)
 - **Creation**: `git worktree add -b` creates branch + worktree atomically
-- **Cleanup**: the workflow never removes worktrees automatically; use `git merged` after merge
+- **Cleanup**: the workflow never removes worktrees automatically; remove them after the merge (Branch Cleanup above)
 - **Manual removal**: `git worktree remove <path>` or `git worktree prune`
 
 ### Branch Protection

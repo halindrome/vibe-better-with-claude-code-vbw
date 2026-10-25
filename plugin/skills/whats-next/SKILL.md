@@ -22,7 +22,7 @@ Above: the open requirements and backlog (`summary`), the models, the effort tab
 
 1. The summary shows a run is open (`run` is not null): say so in one line and do not start. Stop here.
 2. Otherwise run Workflow `vbw:recommending` with args `{"summary": <the triage JSON>, "declined": <declined suggestion texts>, "models": ..., "effort": ..., "profile": <the interview answers>, "root": <the folder vbw root printed>}`. It starts no run.
-3. Pipe its `recommendation` (JSON) to `vbw recommend`.
+3. Pipe its `recommendation` (JSON) to `vbw recommend` (from a result saved to a file: `jq -c '.result.recommendation' FILE | vbw recommend`).
 4. Show the what's-next part of `vbw status`.
 
 ## When it does not work

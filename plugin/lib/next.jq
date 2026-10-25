@@ -54,6 +54,11 @@ def fix_files($r): if .command then ["*"]
        | map(select(overlaps(.files; $ff) | not))
          + [{ids: ([$hit[].ids[]] + [$f.id]), files: ([$hit[].files[]] + $ff | unique)}])
    | map(.ids)) as $fix_groups
+# Delivered files changed outside any plan that the user has not settled yet (lib/qa.jq):
+# no decision covers the change and no restore (vbw fix restore) is under way for the file.
+| ([.fixes[] | select(has("restore") and (.status | IN("open","fixed"))) | .restore]) as $restoring
+| ([($qa.deviations // {}) | to_entries[] | .key as $p | .value[] | select(.decision == null and (.file | IN($restoring[]) | not))
+    | {phase: $p, file, plan, change, commit, by}]) as $unsettled
 | (.evidence == null or .evidence.contract != $contract or $code_changed) as $stale
 | ([.requirements[] | select(.proof == "auto" and (.status != "proven" or $stale)) | .id]) as $unproven
 | ([$current[] | select(.proof == "human" and .status == "open" and .skipped != true) | .id]) as $to_accept
@@ -133,6 +138,8 @@ def fix_files($r): if .command then ["*"]
     | result("approve"; true; "Approve the test files new or edited since the approval (a fix may add or change them), once, before they are proved: \($wf | join(", "))"; {files: $wf})
   elif ($unproven | length) > 0 then
     result("prove"; false; "Run vbw prove for \($unproven | join(", "))"; {requirements: $unproven})
+  elif ($unsettled | length) > 0 then
+    result("deviations"; true; "Files the plans delivered changed outside any plan: ask the user whether to keep each change (vbw decide naming the file) or restore it (vbw fix restore FILE): \([$unsettled[] | "\(.file) (\(.plan)) \(.change)"] | join(", "))"; {deviations: $unsettled})
   elif (proof_complete | not) and (($to_verify | length) > 0 or ($to_accept | length) == 0) then
     result("prove"; false; "Run vbw prove --full: QA and shipping need a proof in which no quick command stood in for the test command and no approved full command was skipped"; {full: true})
   elif ($to_verify | length) > 0 then

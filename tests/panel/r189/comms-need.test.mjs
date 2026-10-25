@@ -48,6 +48,7 @@ const GATES = [
   ['unblock', { plans: ['P44.1'], blocked: [{ id: 'P44.1', note: 'no API key' }] }, /block/i],
   ['escalate', { fixes: ['F3'] }, /F3/],
   ['scope', {}, /outside|review/i],
+  ['deviations', { deviations: [{ phase: 'P1', file: 'NOTES.md', plan: 'P1.1', change: 'deleted' }] }, /NOTES\.md.*keep|keep.*NOTES\.md/i],
   ['spec', {}, /requirement|what to build/i],
   ['milestone', {}, /milestone|next/i],
   ['convert', {}, /VBW 1|convert/i],
@@ -229,9 +230,10 @@ const DONE = {
   unblock: [{ plans: [{ id: 'P44.1', phase: 'P44', title: 'Show the cost', status: 'planned' }] }, /blocked/i],
   escalate: [{ fixes: [{ id: 'F3', status: 'closed' }] }, /decision is needed from you on F3/i],
   scope: [{ evidence: { scope: [] } }, /outside/i],
+  deviations: [{ fixes: [{ id: 'F1', req: 'R1', restore: 'NOTES.md', attempts: 0, status: 'open', note: 'Restore NOTES.md' }] }, /NOTES\.md/],
   convert: [{ converted: { from: '.vbw-planning', at: '2026-10-16T10:00:00Z' } }, /VBW 1/],
 }
-const DETAIL = { unblock: { plans: ['P44.1'] }, escalate: { fixes: ['F3'] } }
+const DETAIL = { unblock: { plans: ['P44.1'] }, escalate: { fixes: ['F3'] }, deviations: { deviations: [{ phase: 'P1', file: 'NOTES.md', plan: 'P1.1', change: 'deleted' }] } }
 
 test('every other gate kind clears too once the record says it is done, with next.json unchanged: Comms, Mission Control, the hint line and /vbw-status', async () => {
   for (const [action, [done, said]] of Object.entries(DONE)) {

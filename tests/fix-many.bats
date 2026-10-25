@@ -75,9 +75,13 @@ fix_status() { jq -r --arg f "$1" '.fixes[] | select(.id == $f) | .status' .vbw/
   vbw_run fix done F1
   [ "$status" -eq 1 ]
   [[ "$output" == *"F1 is not open"* ]]
+  # No named fix can close: each is named and the report still ends cleanly
+  # (bash 4 and later leave a local declared without a value unset).
   vbw_run fix done F99
   [ "$status" -eq 1 ]
   [[ "$output" == *"unknown fix F99"* ]]
+  [[ "$output" == *"ran again: 0 of 0 units"* ]] || { echo "$output"; false; }
+  [[ "$output" != *"unbound variable"* ]] || { echo "$output"; false; }
 }
 
 @test "several fixes close in one command and a shared check runs once" {

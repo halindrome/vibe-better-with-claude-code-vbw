@@ -81,11 +81,46 @@ fix_unit_lines() {
       else empty end'
 }
 
+# vbw fix restore FILE...: the user chose to bring each FILE, delivered by a plan and
+# changed outside any plan (the last proof's deviations, no decision covering it),
+# back to what its plan made. Each gets one fix naming it (restore), on the plan's
+# first requirement; the proof closes it once the file no longer deviates. All or
+# nothing: an unknown or already restoring file refuses the whole command.
+cmd_fix_restore() {
+  [ $# -ge 1 ] || vbw_usage_error "usage: vbw fix restore FILE [FILE...]"
+  vbw_require_project
+  local record dv dvf files why
+  record=$(record_read)
+  # shellcheck source=cmd-next.sh
+  . "$VBW_LIB/cmd-next.sh"
+  dv=$(qa_deviations "$record")
+  # The record update reads the deviations from a file of its own (a pipe would be gone by then).
+  vbw_scratch_json dvf "$dv"
+  files=$(printf '%s\n' "$@" | jq -R . | jq -sc 'unique')
+  why=$(printf '%s' "$record" | jq -r --slurpfile dv <(printf '%s' "$dv") --argjson fs "$files" '. as $r
+    | [$dv[0][]?[] | select(.decision == null)] as $d
+    | $fs[] as $f
+    | ([$r.fixes[] | select(.restore == $f and (.status | IN("open", "fixed"))) | .id][0]) as $by
+    | if any($d[]; .file == $f) | not then "\($f) is not a file its plan delivered that changed outside any plan (vbw show evidence lists them)"
+      elif $by != null then "\($f) is already being restored by \($by)"
+      else empty end')
+  [ -z "$why" ] || vbw_die "$(printf '%s' "$why" | head -1)"
+  record_update "$VBW_JQ_DEFS"'. as $r | [$dv[0][]?[] | select(.decision == null)] as $d
+    | reduce $fs[] as $f (.;
+        first($d[] | select(.file == $f)) as $x
+        | .fixes += [{id: next_fix_id, req: first($r.plans[] | select(.id == $x.plan) | .reqs[0]), restore: $f, attempts: 0, status: "open",
+            note: "Restore \($f): \($x.plan) delivered it (commit \($x.commit[0:12])) and it was \($x.change) outside any plan; the user chose to bring it back to what \($x.plan) made"}])' \
+    --slurpfile dv "$dvf" --argjson fs "$files"
+  vbw_guard_drop "$dvf"
+  jq -r --argjson fs "$files" '.fixes[] | select(.status == "open" and (.restore | IN($fs[]))) | "\(.id) opened for \(.req): restore \(.restore)"' "$VBW_RECORD"
+}
+
 cmd_fix() {
   local mode="${1:-}"
   [ "$mode" != check ] || { shift; cmd_fix_check "$@"; return; }
+  [ "$mode" != restore ] || { shift; cmd_fix_restore "$@"; return; }
   { [ "$mode" = "done" ] && [ $# -ge 2 ]; } || { [ "$mode" = retry ] && [ $# -eq 2 ]; } \
-    || vbw_usage_error "usage: vbw fix done ID [ID...] | fix retry ID | fix check FIX < CHECK"
+    || vbw_usage_error "usage: vbw fix done ID [ID...] | fix retry ID | fix check FIX < CHECK | fix restore FILE [FILE...]"
   shift
   vbw_require_project
   local record id
@@ -150,7 +185,7 @@ cmd_fix() {
     ids+=("$id")
   done
 
-  local own_json cands_json tf_json obuf='' ebuf='' wait_files='' wf mine todo=() cands=() c at results='{}' held head noreads causes keys served='[]' tfres='{}' tfbad='' off wmap='{}' rmap='{}' tfwant=0 began=0
+  local own_json cands_json tf_json obuf='' ebuf='' wait_files='' wf mine todo=() cands=() c at results='{}' held head noreads causes='' keys served='[]' tfres='{}' tfbad='' off wmap='{}' rmap='{}' tfwant=0 began=0
   # The run and its slot store open before the planning, which holds vbw:plan
   # (R202); the contract must be approved only when something will run.
   [ ${#ids[@]} -eq 0 ] || { mkdir -p "$VBW_RUNTIME" || vbw_die "cannot create $VBW_RUNTIME"; checks_open; began=1; }

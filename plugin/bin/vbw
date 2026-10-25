@@ -35,7 +35,7 @@ usage: vbw <command> [args]
   apply --add < P   add new phases with their plans, checks and rules, the rest untouched
   run start KIND [IDS] | run confirm ID... | run end [--owner-closed]   open the run lease, check what its agents recorded, close it
   plan done|block|reset ID   a plan's outcome (done is verified)
-  fix done ID [ID...] | retry ID   fixes committed (checks they serve run once); retry an escalated fix
+  fix done ID [ID...] | retry ID | restore FILE...   fixes committed (checks they serve run once); retry an escalated fix; restore a delivered file changed outside any plan
   req accept ID | req reject ID NOTE | req skip ID   the user's verdict on a [human] requirement, or Skip for now
   qa finding [PHASE] REQ TEXT | qa record PHASE pass|fail TIER [NOTE]   the QA agent's findings and verdict on a built phase
   ship              mark the milestone shipped (when vbw next says ship)
@@ -103,6 +103,7 @@ vbw_cmd_usage() {
     fix)
       echo "usage: vbw fix done ID [ID...]   fixes committed; the checks they serve run once"
       echo "       vbw fix retry ID   retry an escalated fix"
+      echo "       vbw fix restore FILE [FILE...]   the user chose to bring a delivered file changed outside any plan back to what its plan made"
       echo "       vbw fix check FIX < CHECK   add a check (a JSON object: run, files, optionally exit, output, timeout, alone)" ;;
     req)
       echo "usage: vbw req accept ID | req reject ID NOTE | req skip ID   the user's verdict on a [human] requirement"

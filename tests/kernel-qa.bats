@@ -61,6 +61,10 @@ shop_project() {
   printf 'paid\nmore\n' > src/pay.txt
   git add src/pay.txt && git commit -q -m "fix(pay): more"
   "$VBW" prove --full > /dev/null
+  # A hand change to a delivered file goes to the user first; kept, the phase is checked again.
+  vbw_run next --json
+  echo "$output" | jq -e '.action == "deviations"'
+  "$VBW" decide "Keep the change to src/pay.txt" > /dev/null
   vbw_run next --json
   echo "$output" | jq -e '.action == "qa"'
   local round
