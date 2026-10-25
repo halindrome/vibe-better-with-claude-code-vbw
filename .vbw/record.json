@@ -51614,7 +51614,7 @@
       "id": "F291",
       "req": "R202",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "C434 fail (exit 1)"
     }
   ],
@@ -63531,6 +63531,17 @@
         "ended": "2026-10-25T14:45:42Z",
         "cost": {
           "usd": 0.311695
+        }
+      },
+      {
+        "id": "fix-20261025T145008Z",
+        "kind": "fix",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M42",
+        "started": "2026-10-25T14:50:08Z",
+        "ended": "2026-10-25T14:53:18Z",
+        "cost": {
+          "usd": 0.301008
         }
       }
     ],
