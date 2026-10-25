@@ -6010,7 +6010,7 @@
   "milestone": {
     "id": "M42",
     "title": "Faster proofs on large projects",
-    "status": "active"
+    "status": "shipped"
   },
   "shipped": [
     {
@@ -6212,6 +6212,11 @@
       "id": "M41",
       "title": "Release fixes from the 2.0.40 user runs",
       "at": "2026-10-20T06:58:30Z"
+    },
+    {
+      "id": "M42",
+      "title": "Faster proofs on large projects",
+      "at": "2026-10-25T15:18:22Z"
     }
   ],
   "requirements": [
@@ -55763,6 +55768,11 @@
       "text": "The owner accepts the changes the 2.1.4-2.1.13 releases made to M42's delivered files, outside any plan (built with VBW off in plow batches, each released by PR after CI): plugin/lib/prooftime.sh (6e1d6311, c37fbe31); tools/l3.sh (2bc14124, e54013ea, 55baa884, e9a68b84); tools/l3-suite.sh (d7f73771, 9d337c8a, 2bc14124, 88f618de, ea44b913, 73f98d31, 2f26efa3, 3d2ff29f, df907c74, 208083c5, e54013ea, a290a89e, 76bc321a, aafc139d, c6a59ce0, 6effe97f, 740b06f4, 9ef2ebec, e10808f0, ba216d91); plugin/lib/proofcauses.sh (ad22e59d, 89508935); plugin/lib/testfiles.sh (076b1245, b25b3a01, 605803fc); plugin/lib/steps.sh (6e1d6311, ad22e59d, 3c7bb8b6, d031f4c9, 8478c761, 9ed3153b); plugin/lib/reads.sh (c1f93cea); docs/next.md (fadf6e8d, a99fba00, 6e1d6311, ad22e59d, 9894319c, 53a07960, 907e3837, d031f4c9, ba4f1443); AGENTS.md (0a59ecb7, 55baa884, 83bcfc49, 06a1e773, 4dbf1276, 3a3b40e8); plugin/lib/checks.sh (0c30b9ef, 817d9cba, 38c06193, 076b1245, e045fcac, d4d4be1d, 605803fc, 738cb333, 23aa2b44); plugin/lib/cmd-fix.sh (b45afa79, 076b1245, 953ad723, e52ff7b2, 8478c761, c37fbe31, 605803fc, 685624fb, d060cbd5); plugin/lib/slots.sh (71852955, b827f7d0, d658040e, ab228cd2, 4780e81c, 605803fc, 738cb333); tools/l3-stale.sh (f6a63da7); tools/test.sh (5b45651d); plugin/lib/cmd-mutate.sh (304cebfa, 206b6b52, 47d9acdb, d4d4be1d, f535e10b, 23aa2b44); plugin/lib/proofreuse.sh (47d9acdb, ad22e59d, 0fa41cfc); plugin/lib/cmd-plan.sh (de32c4a7, 23aa2b44, 8674376f); docs/workflows.md (2d061b57, fdc5aab8, 80f6bbd9, 3fde5566, 304cebfa, 206b6b52, 2b03a912, 907e3837, d060cbd5, 23aa2b44, ba4f1443); plugin/agents/dev.md (06a1e773, 23aa2b44, 8674376f); plugin/lib/cmd-prove.sh (b45afa79, 076b1245, 6e1d6311, 666c1c87, ad22e59d, 907e3837, 0fa41cfc, e52ff7b2, c37fbe31, 685624fb, a5eabf04); plugin/lib/cmd-show.sh (304cebfa, a99fba00, b45afa79, 076b1245, 5f4e2950, 53a07960, 907e3837, 953ad723, e52ff7b2, 71a55219, 8674376f); plugin/lib/record.jq (7f434be9, 1006c879, 91bcdef1, a356babf, 304cebfa, 6d0c31d1, 907e3837, e52ff7b2, 71a55219); docs/loop.md (49010750, 6d0c31d1, 71a55219); docs/proof.md (71852955, 304cebfa, 817d9cba, ee05502f, d658040e, ab228cd2, 076b1245, 206b6b52, 6e1d6311, e5ce7459, 47d9acdb, ad22e59d, 1d7e7d6d, 907e3837, e045fcac, 4780e81c, 0fa41cfc, e52ff7b2, d031f4c9, 89508935, 243e8d4a, c37fbe31, 605803fc, d060cbd5, 23aa2b44, 8674376f, 4dbf1276); docs/record.md (7f434be9, 1006c879, 91bcdef1, a356babf, 304cebfa, 076b1245, 6d0c31d1, e5ce7459, 907e3837, e52ff7b2, 89508935, c37fbe31, 71a55219)",
       "why": "owner, 2026-10-25, after the QA round of P161-P165 found no behaviour fault: the changes are later maintainer work already on main and released; moving them into plans adds nothing",
       "at": "2026-10-25T15:11:44Z"
+    },
+    {
+      "id": "D496",
+      "at": "2026-10-25T15:18:22Z",
+      "text": "Shipped M42 Faster proofs on large projects: 3 requirements proven or accepted"
     }
   ],
   "commands": {
@@ -61161,27 +61171,6 @@
       "wall": 166.311
     }
   },
-  "recommendation": {
-    "at": "2026-10-09T20:53:56Z",
-    "top": {
-      "text": "Skip the second full check run after a fix that only changes documentation. Today, if QA (VBW's final review) finds a problem and the fix only edits documentation, VBW still reruns its whole test suite, about 23 minutes on VBW itself, before QA looks again. With this change, VBW reuses the earlier test results when only documentation has changed since they ran, the same way QA already does under R115.",
-      "size": "small",
-      "reason": "Decision D220 already named this as the next pick once M18 shipped, and M18 has now shipped (D222); it is a small change that saves about 23 minutes each time it applies.",
-      "source": "T86"
-    },
-    "runners": [
-      {
-        "text": "Fix a QA depth bug. A phase that was raised to the strictest review level ('deep') is currently reviewed at the lighter 'standard' level, because a small-change shortcut still applies to it. This happened to P89, P90 and P92, and P92 failed QA four times. A phase that was raised should keep the review level it was given.",
-        "size": "small",
-        "source": "T93"
-      },
-      {
-        "text": "Backlog commands (vbw todo add, sort, done and drop) leave the project record file unsaved in git when they are the last command run. Have them commit it, as vbw recommend has done since 2.0.29, without touching any files the user has staged.",
-        "size": "small",
-        "source": "T90"
-      }
-    ]
-  },
   "test_files": {
     "run": [
       "bats",
@@ -65684,6 +65673,10 @@
             "out": 0,
             "at": "2026-10-20T07:20:18Z"
           }
+        },
+        "total": {
+          "usd": 5212.974714,
+          "sessions": 38
         }
       }
     }
