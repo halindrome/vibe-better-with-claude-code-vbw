@@ -22905,7 +22905,15 @@
           "to": "deep",
           "reason": "proven requirement R202 failed"
         }
-      ]
+      ],
+      "qa": {
+        "result": "fail",
+        "tier": "deep",
+        "tree": "1726928564777dc53be3d50f80f03870e3383c00f7b6ea0a96984458623af3c7",
+        "at": "2026-10-25T15:02:01Z",
+        "note": "27/32 checks",
+        "rounds": 1
+      }
     },
     {
       "id": "P163",
