@@ -22865,6 +22865,14 @@
         "tree": "e82ce7986f9f24ecaa9f1bf242ac63317302e3603fd55cb2e6d4170e901a4500",
         "at": "2026-10-25T15:16:51Z",
         "note": "5/5 checks"
+      },
+      "outcome": {
+        "tier": "deep",
+        "predicted": "deep",
+        "held": true,
+        "fix_rounds": 13,
+        "qa_findings": 12,
+        "escalations": 3
       }
     },
     {
@@ -22911,6 +22919,14 @@
         "tree": "1726928564777dc53be3d50f80f03870e3383c00f7b6ea0a96984458623af3c7",
         "at": "2026-10-25T15:16:54Z",
         "note": "5/5 checks"
+      },
+      "outcome": {
+        "tier": "deep",
+        "predicted": "deep",
+        "held": true,
+        "fix_rounds": 13,
+        "qa_findings": 12,
+        "escalations": 1
       }
     },
     {
@@ -22950,12 +22966,19 @@
         }
       ],
       "qa": {
-        "result": "fail",
+        "result": "pass",
         "tier": "deep",
         "tree": "0caf853758b3e2e4a54326d018481801da67f102c6f861a1cd87c95ab3d598f8",
-        "at": "2026-10-25T15:03:00Z",
-        "note": "26/30 checks",
-        "rounds": 1
+        "at": "2026-10-25T15:17:00Z",
+        "note": "6/6 checks"
+      },
+      "outcome": {
+        "tier": "deep",
+        "predicted": "standard",
+        "held": false,
+        "fix_rounds": 13,
+        "qa_findings": 12,
+        "escalations": 1
       }
     },
     {
@@ -23030,12 +23053,19 @@
       ],
       "predicted": "standard",
       "qa": {
-        "result": "fail",
+        "result": "pass",
         "tier": "standard",
         "tree": "5da4b3bd5a577fe9aedd756947915d0db527512c8024677b9e35af200eb448ab",
-        "at": "2026-10-25T15:01:59Z",
-        "note": "10/16 checks",
-        "rounds": 1
+        "at": "2026-10-25T15:16:52Z",
+        "note": "6/6 checks"
+      },
+      "outcome": {
+        "tier": "standard",
+        "predicted": "standard",
+        "held": true,
+        "fix_rounds": 6,
+        "qa_findings": 6,
+        "escalations": 0
       }
     }
   ],
@@ -51694,7 +51724,7 @@
       "req": "R204",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "plugin/lib/cmd-prove.sh (P165.1) was changed after the plan by commits no recorded decision covers. R204's own follow-ups: a5eabf04 'perf(R204): the scope check sorts the history out in jq' rewrote prove_scope from the planned bash 'read -r -d' loop over ONE git log walk into two walks (a counting walk plus a bounded raw walk with --max-count) and a jq program that re-runs while 'git merge-base' rejects a pair; the plan and the criterion say one walk, and docs/proof.md now says '2 git processes plus one per undone pair'. D487 only decides that an exactly-undone commit is not judged; it does not cover the changed mechanism. Other, unrelated commits touching the same file with no covering decision: b45afa79, 076b1245, 6e1d6311, 666c1c87, ad22e59d, 907e3837, 0fa41cfc, e52ff7b2, c37fbe31, 685624fb. The behaviour looks right (tests/scope-undone.bats and tests/scope-history.bats exist, the full test run passed), so the fix is a recorded user decision accepting these changes, or updating the plan. Regression test idea: none for behaviour; the gap is the missing decision.",
       "phase": "P165"
     },
@@ -51721,7 +51751,7 @@
       "req": "R204",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "plugin/lib/cmd-show.sh (P165.2) was changed after the plan by commits no decision covers: 304cebfa (apply: reword/retire a rule), a99fba00 (qa interleaved phases), b45afa79, 076b1245, 5f4e2950 (show req lists only the record's own commits), 53a07960 (contract says why a plan waits), 907e3837, 953ad723, e52ff7b2, 71a55219 (costs), 8674376f (mutate: one break per rule; this one falls under D491's T174 scope). P165.2 only planned the evidence view's 'scope: ... undone by ..., not judged' line, which is present at cmd-show.sh:178. The extra edits belong to other work and need a user decision (or a plan) naming them. Regression test idea: none; recording the decision is the fix.",
       "phase": "P165"
     },
@@ -51739,7 +51769,7 @@
       "req": "R204",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "plugin/lib/record.jq (P165.2) was changed after the plan by commits no decision covers: 7f434be9 (effort per helper, schema 5), 1006c879 and 91bcdef1 (sound setting), a356babf (loop item time, stepped_at), 304cebfa (retire a rule), 6d0c31d1 (loop budget from road), 907e3837 (qa delivered-files check), e52ff7b2 (check_budget), 71a55219 (costs). P165.2's own validator rule for evidence.undone is present (record.jq:360-363). The other edits are unrelated features and need a recorded user decision or a plan. Regression test idea: none; recording the decision is the fix.",
       "phase": "P165"
     },
@@ -51757,7 +51787,7 @@
       "req": "R204",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "docs/loop.md (P165.3) was changed after the plan by commits no decision covers: 49010750 (what counts as an item's time, how an item resumes), 6d0c31d1 (budget from planned road), 71a55219 (costs). The P165.3 text (park and hand revert clear a commit the same way, loop.md:312) is present. Needs a recorded user decision or a plan naming the other edits. Regression test idea: none.",
       "phase": "P165"
     },
@@ -51784,7 +51814,7 @@
       "req": "R204",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "docs/proof.md (P165.3) was changed after the plan by many commits no decision covers: 243e8d4a (R204: docs say an undo of an untrailered commit is judged and give the scope check's cost as 2 git processes plus one per undone pair, which differs from the criterion's 'one walk'), a5eabf04-era wording, 71852955, 304cebfa, 817d9cba, ee05502f, d658040e, ab228cd2, 076b1245, 206b6b52, 6e1d6311, e5ce7459, 47d9acdb, ad22e59d, 1d7e7d6d, 907e3837, e045fcac, 4780e81c, 0fa41cfc, e52ff7b2, d031f4c9, 89508935, c37fbe31, 605803fc, 4dbf1276, plus 23aa2b44, d060cbd5 and 8674376f (T174, covered in scope by D491). The planned exact-undo text (proof.md:598-613) is present. Needs a recorded user decision (especially for 243e8d4a, which narrows the criterion that the undoing commit is never judged) or a plan. Regression test idea: none.",
       "phase": "P165"
     },
@@ -51802,7 +51832,7 @@
       "req": "R204",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "docs/record.md (P165.3) was changed after the plan by commits no decision covers: 7f434be9, 1006c879, 91bcdef1, a356babf, 304cebfa, 076b1245, 6d0c31d1, e5ce7459, 907e3837, e52ff7b2, 89508935, c37fbe31, 71a55219. The planned evidence.undone row is present. Needs a recorded user decision or a plan naming the other edits. Regression test idea: none.",
       "phase": "P165"
     },
@@ -51847,7 +51877,7 @@
       "req": "R202",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "Deviation: AGENTS.md (P163.1 delivered it, then reverted by D478) was changed outside any plan by 0a59ecb7 (CI is the release gate, 2026-10-24), 55baa884 (main is the home branch), 83bcfc49 (no builtin write rule), 06a1e773 (lean checks, supersede), 4dbf1276 (privacy rewrite). None carries a VBW-Plan trailer and no recorded decision covers them (0a59ecb7 cites an owner decision of 2026-10-24 that is not in 'vbw show decisions'). The revert 3a3b40e8 is covered by D478/D487 and is not part of this finding. Regression test: none fits; the fix is a recorded owner decision covering these commits, so the deviation line clears.",
       "phase": "P163"
     },
@@ -51856,7 +51886,7 @@
       "req": "R202",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "Deviation: plugin/lib/checks.sh (P163.1) was changed outside any plan by 0c30b9ef (gate lock as a file), 817d9cba (each unit told its share of the cores), 38c06193 (lock takeover by rename), 076b1245 (units timed to a tenth of a second), e045fcac (slots kept busy), d4d4be1d (runs keep results apart), 605803fc (fix done asks for approval only when something runs; it also reworked P163.2's checks_begin move), 738cb333 (lock folders by owner file). No VBW-Plan trailer and no recorded decision covers them. 23aa2b44 (T174) is covered by owner decision D491 and left out. Regression test: none fits; needs an owner decision recorded for these commits.",
       "phase": "P163"
     },
@@ -51865,7 +51895,7 @@
       "req": "R202",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "Deviation: plugin/lib/cmd-fix.sh (P163.2) was changed outside any plan by b45afa79, 076b1245, 953ad723, e52ff7b2, 8478c761, c37fbe31, 605803fc, 685624fb (fixes and features on quiet grep, builtin writes, unit-time report, R149 unit list, R202 own-work, jq arguments). No VBW-Plan trailer, no recorded decision covers them. d060cbd5 (T174) is covered by D491 and left out. Regression test: none fits; needs an owner decision recorded for these commits.",
       "phase": "P163"
     },
@@ -51874,7 +51904,7 @@
       "req": "R202",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "Deviation: plugin/lib/slots.sh (P163.2) was changed outside any plan by 71852955 (unit that lost the store leaves no slot), b827f7d0 (one waiter pace), d658040e (three processes per store step), ab228cd2 (lock takeover by rename), 4780e81c (hand-over in the freeing step, T175), 605803fc, 738cb333. No VBW-Plan trailer and no recorded decision covers them; D491 puts T175 after 2.1.0, so it does not cover 4780e81c. Regression test: none fits; needs an owner decision recorded for these commits.",
       "phase": "P163"
     }
