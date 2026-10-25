@@ -17,6 +17,11 @@
   teammate on an older VBW is asked to update VBW instead of being told the
   project is damaged. Projects without one are not affected.
 
+### Fixed
+
+- **A setting's name keeps its gap in Settings** when its choices are wide
+  ("your level" no longer runs into its first choice).
+
 ## [2.1.12] - 2026-10-24
 
 ### Added

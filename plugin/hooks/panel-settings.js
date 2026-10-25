@@ -272,7 +272,8 @@ export function renderSettings(ui, model, act) {
     }
     kids.push(h(Box, { key: 'setting:' + r.key, flexDirection: 'column' },
       h(Box, { key: 'line', flexDirection: 'row' },
-        h(Text, { key: 'name', ...(r.role ? { color: roleColor(r.role) } : {}) }, label(r).padEnd(nameW)),
+        // The name's box never shrinks: wide choices wrap under themselves, the name keeps its gap.
+        h(Box, { key: 'name-cell', flexShrink: 0 }, h(Text, { key: 'name', ...(r.role ? { color: roleColor(r.role) } : {}) }, label(r).padEnd(nameW))),
         h(Box, { key: 'controls', flexDirection: 'row', flexWrap: 'wrap', columnGap: 2, flexShrink: 1 },
           ...controls,
           r.mine ? h(Text, { key: 'mine', dimColor: true }, '(set by you)') : null,

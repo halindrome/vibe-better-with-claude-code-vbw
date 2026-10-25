@@ -302,6 +302,20 @@ test('every choice is a button a click presses, also where the surface has a Sel
   }
 })
 
+test('a row\'s name never shrinks: wide choices wrap under themselves and the name keeps its column and its gap', async () => {
+  const kn = kernel()
+  const st = state({ pressed: [] })
+  await settings(st, kn, null)
+  const tree = draw(st)
+  for (const r of S.ROWS) {
+    const line = rowOf(tree, r.key)
+    if (!line) continue
+    let cell = null
+    walk(line, (n) => { if (!cell && n.type === 'Box' && n.children && n.children.some((c) => c && c.type === 'Text' && c.props.key === 'name')) cell = n })
+    assert.ok(cell && cell.props.flexShrink === 0, r.key + ': the name sits in a box that does not shrink')
+  }
+})
+
 test('the rows fit at 80, 100 and 140 columns: no line wider than the pane', async () => {
   const kn = kernel()
   const st = state({ pressed: [] })
