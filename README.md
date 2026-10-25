@@ -31,7 +31,7 @@
 <a href="#documentation">Docs</a>
 </p>
 
-<p align="center"><img src="assets/mission-control.png" alt="VBW's Mission Control panel beside a Claude Code chat: six tabs (Now, Plan, Proof, Timeline, Sessions, Settings), here Settings, where every VBW setting is one click: the model of each helper in its role's colour, autonomy, rigor, the checks' limits, motion, sound and the status line. Under the prompt, the VBW status line shows the project, its milestone, progress and state." width="900"/></p>
+<p align="center"><img src="assets/mission-control-settings.png" alt="VBW's Mission Control panel beside a Claude Code chat: six tabs (Now, Plan, Proof, Timeline, Sessions, Settings), here Settings, where every VBW setting is one click: the model and the effort of each helper in its role's colour, how VBW talks to you, autonomy, the autonomous run and rigor. Under the prompt, the VBW status line shows the project, its milestone, progress and state." width="900"/></p>
 
 ## What Is This?
 
