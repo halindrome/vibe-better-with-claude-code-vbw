@@ -22999,7 +22999,15 @@
         "guarded: R12 (C11), R13 (C12), R14 (C13), R22 (C19), R23 (C20), R24 (C23), R25 (C24), R27 (C21), R28 (C25), R31 (C27), R32 (C28), R33 (C29), R38 (C33, C34), R40 (C37), R43 (C42, C43), R44 (C44, C45), R45 (C39, C40, C41), R46 (C46), R47 (C47), R48 (C49, C50), R49 (C48), R61 (C73, C74, C75, C76, C77), R62 (C78, C79, C80, C81, C82, C83, C93), R65 (C86, C87, C88, C89, C90), R66 (C95), R69 (C110, C120, C122), R70 (C114), R73 (C98), R74 (C99, C100), R78 (C105, C106), R79 (C107), R80 (C108), R81 (C109, C111, C112, C113), R92 (C131, C132, C133, C134, C135, C136, C137, C138, C139), R94 (C145, C146, C147, C148), R97 (C153), R98 (C154), R100 (C156), R101 (C179), R102 (C158, C159), R103 (C160), R104 (C161, C162), R105 (C163), R110 (C169, C170), R111 (C171, C172, C173, C174, C175), R115 (C181), R118 (C184), R119 (C180), R121 (C187, C188), R123 (C190, C191), R127 (C194), R131 (C198), R132 (C199), R133 (C195), R134 (C201), R135 (C202), R144 (C208, C209), R147 (C212, C215, C237), R148 (C213, C214, C216, C238), R150 (C223, C224, C225, C226, C227, C228, C229, C230), R153 (C235, C236, C239), R160 (C247, C263, C264), R161 (C248, C265, C266), R166 (C253, C254, C255, C256, C267), R167 (C257, C258, C259, C260), R168 (C261, C262), R169 (C268), R170 (C269), R173 (C281, C282, C283, C284, C285, C286, C289), R174 (C279, C280), R175 (C274, C275), R176 (C276, C277, C278), R178 (C290, C291, C292, C293, C294, C295, C296, C311), R179 (C297, C298, C299, C300, C301, C302, C303, C304, C305, C306, C312), R180 (C307, C308, C309, C310), R181 (C313, C314, C315, C316, C317, C318, C319, C320, C321), R182 (C322, C323, C324, C325, C326), R183 (C327), R188 (C350, C351, C352, C353, C354, C355, C356, C357, C358, C359), R190 (C374, C375, C376, C377, C378, C379, C380, C381, C382, C383, C384, C385, C386, C387, C388), R191 (C389, C390, C391, C392, C393, C394, C395, C396, C397, C398, C399, C400), R192 (C401, C402, C403, C404, C405, C406, C407, C408, C409, C410), R193 (C411, C412), R194 (C417, C418, C419), R195 (C420, C421, C422), R196 (C415, C416), R197 (C413, C414), R202 (C432, C433, C434, C435, C436, C437, C438, C439, C440, C441, C442, C443, C444, C445, C446, C447), R203 (C448, C449, C450)",
         "tests: project test command"
       ],
-      "predicted": "standard"
+      "predicted": "standard",
+      "qa": {
+        "result": "fail",
+        "tier": "standard",
+        "tree": "5da4b3bd5a577fe9aedd756947915d0db527512c8024677b9e35af200eb448ab",
+        "at": "2026-10-25T15:01:59Z",
+        "note": "10/16 checks",
+        "rounds": 1
+      }
     }
   ],
   "plans": [
@@ -51732,6 +51740,78 @@
       "status": "open",
       "note": "Deviation: plugin/lib/steps.sh (P162.3) was changed after the plan by 6e1d63115d18 (top reason in step.why), ad22e59d42fe (the unfinished-marker part of the cache key removed, which P162.3 task 2 required), 3c7bb8b66a2c (step ordering in the same second), d031f4c91c88 (cache also keyed on the git index), 8478c761b7b4 (unit list never on a command line) and 9ed3153b5279 (build-wave timing). The cache key now differs from the plan text (no marker; index added). No user decision names steps.sh at or after those commits. Needed: a user decision naming plugin/lib/steps.sh covering these commits.",
       "phase": "P162"
+    },
+    {
+      "id": "F303",
+      "req": "R203",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "Deviation: plugin/lib/proofreuse.sh (P164.1) changed after P164 shipped by commits no decision covers: 0fa41cfc (run store drops units that no longer exist), ad22e59d (new/deleted file and cut-short proof re-run only what read lists reach), 47d9acdb (tie a check to its requirement plans' files). None is named in a decision. A regression test should catch: the delivered-files check lists no uncovered commit for this file.",
+      "phase": "P164"
+    },
+    {
+      "id": "F304",
+      "req": "R204",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "docs/proof.md (P165.3) was changed after the plan by many commits no decision covers: 243e8d4a (R204: docs say an undo of an untrailered commit is judged and give the scope check's cost as 2 git processes plus one per undone pair, which differs from the criterion's 'one walk'), a5eabf04-era wording, 71852955, 304cebfa, 817d9cba, ee05502f, d658040e, ab228cd2, 076b1245, 206b6b52, 6e1d6311, e5ce7459, 47d9acdb, ad22e59d, 1d7e7d6d, 907e3837, e045fcac, 4780e81c, 0fa41cfc, e52ff7b2, d031f4c9, 89508935, c37fbe31, 605803fc, 4dbf1276, plus 23aa2b44, d060cbd5 and 8674376f (T174, covered in scope by D491). The planned exact-undo text (proof.md:598-613) is present. Needs a recorded user decision (especially for 243e8d4a, which narrows the criterion that the undoing commit is never judged) or a plan. Regression test idea: none.",
+      "phase": "P165"
+    },
+    {
+      "id": "F305",
+      "req": "R202",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "Deviation: plugin/lib/reads.sh (P162.4) was changed after the plan by c1f93ceafcc9 (fix(proof): file time stamps written in UTC after the clock-change hour broke CI). Correct and tested (reads-lib.bats, mutate-fresh-mtime.bats), but outside any plan and no user decision names plugin/lib/reads.sh at or after it. Needed: a user decision naming plugin/lib/reads.sh covering c1f93ceafcc9.",
+      "phase": "P162"
+    },
+    {
+      "id": "F306",
+      "req": "R204",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "docs/record.md (P165.3) was changed after the plan by commits no decision covers: 7f434be9, 1006c879, 91bcdef1, a356babf, 304cebfa, 076b1245, 6d0c31d1, e5ce7459, 907e3837, e52ff7b2, 89508935, c37fbe31, 71a55219. The planned evidence.undone row is present. Needs a recorded user decision or a plan naming the other edits. Regression test idea: none.",
+      "phase": "P165"
+    },
+    {
+      "id": "F307",
+      "req": "R202",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "Deviation: docs/next.md (P162.5) was changed after the plan by fadf6e8dd694, a99fba00d079, 6e1d63115d18, ad22e59d42fe, 9894319caec5, 53a07960e521, 907e38370e00, d031f4c91c88 and ba4f1443aada. Most belong to other work (vbw root, interleaved phases, plan-changed answer, contract waves, deviation check, QA round); only 6e1d6311, ad22e59d and d031f4c9 touch the proof-sizing text P162.5 owns, and that text is accurate today (docs/next.md line 174 names tree, index, record, store, recompute). No user decision names docs/next.md at or after these commits. Needed: a user decision naming docs/next.md covering them.",
+      "phase": "P162"
+    },
+    {
+      "id": "F308",
+      "req": "R203",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "Deviation: plugin/lib/cmd-plan.sh (P164.2) changed after P164 shipped by commits no decision covers: 23aa2b44 (queued breaks named by plan done, T174), 8674376f (one break per rule at deep, plan done no longer asks a task break, T174), de32c4a7 (count only the record's own commits as a plan's). Same regression expectation: no uncovered change left once a decision names them.",
+      "phase": "P164"
+    },
+    {
+      "id": "F309",
+      "req": "R203",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "Deviation: docs/workflows.md (P164.3) changed after P164 shipped by 11 commits no decision covers: 2d061b57, fdc5aab8, 80f6bbd9, 3fde5566, 304cebfa, 206b6b52, 2b03a912, 907e3837, d060cbd5, 23aa2b44, ba4f1443. Most are other work items (workflows, panel, qa, rigor, apply) that edited the shared page. No decision names them. Regression expectation: no uncovered change left once a decision names them.",
+      "phase": "P164"
+    },
+    {
+      "id": "F310",
+      "req": "R203",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "Deviation: plugin/agents/dev.md (P164.3) changed after P164 shipped by 06a1e773 (lean checks), 23aa2b44 (queue breaks, T174) and 8674376f (one break per rule at deep, T174), none covered by a decision. Regression expectation: no uncovered change left once a decision names them.",
+      "phase": "P164"
     }
   ],
   "todos": [
