@@ -119,7 +119,8 @@ cmd_show() {
           "project commands:",
           (.commands | to_entries[] | "  \(.key): \(.value | argv_line)"),
           (.test_files // empty | "  test file form: \(.run | join(" ")) (one test file per run; test files: \(.files | join(" ")))"),
-          (.project.results // empty | "saved test results folders: \(join(", "))")'
+          (.project.results // empty | "saved test results folders: \(join(", "))"),
+          (.project.leave_out // empty | "clean copy leaves out: \(join(", "))")'
       if [ "$state" != approved ]; then
         printf 'approval question: Approve contract %s?\napproval options: Approve, Not yet\n' "${hash:0:12}"
       fi
@@ -297,7 +298,9 @@ show_contract_changes() {
         (select(($old.test_files // null) != ($new.test_files // null))
           | "test file form: \(($new.test_files // null) | if . == null then "none" else "\(.run | join(" ")) (files \(.files | join(" ")))" end)"),
         (select($old.results != $new.results)
-          | "saved test results folders: \(($new.results // []) | if length == 0 then "none" else join(", ") end) (was \(($old.results // []) | if length == 0 then "none" else join(", ") end))") ]
+          | "saved test results folders: \(($new.results // []) | if length == 0 then "none" else join(", ") end) (was \(($old.results // []) | if length == 0 then "none" else join(", ") end))"),
+        (select(($old.leave_out // []) != ($new.leave_out // []))
+          | "clean copy leaves out: \(($new.leave_out // []) | if length == 0 then "none" else join(", ") end) (was \(($old.leave_out // []) | if length == 0 then "none" else join(", ") end))") ]
     | if length == 0 then "no changes since the last approval" else "changes since the last approval:", (.[] | "  " + .) end'
 }
 
