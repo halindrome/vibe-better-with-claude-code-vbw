@@ -23722,6 +23722,12 @@
           "from": "deep",
           "to": "deep",
           "reason": "Dev blocked P169.1: Tasks 1-3 are committed. tests/mutate-time.bats passes 10 of 11 on bash 5. The case 'the figures are measured' (R207.5) fails on its last assertion: the own-work line must not end 'of 0.0 min', but the timer measures a wall of only 2.1-2.6 s there (copies 0.3, unbroken 0.3-0.6, break 1.3-1.4, saving 0.2), and minutes round to the nearest tenth like the proof line (round(s/6)), so anything under 3 s reads 0.0. The proof avoids this in prove-own-work.bats by sleeping 13 s. Making it pass would need minutes rounded up, which breaks prove-own-work.bats line 211 (it pins the nearest rounding), or a protected check edited (lengthen the sleep to 4 s+). Needs the Lead or user: fix the check (approved file, not mine to edit) or change the rounding rule."
+        },
+        {
+          "at": "2026-10-26T17:47:52Z",
+          "from": "deep",
+          "to": "deep",
+          "reason": "Dev blocked P169.3: Task 1 is committed (c0f67415): the scenario now reads mutate_breakdown_line and mutate_steps_line, and both were true in two real runs. But 'bash tools/l3-suite.sh taskbreak' fails twice (2026-10-26, 17:21 and 17:46) on two older facts, so the committed result cannot show passed:true as R207.13 needs. Cause, from the session transcripts: P1.1's Dev runs 'vbw check C1 C2', sees C2 red (shout.sh belongs to P1.2), and blocks the plan ('R1.2/C2 needs shout.sh, but the plan's only file is greet.sh'). The orchestrating session then re-plans (P1.1 gets shout.sh), P1.2 is built before P1.1's breaks run, so 'break made before P1.2 was built' and 'other rule check red at break' fail. 'vbw show plan P1.1' lists R1.2 and C2 with no hint that P1.2 owns that rule. The fix belongs in plugin code (show plan naming the plan that owns each rule, or the Dev prompt), outside this plan's files; making the fixture dodge it would hide a real gap. Decision needed: add a plan for that, then re-run taskbreak."
         }
       ]
     }
@@ -51672,13 +51678,14 @@
         "P169.1",
         "P168.4"
       ],
-      "status": "planned",
+      "status": "blocked",
       "role": "dev",
       "tasks": [
         "tools/l3-suite.sh scenario_taskbreak gains two facts read from the tool results of the session's vbw mutate calls (transcripts | transcript_tool_output 'vbw mutate' REGEX, never the screen): mutate_breakdown_line (a line matching \"^VBW.s own work: [0-9]+\\.[0-9] of [0-9]+\\.[0-9] min\") and mutate_steps_line (a line starting '  steps of '); each is an expect so a missing line fails the scenario; the existing facts stay.",
         "Run bash tools/l3-suite.sh taskbreak (a real Claude Code session at rigor deep) and fix what it finds.",
         "Commit tools/l3-results/taskbreak.json with the suite; tests/l3-taskbreak.bats green (its R193 cases included)."
-      ]
+      ],
+      "note": "Task 1 is committed (c0f67415): the scenario now reads mutate_breakdown_line and mutate_steps_line, and both were true in two real runs. But 'bash tools/l3-suite.sh taskbreak' fails twice (2026-10-26, 17:21 and 17:46) on two older facts, so the committed result cannot show passed:true as R207.13 needs. Cause, from the session transcripts: P1.1's Dev runs 'vbw check C1 C2', sees C2 red (shout.sh belongs to P1.2), and blocks the plan ('R1.2/C2 needs shout.sh, but the plan's only file is greet.sh'). The orchestrating session then re-plans (P1.1 gets shout.sh), P1.2 is built before P1.1's breaks run, so 'break made before P1.2 was built' and 'other rule check red at break' fail. 'vbw show plan P1.1' lists R1.2 and C2 with no hint that P1.2 owns that rule. The fix belongs in plugin code (show plan naming the plan that owns each rule, or the Dev prompt), outside this plan's files; making the fixture dodge it would hide a real gap. Decision needed: add a plan for that, then re-run taskbreak."
     }
   ],
   "fixes": [
@@ -54173,6 +54180,15 @@
       "status": "closed",
       "note": "Deviation: plugin/lib/slots.sh (P163.2) was changed outside any plan by 71852955 (unit that lost the store leaves no slot), b827f7d0 (one waiter pace), d658040e (three processes per store step), ab228cd2 (lock takeover by rename), 4780e81c (hand-over in the freeing step, T175), 605803fc, 738cb333. No VBW-Plan trailer and no recorded decision covers them; D491 puts T175 after 2.1.0, so it does not cover 4780e81c. Regression test: none fits; needs an owner decision recorded for these commits.",
       "phase": "P163"
+    },
+    {
+      "id": "F315",
+      "req": "R208",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "Lead review of P168.2 (2026-10-26): plugin/lib/cmd-doctor.sh, doctor_project, the hidden-file loop (while IFS= read -r hid; do doctor_line fail ...; done < <(cd \"$VBW_ROOT\" && record_hidden || true)) prints through doctor_line (a printf) in the shell that owns the process substitution's live child. The standard forbids a builtin write there (macOS /bin/bash 3.2 loses a write interrupted by the child's exit: CLAUDE.md, 'No builtin write while the shell has a live child'); tools/check-loop-writes.sh passes only because the write sits inside a called function, which its header leaves to the reviewer. Fix: collect the lines first (hidden=$(cd \"$VBW_ROOT\" && record_hidden) || true), then loop over the variable with a here-string (done <<< \"$hidden\"; [ -n \"$hidden\" ] first), so no child is alive while doctor_line prints; a pipe is not an option because doctor_line sets DOCTOR_FAILED in the main shell. Regression test, shown red first: in tests/hidden-record-commands.bats, cmd-doctor.sh has no loop fed by a process substitution that calls doctor_line (grep on the shell file, not JSON), kept narrow; the doctor fail case stays green under /bin/bash.",
+      "phase": "P168"
     }
   ],
   "todos": [
@@ -66273,6 +66289,17 @@
         "ended": "2026-10-26T17:06:39Z",
         "cost": {
           "usd": 1.4668
+        }
+      },
+      {
+        "id": "build-20261026T170833Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M43",
+        "started": "2026-10-26T17:08:33Z",
+        "ended": "2026-10-26T17:48:15Z",
+        "cost": {
+          "usd": 1.304715
         }
       }
     ],
