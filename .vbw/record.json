@@ -51897,7 +51897,7 @@
         "P169.1",
         "P168.4"
       ],
-      "status": "planned",
+      "status": "done",
       "tasks": [
         "tools/l3-suite.sh scenario_taskbreak gains two facts read from the tool results of the session's vbw mutate calls (transcripts | transcript_tool_output 'vbw mutate' REGEX, never the screen): mutate_breakdown_line (a line matching \"^VBW.s own work: [0-9]+\\.[0-9] of [0-9]+\\.[0-9] min\") and mutate_steps_line (a line starting '  steps of '); each is an expect so a missing line fails the scenario; the existing facts stay.",
         "The committed tools/l3-results/taskbreak.json is this plan's result: P170.5 ran bash tools/l3-suite.sh taskbreak on the fixed code on 2026-10-26 and committed it with every fact true, mutate_breakdown_line and mutate_steps_line included; no second real session is run; tests/l3-taskbreak.bats green in full (its R193, R207 and R209 cases).",
@@ -51919,6 +51919,54 @@
           "result": "survivor",
           "at": "2026-10-26T19:17:10Z",
           "head": "1e455c4d89eacd8b8109e5af3f07b82f54ba4387"
+        },
+        {
+          "rule": {
+            "req": "R207",
+            "text": "the taskbreak scenario of tools/l3-suite.sh reads the mutate breakdown from the transcripts' tool results as the facts mutate_breakdown_line and mutate_steps_line, and its committed result from this code (dated 2026-10-26 or later) shows both true"
+          },
+          "what": "removed the expect of mutate_breakdown_line",
+          "files": [
+            "tools/l3-suite.sh"
+          ],
+          "checks": {
+            "C463": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-26T19:34:43Z",
+          "head": "4523942a2a8f11759bc24844809426962c54347c"
+        },
+        {
+          "rule": {
+            "req": "R207",
+            "text": "the taskbreak scenario of tools/l3-suite.sh reads the mutate breakdown from the transcripts' tool results as the facts mutate_breakdown_line and mutate_steps_line, and its committed result from this code (dated 2026-10-26 or later) shows both true"
+          },
+          "what": "removed the transcript line reading mutate_breakdown_line",
+          "files": [
+            "tools/l3-suite.sh"
+          ],
+          "checks": {
+            "C463": "red"
+          },
+          "result": "red",
+          "at": "2026-10-26T19:34:59Z",
+          "head": "4523942a2a8f11759bc24844809426962c54347c"
+        },
+        {
+          "rule": {
+            "req": "R207",
+            "text": "the taskbreak scenario of tools/l3-suite.sh reads the mutate breakdown from the transcripts' tool results as the facts mutate_breakdown_line and mutate_steps_line, and its committed result from this code (dated 2026-10-26 or later) shows both true"
+          },
+          "what": "removed the transcript line reading mutate_breakdown_line",
+          "files": [
+            "tools/l3-suite.sh"
+          ],
+          "checks": {
+            "C463": "red"
+          },
+          "result": "red",
+          "at": "2026-10-26T19:35:14Z",
+          "head": "4523942a2a8f11759bc24844809426962c54347c"
         }
       ]
     },
@@ -67170,6 +67218,17 @@
         "ended": "2026-10-26T19:19:02Z",
         "cost": {
           "usd": 0.405194
+        }
+      },
+      {
+        "id": "build-20261026T193343Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M43",
+        "started": "2026-10-26T19:33:43Z",
+        "ended": "2026-10-26T19:36:43Z",
+        "cost": {
+          "usd": 0.375212
         }
       }
     ],
