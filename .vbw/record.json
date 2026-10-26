@@ -54248,6 +54248,13 @@
       "sort": "next",
       "size": "small",
       "status": "open"
+    },
+    {
+      "id": "T188",
+      "text": "The own-work line (VBW's own work: X of Y min) shows seconds when the wall is under a minute: a mutation run takes seconds and reads '0.0 of 0.0 min' (M43 2026-10-26, R207.5)",
+      "sort": "later",
+      "size": "small",
+      "status": "open"
     }
   ],
   "decisions": [
