@@ -56976,6 +56976,17 @@
       "id": "D499",
       "at": "2026-10-26T14:01:09Z",
       "text": "Contract approved: 197 requirements, 461 checks, 520 plans (c92d05d5685e)"
+    },
+    {
+      "id": "D500",
+      "text": "P166.1, P168.1 and P169.1 were blocked by their checks, not their code: C455 and C464 each held cases of the plan built after (so the mutation baseline was red), and R207.5 asserted a minutes line that rounds to 0.0 under three seconds. The contract is corrected: the later plans' cases moved to checks of their own (C467 tests/clean-copy-contract.bats, C468 tests/hidden-record-commands.bats), R207.5 and its case drop the minutes clause; the three plans are reset to run their mutation step on the committed code",
+      "why": "Lead dev 2026-10-26: a planning defect, fixed in the contract rather than by ordering the mutation step after another plan (which VBW does not have and should not need)",
+      "at": "2026-10-26T14:22:10Z"
+    },
+    {
+      "id": "D501",
+      "at": "2026-10-26T14:32:44Z",
+      "text": "Contract approved: 197 requirements, 463 checks, 520 plans (86f2be235001)"
     }
   ],
   "commands": {

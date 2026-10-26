@@ -17,7 +17,9 @@
 # names it among the reasons the contract is not ready (R171); record_commit's
 # non-strict form prints a vbw: warning: line naming the file and the rule's
 # source line, never skipping the file silently. A project with no such rule
-# prints nothing new. L1: the kernel on fixture projects.
+# prints nothing new. This file holds the commit path and vbw approve; the init,
+# doctor and next cases are tests/hidden-record-commands.bats. L1: the kernel on
+# fixture projects.
 
 load helper
 load fixture-helper
@@ -62,28 +64,6 @@ teardown_file() { fixture_teardown; }
 
 tracked() { git ls-files --error-unmatch -- "$1" > /dev/null 2>&1; }
 
-@test "R208: vbw init writes .vbw/.gitignore with runtime/ and the four un-hide lines, and says so in one line" {
-  vbw_run init
-  [ "$status" -eq 0 ] || { echo "$output"; false; }
-  [ "$(cat .vbw/.gitignore)" = "$UNHIDE" ] || { cat .vbw/.gitignore; false; }
-  [ "$(printf '%s\n' "$output" | grep -cE "$SAID_RE")" -eq 1 ] || { echo "$output"; false; }
-}
-
-@test "R208: in an initialized project vbw init adds only the missing lines, keeps the user's lines, and leaves the file byte-identical when run again" {
-  "$VBW" init > /dev/null
-  printf 'runtime/\nscratch/\n' > .vbw/.gitignore
-  vbw_run init
-  [ "$status" -eq 0 ] || { echo "$output"; false; }
-  [ "$(cat .vbw/.gitignore)" = $'runtime/\nscratch/\n!record.json\n!spec.md\n!map.md\n!.gitignore' ] || { cat .vbw/.gitignore; false; }
-  [ "$(printf '%s\n' "$output" | grep -cE "$SAID_RE")" -eq 1 ] || { echo "$output"; false; }
-  local sum
-  sum=$(cksum < .vbw/.gitignore)
-  vbw_run init
-  [ "$status" -eq 0 ] || { echo "$output"; false; }
-  [ "$(cksum < .vbw/.gitignore)" = "$sum" ]
-  [ "$(printf '%s\n' "$output" | grep -cE "$SAID_RE")" -eq 0 ] || { echo "$output"; false; }
-}
-
 @test "R208: a project-wide *.json rule in the project's .gitignore no longer hides the record: VBW's next commit commits it, the spec and .vbw/.gitignore" {
   printf '*.json\n*.md\n' > .gitignore
   git add .gitignore && git commit -q -m "chore: ignore json and md"
@@ -126,31 +106,6 @@ tracked() { git ls-files --error-unmatch -- "$1" > /dev/null 2>&1; }
   [ -z "$(git status --porcelain -- .vbw)" ] || { git status --porcelain -- .vbw; false; }
 }
 
-@test "R208: a rule hiding the whole .vbw folder: vbw init names the rule's source (file, line, pattern) and the fix" {
-  printf '.vbw/\n' > .gitignore
-  git add .gitignore && git commit -q -m "chore: hide .vbw"
-  vbw_run init
-  printf '%s\n' "$output" | grep -qE "$HIDDEN_RE" || { echo "$output"; false; }
-  [[ "$output" == *"$FIX"* ]] || { echo "$output"; false; }
-  vbw_run init
-  printf '%s\n' "$output" | grep -qE "$HIDDEN_RE" || { echo "$output"; false; }
-  printf '*\n' > .gitignore
-  vbw_run init
-  printf '%s\n' "$output" | grep -qE '\.vbw/record\.json is hidden from git by \.gitignore:1:\*' || { echo "$output"; false; }
-  [[ "$output" == *"$FIX"* ]] || { echo "$output"; false; }
-}
-
-@test "R208: vbw doctor prints the same as a fail line with the fix and exits 1; without such a rule it says nothing about hidden files" {
-  "$VBW" init > /dev/null
-  run "$VBW" doctor < /dev/null
-  [[ "$output" != *"hidden from git"* ]] || { echo "$output"; false; }
-  printf '.vbw/\n' > .gitignore
-  run "$VBW" doctor < /dev/null
-  [ "$status" -eq 1 ] || { echo "$output"; false; }
-  printf '%s\n' "$output" | grep -qE "^✗ .*$HIDDEN_RE" || { echo "$output"; false; }
-  printf '%s\n' "$output" | grep -qF "    fix: $FIX" || { echo "$output"; false; }
-}
-
 @test "R208: vbw approve refuses with that message, exit 1, adding no decision, granting no consent and making no commit" {
   fixture_copy hidden
   local head decisions
@@ -164,21 +119,6 @@ tracked() { git ls-files --error-unmatch -- "$1" > /dev/null 2>&1; }
   [ "$(jq '.decisions | length' .vbw/record.json)" = "$decisions" ]
   run "$VBW" show contract < /dev/null
   printf '%s\n' "$output" | head -n 1 | grep -q 'NOT APPROVED' || { echo "$output"; false; }
-}
-
-@test "R208: vbw next names the hidden file among the reasons the contract is not ready instead of offering the approval menu" {
-  fixture_copy hidden
-  run "$VBW" next --json < /dev/null
-  [ "$status" -eq 0 ] || { echo "$output"; false; }
-  printf '%s\n' "$output" | jq -e '.action == "contract" and .gate == false
-    and (.detail.problems | any(.[]; test("\\.vbw/record\\.json is hidden from git by \\.gitignore:1:\\.vbw/")))' || { echo "$output"; false; }
-  printf '.vbw/runtime/\n' > .gitignore
-  git add .gitignore && git commit -q -m "chore: hide only the runtime folder"
-  run "$VBW" next --json < /dev/null
-  printf '%s\n' "$output" | jq -e '.action == "approve"' || { echo "$output"; false; }
-  vbw_run approve
-  [ "$status" -eq 0 ] || { echo "$output"; false; }
-  tracked .vbw/record.json
 }
 
 @test "R208: record_commit's non-strict form prints a vbw: warning: line naming the hidden file and the rule's source line" {

@@ -175,7 +175,6 @@ the pending file still needs the one approval before the proof" ] || { echo "$ou
   split
   awk -v b="$(step 'break R1.1')" -v u="$(step unbroken)" 'BEGIN {exit !(b >= 1.0 && u < b)}' || { echo "$STEPS"; false; }
   sum_ok
-  [[ "$OWN" != *" of 0.0 min" ]] || { echo "$OWN"; false; }
 }
 
 @test "R207: a refusal ends with its message as today and prints no breakdown: red on the unbroken code, a dirty check file, a stale queued break" {

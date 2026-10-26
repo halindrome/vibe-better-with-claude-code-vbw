@@ -8,10 +8,9 @@
 # the path, and leave the record unchanged, while a path with nothing at it is
 # accepted (nothing to leave out) and vbw spec check names it; an absolute
 # path, a path with '..', or one under .vbw/ or .git/ is refused like a bad Test
-# results folder. The list is part of the contract (fingerprint, vbw show
-# contract line, --changes), and vbw approve and vbw next compare the section
-# with the record like the other sections (R174, R171). vbw init's starting
-# spec.md explains the section. L1: the kernel on a fixture project.
+# results folder. vbw init's starting spec.md explains the section. The
+# contract side (fingerprint, vbw show contract, --changes, approve and next) is
+# tests/clean-copy-contract.bats. L1: the kernel on a fixture project.
 
 load helper
 load fixture-helper
@@ -47,14 +46,6 @@ spec() {
 
 record_sum() { cksum < .vbw/record.json; }
 parsed() { jq -Rs -f "$PLUGIN_ROOT/lib/spec.jq" < .vbw/spec.md; }
-
-# planned: one approved check on R1 and a plan, so the contract can be shown and approved.
-planned() {
-  jq -nc '{phases: [{id: "P1", title: "Shop", reqs: ["R1"], goal: "g", criteria: ["c"]}],
-    plans: [{id: "P1.1", phase: "P1", title: "Pay", reqs: ["R1"], files: ["src/pay.txt"], after: [], role: "dev", tasks: ["pay"]}],
-    checks: [{id: "C1", req: "R1", run: ["sh", "tests/pay.sh"], files: ["tests/pay.sh"]}],
-    rules: [{req: "R1", text: "paying works", check: "C1"}]}' | "$VBW" apply > /dev/null
-}
 
 # refused SUM: the last run failed and the record is byte-identical to SUM.
 refused() {
@@ -201,77 +192,4 @@ refused() {
   sed -n '/^## Clean copy$/,/-->/p' .vbw/spec.md | grep -q 'vbw spec sync' || { cat .vbw/spec.md; false; }
   sed -n '/^## Clean copy$/,/-->/p' .vbw/spec.md | grep -q '^- [a-z]*/$' || { cat .vbw/spec.md; false; }
   parsed | jq -e '.leave_out == null and .errors == []' || { parsed; false; }
-}
-
-@test "R205: the list is part of the contract: adding a path changes the fingerprint and the approval is asked again" {
-  spec '- data/'
-  "$VBW" spec sync > /dev/null
-  planned
-  git add -A && git commit -q -m "chore(vbw): plan"
-  "$VBW" approve > /dev/null
-  local before
-  before=$("$VBW" show contract | head -n 1)
-  [[ "$before" == *"(approved)"* ]] || { echo "$before"; false; }
-  spec '- data/
-- cache/'
-  "$VBW" spec sync > /dev/null
-  run "$VBW" show contract
-  [ "$status" -eq 0 ] || { echo "$output"; false; }
-  [ "$(printf '%s\n' "$output" | head -n 1 | cut -d' ' -f2)" != "$(printf '%s' "$before" | cut -d' ' -f2)" ] || { echo "$output"; false; }
-  printf '%s\n' "$output" | head -n 1 | grep -q 'NOT APPROVED' || { echo "$output"; false; }
-  printf '%s\n' "$output" | grep -q '^approval question: Approve contract ' || { echo "$output"; false; }
-}
-
-@test "R205: vbw show contract prints one line naming the paths left out, and no such line when nothing is listed" {
-  spec ''
-  "$VBW" spec sync > /dev/null
-  planned
-  run "$VBW" show contract
-  [ "$status" -eq 0 ] || { echo "$output"; false; }
-  [[ "$output" != *"clean copy leaves out"* ]] || { echo "$output"; false; }
-  spec '- data/
-- cache/'
-  "$VBW" spec sync > /dev/null
-  run "$VBW" show contract
-  [ "$status" -eq 0 ] || { echo "$output"; false; }
-  [ "$(printf '%s\n' "$output" | grep -c '^clean copy leaves out: data/, cache/$')" -eq 1 ] || { echo "$output"; false; }
-}
-
-@test "R205: vbw show contract --changes names an added or removed path since the last approval" {
-  spec '- data/'
-  "$VBW" spec sync > /dev/null
-  planned
-  git add -A && git commit -q -m "chore(vbw): plan"
-  "$VBW" approve > /dev/null
-  spec '- data/
-- cache/'
-  "$VBW" spec sync > /dev/null
-  run "$VBW" show contract --changes
-  [ "$status" -eq 0 ] || { echo "$output"; false; }
-  printf '%s\n' "$output" | grep -q '^  clean copy leaves out: data/, cache/ (was data/)$' || { echo "$output"; false; }
-  spec ''
-  "$VBW" spec sync > /dev/null
-  run "$VBW" show contract --changes
-  [ "$status" -eq 0 ] || { echo "$output"; false; }
-  printf '%s\n' "$output" | grep -q '^  clean copy leaves out: none (was data/)$' || { echo "$output"; false; }
-}
-
-@test "R205: an edited, unsynced section cannot be approved, and vbw next says the contract is not ready instead of asking" {
-  spec '- data/'
-  "$VBW" spec sync > /dev/null
-  planned
-  git add -A && git commit -q -m "chore(vbw): plan"
-  spec '- data/
-- cache/'
-  run "$VBW" approve
-  [ "$status" -ne 0 ] || { echo "$output"; false; }
-  [[ "$output" == *"spec.md and the record differ (vbw spec sync)"* ]] || { echo "$output"; false; }
-  run "$VBW" next --json
-  [ "$status" -eq 0 ] || { echo "$output"; false; }
-  printf '%s\n' "$output" | jq -e '.action == "contract" and .gate == false
-    and (.detail.problems | any(.[]; contains("spec.md and the record differ")))' || { echo "$output"; false; }
-  "$VBW" spec sync > /dev/null
-  git add -A && git commit -q -m "chore(vbw): sync"
-  run "$VBW" next --json
-  printf '%s\n' "$output" | jq -e '.action == "approve"' || { echo "$output"; false; }
 }
