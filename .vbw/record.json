@@ -6263,7 +6263,7 @@
   "milestone": {
     "id": "M43",
     "title": "Clean copies, the hidden record and mutation timing on real projects",
-    "status": "active"
+    "status": "shipped"
   },
   "shipped": [
     {
@@ -6470,6 +6470,11 @@
       "id": "M42",
       "title": "Faster proofs on large projects",
       "at": "2026-10-25T15:18:22Z"
+    },
+    {
+      "id": "M43",
+      "title": "Clean copies, the hidden record and mutation timing on real projects",
+      "at": "2026-10-26T22:28:47Z"
     }
   ],
   "requirements": [
@@ -59125,6 +59130,11 @@
       "text": "F320 diagnosis and fix direction: the R204 count in tests/scope-history.bats (shell commands traced with set -x, counted as lines starting with +) is a racy measurement, not a scope-check regression. prove_scope's process-substitution children and pipeline parts (printf, jq, git) inherit set -x and write their trace lines into the same trace file as the parent shell, at the same time, and bash writes a line in more than one call (the PS4 prefix, each word, the newline), so under load one process's line lands inside another's and its + prefix is no longer at a line start: grep -c '^+' then misses it. Fix in the tests, not the kernel: PS4 carries a marker no traced word contains, and the count is the number of markers anywhere in the trace (grep -o MARKER | wc -l), which a merged line keeps because the prefix is written in one call. Apply the same to the delivered-files trace count in tests/qa-delivered.bats (same pattern, same latent flaw). No tests/helper.bash change: 497 test files load it and the two trace functions stay local to their files.",
       "why": "Proof 3: 80 shell commands for 50 commits, 81 for 500, in a suite run under bash 5.3 at load 14-19 on 10 cores; the case passes alone. 48 reproductions of the case (16 under /bin/bash 3.2 quiet, 8 then 24 in parallel under bash 5.3 with 6 CPU burners, load up to 90) counted 81 and 81 every time, so the proof's 80 is a lost line, never an extra command: both projects run the same commands (the traces list the same 81, only n=50 vs n=500 differ in text). The traces show the children's lines (level +++) interleaved with the parent's (++) in one file, and the order at each site is timing-dependent: the child's printf line precedes the parent's 15 KB jq -n -c line in all 48 traces at that site and follows the parent's read lines at the others. 960 micro-runs of one jq call with a process substitution (bash 3.2, 24 parallel) produced no merge, so the race is rare; it is real because its only precondition is two writers of multi-call lines on one shared offset. Shown by: a reproduction copy of the test in the scratchpad keeping each trace, and the trace shapes above. Not shown: a merged line caught in the act.",
       "at": "2026-10-26T21:57:45Z"
+    },
+    {
+      "id": "D512",
+      "at": "2026-10-26T22:28:47Z",
+      "text": "Shipped M43 Clean copies, the hidden record and mutation timing on real projects: 5 requirements proven or accepted"
     }
   ],
   "commands": {
@@ -69168,6 +69178,10 @@
             "usd": 0,
             "at": "2026-10-26T12:25:46Z"
           }
+        },
+        "total": {
+          "usd": 84.208783,
+          "sessions": 39
         }
       }
     }
@@ -69533,26 +69547,5 @@
       "at": "2026-10-16T02:28:25Z",
       "reason": "scope violation: 32f17ce8f51d (P144.3) changed tests/panel/r189/now-box.test.mjs, which is not in the plan"
     }
-  ],
-  "recommendation": {
-    "at": "2026-10-25T15:26:10Z",
-    "top": {
-      "text": "Fix the Timeline tab during a proof: while `vbw prove` runs (the proof is VBW running all the project's checks), the Timeline tab currently says 'No VBW workflow runs in this session right now', which looks like nothing is happening. Change it to say a proof is running, show checks done of total, and point to the Proof tab.",
-      "size": "small",
-      "reason": "You reported this today, it misleads anyone watching the panel during every proof, and it is a small, self-contained change to the panel with no effect on how proofs or the record work.",
-      "source": "T184"
-    },
-    "runners": [
-      {
-        "text": "Slots held while units run, the rest: the 'slot store' is the file that limits how many checks run at once across all your projects. Taking a slot currently runs jq (the JSON tool) while holding the lock, so other units wait about 18 ms half the time, and each unit change costs two steps. Do the jq work on a copy outside the lock and lock only to compare and rename, or let a runner pass its slot straight to the next unit. Measured at 6.08 of 7 slots used on average; target 6.5.",
-        "size": "small",
-        "source": "T183"
-      },
-      {
-        "text": "Cost per correct outcome: measure and present VBW's cost as cost per proven, safe result rather than tokens per turn (ten cheap turns that ship broken code waste more than five dearer turns that ship proven code). This is positioning and reporting work, medium in size, placed after 2.1.0 by D491, so it fits once the two small items are done.",
-        "size": "medium",
-        "source": "T10"
-      }
-    ]
-  }
+  ]
 }
