@@ -51897,12 +51897,11 @@
         "P169.1",
         "P168.4"
       ],
-      "status": "blocked",
-      "role": "dev",
+      "status": "planned",
       "tasks": [
         "tools/l3-suite.sh scenario_taskbreak gains two facts read from the tool results of the session's vbw mutate calls (transcripts | transcript_tool_output 'vbw mutate' REGEX, never the screen): mutate_breakdown_line (a line matching \"^VBW.s own work: [0-9]+\\.[0-9] of [0-9]+\\.[0-9] min\") and mutate_steps_line (a line starting '  steps of '); each is an expect so a missing line fails the scenario; the existing facts stay.",
-        "Run bash tools/l3-suite.sh taskbreak (a real Claude Code session at rigor deep) and fix what it finds.",
-        "Commit tools/l3-results/taskbreak.json with the suite; tests/l3-taskbreak.bats green (its R193 cases included)."
+        "The committed tools/l3-results/taskbreak.json is this plan's result: P170.5 ran bash tools/l3-suite.sh taskbreak on the fixed code on 2026-10-26 and committed it with every fact true, mutate_breakdown_line and mutate_steps_line included; no second real session is run; tests/l3-taskbreak.bats green in full (its R193, R207 and R209 cases).",
+        "Mutation for R207.13: the first break (the steps fact wired to false) survived, and tests/l3-taskbreak.bats cannot be strengthened by this plan because R209's C473 also reads it (backlog T192, the kernel refuses a check file shared with another requirement's check). Record that survivor as it is, then break R207.13 in a way the R207 cases do catch (remove the transcript line or the expect of one fact), record the red break, and check the file is restored byte for byte; then vbw plan done P169.3."
       ],
       "mutations": [
         {
@@ -51921,8 +51920,7 @@
           "at": "2026-10-26T19:17:10Z",
           "head": "1e455c4d89eacd8b8109e5af3f07b82f54ba4387"
         }
-      ],
-      "note": "R207.13 break (steps fact forced false in tools/l3-suite.sh) survives C463: its R207 cases only grep the scenario text and read the committed result. Strengthening tests/l3-taskbreak.bats (grep that the facts are set from the tool output and expected) is impossible: the file is shared with C473 (R209), so vbw commit refuses it as not the plan's to commit. Needs a decision: give R207.13 a check file of its own, or allow the shared file."
+      ]
     },
     {
       "id": "P170.1",
@@ -58939,6 +58937,17 @@
       "id": "D505",
       "at": "2026-10-26T18:35:30Z",
       "text": "Contract approved: 198 requirements, 468 checks, 525 plans (d02e00e2ed70)"
+    },
+    {
+      "id": "D506",
+      "text": "P169.3 closes on P170.5's committed taskbreak result (one real-user run on the fixed code; the two failing runs were on the unfixed code) and records R207.13's survivor as a known gap: the break that wires the steps fact to false passes the R207 cases, which pin the scenario's text and read the committed result, and the file cannot be strengthened by this plan (T192). A second real run is not bought: the fix removes the ambiguity the Dev stumbled on, and the check files pin the words it now sees",
+      "why": "Lead dev 2026-10-26: one honest L3 run plus the survivor on record beats a second session (25 min, about 1.5 USD) or a test file split that only works around T192",
+      "at": "2026-10-26T19:20:56Z"
+    },
+    {
+      "id": "D507",
+      "at": "2026-10-26T19:33:04Z",
+      "text": "Contract approved: 198 requirements, 468 checks, 525 plans (9aa8b22851d5)"
     }
   ],
   "commands": {
