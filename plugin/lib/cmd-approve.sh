@@ -118,6 +118,8 @@ approve_problems() {
   while IFS= read -r -d '' f; do
     [ -f "$VBW_ROOT/$f" ] || vbw_out 'check file missing: %s\n' "$f"
   done < <(printf '%s' "$1" | jq -j '[.checks[].files // [] | .[]] | unique[] | . + "\u0000"')
+  # An own file a project rule hides that VBW's .gitignore lines cannot un-hide (R208).
+  (cd "$VBW_ROOT" && record_hidden) || true
 }
 
 # Consent to every project command, by argv hash, and to the test file form.
