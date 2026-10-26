@@ -105,7 +105,8 @@ approve_problems() {
       '$f_p[0] as $p | [.requirements[] | {id, text, proof}] == [$p.requirements[] | {id, text, proof}]
         and ($p.commands == null or .commands == $p.commands)
         and ((.test_files // null) == $p.test_files)
-        and ((.project.results // null) == ($p.results // null))' > /dev/null; then
+        and ((.project.results // null) == ($p.results // null))
+        and ((.project.leave_out // null) == (($p.leave_out // null) | if . == null then null else map(.path) end))' > /dev/null; then
     printf 'spec.md and the record differ (vbw spec sync)\n'
   fi
   printf '%s' "$1" | jq -r "$VBW_JQ_DEFS"'
