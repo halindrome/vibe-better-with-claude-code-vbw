@@ -23815,7 +23815,15 @@
           "to": "deep",
           "reason": "Dev blocked P166.1: Tasks 1-4 are committed and tests/clean-copy-spec.bats cases 1-12 (R205.1-R205.10) pass on bash 5 and /bin/bash 3.2. Cases 13-16 (contract, show contract, --changes, approve/next) wait for P166.2, so C455 stays red. vbw mutate --run refuses to run: 'checks do not pass on the unbroken code' (C455), so no rule break can be recorded and plan done is refused. Nine breaks were prepared (R205.1-R205.10) and need re-running once P166.2 is done: replan so the mutation step of P166.1 runs after P166.2, or split C455 so P166.1 owns its cases."
         }
-      ]
+      ],
+      "qa": {
+        "result": "fail",
+        "tier": "deep",
+        "tree": "497be4c7527be442ea5752633ebd1e216b58cc7a17aede55f7e40036a0cd82a3",
+        "at": "2026-10-26T20:42:43Z",
+        "note": "19/20 checks",
+        "rounds": 1
+      }
     },
     {
       "id": "P167",
@@ -55053,7 +55061,7 @@
       "req": "R205",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "Lead review 2026-10-26, reported by P170.1's Dev: tests/standards.bats test 53 (tools/check-pipefail-grep.sh) fails on tools/l3-suite.sh line 2638, in scenario_leaveout's checks (commit cdf40ac5, P166.5): '\"$VBW\" show contract 2> /dev/null | grep -qxF \"clean copy leaves out: data/\"' pipes into a quiet grep, which stops reading early and under pipefail fails the pipeline with the producer's SIGPIPE. Fix inside tools/l3-suite.sh as the tool's header asks (read the whole input: grep without -q to /dev/null, or capture the output and test it), keeping the fact's meaning; tests/standards.bats green again under /bin/bash, tests/l3-leaveout.bats green, bash tools/test.sh --lint clean. Regression test: the standards test itself is the test (it is red now).",
       "phase": "P166"
     },
@@ -55072,6 +55080,15 @@
       "status": "open",
       "note": "R209.20 test gap: the tests/l3-taskbreak.bats case 'early_plan_never_blocked' cannot fail when the scenario's block check is wrong. The kernel's own mutation run on P170.5 (tools/l3-suite.sh, 'block regex misspelled') ended as a survivor, twice, with C473 green (record: P170.5 mutations, head 0e2cb29f). Cause: tests/l3-taskbreak.bats line 86 does grep -qF 'plan block P1.1' on the scenario text, and that text also appears in the expect() message ('no vbw plan block P1.1 call...'), so it matches even when the real call 'transcript_tool_called vbw plan block P1\\.1' is misspelled or removed. Then the fact early_plan_never_blocked would be true no matter what the Dev did (an unfound tool call counts as 'never blocked'). Only the files half of the fact is pinned (a mutation on it went red). T192 explains why the Dev could not commit the fix, but no decision accepts this survivor (D506 covers only R207.13). Regression test: in the R209 'early_plan_never_blocked' case, pin the actual call line, e.g. grep -qE \"transcript_tool_called 'vbw plan block P1\\\\\\\\.1'\" on the scenario body (not the expect message), and show it fails when that line is misspelled.",
       "phase": "P170"
+    },
+    {
+      "id": "F319",
+      "req": "R205",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "A listed path that sits INSIDE an ignored folder is accepted by 'vbw spec check/sync' but is not left out of the clean copy. Example: .gitignore has 'data/', the spec lists '- data/raw/'. Verify (plugin/lib/cmd-spec.sh spec_verify_leave_out) accepts it: git check-ignore succeeds on the parent rule and nothing is tracked/stray (I checked the same shape read-only in this repo: a_non_prod_docs/brandkit passes all three git checks). But plugin/lib/proofcopy.sh proofcopy_make lists ignored paths with 'git ls-files --others --ignored --exclude-standard --directory', which gives the whole folder as one entry 'data/'; the skip test 'case $p in $L | $L/*' only matches when the entry equals or is below the listed path, so 'data' vs 'data/raw' never matches and the whole of data/, raw/ included, is copied in. The user gets an approved contract line 'clean copy leaves out: data/raw/' while the big folder is still copied: the phase goal and criterion 4 ('skips a listed path and everything under it') and docs/proof.md ('skips the listed paths') are false for this case. tests/clean-copy-proof.bats only covers the listed folder being the ignored one, or its files ignored one by one. Fix idea: after copying an entry p that is a proper parent of a listed path L, remove $copy/L from the copy (or copy p's children one by one around L). Regression test: ignore 'data/' as a whole, list 'data/sub/', run vbw prove with the probe; the copy must hold data/a.bin and nothing of data/sub, and it must fail without the fix.",
+      "phase": "P166"
     }
   ],
   "todos": [
