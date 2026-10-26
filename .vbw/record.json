@@ -55083,7 +55083,7 @@
       "req": "R209",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "R209.20 test gap: the tests/l3-taskbreak.bats case 'early_plan_never_blocked' cannot fail when the scenario's block check is wrong. The kernel's own mutation run on P170.5 (tools/l3-suite.sh, 'block regex misspelled') ended as a survivor, twice, with C473 green (record: P170.5 mutations, head 0e2cb29f). Cause: tests/l3-taskbreak.bats line 86 does grep -qF 'plan block P1.1' on the scenario text, and that text also appears in the expect() message ('no vbw plan block P1.1 call...'), so it matches even when the real call 'transcript_tool_called vbw plan block P1\\.1' is misspelled or removed. Then the fact early_plan_never_blocked would be true no matter what the Dev did (an unfound tool call counts as 'never blocked'). Only the files half of the fact is pinned (a mutation on it went red). T192 explains why the Dev could not commit the fix, but no decision accepts this survivor (D506 covers only R207.13). Regression test: in the R209 'early_plan_never_blocked' case, pin the actual call line, e.g. grep -qE \"transcript_tool_called 'vbw plan block P1\\\\\\\\.1'\" on the scenario body (not the expect message), and show it fails when that line is misspelled.",
       "phase": "P170"
     },
@@ -55092,7 +55092,7 @@
       "req": "R205",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "A listed path that sits INSIDE an ignored folder is accepted by 'vbw spec check/sync' but is not left out of the clean copy. Example: .gitignore has 'data/', the spec lists '- data/raw/'. Verify (plugin/lib/cmd-spec.sh spec_verify_leave_out) accepts it: git check-ignore succeeds on the parent rule and nothing is tracked/stray (I checked the same shape read-only in this repo: a_non_prod_docs/brandkit passes all three git checks). But plugin/lib/proofcopy.sh proofcopy_make lists ignored paths with 'git ls-files --others --ignored --exclude-standard --directory', which gives the whole folder as one entry 'data/'; the skip test 'case $p in $L | $L/*' only matches when the entry equals or is below the listed path, so 'data' vs 'data/raw' never matches and the whole of data/, raw/ included, is copied in. The user gets an approved contract line 'clean copy leaves out: data/raw/' while the big folder is still copied: the phase goal and criterion 4 ('skips a listed path and everything under it') and docs/proof.md ('skips the listed paths') are false for this case. tests/clean-copy-proof.bats only covers the listed folder being the ignored one, or its files ignored one by one. Fix idea: after copying an entry p that is a proper parent of a listed path L, remove $copy/L from the copy (or copy p's children one by one around L). Regression test: ignore 'data/' as a whole, list 'data/sub/', run vbw prove with the probe; the copy must hold data/a.bin and nothing of data/sub, and it must fail without the fix.",
       "phase": "P166"
     }
@@ -59087,6 +59087,12 @@
       "id": "D508",
       "at": "2026-10-26T19:42:43Z",
       "text": "Contract approved: 198 requirements, 468 checks, 525 plans (30bd450dd805)"
+    },
+    {
+      "id": "D509",
+      "text": "F319 (a listed path under a folder git ignores as a whole, data/raw/ under an ignored data/): the clean copy leaves it out by descending into that folder and copying its children one by one around the listed path, as deep as the path goes, never by copying the folder and deleting the path afterwards. vbw spec check and sync keep accepting such a path. The regression test ignores data/ as a whole, lists data/sub/, runs the proof with the probe and expects data/a.bin in the copy and nothing of data/sub",
+      "why": "Lead dev 2026-10-26: the list exists to spare the copy cost of a big folder (18 GB in the field report); copy-then-delete pays that cost on a plain copy and only hides it on a clone",
+      "at": "2026-10-26T20:44:54Z"
     }
   ],
   "commands": {
@@ -67101,6 +67107,17 @@
         "ended": "2026-10-26T20:43:40Z",
         "cost": {
           "usd": 1.883235
+        }
+      },
+      {
+        "id": "fix-20261026T204457Z",
+        "kind": "fix",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M43",
+        "started": "2026-10-26T20:44:57Z",
+        "ended": "2026-10-26T20:48:45Z",
+        "cost": {
+          "usd": 0.774435
         }
       }
     ],
