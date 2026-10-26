@@ -16,6 +16,11 @@
 # leaves a folder whose owner has ended. A copy that will not go prints one
 # warning line and the proof goes on.
 #
+# Left out (R205): the paths listed under ## Clean copy in .vbw/spec.md (the
+# record's project.leave_out) are not copied in: a listed path, or any ignored
+# path under a listed folder, is skipped in every clean copy; a listed path with
+# nothing at it matches nothing. Every other ignored path is still copied.
+#
 # One line about a plain copy (R206): when the copies of a command took the
 # plain way (no copy-on-write clone) for more than 500 MB of ignored data
 # (VBW_PROOFCOPY_PLAIN_KB, a test-only variable, lowers that threshold; equal
@@ -149,7 +154,7 @@ proofcopy_sweep() {
 
 # proofcopy_make: one more copy, added to PROOF_COPIES.
 proofcopy_make() {
-  local dir p l t real copy first=''
+  local dir p l t real copy first='' left='' L skip
   dir=$(mktemp -d "$VBW_RUNTIME/proof.$$.XXXXXX") || vbw_die "cannot create a directory in $VBW_RUNTIME"
   vbw_guard_add dir "$dir"
   copy="$dir/tree"
@@ -160,9 +165,19 @@ proofcopy_make() {
   git -C "$VBW_ROOT" -c core.hooksPath=/dev/null worktree add -q --detach "$copy" HEAD > /dev/null 2>&1 \
     || { proofcopy_remove; vbw_die "cannot make a clean copy of the committed code (does the project have a commit?)"; }
   real=$(cd -P "$VBW_ROOT" && pwd -P) || vbw_die "cannot resolve $VBW_ROOT"
+  if [ -f "${VBW_RECORD:-}" ]; then
+    left=$(jq -r '(.project.leave_out // [])[]' "$VBW_RECORD" 2> /dev/null) || left=''
+  fi
   while IFS= read -r -d '' p; do
     p=${p%/}
     case "$p" in .git | .git/* | .vbw | .vbw/*) continue ;; esac
+    skip=''
+    while IFS= read -r L; do
+      L=${L%/}
+      [ -n "$L" ] || continue
+      case "$p" in "$L" | "$L"/*) skip=1; break ;; esac
+    done <<< "$left"
+    [ -z "$skip" ] || continue
     ! proofcopy_is_build_dir "$p" || continue
     [ ! -e "$copy/$p" ] && [ ! -L "$copy/$p" ] || continue
     mkdir -p "$copy/$(dirname "$p")"
