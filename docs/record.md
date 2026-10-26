@@ -8,6 +8,24 @@ commits made since the record was first committed count as its own
 ([docs/proof.md](proof.md#whose-commits-vbw-judges)): ids start again in a new
 record, so an older roadmap's trailers name nothing of it.
 
+## VBW's own files stay visible to git
+
+VBW keeps `.vbw/.gitignore` with `runtime/` and the un-hide lines `!record.json`, `!spec.md`, `!map.md` and `!.gitignore` (the last so a project-wide `*` rule cannot hide the file itself).
+They keep a rule such as `*.json` or `*.md` from hiding the plan files, whether it sits in the project's `.gitignore`, in `.git/info/exclude` or in a global excludes file.
+
+`vbw init` writes these lines to `.vbw/.gitignore` and says so in one line.
+An existing project gets the un-hide lines at its next VBW commit, committed along with the record.
+VBW never edits the project's .gitignore.
+
+**The whole-folder case.** A rule that hides the whole `.vbw/` folder (`.vbw/` or `*`) cannot be undone by any line inside it. VBW then names the hidden file and the rule's source as `git check-ignore -v` gives it (file, line, pattern):
+
+- `vbw init` says so.
+- `vbw doctor` fails with it and exits 1.
+- `vbw approve` refuses with it and commits nothing.
+- Other VBW commits print a `vbw: warning:` naming the hidden file; they never skip it silently.
+
+The fix: remove that line, or change it to .vbw/runtime/
+
 ## Guarantees
 
 - **One writer, atomic:** every mutation takes the project lock, writes a
