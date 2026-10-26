@@ -1,19 +1,6 @@
 {
   "schema": 4,
-  "lease": {
-    "run": "build-20261026T165137Z",
-    "kind": "build",
-    "started_at": "2026-10-26T16:51:37Z",
-    "files": [
-      "tools/l3-results/greenfield.json",
-      "tools/l3-results/hiddenrecord.json",
-      "tools/l3-suite.sh"
-    ],
-    "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
-    "cost": {
-      "usd": 2549.476603
-    }
-  },
+  "lease": null,
   "protected": [
     "tests/adaptive-results.bats",
     "tests/agent-scratch.bats",
@@ -51369,12 +51356,46 @@
         "P168.2",
         "P166.5"
       ],
-      "status": "building",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "tools/l3-suite.sh: scenario_hiddenrecord, in ALL and the header list: a fresh project whose committed .gitignore holds '*.json'; the user types /vbw:vibe with the greet.sh request and the build runs to the end. Its checks read git and the project's files, never the screen: facts gitignore_rule ('*.json', read from .gitignore), record_committed (git ls-files --error-unmatch .vbw/record.json), unhide_lines (.vbw/.gitignore holds the four un-hide lines), record_commits (git log --format=%H -- .vbw/record.json counted, at least 1); common_checks; result_write hiddenrecord with a fixture text and a not_tested list.",
         "scenario_greenfield gains the fact plan_files_unhidden: true when the project's .vbw/.gitignore holds the four un-hide lines and .vbw/record.json is tracked; its existing facts and checks stay.",
         "Run bash tools/l3-suite.sh greenfield hiddenrecord (real Claude Code sessions), fix what they find, and commit tools/l3-results/greenfield.json and tools/l3-results/hiddenrecord.json with the suite; tests/l3-hiddenrecord.bats green (tests/l3-greenfield-report.bats stays green)."
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R208",
+            "text": "tools/l3-suite.sh has the hiddenrecord scenario (in ALL and the header) seeding a *.json rule and reading git and .vbw/.gitignore, never the screen; its committed result (L3, passed, dated 2026-10-26 or later) shows the record committed, the un-hide lines and at least one record commit"
+          },
+          "what": "removed hiddenrecord from ALL",
+          "files": [
+            "tools/l3-suite.sh"
+          ],
+          "checks": {
+            "C466": "red"
+          },
+          "result": "red",
+          "at": "2026-10-26T17:04:59Z",
+          "head": "1a78247e34b2c2a12eb7dd1b017c766ebc06e5de"
+        },
+        {
+          "rule": {
+            "req": "R208",
+            "text": "the greenfield scenario records plan_files_unhidden and its committed result from this code shows it true"
+          },
+          "what": "dropped plan_files_unhidden fact",
+          "files": [
+            "tools/l3-suite.sh"
+          ],
+          "checks": {
+            "C466": "red"
+          },
+          "result": "red",
+          "at": "2026-10-26T17:05:02Z",
+          "head": "1a78247e34b2c2a12eb7dd1b017c766ebc06e5de"
+        }
       ]
     },
     {
@@ -66241,6 +66262,17 @@
         "ended": "2026-10-26T16:49:53Z",
         "cost": {
           "usd": 0.451057
+        }
+      },
+      {
+        "id": "build-20261026T165137Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M43",
+        "started": "2026-10-26T16:51:37Z",
+        "ended": "2026-10-26T17:06:39Z",
+        "cost": {
+          "usd": 1.4668
         }
       }
     ],
