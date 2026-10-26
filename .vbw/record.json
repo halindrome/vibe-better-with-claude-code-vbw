@@ -55100,7 +55100,7 @@
       "id": "F320",
       "command": "test",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "test fail"
     }
   ],
@@ -59105,6 +59105,12 @@
       "id": "D510",
       "at": "2026-10-26T20:54:44Z",
       "text": "Contract approved: 198 requirements, 468 checks, 525 plans (4100a3e5c422)"
+    },
+    {
+      "id": "D511",
+      "text": "F320 diagnosis and fix direction: the R204 count in tests/scope-history.bats (shell commands traced with set -x, counted as lines starting with +) is a racy measurement, not a scope-check regression. prove_scope's process-substitution children and pipeline parts (printf, jq, git) inherit set -x and write their trace lines into the same trace file as the parent shell, at the same time, and bash writes a line in more than one call (the PS4 prefix, each word, the newline), so under load one process's line lands inside another's and its + prefix is no longer at a line start: grep -c '^+' then misses it. Fix in the tests, not the kernel: PS4 carries a marker no traced word contains, and the count is the number of markers anywhere in the trace (grep -o MARKER | wc -l), which a merged line keeps because the prefix is written in one call. Apply the same to the delivered-files trace count in tests/qa-delivered.bats (same pattern, same latent flaw). No tests/helper.bash change: 497 test files load it and the two trace functions stay local to their files.",
+      "why": "Proof 3: 80 shell commands for 50 commits, 81 for 500, in a suite run under bash 5.3 at load 14-19 on 10 cores; the case passes alone. 48 reproductions of the case (16 under /bin/bash 3.2 quiet, 8 then 24 in parallel under bash 5.3 with 6 CPU burners, load up to 90) counted 81 and 81 every time, so the proof's 80 is a lost line, never an extra command: both projects run the same commands (the traces list the same 81, only n=50 vs n=500 differ in text). The traces show the children's lines (level +++) interleaved with the parent's (++) in one file, and the order at each site is timing-dependent: the child's printf line precedes the parent's 15 KB jq -n -c line in all 48 traces at that site and follows the parent's read lines at the others. 960 micro-runs of one jq call with a process substitution (bash 3.2, 24 parallel) produced no merge, so the race is rare; it is real because its only precondition is two writers of multi-call lines on one shared offset. Shown by: a reproduction copy of the test in the scratchpad keeping each trace, and the trace shapes above. Not shown: a merged line caught in the act.",
+      "at": "2026-10-26T21:57:45Z"
     }
   ],
   "commands": {
@@ -67130,6 +67136,17 @@
         "ended": "2026-10-26T20:48:45Z",
         "cost": {
           "usd": 0.774435
+        }
+      },
+      {
+        "id": "fix-20261026T215808Z",
+        "kind": "fix",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M43",
+        "started": "2026-10-26T21:58:08Z",
+        "ended": "2026-10-26T22:16:24Z",
+        "cost": {
+          "usd": 2.07878
         }
       }
     ],
