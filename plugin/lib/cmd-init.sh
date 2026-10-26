@@ -80,6 +80,16 @@ EOF
   # An argv whose words contain no whitespace reads as plain words.
   printf '%s' "$2" | jq -r 'to_entries[] | "- \(.key): " + (.value
     | if any(.[]; test("\\s") or startswith("[")) then tojson else join(" ") end)'
+  cat <<'EOF'
+
+## Clean copy
+
+<!-- Git-ignored paths the proof's clean copy leaves out, such as a huge data
+     folder or caches. One per line, relative to the project root; the rest of
+     the ignored environment is still copied in. Edit lines, then vbw spec sync.
+- data/
+-->
+EOF
 }
 
 # .vbw/runtime/ (locks, caches, check output) is never committed. VBW ignores it
