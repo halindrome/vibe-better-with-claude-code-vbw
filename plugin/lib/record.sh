@@ -326,6 +326,45 @@ record_update() {
   record_unlock
 }
 
+# record_gitignore: VBW's one writer of .vbw/.gitignore: runtime/ plus the lines that
+# un-hide its own plan files from a project-wide ignore rule (*.json, *.md). A missing
+# file is written whole; an existing one gets only the lines it lacks (exact line
+# match), every existing line kept, a complete file left byte-identical.
+# Returns 0 when it wrote something, 1 when it changed nothing.
+record_gitignore() {
+  local f="${VBW_DIR:-$VBW_ROOT/.vbw}/.gitignore" line wrote=1
+  [ -d "$(dirname "$f")" ] || mkdir -p "$(dirname "$f")"
+  for line in 'runtime/' '!record.json' '!spec.md' '!map.md' '!.gitignore'; do
+    if [ ! -f "$f" ] || ! grep -qxF -- "$line" "$f"; then
+      # A last line without its newline gets one before the appended line.
+      if [ -s "$f" ] && [ -n "$(tail -c 1 "$f")" ]; then printf '\n' >> "$f"; fi
+      printf '%s\n' "$line" >> "$f"
+      wrote=0
+    fi
+  done
+  return "$wrote"
+}
+
+# record_hidden: one line per own file (record, spec, map, .gitignore) that exists, is
+# untracked and that git still ignores: "FILE is hidden from git by SOURCE:LINE:PATTERN:
+# remove that line, or change it to .vbw/runtime/", the source as git check-ignore -v
+# gives it. Prints nothing and returns 1 when no own file is hidden. Run from the root.
+record_hidden() {
+  local f src ln pat _path found=1
+  for f in .vbw/record.json .vbw/spec.md .vbw/map.md .vbw/.gitignore; do
+    [ -f "$f" ] || continue
+    git ls-files -z --error-unmatch -- "$f" > /dev/null 2>&1 && continue
+    # -z: source, line, pattern, path, each ended by NUL. A negated pattern (!...) is
+    # git's report of an un-hide, not of an ignore.
+    { IFS= read -r -d '' src && IFS= read -r -d '' ln && IFS= read -r -d '' pat && IFS= read -r -d '' _path; } \
+      < <(printf '%s\0' "$f" | git check-ignore -v -z --stdin 2> /dev/null) || continue
+    case "$pat" in '!'*) continue ;; esac
+    printf '%s is hidden from git by %s:%s:%s: remove that line, or change it to .vbw/runtime/\n' "$f" "$src" "$ln" "$pat"
+    found=0
+  done
+  return "$found"
+}
+
 # record_commit [--strict] MESSAGE [FILE...]: commit VBW's own files that changed (.vbw/spec.md,
 # .vbw/record.json, .vbw/map.md, .vbw/.gitignore and the protected check
 # files) with `git commit --only`, so the user's staged work stays staged.
@@ -339,21 +378,41 @@ record_update() {
 record_commit() {
   local strict=0
   [ "${1:-}" != "--strict" ] || { strict=1; shift; }
-  local msg="$1" own=() changed=() untracked=() f why
+  local msg="$1" own=() changed=() untracked=() freed=() f why hidden
   shift
   local only=("$@")
   (
     # A subshell starts without the parent's traps: it guards only its own lock.
     vbw_guard_reset
     cd "$VBW_ROOT" || exit 1
+    # Own files a project rule hid until now (never committed, so never missed): once the
+    # un-hide lines free them, this commit takes them along, whatever FILE... names.
+    for f in .vbw/spec.md .vbw/record.json .vbw/map.md; do
+      [ -f "$f" ] && ! git ls-files -z --error-unmatch -- "$f" > /dev/null 2>&1 &&
+        git check-ignore -q -- "$f" 2> /dev/null && freed+=("$f")
+    done
+    # An existing project gets the un-hide lines at its next VBW commit.
+    record_gitignore || true
     if [ ${#only[@]} -gt 0 ]; then
       for f in "${only[@]}"; do [ -f "$f" ] && own+=("$f"); done
+      for f in .vbw/.gitignore ${freed[@]+"${freed[@]}"}; do
+        case " ${own[*]+"${own[*]}"} " in *" $f "*) ;; *) [ -f "$f" ] && own+=("$f") ;; esac
+      done
     else
       for f in .vbw/spec.md .vbw/record.json .vbw/map.md .vbw/.gitignore; do [ -f "$f" ] && own+=("$f"); done
       while IFS= read -r -d '' f; do [ -f "$f" ] && own+=("$f"); done \
         < <(jq -j '[.checks[].files // [] | .[]] | unique[] | . + "\u0000"' "$VBW_RECORD")
     fi
     [ ${#own[@]} -gt 0 ] || exit 0
+    # A rule that hides a file the lines cannot un-hide (the whole folder) is said, never
+    # skipped silently: strict, it is the failure; otherwise a warning and the rest goes on.
+    if hidden=$(record_hidden); then
+      if [ "$strict" = 1 ]; then
+        printf '%s\n' "$hidden" >&2
+        exit 1
+      fi
+      printf '%s\n' "$hidden" | sed 's/^/vbw: warning: /' >&2
+    fi
     while IFS= read -r -d '' f; do changed+=("$f"); done < <(git diff --name-only -z HEAD -- "${own[@]}" 2> /dev/null)
     while IFS= read -r -d '' f; do untracked+=("$f"); changed+=("$f"); done \
       < <(git ls-files -z --others --exclude-standard -- "${own[@]}")
