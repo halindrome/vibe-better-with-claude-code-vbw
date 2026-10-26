@@ -23682,6 +23682,12 @@
           "from": "deep",
           "to": "deep",
           "reason": "Dev blocked P168.1: Code done and committed (893c1b43): record_gitignore, record_hidden, record_commit; R208.3/.4/.5/.10 cases pass on bash 5 and /bin/bash 3.2 (tests 3,4,5,8,10). The mutation step cannot run: vbw mutate refuses because C464 (tests/hidden-record.bats, the only check of R208.3/4/5/10) is red on unbroken code; tests 1,2,6,7,9 need init/doctor/approve/next, which are P168.2's files (plugin/lib/cmd-init.sh, cmd-doctor.sh, cmd-approve.sh). Needs replanning: run the P168.1 mutation after P168.2 is built, or give R208.3/4/5/10 a check of their own."
+        },
+        {
+          "at": "2026-10-26T15:16:41Z",
+          "from": "deep",
+          "to": "deep",
+          "reason": "Dev blocked P168.2: Tasks 1-3 are implemented and C465/C468 pass, but C464 (R208.3/R208.4) goes red once vbw init writes the un-hide lines (task 1): record_commit in plugin/lib/record.sh finds the own files to free by asking git which are still ignored BEFORE record_gitignore runs, and after init has written '!spec.md' nothing is ignored any more, so a project-wide *.md rule no longer makes the next commit take .vbw/spec.md along (tests/hidden-record.bats tests 1 and 2: 'tracked .vbw/spec.md' fails). The fix belongs in record.sh (outside this plan's files): the freed detection must recognise a spec.md/map.md that a project rule would hide without the un-hide line (e.g. probing the same file name in a folder without the un-hide lines). C466 is red for the l3-suite scenario, not this plan's files. I reverted my edits to the three lib files; ask for record.sh to be added to the plan."
         }
       ]
     },
@@ -50603,12 +50609,90 @@
         "P166.2",
         "P166.3"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "tools/l3-suite.sh: scenario_leaveout and leaveout_seed, in ALL and the header list. The seed makes a project with a committed .gitignore ignoring data/ and cache/, both folders present with files, a spec whose '## Clean copy' section lists '- data/' and whose one requirement is greet.sh, a seeded check (sh test_greet.sh) that, from inside the copy, writes whether data and cache exist there into the project's own runtime folder (\"$(git rev-parse --git-common-dir)/../.vbw/runtime/leaveout-probe\"), synced and committed; the user types /vbw:vibe and the build runs to the end.",
         "Its checks read the record and the kernel's output, never the screen: facts contract_names_path (vbw show contract run by the suite prints 'clean copy leaves out: data/'), leave_out (.project.leave_out from the record), proof_passed (.evidence.passed) and copy_without_data (the probe says data absent and cache present); common_checks; result_write leaveout with a fixture text and a not_tested list.",
         "Run bash tools/l3-suite.sh leaveout (a real Claude Code session, about $1-3), fix what it finds, and commit tools/l3-results/leaveout.json with the scenario; tests/l3-leaveout.bats green."
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R205",
+            "text": "tools/l3-suite.sh has the leaveout scenario (in ALL and the header) seeding an ignored data folder listed under Clean copy, reading the record, vbw show contract and a probe the check writes from the copy, never the screen"
+          },
+          "what": "leaveout removed from ALL",
+          "files": [
+            "tools/l3-suite.sh"
+          ],
+          "checks": {
+            "C458": "red"
+          },
+          "result": "red",
+          "at": "2026-10-26T15:20:51Z",
+          "head": "5588cb190294426f44c093f76560e1d999e26294"
+        },
+        {
+          "rule": {
+            "req": "R205",
+            "text": "the committed tools/l3-results/leaveout.json (L3, passed, dated 2026-10-26 or later) shows the contract naming the path, leave_out ['data/'], a passed proof and a copy without the data"
+          },
+          "what": "result says the copy held data",
+          "files": [
+            "tools/l3-results/leaveout.json"
+          ],
+          "checks": {
+            "C458": "red"
+          },
+          "result": "red",
+          "at": "2026-10-26T15:20:54Z",
+          "head": "5588cb190294426f44c093f76560e1d999e26294"
+        },
+        {
+          "task": 2,
+          "what": "leave_out fact no longer read",
+          "files": [
+            "tools/l3-suite.sh"
+          ],
+          "checks": {
+            "C455": "green",
+            "C456": "green",
+            "C457": "green",
+            "C458": "green",
+            "C467": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-26T15:23:30Z",
+          "head": "5588cb190294426f44c093f76560e1d999e26294"
+        },
+        {
+          "task": 2,
+          "what": "leave_out fact no longer read",
+          "files": [
+            "tools/l3-suite.sh"
+          ],
+          "checks": {
+            "C455": "green",
+            "C456": "green",
+            "C457": "green",
+            "C458": "red"
+          },
+          "result": "red",
+          "at": "2026-10-26T15:25:40Z",
+          "head": "67ad94c01ae392127017991aaab55871824ab622",
+          "strengthened": [
+            "tests/l3-leaveout.bats"
+          ],
+          "pending": [
+            "tests/l3-leaveout.bats"
+          ]
+        },
+        {
+          "task": 3,
+          "none": "task 3 runs the scenario and commits its result; the breaks of R205.24 on the result file cover it",
+          "at": "2026-10-26T15:25:43Z"
+        }
       ]
     },
     {
@@ -50955,13 +51039,14 @@
         "P168.1",
         "P166.2"
       ],
-      "status": "planned",
+      "status": "blocked",
       "role": "dev",
       "tasks": [
         "plugin/lib/cmd-init.sh: init_gitignore is replaced by record_gitignore; on a fresh init, and in an already-initialized project whenever a line was added, vbw init prints exactly one line 'VBW keeps its plan files visible to git through .vbw/.gitignore (runtime/ ignored; record.json, spec.md, map.md un-hidden)' and nothing about it when the file was already complete; after that it prints each record_hidden line prefixed 'vbw: ' on stderr (exit code unchanged: init stays idempotent and succeeds).",
         "plugin/lib/cmd-doctor.sh doctor_project: after the spec line, each record_hidden line is a fail line (doctor_line fail '<the line before the colon-fix>' 'remove that line, or change it to .vbw/runtime/'), so vbw doctor exits 1; nothing is printed when no own file is hidden.",
         "plugin/lib/cmd-approve.sh approve_problems: appends each record_hidden line, so vbw approve refuses with 'the contract is not ready for approval:' and that line (exit 1, no decision, no consent, no commit) and vbw next's contract action names it among its problems (R171). tests/hidden-record.bats fully green on both shells."
-      ]
+      ],
+      "note": "Tasks 1-3 are implemented and C465/C468 pass, but C464 (R208.3/R208.4) goes red once vbw init writes the un-hide lines (task 1): record_commit in plugin/lib/record.sh finds the own files to free by asking git which are still ignored BEFORE record_gitignore runs, and after init has written '!spec.md' nothing is ignored any more, so a project-wide *.md rule no longer makes the next commit take .vbw/spec.md along (tests/hidden-record.bats tests 1 and 2: 'tracked .vbw/spec.md' fails). The fix belongs in record.sh (outside this plan's files): the freed detection must recognise a spec.md/map.md that a project rule would hide without the un-hide line (e.g. probing the same file name in a folder without the un-hide lines). C466 is red for the l3-suite scenario, not this plan's files. I reverted my edits to the three lib files; ask for record.sh to be added to the plan."
     },
     {
       "id": "P168.3",
@@ -65883,6 +65968,17 @@
         "ended": "2026-10-26T15:13:26Z",
         "cost": {
           "usd": 0.593593
+        }
+      },
+      {
+        "id": "build-20261026T151410Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M43",
+        "started": "2026-10-26T15:14:10Z",
+        "ended": "2026-10-26T15:27:31Z",
+        "cost": {
+          "usd": 0.925649
         }
       }
     ],
