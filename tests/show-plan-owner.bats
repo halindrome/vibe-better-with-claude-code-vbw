@@ -167,6 +167,21 @@ NOT_MINE="red until it is built, not this plan's to pass"
   grep -q 'own_rules(' "$PLUGIN_ROOT/lib/record.sh" || { echo "record.sh does not define own_rules"; false; }
 }
 
+@test "R209 kernel: a task break records the checks of own_rules, early (one check) and completing (every check of the requirement)" {
+  printf 'echo "Hello, $1!" # noted\n' > greet.sh
+  run "$VBW" mutate P1.1 task1 "adds a comment" greet.sh < /dev/null
+  [ "$status" -ne 0 ] && [[ "$output" == *survivor* ]] || { echo "$output"; false; }
+  [ "$(jq -c '[.plans[] | select(.id == "P1.1") | .mutations[-1].checks | keys[]] | unique' .vbw/record.json)" = '["C1"]' ] || { jq -c '.plans[0].mutations' .vbw/record.json; false; }
+  git checkout -q -- greet.sh
+  printf 'echo "HELLO, $(printf %%s "$1" | tr a-z A-Z)!"\n' > shout.sh
+  git commit -q -am "feat(shout): shout"
+  status_of P1.1 done
+  printf 'echo "HELLO, $(printf %%s "$1" | tr a-z A-Z)!" # noted\n' > shout.sh
+  run "$VBW" mutate P1.2 task1 "adds a comment" shout.sh < /dev/null
+  [ "$status" -ne 0 ] && [[ "$output" == *survivor* ]] || { echo "$output"; false; }
+  [ "$(jq -c '[.plans[] | select(.id == "P1.2") | .mutations[-1].checks | keys[]] | unique' .vbw/record.json)" = '["C1","C2"]' ] || { jq -c '.plans[1].mutations' .vbw/record.json; false; }
+}
+
 # --- R209 show: the marks vbw show plan prints (plan P170.2)
 
 @test "R209 show: a sibling plan's rule is marked with its plan and whether it is built after or before this plan; this plan's own rule is listed as today" {
