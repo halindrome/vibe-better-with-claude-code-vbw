@@ -414,6 +414,9 @@
     "tests/sessions-rename-hint.bats",
     "tests/sessions-statusline.bats",
     "tests/show-fix-failing-tests.bats",
+    "tests/show-plan-owner-docs.bats",
+    "tests/show-plan-owner-prompt.bats",
+    "tests/show-plan-owner.bats",
     "tests/small-change.bats",
     "tests/small-request.bats",
     "tests/statusline-handback.bats",
@@ -6181,6 +6184,72 @@
       ],
       "files": [
         "tests/hidden-record-commands.bats"
+      ]
+    },
+    {
+      "id": "C469",
+      "req": "R209",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "--filter",
+        "R209 kernel",
+        "tests/show-plan-owner.bats"
+      ],
+      "files": [
+        "tests/show-plan-owner.bats"
+      ]
+    },
+    {
+      "id": "C470",
+      "req": "R209",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "--filter",
+        "R209 show",
+        "tests/show-plan-owner.bats"
+      ],
+      "files": [
+        "tests/show-plan-owner.bats"
+      ]
+    },
+    {
+      "id": "C471",
+      "req": "R209",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/show-plan-owner-prompt.bats"
+      ],
+      "files": [
+        "tests/show-plan-owner-prompt.bats"
+      ]
+    },
+    {
+      "id": "C472",
+      "req": "R209",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/show-plan-owner-docs.bats"
+      ],
+      "files": [
+        "tests/show-plan-owner-docs.bats"
+      ]
+    },
+    {
+      "id": "C473",
+      "req": "R209",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "--filter",
+        "R209",
+        "tests/l3-taskbreak.bats"
+      ],
+      "files": [
+        "tests/l3-taskbreak.bats"
       ]
     }
   ],
@@ -15630,6 +15699,120 @@
           "plan": "P168.4"
         }
       ]
+    },
+    {
+      "id": "R209",
+      "text": "When a rule names its plan, vbw show plan tells the Dev which rules and checks are this plan's and which are another plan's: a rule naming another plan is marked with that plan and whether it is built before or after this one, a check that serves only other plans' rules is marked as that plan's (red until it is built, not this plan's to pass), and the rules shown as this plan's are exactly those vbw mutate counts as the plan's own (those naming it, plus every rule of a requirement it completes); the Dev's red-first and green steps use only the plan's own checks, and a red check of another plan's rule is never a blocker; rules naming no plan keep today's listing (found 2026-10-26 in the taskbreak real-user run: P1.1's Dev blocked twice on P1.2's red C2, 'R1.2/C2 needs shout.sh, but the plan's only file is greet.sh', and the main session re-planned P1.1 to own shout.sh)",
+      "proof": "auto",
+      "status": "open",
+      "milestone": "M43",
+      "rules": [
+        {
+          "text": "own_rules($p) in VBW_JQ_DEFS gives, as [{req, n, text, check, plan}], the live rules of the [auto] requirements plan $p serves that name $p, while another plan of the requirement is open; [] for an unknown plan or a plan of [human] requirements only",
+          "check": "C469",
+          "plan": "P170.1"
+        },
+        {
+          "text": "a plan that completes a requirement (every other plan serving it is done) owns every live rule of it, those naming a done plan and those naming no plan (plan null) included",
+          "check": "C469",
+          "plan": "P170.1"
+        },
+        {
+          "text": "own_rules is independent of the phase's tier; owed_rules($p) equals own_rules($p) at standard and deep and is [] at express or without a tier, so vbw plan done, steps.sh and road.jq count the same rules as before",
+          "check": "C469",
+          "plan": "P170.1"
+        },
+        {
+          "text": "a retired rule is left out of own_rules and the other rules keep their numbers",
+          "check": "C469",
+          "plan": "P170.1"
+        },
+        {
+          "text": "cmd-mutate.sh's task break takes its check ids from own_rules and holds no second definition of the owner computation; its fallback (every check of its requirements) and its 'owns no rule' wording stay",
+          "check": "C469",
+          "plan": "P170.1"
+        },
+        {
+          "text": "in vbw show plan P, a rule of P's requirements that is not P's own and names another plan Q is listed as today followed by ' [Q's, ORDER]': 'built before this plan' when Q's build wave comes earlier, 'built after this plan' when later, 'built beside this plan' when the same",
+          "check": "C470",
+          "plan": "P170.2"
+        },
+        {
+          "text": "ORDER is 'done' when Q is done, 'blocked' when Q is blocked, and 'built after this plan' when P is done (out of the build waves) and Q is open",
+          "check": "C470",
+          "plan": "P170.2"
+        },
+        {
+          "text": "a rule that is P's own (naming P, naming no plan, or any rule of a requirement P completes, one naming a done plan included) is listed byte for byte as today",
+          "check": "C470",
+          "plan": "P170.2"
+        },
+        {
+          "text": "a check is listed as today followed by ' [Q's: red until it is built, not this plan's to pass]' when at least one live rule points at it and every live rule pointing at it is another plan's; several plans are joined 'P1.2's and P1.3's'",
+          "check": "C470",
+          "plan": "P170.2"
+        },
+        {
+          "text": "a check pointed at by any own rule, or by no live rule (a retired rule only), is listed exactly as today; a plan whose requirements are all [human] shows no mark",
+          "check": "C470",
+          "plan": "P170.2"
+        },
+        {
+          "text": "vbw show plan --json keeps every field it has today and adds to each rule plan (the named plan or null), own, and when not own order (done, blocked, before, after, beside); to each check own and, when not own, plans (the ids whose rules it serves)",
+          "check": "C470",
+          "plan": "P170.2"
+        },
+        {
+          "text": "the two readers agree: the checks of the rules --json marks own are exactly the keys of the checks map a task break records, for the early plan while the other is open and for the completing plan after the other is done",
+          "check": "C470",
+          "plan": "P170.2"
+        },
+        {
+          "text": "a project whose rules name no plan prints exactly today's listing, and its --json marks every rule and check own",
+          "check": "C470",
+          "plan": "P170.2"
+        },
+        {
+          "text": "dev.md's red-first step runs vbw check --expect-red on the plan's own checks only (those vbw show plan leaves unmarked), and its green step ends when every own check passes",
+          "check": "C471",
+          "plan": "P170.3"
+        },
+        {
+          "text": "dev.md says a check marked another plan's stays red until that plan is built, is never a blocker and never DEVN-04, and is at most named in notes; the DEVN-04 row keeps 'plan cannot work as written' and excludes a file another plan owns for its own marked rule",
+          "check": "C471",
+          "plan": "P170.3"
+        },
+        {
+          "text": "docs/workflows.md's vbw show plan row names the marks for another plan's rules and checks, and the doc shows both marks as printed and names the ORDER words",
+          "check": "C472",
+          "plan": "P170.4"
+        },
+        {
+          "text": "docs/workflows.md's task-form bullet points at the rules vbw show plan leaves unmarked, and the doc says red-first and green use only the plan's own checks and another plan's red check is no blocker",
+          "check": "C472",
+          "plan": "P170.4"
+        },
+        {
+          "text": "docs/proof.md's paragraph on a rule that names its plan shows both marks as printed, names the ORDER words, and says the Dev's steps use only the plan's own checks and another plan's red check is no blocker",
+          "check": "C472",
+          "plan": "P170.4"
+        },
+        {
+          "text": "scenario_taskbreak reads vbw show plan P1.1's marks (R1.2 built after this plan, C2 red until it is built) from the transcripts' tool results, never the screen, as the fact show_plan_marked",
+          "check": "C473",
+          "plan": "P170.5"
+        },
+        {
+          "text": "scenario_taskbreak records early_plan_never_blocked: no vbw plan block P1.1 tool call in the transcripts and P1.1's recorded files still exactly [\"greet.sh\"]; the earlier facts stay",
+          "check": "C473",
+          "plan": "P170.5"
+        },
+        {
+          "text": "the committed taskbreak result from this code (dated 2026-10-26 or later) passed with show_plan_marked and early_plan_never_blocked true",
+          "check": "C473",
+          "plan": "P170.5"
+        }
+      ]
     }
   ],
   "phases": [
@@ -23730,6 +23913,36 @@
           "reason": "Dev blocked P169.3: Task 1 is committed (c0f67415): the scenario now reads mutate_breakdown_line and mutate_steps_line, and both were true in two real runs. But 'bash tools/l3-suite.sh taskbreak' fails twice (2026-10-26, 17:21 and 17:46) on two older facts, so the committed result cannot show passed:true as R207.13 needs. Cause, from the session transcripts: P1.1's Dev runs 'vbw check C1 C2', sees C2 red (shout.sh belongs to P1.2), and blocks the plan ('R1.2/C2 needs shout.sh, but the plan's only file is greet.sh'). The orchestrating session then re-plans (P1.1 gets shout.sh), P1.2 is built before P1.1's breaks run, so 'break made before P1.2 was built' and 'other rule check red at break' fail. 'vbw show plan P1.1' lists R1.2 and C2 with no hint that P1.2 owns that rule. The fix belongs in plugin code (show plan naming the plan that owns each rule, or the Dev prompt), outside this plan's files; making the fixture dodge it would hide a real gap. Decision needed: add a plan for that, then re-run taskbreak."
         }
       ]
+    },
+    {
+      "id": "P170",
+      "title": "vbw show plan tells the Dev which rules and checks are this plan's and which belong to another plan",
+      "reqs": [
+        "R209"
+      ],
+      "milestone": "M43",
+      "goal": "A Dev building one plan of a requirement that several plans share sees in vbw show plan which rules and checks are its own and which belong to a sibling plan (and whether that sibling is built before or after), uses only its own checks for red-first and green, and never blocks on a sibling's red check; what show plan calls the plan's own rules is exactly what vbw mutate counts as its own.",
+      "criteria": [
+        "One definition of a plan's own rules lives in the kernel and every reader uses it: plugin/lib/record.sh's VBW_JQ_DEFS gains own_rules($p), the live (not retired) rules of the [auto] requirements plan $p serves that either name $p or belong to a requirement $p completes (every other plan serving that requirement is done), as [{req, n, text, check, plan}], independent of the phase's tier; owed_rules($p) is rewritten on top of it (own_rules at standard and deep, [] otherwise) with no change in what vbw plan done, the step timings (steps.sh) and the road (road.jq) count; cmd-mutate.sh's task break drops its inline copy and takes its check ids from own_rules, keeping its fallback and wording when the plan owns no rule (every check of its requirements, 'owns no rule'); tests/mutate-own-rules.bats, tests/mutate-rule-owner.bats, tests/mutate-plan-done.bats and tests/mutate-show.bats stay green unchanged.",
+        "In vbw show plan P, a rule of P's requirements that is not P's own and names another plan Q is listed with its number, text and check as today followed by ' [Q's, ORDER]', where ORDER is 'done' when Q is done, 'blocked' when Q is blocked, 'built after this plan' when P is done and Q is open, and otherwise from the milestone's build waves (waves($m)): 'built before this plan' when Q's wave comes earlier, 'built after this plan' when later, 'built beside this plan' when both are in the same wave; a rule that is P's own (naming P, naming no plan, or any rule of a requirement P completes, including one naming a done plan) is listed byte for byte as today.",
+        "In vbw show plan P, a check of P's requirements is listed as today followed by ' [Q's: red until it is built, not this plan's to pass]' when at least one live rule points at it and every live rule pointing at it is another plan's rule (Q is that plan; several plans are joined 'P1.2's and P1.3's'); a check pointed at by any own rule, or by no rule at all, is listed exactly as today; a plan whose requirements are all [human], and a retired rule, change nothing (the retired rule stays left out, addresses keep their places).",
+        "vbw show plan P --json keeps every field it has today and adds to each rule 'plan' (the named plan or null), 'own' (true or false) and, when not own, 'order' (one of done, blocked, before, after, beside); to each check 'own' (true or false) and, when not own, 'plans' (the ids whose rules it serves); the R188 --json case in tests/mutate-show.bats stays green.",
+        "A test proves the two readers agree: on a fixture with two plans of one requirement, two checks and rules naming each plan, the checks of the rules show plan --json marks own are exactly the keys of the checks map a task break of that plan records, both for the early plan while the other is open (its own check only) and for the completing plan after the other is done (every check); and on a project whose rules name no plan, vbw show plan prints exactly the output it printed before this change (today's listing).",
+        "plugin/agents/dev.md: Stage 2 step 1 (red first) runs vbw check --expect-red on the plan's own checks only (those vbw show plan leaves unmarked); step 3 (green) ends when every own check passes; one sentence says a check marked another plan's stays red until that plan is built, is never a blocker and never DEVN-04, and is at most named in notes; the DEVN-04 row no longer reads a file another plan owns for its own marked rule as 'plan cannot work as written'; a test in the requirement's area pins these words, and tests/mutate-prompts.bats plus the prompt case of tests/mutate-own-rules.bats stay green; plugin/workflows/building.js is unchanged (the Dev already starts with vbw show plan).",
+        "docs/workflows.md (the vbw show plan row and the mutation check's task-form bullet) and docs/proof.md (the paragraph on a rule that names its plan) show the two marks as printed, name the ORDER words, and say the Dev's red-first and green steps use only the plan's own checks and that another plan's red check is no blocker; a docs test in the requirement's area pins them.",
+        "tools/l3-suite.sh scenario_taskbreak gains two facts, each an expect read from the transcripts' tool results, never the screen: show_plan_marked (the tool output of vbw show plan P1.1 carries \"[P1.2's, built after this plan]\" on R1.2 and the \"[P1.2's: red until it is built\" mark on C2) and early_plan_never_blocked (no vbw plan block P1.1 tool call in the transcript, and P1.1's recorded files are still exactly [\"greet.sh\"]); the existing facts (R193, R207) stay; bash tools/l3-suite.sh taskbreak is run on this code and tools/l3-results/taskbreak.json is committed showing passed:true with every fact true (which also gives R207.13 its dated result); tests/l3-taskbreak.bats gains the R209 cases and its R193 and R207 cases stay green."
+      ],
+      "tier": "standard",
+      "reasons": [
+        "requirements: 1",
+        "files: 8 (409721 bytes)",
+        "files: more than 2 in a repository tracking 1176 files",
+        "risk: none",
+        "breaks: R41",
+        "guarded: R1 (C1), R2 (C2), R4 (C4), R5 (C5), R8 (C8), R12 (C11), R13 (C12), R14 (C13), R22 (C19), R23 (C20), R24 (C23), R25 (C24), R28 (C25), R31 (C27), R32 (C28), R33 (C29), R34 (C30), R38 (C33, C34), R39 (C36), R42 (C38), R43 (C42, C43), R44 (C44, C45), R45 (C39, C40, C41), R46 (C46), R47 (C47), R48 (C49, C50), R49 (C48), R50 (C51), R51 (C52, C53, C66), R59 (C68, C92), R60 (C72, C94), R61 (C73, C74, C75, C76, C77), R62 (C78, C79, C80, C81, C82, C83, C93), R64 (C84, C85), R65 (C86, C87, C88, C89, C90), R66 (C95), R69 (C110, C120, C122), R70 (C114), R72 (C116, C118), R73 (C98), R74 (C99, C100), R75 (C101), R76 (C102, C103), R77 (C104), R78 (C105, C106), R79 (C107), R80 (C108), R81 (C109, C111, C112, C113), R92 (C131, C132, C133, C134, C135, C136, C137, C138, C139), R93 (C140, C141, C142, C143, C144), R94 (C145, C146, C147, C148), R95 (C149, C150), R96 (C151, C152), R97 (C153), R98 (C154), R99 (C155), R100 (C156), R101 (C179), R102 (C158, C159), R103 (C160), R104 (C161, C162), R105 (C163), R106 (C164, C165), R107 (C166, C167), R110 (C169, C170), R111 (C171, C172, C173, C174, C175), R115 (C181), R116 (C182, C183), R118 (C184), R121 (C187, C188), R123 (C190, C191), R129 (C196), R130 (C197), R131 (C198), R132 (C199), R134 (C201), R135 (C202), R144 (C208, C209), R146 (C211), R147 (C212, C215, C237), R148 (C213, C214, C216, C238), R149 (C217, C218, C219, C220, C221, C222), R150 (C223, C224, C225, C226, C227, C228, C229, C230), R152 (C233, C234), R153 (C235, C236, C239), R156 (C242, C243), R157 (C244), R158 (C245), R159 (C246), R160 (C247, C263, C264), R161 (C248, C265, C266), R162 (C249), R163 (C250), R165 (C252), R166 (C253, C254, C255, C256, C267), R167 (C257, C258, C259, C260), R168 (C261, C262), R169 (C268), R170 (C269), R173 (C281, C282, C283, C284, C285, C286, C289), R174 (C279, C280), R175 (C274, C275), R176 (C276, C277, C278), R177 (C287, C288), R179 (C297, C298, C299, C300, C301, C302, C303, C304, C305, C306, C312), R180 (C307, C308, C309, C310), R181 (C313, C314, C315, C316, C317, C318, C319, C320, C321), R182 (C322, C323, C324, C325, C326), R183 (C327), R184 (C328, C329, C330, C331, C332, C333), R185 (C334, C335, C336, C337, C338, C339, C340, C341, C342, C343), R186 (C344, C345, C346, C347, C348), R188 (C350, C351, C352, C353, C354, C355, C356, C357, C358, C359), R189 (C360, C361, C362, C363, C364, C365, C366, C367, C368, C369, C370, C371, C372, C373), R190 (C374, C375, C376, C377, C378, C379, C380, C381, C382, C383, C384, C385, C386, C387, C388), R191 (C389, C390, C391, C392, C393, C394, C395, C396, C397, C398, C399, C400), R192 (C401, C402, C403, C404, C405, C406, C407, C408, C409, C410), R193 (C411, C412), R194 (C417, C418, C419), R195 (C420, C421, C422), R196 (C415, C416), R197 (C413, C414), R199 (C424, C425, C430), R200 (C426, C427, C431), R201 (C428, C429), R202 (C432, C433, C434, C435, C436, C437, C438, C439, C440, C441, C442, C443, C444, C445, C446, C447), R203 (C448, C449, C450), R204 (C451, C452, C453, C454)",
+        "tests: project test command"
+      ],
+      "predicted": "standard"
     }
   ],
   "plans": [
@@ -51684,8 +51897,111 @@
         "tools/l3-suite.sh scenario_taskbreak gains two facts read from the tool results of the session's vbw mutate calls (transcripts | transcript_tool_output 'vbw mutate' REGEX, never the screen): mutate_breakdown_line (a line matching \"^VBW.s own work: [0-9]+\\.[0-9] of [0-9]+\\.[0-9] min\") and mutate_steps_line (a line starting '  steps of '); each is an expect so a missing line fails the scenario; the existing facts stay.",
         "Run bash tools/l3-suite.sh taskbreak (a real Claude Code session at rigor deep) and fix what it finds.",
         "Commit tools/l3-results/taskbreak.json with the suite; tests/l3-taskbreak.bats green (its R193 cases included)."
+      ]
+    },
+    {
+      "id": "P170.1",
+      "phase": "P170",
+      "title": "One kernel definition of a plan's own rules, used by the mutation check",
+      "reqs": [
+        "R209"
       ],
-      "note": "Task 1 is committed (c0f67415): the scenario now reads mutate_breakdown_line and mutate_steps_line, and both were true in two real runs. But 'bash tools/l3-suite.sh taskbreak' fails twice (2026-10-26, 17:21 and 17:46) on two older facts, so the committed result cannot show passed:true as R207.13 needs. Cause, from the session transcripts: P1.1's Dev runs 'vbw check C1 C2', sees C2 red (shout.sh belongs to P1.2), and blocks the plan ('R1.2/C2 needs shout.sh, but the plan's only file is greet.sh'). The orchestrating session then re-plans (P1.1 gets shout.sh), P1.2 is built before P1.1's breaks run, so 'break made before P1.2 was built' and 'other rule check red at break' fail. 'vbw show plan P1.1' lists R1.2 and C2 with no hint that P1.2 owns that rule. The fix belongs in plugin code (show plan naming the plan that owns each rule, or the Dev prompt), outside this plan's files; making the fixture dodge it would hide a real gap. Decision needed: add a plan for that, then re-run taskbreak."
+      "files": [
+        "plugin/lib/record.sh",
+        "plugin/lib/cmd-mutate.sh"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "plugin/lib/record.sh: VBW_JQ_DEFS gains own_rules($p), the one definition of a plan's own rules, as [{req, n, text, check, plan}] (plan null when the rule names none): the live (not retired) rules of the [auto] requirements with a check that plan $p serves, each either naming $p or belonging to a requirement $p completes (every other plan serving it is done); n is the rule's place in its requirement, retired rules counted; [] for an unknown plan or a plan of [human] requirements only; independent of the phase's tier. owed_rules($p) is rewritten on top of it: own_rules($p) when the plan's phase is standard or deep, [] otherwise (express or no tier); its comment says so. vbw plan done (plan_missing_breaks), steps.sh and road.jq keep counting the same rules: they read req, n, text and the length, which do not change.",
+        "plugin/lib/cmd-mutate.sh: the task break without --check takes its check ids from own_rules ([own_rules($p)[].check] | unique, through the kernel's jq definitions) and its inline copy of the owner computation (the $others and $done arrays) is deleted; the fallback when the plan owns no rule (every check of its requirements) and its wording ('owns no rule: the Lead names a plan on each rule, and until then every check of its requirements runs') stay exactly as they are.",
+        "Both shells: bats --filter 'R209 kernel' tests/show-plan-owner.bats green on bash 5 and /bin/bash 3.2 (the 'R209 show' cases of that file wait for P170.2); tests/mutate-own-rules.bats, tests/mutate-rule-owner.bats, tests/mutate-plan-done.bats, tests/mutate-show.bats, tests/contract-waves.bats and tests/standards.bats green unchanged."
+      ]
+    },
+    {
+      "id": "P170.2",
+      "phase": "P170",
+      "title": "vbw show plan marks another plan's rules and checks",
+      "reqs": [
+        "R209"
+      ],
+      "files": [
+        "plugin/lib/cmd-show.sh"
+      ],
+      "after": [
+        "P170.1"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "plugin/lib/cmd-show.sh show_work (plan): the JSON gains, per rule: plan (the named plan or null), own (true when own_rules holds the rule or when it names no plan: exactly the rules the listing leaves unmarked), and when not own order: 'done' when the named plan Q is done, 'blocked' when Q is blocked, 'after' when this plan P is no longer in the build waves (done or blocked) and Q is open, otherwise from waves(the milestone of P's phase): 'before' when Q's wave comes earlier, 'after' when later, 'beside' when the same (Q missing from the waves counts as after); per check: own (true when any own rule points at it or when no live rule does) and, when not own, plans (the ids of the plans whose live rules point at it, sorted, unique). Every field the JSON has today stays; a retired rule stays left out of rules.",
+        "The text listing: a rule that is not own prints as today followed by ' [Q's, ORDER]' with ORDER one of 'done', 'blocked', 'built before this plan', 'built after this plan', 'built beside this plan'; a check that is not own prints as today followed by ' [Q's: red until it is built, not this plan's to pass]', several plans joined as 'P1.2's and P1.3's'; every own rule and own check, every line of a plan whose rules name no plan, and every line of a plan whose requirements are all [human] stay byte for byte today's.",
+        "bats --filter 'R209 show' tests/show-plan-owner.bats green on bash 5 and /bin/bash 3.2 (its agreement case runs vbw mutate on the fixture, its golden cases pin today's listing); tests/mutate-show.bats (the R188 --json case included) and tests/mutate-rule-owner.bats (the T168 retired-rule case) green unchanged."
+      ]
+    },
+    {
+      "id": "P170.3",
+      "phase": "P170",
+      "title": "The Dev prompt: red-first and green on the plan's own checks only; a sibling's red check is no blocker",
+      "reqs": [
+        "R209"
+      ],
+      "files": [
+        "plugin/agents/dev.md"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "plugin/agents/dev.md Stage 2, step 1 (Red first): vbw check --expect-red on the plan's own checks only, those vbw show plan leaves unmarked (the line keeps the words 'Red first' and '--expect-red'); step 3 (Green): the step ends when every own check passes (the line keeps 'Green' and 'Never weaken').",
+        "One sentence in Stage 2 (with steps 1 to 3): a check vbw show plan marks as another plan's stays red until that plan is built, is never a blocker and never DEVN-04, and is at most named in notes. The DEVN-04 row keeps 'plan cannot work as written' and excludes a file another plan owns for its own marked rule (for example: 'plan cannot work as written (a file outside it that your own checks need, a decision; never a file another plan owns for its marked rule)').",
+        "The Mutation bullet's sentence on the task break keeps the words 'task' and 'own rules' on one line (the R193 prompt case of tests/mutate-own-rules.bats) and points at the marks (the rules vbw show plan leaves unmarked); tests/show-plan-owner-prompt.bats, tests/mutate-prompts.bats and tests/mutate-own-rules.bats green; plugin/workflows/building.js is not touched (the Dev already starts with vbw show plan)."
+      ]
+    },
+    {
+      "id": "P170.4",
+      "phase": "P170",
+      "title": "docs: the two marks, the order words, and the Dev's own checks",
+      "reqs": [
+        "R209"
+      ],
+      "files": [
+        "docs/workflows.md",
+        "docs/proof.md"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "docs",
+      "tasks": [
+        "docs/workflows.md: the 'vbw show plan P1.2 [--json]' row says the plan's rules and checks are listed with another plan's marked (its own stay unmarked): ' [P1.2's, built after this plan]' on a rule and ' [P1.2's: red until it is built, not this plan's to pass]' on a check, both as printed; the ORDER words 'done', 'blocked', 'built before this plan', 'built after this plan', 'built beside this plan' (with '[P1.2's, done]' and '[P1.2's, blocked]' shown as printed); and the --json fields (plan, own, order on a rule; own, plans on a check).",
+        "docs/workflows.md, section '## The mutation check', Task form bullet: a task break runs the checks of the plan's own rules, the ones vbw show plan leaves unmarked; one sentence there says the Dev's red-first and green steps use only the plan's own checks and another plan's red check is no blocker (it stays red until that plan is built).",
+        "docs/proof.md, section '### The mutation check', the paragraph on a rule that names its plan: vbw show plan marks another plan's rule and check (both marks as printed), names the ORDER words ('built before this plan', 'built after this plan', 'built beside this plan', 'done', 'blocked'), and says the Dev's red-first and green steps use only the plan's own checks and another plan's red check is no blocker; tests/show-plan-owner-docs.bats green."
+      ]
+    },
+    {
+      "id": "P170.5",
+      "phase": "P170",
+      "title": "Real-user scenario taskbreak run again: the marks shown, the early plan never blocked",
+      "reqs": [
+        "R209"
+      ],
+      "files": [
+        "tools/l3-suite.sh",
+        "tools/l3-results/taskbreak.json"
+      ],
+      "after": [
+        "P170.1",
+        "P170.2",
+        "P170.3"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "tools/l3-suite.sh: a helper transcript_tool_called COMMAND_REGEX beside transcript_tool_output (transcript file names on stdin; succeeds when a Bash tool_use command matches); scenario_taskbreak gains two expects recorded as facts: show_plan_marked (transcripts | transcript_tool_output 'vbw show plan P1\\.1' finds the R1.2 line ending \"[P1.2's, built after this plan]\" and the C2 line carrying \"[P1.2's: red until it is built\") and early_plan_never_blocked (transcripts | transcript_tool_called 'vbw plan block P1\\.1' fails, and the record's P1.1 files are exactly [\"greet.sh\"]); the existing facts and not_tested list stay; nothing is read from the screen; shellcheck clean (bash tools/test.sh --lint).",
+        "Run bash tools/l3-suite.sh taskbreak (a real Claude Code session at rigor deep) on this code, with P170.1 to P170.3 built, and fix what it finds inside this plan's files; a failing fact is reported in notes with its cause from the transcripts, never dodged by changing the fixture.",
+        "Commit tools/l3-results/taskbreak.json showing passed:true with every fact true (this also gives R207.13 its dated result); tests/l3-taskbreak.bats green in full (its R209, R207 and R193 cases)."
+      ]
     }
   ],
   "fixes": [
@@ -58133,6 +58449,12 @@
       "id": "D503",
       "at": "2026-10-26T16:38:33Z",
       "text": "Contract approved: 197 requirements, 463 checks, 520 plans (6ccc2935f0f1)"
+    },
+    {
+      "id": "D504",
+      "text": "The rules a plan owes get one definition in the kernel, shared by vbw mutate and vbw show plan (today only cmd-mutate.sh computes it: rules naming the plan, plus every rule of a requirement no other open plan serves; a plan owing none keeps all the checks of its requirements). vbw show plan marks the other plans' rules and checks from it, and the Dev prompt (plugin/agents/dev.md: red first, green, DEVN-04) says a check of another plan's rule stays red until that plan is built and is never a blocker. No new field, no new command",
+      "why": "Lead dev 2026-10-26: the taskbreak scenario failed twice today because show plan lists every rule and check of the plan's requirements without saying whose they are, so a Sonnet Dev read a sibling plan's red check as an architectural blocker; one shared definition keeps mutate and show plan from drifting apart",
+      "at": "2026-10-26T17:52:31Z"
     }
   ],
   "commands": {
@@ -66300,6 +66622,17 @@
         "ended": "2026-10-26T17:48:15Z",
         "cost": {
           "usd": 1.304715
+        }
+      },
+      {
+        "id": "plan-20261026T175327Z",
+        "kind": "plan",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M43",
+        "started": "2026-10-26T17:53:27Z",
+        "ended": "2026-10-26T18:28:40Z",
+        "cost": {
+          "usd": 11.512834
         }
       }
     ],

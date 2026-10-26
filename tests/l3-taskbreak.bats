@@ -67,3 +67,34 @@ body() { sed -n "/^scenario_$1()/,/^}/p" "$SUITE"; }
     and (.at | type == "string" and . >= "2026-10-26")
     and .facts.mutate_breakdown_line == true and .facts.mutate_steps_line == true' "$f" || { cat "$f"; false; }
 }
+
+# R209: the same scenario, run again on the code that marks another plan's rules
+# and checks in vbw show plan: the Dev of the early plan P1.1 sees R1.2 and C2
+# marked as P1.2's, never blocks on C2, and P1.1 keeps its one file. Both facts
+# are read from the transcripts' tool calls and results and from the record,
+# never from the screen.
+
+@test "R209: the taskbreak scenario reads vbw show plan's marks from the transcripts' tool results, as the fact show_plan_marked" {
+  body taskbreak | grep -q 'show_plan_marked' || { echo "scenario_taskbreak does not record show_plan_marked"; false; }
+  body taskbreak | grep -E "transcript_tool_output .*vbw show plan P1" | grep -qF "built after this plan" || { echo "the rule mark on R1.2 is not read from the show plan tool output"; false; }
+  body taskbreak | grep -E "transcript_tool_output .*vbw show plan P1" | grep -qF "red until it is built" || { echo "the check mark on C2 is not read from the show plan tool output"; false; }
+  if body taskbreak | grep -qE 'screen \|.*(show plan|marked|block)'; then false; fi
+}
+
+@test "R209: the scenario records early_plan_never_blocked: no vbw plan block P1.1 tool call, and P1.1's recorded files still exactly greet.sh" {
+  body taskbreak | grep -q 'early_plan_never_blocked' || { echo "scenario_taskbreak does not record early_plan_never_blocked"; false; }
+  body taskbreak | grep -qF 'plan block P1.1' || { echo "the scenario does not look for a vbw plan block P1.1 tool call"; false; }
+  body taskbreak | grep -qF '["greet.sh"]' || { echo "the scenario does not hold P1.1's files to [\"greet.sh\"]"; false; }
+  for k in task_break_recorded checks_run other_rule_check_red_at_break early_plan_built_first later_plan_completed mutate_breakdown_line mutate_steps_line; do
+    body taskbreak | grep -qF "$k" || { echo "the earlier fact $k is gone"; false; }
+  done
+}
+
+@test "R209: the committed taskbreak result from this code passed with show_plan_marked and early_plan_never_blocked true" {
+  local f="$RESULTS/taskbreak.json"
+  [ -f "$f" ] || { echo "the taskbreak scenario has not been run: no result is committed"; false; }
+  jq -e '.scenario == "taskbreak" and .passed == true and .evidence_level == "L3"
+    and (.at | type == "string" and . >= "2026-10-26")
+    and .facts.show_plan_marked == true and .facts.early_plan_never_blocked == true
+    and .facts.task_break_recorded == true and .facts.other_rule_check_red_at_break == true and .facts.early_plan_built_first == true' "$f" || { cat "$f"; false; }
+}
