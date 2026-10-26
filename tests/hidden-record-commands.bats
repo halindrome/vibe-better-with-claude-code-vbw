@@ -116,3 +116,8 @@ tracked() { git ls-files --error-unmatch -- "$1" > /dev/null 2>&1; }
   [ "$status" -eq 0 ] || { echo "$output"; false; }
   tracked .vbw/record.json
 }
+
+@test "R208: cmd-doctor.sh has no loop fed by a process substitution that prints through doctor_line" {
+  run grep -nE 'done < <\(.*record_hidden' "$BATS_TEST_DIRNAME/../plugin/lib/cmd-doctor.sh"
+  [ "$status" -eq 1 ] || { echo "$output"; false; }
+}
