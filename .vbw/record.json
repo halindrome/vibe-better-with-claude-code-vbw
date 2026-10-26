@@ -50079,13 +50079,235 @@
         "plugin/lib/cmd-init.sh"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "plugin/lib/spec.jq reads a '## Clean copy' section (heading test like Test results, case-insensitive): each bullet '- <path>' becomes {path, line} in a new output key leave_out (null without the section, as results is), the path kept exactly as written (its trailing / included). A bullet is a parse error with its line number when the path is absolute, has an empty, '.' or '..' segment, or its first segment is .vbw or .git ('expected \"- <path>\" (a git-ignored path relative to the project root, no \".\" or \"..\", outside .vbw/ and .git/), got: ...'), or when the same path (compared without a trailing /) is named twice ('clean copy path X is named twice'). tests/clean-copy-spec.bats: the parser and the bad-path cases go green.",
         "plugin/lib/record.jq validates project.leave_out when present: a non-empty array of distinct non-empty strings, each a relative path (safe_path: no leading /, no .. segment) with no empty or '.' segment and a first segment that is neither .vbw nor .git; the violation names project.leave_out; a record without the field stays valid at schema 4 (no schema change, like project.results).",
         "plugin/lib/cmd-spec.sh: a verification shared by vbw spec check and vbw spec sync, run before any write, for each listed path (trailing / trimmed): a listed path with nothing at it is accepted (nothing to leave out, so a clone without the data folder syncs its spec), the git checks below applying only to a path that exists, and vbw spec check names it 'spec.md line N: PATH is not here now, so nothing is left out for it yet'; 'spec.md line N: PATH is not git-ignored: only ignored paths are copied in, so only they can be left out' when git lists anything tracked at or under it (git ls-files -z -- PATH), anything untracked and not ignored at or under it (git ls-files -z --others --exclude-standard -- PATH), or when neither git check-ignore -q -- PATH succeeds nor git ls-files -z --others --ignored --exclude-standard -- PATH lists anything (a folder holding only ignored files is accepted). spec_sync_leave_out then writes project.leave_out = the paths as written (deleting the field when the section is absent), printing 'clean copy leaves out: a, b' or 'removed the clean copy list' when the list changes, exactly as spec_sync_results does; vbw spec check appends ', N path(s) left out of the clean copy' when listed. Every refusal is a vbw_die with exit 1 and leaves the record byte-identical. Record-sized data reaches jq through --slurpfile scratch files, never --arg.",
         "plugin/lib/cmd-init.sh init_spec: the starting spec.md gains a '## Clean copy' section after Commands, with an HTML comment in the style of the other sections (what it is for: git-ignored paths such as a huge data folder or caches that the proof's clean copy leaves out, one per line relative to the project root, the rest of the ignored environment still copied in, edit then vbw spec sync) holding an example line '- data/' inside the comment, so a fresh spec parses with leave_out null. tests/clean-copy-spec.bats green on bash 5 and /bin/bash 3.2 for the parts this plan builds (the contract and approval cases wait for P166.2)."
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R205",
+            "text": "the spec parser reads a '## Clean copy' section as one path per bullet, kept as written with its line number, and gives null without the section"
+          },
+          "what": "parser drops the trailing slash of a path",
+          "files": [
+            "plugin/lib/spec.jq"
+          ],
+          "checks": {
+            "C455": "red"
+          },
+          "result": "red",
+          "at": "2026-10-26T14:40:04Z",
+          "head": "777c30df63d9be9def6f541699c71743c754d88a"
+        },
+        {
+          "rule": {
+            "req": "R205",
+            "text": "a spec without the section leaves the record without the field, syncs as today and prints nothing about the clean copy"
+          },
+          "what": "sync always prints the clean copy line",
+          "files": [
+            "plugin/lib/cmd-spec.sh"
+          ],
+          "checks": {
+            "C455": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-26T14:40:07Z",
+          "head": "777c30df63d9be9def6f541699c71743c754d88a"
+        },
+        {
+          "rule": {
+            "req": "R205",
+            "text": "vbw spec sync writes the listed paths to project.leave_out, prints 'clean copy leaves out: a, b', and removes the field, saying so, when the section is gone"
+          },
+          "what": "sync message reworded",
+          "files": [
+            "plugin/lib/cmd-spec.sh"
+          ],
+          "checks": {
+            "C455": "red"
+          },
+          "result": "red",
+          "at": "2026-10-26T14:40:10Z",
+          "head": "777c30df63d9be9def6f541699c71743c754d88a"
+        },
+        {
+          "rule": {
+            "req": "R205",
+            "text": "vbw spec check accepts a good list and counts the paths left out of the clean copy"
+          },
+          "what": "check count text changed",
+          "files": [
+            "plugin/lib/cmd-spec.sh"
+          ],
+          "checks": {
+            "C455": "red"
+          },
+          "result": "red",
+          "at": "2026-10-26T14:40:13Z",
+          "head": "777c30df63d9be9def6f541699c71743c754d88a"
+        },
+        {
+          "rule": {
+            "req": "R205",
+            "text": "an absolute path, a path with '.' or '..' segments, or one under .vbw/ or .git/ is a parse error naming its line, refused like a bad Test results folder; a path named twice is refused with the second line"
+          },
+          "what": "parser accepts .. segments",
+          "files": [
+            "plugin/lib/spec.jq"
+          ],
+          "checks": {
+            "C455": "red"
+          },
+          "result": "red",
+          "at": "2026-10-26T14:40:16Z",
+          "head": "777c30df63d9be9def6f541699c71743c754d88a"
+        },
+        {
+          "rule": {
+            "req": "R205",
+            "text": "vbw spec check and vbw spec sync refuse a listed path git does not ignore (tracked, or untracked but not ignored) naming the spec line and the path with 'is not git-ignored: only ignored paths are copied in, so only they can be left out', leaving the record unchanged"
+          },
+          "what": "tracked paths no longer refused",
+          "files": [
+            "plugin/lib/cmd-spec.sh"
+          ],
+          "checks": {
+            "C455": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-26T14:40:19Z",
+          "head": "777c30df63d9be9def6f541699c71743c754d88a"
+        },
+        {
+          "rule": {
+            "req": "R205",
+            "text": "vbw spec check and vbw spec sync accept a listed path with nothing at it (nothing to leave out; a clone without the data folder syncs its spec), vbw spec check naming it as not here now so a mistyped path is noticed, and the record keeps the path as written"
+          },
+          "what": "missing path refused",
+          "files": [
+            "plugin/lib/cmd-spec.sh"
+          ],
+          "checks": {
+            "C455": "red"
+          },
+          "result": "red",
+          "at": "2026-10-26T14:40:22Z",
+          "head": "777c30df63d9be9def6f541699c71743c754d88a"
+        },
+        {
+          "rule": {
+            "req": "R205",
+            "text": "a folder whose files alone are ignored, with nothing tracked or stray inside, is accepted"
+          },
+          "what": "folder of ignored files refused",
+          "files": [
+            "plugin/lib/cmd-spec.sh"
+          ],
+          "checks": {
+            "C455": "red"
+          },
+          "result": "red",
+          "at": "2026-10-26T14:40:25Z",
+          "head": "777c30df63d9be9def6f541699c71743c754d88a"
+        },
+        {
+          "rule": {
+            "req": "R205",
+            "text": "record.jq accepts a record without project.leave_out and refuses an empty, duplicated, absolute, '..', .vbw/, .git/, empty-string or non-array list, naming the field"
+          },
+          "what": "duplicates allowed in leave_out",
+          "files": [
+            "plugin/lib/record.jq"
+          ],
+          "checks": {
+            "C455": "red"
+          },
+          "result": "red",
+          "at": "2026-10-26T14:40:28Z",
+          "head": "777c30df63d9be9def6f541699c71743c754d88a"
+        },
+        {
+          "rule": {
+            "req": "R205",
+            "text": "vbw init's starting spec.md has a '## Clean copy' section explained in an HTML comment in the style of the other sections, with an example bullet inside the comment, so a fresh spec lists nothing"
+          },
+          "what": "starting spec section renamed",
+          "files": [
+            "plugin/lib/cmd-init.sh"
+          ],
+          "checks": {
+            "C455": "red"
+          },
+          "result": "red",
+          "at": "2026-10-26T14:40:31Z",
+          "head": "777c30df63d9be9def6f541699c71743c754d88a"
+        },
+        {
+          "rule": {
+            "req": "R205",
+            "text": "a spec without the section leaves the record without the field, syncs as today and prints nothing about the clean copy"
+          },
+          "what": "sync always prints the clean copy line",
+          "files": [
+            "plugin/lib/cmd-spec.sh"
+          ],
+          "checks": {
+            "C455": "red"
+          },
+          "result": "red",
+          "at": "2026-10-26T14:43:10Z",
+          "head": "3d1a3818d6fc4b0d149f1ebf580f578b52405fd0",
+          "strengthened": [
+            "tests/clean-copy-spec.bats"
+          ],
+          "pending": [
+            "tests/clean-copy-spec.bats"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R205",
+            "text": "vbw spec check and vbw spec sync refuse a listed path git does not ignore (tracked, or untracked but not ignored) naming the spec line and the path with 'is not git-ignored: only ignored paths are copied in, so only they can be left out', leaving the record unchanged"
+          },
+          "what": "tracked paths no longer refused",
+          "files": [
+            "plugin/lib/cmd-spec.sh"
+          ],
+          "checks": {
+            "C455": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-26T14:43:12Z",
+          "head": "3d1a3818d6fc4b0d149f1ebf580f578b52405fd0"
+        },
+        {
+          "rule": {
+            "req": "R205",
+            "text": "vbw spec check and vbw spec sync refuse a listed path git does not ignore (tracked, or untracked but not ignored) naming the spec line and the path with 'is not git-ignored: only ignored paths are copied in, so only they can be left out', leaving the record unchanged"
+          },
+          "what": "tracked paths no longer refused",
+          "files": [
+            "plugin/lib/cmd-spec.sh"
+          ],
+          "checks": {
+            "C455": "red"
+          },
+          "result": "red",
+          "at": "2026-10-26T14:45:55Z",
+          "head": "75d9d1e4d640e792180dfd42d5ddd41ff9e25621",
+          "strengthened": [
+            "tests/clean-copy-spec.bats"
+          ],
+          "pending": [
+            "tests/clean-copy-spec.bats"
+          ]
+        }
       ]
     },
     {
@@ -50388,12 +50610,52 @@
       "after": [
         "P166.4"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "docs",
       "tasks": [
         "docs/proof.md, right after the copy-on-write sentences of the clean-copy paragraph (within a few lines of them): when more than 500 MB of ignored data is copied file by file because the disk offers no clone, the command prints once, on stderr, one line starting vbw: naming the largest ignored folders copied with their sizes (MB or GB, one decimal) and the way out: list them under ## Clean copy in .vbw/spec.md, then vbw spec sync.",
         "The same paragraph: a copy-on-write clone, 500 MB or less, or nothing ignored prints nothing, and the line changes no verdict, result or exit code; it links to the Clean copy section.",
         "tests/proof-copy-plain-docs.bats green; docs/proof.md still reads as one paragraph flow (no duplicated sentences)."
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R206",
+            "text": "docs/proof.md names, beside its copy-on-write paragraph, the 500 MB threshold, the one vbw: line with the largest ignored folders and their sizes, the way out, the three silent cases and that the line changes no result"
+          },
+          "what": "threshold 500 changed to 900 MB",
+          "files": [
+            "docs/proof.md"
+          ],
+          "checks": {
+            "C460": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-26T14:34:19Z",
+          "head": "21f868a12c3f09954909340f99689ab519e3706e"
+        },
+        {
+          "rule": {
+            "req": "R206",
+            "text": "docs/proof.md names, beside its copy-on-write paragraph, the 500 MB threshold, the one vbw: line with the largest ignored folders and their sizes, the way out, the three silent cases and that the line changes no result"
+          },
+          "what": "threshold 500 changed to 900 MB",
+          "files": [
+            "docs/proof.md"
+          ],
+          "checks": {
+            "C460": "red"
+          },
+          "result": "red",
+          "at": "2026-10-26T14:35:07Z",
+          "head": "702c7c4789c12f82508a96d0fc1b066949ff8695",
+          "strengthened": [
+            "tests/proof-copy-plain-docs.bats"
+          ],
+          "pending": [
+            "tests/proof-copy-plain-docs.bats"
+          ]
+        }
       ]
     },
     {
@@ -50407,13 +50669,95 @@
         "plugin/lib/record.sh"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "plugin/lib/record.sh record_gitignore: writes .vbw/.gitignore as 'runtime/' plus the un-hide lines '!record.json', '!spec.md', '!map.md', '!.gitignore' (that order, one per line) when the file is missing; otherwise appends only the lines that are missing (exact line match), keeping every existing line and leaving a complete file byte-identical; returns 0 when it wrote something and 1 when it changed nothing. It is the one writer of that file (cmd-init.sh's init_gitignore moves here).",
         "record_hidden: for each own file (.vbw/record.json, .vbw/spec.md, .vbw/map.md, .vbw/.gitignore) that exists, is untracked (git ls-files --error-unmatch fails) and that git check-ignore -v -- FILE still reports ignored, one line 'FILE is hidden from git by SOURCE:LINE:PATTERN: remove that line, or change it to .vbw/runtime/' (the source, line number and pattern exactly as git check-ignore -v gives them, e.g. .gitignore:1:.vbw/); prints nothing and returns 1 when no own file is hidden.",
         "record_commit: before listing its own files it runs record_gitignore and always counts .vbw/.gitignore among them, so an existing project gets the lines at its next VBW commit and the file is committed along with the record; then record_hidden: in the non-strict form each line is printed as 'vbw: warning: <line>' on stderr and the commit of the other files goes on; in the strict form the lines are the failure's reason (printed as the reason today is, exit 1, nothing committed). A project with no such rule prints nothing new and commits as today. Untracked own files git no longer ignores are added as today.",
         "tests/hidden-record.bats: the record_commit cases (a *.json or *.md rule in the project's .gitignore, .git/info/exclude and a global excludes file; the existing project; the warning) green on bash 5 and /bin/bash 3.2."
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R208",
+            "text": "an existing project (.vbw/.gitignore holding runtime/ alone) gets the un-hide lines at its next VBW commit, .vbw/.gitignore committed along with the record, leaving .vbw clean"
+          },
+          "what": "no record_gitignore in record_commit",
+          "files": [
+            "plugin/lib/record.sh"
+          ],
+          "checks": {
+            "C464": "red"
+          },
+          "result": "red",
+          "at": "2026-10-26T14:37:40Z",
+          "head": "777c30df63d9be9def6f541699c71743c754d88a"
+        },
+        {
+          "rule": {
+            "req": "R208",
+            "text": "record_commit's non-strict form prints a 'vbw: warning:' line naming the hidden file, the rule's source line and the fix, and never commits the hidden file silently"
+          },
+          "what": "no warning printed",
+          "files": [
+            "plugin/lib/record.sh"
+          ],
+          "checks": {
+            "C464": "red"
+          },
+          "result": "red",
+          "at": "2026-10-26T14:37:44Z",
+          "head": "777c30df63d9be9def6f541699c71743c754d88a"
+        },
+        {
+          "rule": {
+            "req": "R208",
+            "text": "vbw approve refuses with that message, exit 1, adding no decision, granting no consent (the contract stays NOT APPROVED) and making no commit"
+          },
+          "what": "strict does not stop on hidden",
+          "files": [
+            "plugin/lib/record.sh"
+          ],
+          "checks": {
+            "C464": "red"
+          },
+          "result": "red",
+          "at": "2026-10-26T14:37:47Z",
+          "head": "777c30df63d9be9def6f541699c71743c754d88a"
+        },
+        {
+          "rule": {
+            "req": "R208",
+            "text": "with a project-wide *.json or *.md rule in the project's .gitignore, VBW's next commit commits the record, the spec and .vbw/.gitignore, printing no warning"
+          },
+          "what": "dropped !record.json line",
+          "files": [
+            "plugin/lib/record.sh"
+          ],
+          "checks": {
+            "C464": "red"
+          },
+          "result": "red",
+          "at": "2026-10-26T14:39:03Z",
+          "head": "777c30df63d9be9def6f541699c71743c754d88a"
+        },
+        {
+          "rule": {
+            "req": "R208",
+            "text": "the same holds for a rule in .git/info/exclude and in a global excludes file"
+          },
+          "what": "dropped !spec.md line",
+          "files": [
+            "plugin/lib/record.sh"
+          ],
+          "checks": {
+            "C464": "red"
+          },
+          "result": "red",
+          "at": "2026-10-26T14:39:06Z",
+          "head": "777c30df63d9be9def6f541699c71743c754d88a"
+        }
       ]
     },
     {
@@ -50454,12 +50798,62 @@
       "after": [
         "P166.4"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "docs",
       "tasks": [
         "docs/record.md, where it names VBW's own files and their commits: VBW keeps .vbw/.gitignore with runtime/ and the un-hide lines !record.json, !spec.md, !map.md and !.gitignore (the last so a project-wide * rule cannot hide the file itself); vbw init writes them, an existing project gets them at its next VBW commit, and VBW never edits the project's .gitignore.",
         "docs/record.md: the whole-folder case (a rule such as .vbw/ or * hides the folder and nothing inside can undo it): vbw init says so with the rule's source as git check-ignore -v gives it (file, line, pattern), vbw doctor fails, vbw approve refuses, other VBW commits print a vbw: warning: naming the hidden file, and the fix 'remove that line, or change it to .vbw/runtime/'.",
         "docs/diagnostics.md, in the vbw doctor section: the fail line for a hidden own file (with its git check-ignore -v source) and its fix line. tests/hidden-record-docs.bats green."
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R208",
+            "text": "docs/record.md names the un-hide lines, that vbw init writes them and an existing project gets them at its next VBW commit, that the project's .gitignore is never edited, the whole-folder case with what init, doctor, approve and other commits say, and the fix"
+          },
+          "what": "record.md fix line says .vbw/cache/",
+          "files": [
+            "docs/record.md"
+          ],
+          "checks": {
+            "C465": "red"
+          },
+          "result": "red",
+          "at": "2026-10-26T14:35:37Z",
+          "head": "777c30df63d9be9def6f541699c71743c754d88a"
+        },
+        {
+          "rule": {
+            "req": "R208",
+            "text": "docs/record.md names the un-hide lines, that vbw init writes them and an existing project gets them at its next VBW commit, that the project's .gitignore is never edited, the whole-folder case with what init, doctor, approve and other commits say, and the fix"
+          },
+          "what": "spec un-hide line renamed",
+          "files": [
+            "docs/record.md"
+          ],
+          "checks": {
+            "C465": "red"
+          },
+          "result": "red",
+          "at": "2026-10-26T14:36:13Z",
+          "head": "777c30df63d9be9def6f541699c71743c754d88a"
+        },
+        {
+          "rule": {
+            "req": "R208",
+            "text": "docs/diagnostics.md documents the doctor's fail line for a hidden own file, its git check-ignore source and its fix"
+          },
+          "what": "diag hidden line removed",
+          "files": [
+            "docs/diagnostics.md"
+          ],
+          "checks": {
+            "C465": "red"
+          },
+          "result": "red",
+          "at": "2026-10-26T14:36:41Z",
+          "head": "777c30df63d9be9def6f541699c71743c754d88a"
+        }
       ]
     },
     {
@@ -50499,13 +50893,213 @@
         "plugin/lib/prooftime.sh"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "plugin/lib/prooftime.sh prooftime_split: like prooftime_total but general: {steps: [{k, v}] in the order each step was first counted, wall} from the scratch file, so a command names its own steps; prooftime_total is unchanged. A helper prooftime_minutes (seconds to 'X.Y' as prooftime_lines rounds) is shared by the proof line and the new one.",
         "plugin/lib/cmd-mutate.sh single form: the timer opens (prooftime_begin) right before proofcopy_create_slots and the wall ends after the record write; steps: copies (making the copies, proofcopy_verify when it runs, mutate_put, mutate_clean, proofcopy_remove), unbroken (each checks_run_all on the unbroken code), 'break <target>' (each checks_run_all on the broken code; one entry per target, R1.1 or task1), waits (the slot seconds the slots count for the run, read from the run's waits file before and after each run, moved out of the step they fell in so the steps tile the wall), saving (mutate_record's record_update; the read tracking the units count stays in the tracking lines and counts as own work). mutate_time_say prints, after mutate_record's result lines and before slots_say (which moves from mutate_record to its callers), two lines: \"VBW's own work: X of Y min\" (X = copies + saving + tracking, Y the wall, both in minutes with one decimal) and '  steps of W s: copies A, unbroken B, break R1.1 C, waits D, saving E' (seconds with one decimal; every step listed, 0.0 when nothing fell in it; the break entries in the order the targets ran). Nothing else printed changes; the recorded entry, the exit code and the strengthened and pending markings are untouched; every vbw_die before mutate_record prints no breakdown; --queue, task --none and Rn.k --none print none.",
         "plugin/lib/mutate-queue.sh --run: the same timer around proofcopy_create_slots through the recording loop (saving = the loop of mutate_record calls); unbroken is the one run of the unbroken checks; each wave of breaks run side by side is one entry named 'break R1.1' when the wave holds one break and 'breaks R1.1 R1.2' (targets in queue order, space-separated) when it holds several; waits as in the single form; the two lines come after the last result's lines and before the one slots line; the exit code (survivor or stale break) is unchanged. A stale queued break's refusal and the red-on-unbroken refusal print no breakdown.",
         "tests/mutate-time.bats green on bash 5 and /bin/bash 3.2 (the forced wait case holds the only slot from another project); tests/mutate-command.bats, tests/mutate-queue.bats, tests/mutate-pending-check.bats, tests/mutate-rule-none.bats and tests/prove-own-work.bats stay green."
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R207",
+            "text": "waits is the time the run waited for a computer-wide slot (at least 1.0 s when another project held the only slot) and the slots line still comes last, after the breakdown"
+          },
+          "what": "slots line before breakdown",
+          "files": [
+            "plugin/lib/cmd-mutate.sh"
+          ],
+          "checks": {
+            "C461": "red"
+          },
+          "result": "red",
+          "at": "2026-10-26T14:47:53Z",
+          "head": "75d9d1e4d640e792180dfd42d5ddd41ff9e25621"
+        },
+        {
+          "rule": {
+            "req": "R207",
+            "text": "without a wait the waits entry reads 0.0 and nothing follows the breakdown"
+          },
+          "what": "a wait of 1 s counted without a wait",
+          "files": [
+            "plugin/lib/cmd-mutate.sh"
+          ],
+          "checks": {
+            "C461": "red"
+          },
+          "result": "red",
+          "at": "2026-10-26T14:47:57Z",
+          "head": "75d9d1e4d640e792180dfd42d5ddd41ff9e25621"
+        },
+        {
+          "rule": {
+            "req": "R207",
+            "text": "a red rule break ends with 'VBW's own work: X of Y min' and '  steps of W s: copies A, unbroken B, break Rn.k C, waits D, saving E' (one decimal each), the steps summing to W within rounding, after the result lines, with the recorded entry's keys and the files' restoration unchanged"
+          },
+          "what": "own work leaves out copies",
+          "files": [
+            "plugin/lib/cmd-mutate.sh"
+          ],
+          "checks": {
+            "C461": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-26T14:53:06Z",
+          "head": "75d9d1e4d640e792180dfd42d5ddd41ff9e25621"
+        },
+        {
+          "rule": {
+            "req": "R207",
+            "text": "a survivor keeps its exit 1 and its line, the breakdown following it"
+          },
+          "what": "no breakdown after a survivor",
+          "files": [
+            "plugin/lib/cmd-mutate.sh"
+          ],
+          "checks": {
+            "C461": "red"
+          },
+          "result": "red",
+          "at": "2026-10-26T14:53:09Z",
+          "head": "75d9d1e4d640e792180dfd42d5ddd41ff9e25621"
+        },
+        {
+          "rule": {
+            "req": "R207",
+            "text": "a task break names its entry 'break taskK'"
+          },
+          "what": "entry named break rule",
+          "files": [
+            "plugin/lib/cmd-mutate.sh"
+          ],
+          "checks": {
+            "C461": "red"
+          },
+          "result": "red",
+          "at": "2026-10-26T14:53:12Z",
+          "head": "75d9d1e4d640e792180dfd42d5ddd41ff9e25621"
+        },
+        {
+          "rule": {
+            "req": "R207",
+            "text": "a break caught by a check file waiting for approval keeps its lines, the pending marking and exit 0, the breakdown coming after them"
+          },
+          "what": "pending break exits 1",
+          "files": [
+            "plugin/lib/cmd-mutate.sh"
+          ],
+          "checks": {
+            "C461": "red"
+          },
+          "result": "red",
+          "at": "2026-10-26T14:53:15Z",
+          "head": "75d9d1e4d640e792180dfd42d5ddd41ff9e25621"
+        },
+        {
+          "rule": {
+            "req": "R207",
+            "text": "the figures are measured: a check that takes a second on broken code puts at least 1.0 s into the break's entry, more than the unbroken one, and the steps sum to the wall; the own-work line keeps the proof's rounding to tenths of a minute, so a run under three seconds reads 0.0 min"
+          },
+          "what": "minutes round up",
+          "files": [
+            "plugin/lib/prooftime.sh"
+          ],
+          "checks": {
+            "C461": "red"
+          },
+          "result": "red",
+          "at": "2026-10-26T14:53:18Z",
+          "head": "75d9d1e4d640e792180dfd42d5ddd41ff9e25621"
+        },
+        {
+          "rule": {
+            "req": "R207",
+            "text": "a refusal (checks red on the unbroken code, a dirty check file, a stale queued break) ends with its message as today and prints no breakdown"
+          },
+          "what": "breakdown printed on a refusal",
+          "files": [
+            "plugin/lib/cmd-mutate.sh"
+          ],
+          "checks": {
+            "C461": "red"
+          },
+          "result": "red",
+          "at": "2026-10-26T14:53:20Z",
+          "head": "75d9d1e4d640e792180dfd42d5ddd41ff9e25621"
+        },
+        {
+          "rule": {
+            "req": "R207",
+            "text": "--queue, task --none and Rn.k --none print no breakdown"
+          },
+          "what": "breakdown printed on --queue",
+          "files": [
+            "plugin/lib/cmd-mutate.sh"
+          ],
+          "checks": {
+            "C461": "red"
+          },
+          "result": "red",
+          "at": "2026-10-26T14:53:23Z",
+          "head": "75d9d1e4d640e792180dfd42d5ddd41ff9e25621"
+        },
+        {
+          "rule": {
+            "req": "R207",
+            "text": "vbw mutate --run one at a time ends with one entry per break ('break R1.1', 'break R1.2') in queue order after the last result's lines, the entries recorded as before"
+          },
+          "what": "single break named breaks",
+          "files": [
+            "plugin/lib/mutate-queue.sh"
+          ],
+          "checks": {
+            "C461": "red"
+          },
+          "result": "red",
+          "at": "2026-10-26T14:53:26Z",
+          "head": "75d9d1e4d640e792180dfd42d5ddd41ff9e25621"
+        },
+        {
+          "rule": {
+            "req": "R207",
+            "text": "vbw mutate --run with breaks side by side names the wave's targets in one entry ('breaks R1.1 R1.2')"
+          },
+          "what": "wave named break",
+          "files": [
+            "plugin/lib/mutate-queue.sh"
+          ],
+          "checks": {
+            "C461": "red"
+          },
+          "result": "red",
+          "at": "2026-10-26T14:53:29Z",
+          "head": "75d9d1e4d640e792180dfd42d5ddd41ff9e25621"
+        },
+        {
+          "rule": {
+            "req": "R207",
+            "text": "a red rule break ends with 'VBW's own work: X of Y min' and '  steps of W s: copies A, unbroken B, break Rn.k C, waits D, saving E' (one decimal each), the steps summing to W within rounding, after the result lines, with the recorded entry's keys and the files' restoration unchanged"
+          },
+          "what": "own work leaves out copies",
+          "files": [
+            "plugin/lib/cmd-mutate.sh"
+          ],
+          "checks": {
+            "C461": "red"
+          },
+          "result": "red",
+          "at": "2026-10-26T14:55:53Z",
+          "head": "26d75297098c5dad4cb339fc26dd00a7ec534b45",
+          "strengthened": [
+            "tests/mutate-time.bats"
+          ],
+          "pending": [
+            "tests/mutate-time.bats"
+          ]
+        }
       ]
     },
     {
@@ -65088,6 +65682,17 @@
         "ended": "2026-10-26T14:17:18Z",
         "cost": {
           "usd": 3.352806
+        }
+      },
+      {
+        "id": "build-20261026T143314Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M43",
+        "started": "2026-10-26T14:33:14Z",
+        "ended": "2026-10-26T15:01:20Z",
+        "cost": {
+          "usd": 1.7071
         }
       }
     ],
