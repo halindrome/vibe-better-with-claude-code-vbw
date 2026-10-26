@@ -1322,7 +1322,11 @@ A task break (`taskK`) without `--check` runs the checks of the plan's own
 rules: those of the rules that name the plan and those of the requirements it
 completes, each check once. A red check of a rule the plan does not owe does not
 refuse the break, so an early plan of a requirement that later plans complete
-can still break its tasks. A plan that owns no rule runs the checks of its
+can still break its tasks. `vbw show plan` marks what is another plan's: a rule
+reads `[P1.3's, built after this plan]`, and a check that only other plans' rules
+use reads `[P1.3's: red until it is built, not this plan's to pass]`. The order is
+`built before this plan`, `built after this plan`, `built beside this plan`,
+`done` or `blocked`. The Dev's red-first and green steps use only the plan's own checks (the unmarked ones); another plan's red check is no blocker. A plan that owns no rule runs the checks of its
 requirements, and a refusal then says it owns no rule and that the Lead names a
 plan on each rule.
 
