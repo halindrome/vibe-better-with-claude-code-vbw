@@ -54997,7 +54997,7 @@
       "req": "R208",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "Lead review of P168.2 (2026-10-26): plugin/lib/cmd-doctor.sh, doctor_project, the hidden-file loop (while IFS= read -r hid; do doctor_line fail ...; done < <(cd \"$VBW_ROOT\" && record_hidden || true)) prints through doctor_line (a printf) in the shell that owns the process substitution's live child. The standard forbids a builtin write there (macOS /bin/bash 3.2 loses a write interrupted by the child's exit: CLAUDE.md, 'No builtin write while the shell has a live child'); tools/check-loop-writes.sh passes only because the write sits inside a called function, which its header leaves to the reviewer. Fix: collect the lines first (hidden=$(cd \"$VBW_ROOT\" && record_hidden) || true), then loop over the variable with a here-string (done <<< \"$hidden\"; [ -n \"$hidden\" ] first), so no child is alive while doctor_line prints; a pipe is not an option because doctor_line sets DOCTOR_FAILED in the main shell. Regression test, shown red first: in tests/hidden-record-commands.bats, cmd-doctor.sh has no loop fed by a process substitution that calls doctor_line (grep on the shell file, not JSON), kept narrow; the doctor fail case stays green under /bin/bash.",
       "phase": "P168"
     },
@@ -55006,7 +55006,7 @@
       "req": "R205",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "Lead review 2026-10-26, reported by P170.1's Dev: tests/standards.bats test 53 (tools/check-pipefail-grep.sh) fails on tools/l3-suite.sh line 2638, in scenario_leaveout's checks (commit cdf40ac5, P166.5): '\"$VBW\" show contract 2> /dev/null | grep -qxF \"clean copy leaves out: data/\"' pipes into a quiet grep, which stops reading early and under pipefail fails the pipeline with the producer's SIGPIPE. Fix inside tools/l3-suite.sh as the tool's header asks (read the whole input: grep without -q to /dev/null, or capture the output and test it), keeping the fact's meaning; tests/standards.bats green again under /bin/bash, tests/l3-leaveout.bats green, bash tools/test.sh --lint clean. Regression test: the standards test itself is the test (it is red now).",
       "phase": "P166"
     }
@@ -67229,6 +67229,17 @@
         "ended": "2026-10-26T19:36:43Z",
         "cost": {
           "usd": 0.375212
+        }
+      },
+      {
+        "id": "fix-20261026T193733Z",
+        "kind": "fix",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M43",
+        "started": "2026-10-26T19:37:33Z",
+        "ended": "2026-10-26T19:40:45Z",
+        "cost": {
+          "usd": 0.461123
         }
       }
     ],
