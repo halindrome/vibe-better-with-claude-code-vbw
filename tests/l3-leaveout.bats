@@ -39,6 +39,9 @@ facts() { jq -e "$2" "$RESULTS/$1.json" > /dev/null; }
   for k in contract_names_path leave_out proof_passed copy_without_data; do
     body leaveout | grep -qF "$k"
   done
+  # leave_out is read from the record and that value is what the result states
+  body leaveout | grep -qF '.project.leave_out'
+  body leaveout | grep -qF -- '--argjson l "$leave"'
 }
 
 @test "R205: the committed result of the leaveout scenario shows the path in the contract, a passed proof and a copy without the data" {
