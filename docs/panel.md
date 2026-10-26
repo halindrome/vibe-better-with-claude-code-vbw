@@ -442,6 +442,10 @@ scroll it) to read the rest.
 - **Settings:** every VBW setting with its current value, changed by a click
   (see [Settings](#settings)).
 
+Three of the tabs, from a session building a milestone:
+
+<p align="center"><img src="../assets/panel-plan.png" alt="The Plan tab: the milestone's phases, each with a progress bar and its state, then the selected phase's goal, its requirements, its plans with their state and file count, and its checks with the command each one runs." width="290"/> <img src="../assets/panel-timeline.png" alt="The Timeline tab: one bar per helper of the running build with its time so far, the spread and median of past build steps with the estimate, and the runs of this session with their duration and cost." width="290"/> <img src="../assets/panel-settings.png" alt="The Settings tab, where every VBW setting is one click: the model and the effort of each helper in its role's colour, how VBW talks to you, autonomy, the autonomous run and rigor." width="290"/></p>
+
 ### Settings
 
 The **Settings** tab shows every setting `vbw config set` accepts, and rigor,

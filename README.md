@@ -31,7 +31,9 @@
 <a href="#documentation">Docs</a>
 </p>
 
-<p align="center"><img src="assets/mission-control-settings.png" alt="VBW's Mission Control panel beside a Claude Code chat: six tabs (Now, Plan, Proof, Timeline, Sessions, Settings), here Settings, where every VBW setting is one click: the model and the effort of each helper in its role's colour, how VBW talks to you, autonomy, the autonomous run and rigor. Under the prompt, the VBW status line shows the project, its milestone, progress and state." width="900"/></p>
+<p align="center"><img src="assets/mission-control-now.png" alt="VBW's Mission Control panel beside a Claude Code chat, on the Now tab: a framed box says what VBW is building (four phases of the milestone), the current step with how long it should take and when the milestone should end, then the crew of the running build, one row per helper with what it is doing right now. In the chat, the build has just started. Under the prompt, the VBW status line shows the project, its milestone, progress and state." width="900"/></p>
+
+<p align="center"><img src="assets/panel-plan.png" alt="The Plan tab: the milestone's phases, each with a progress bar and its state, then the selected phase's goal, its requirements, its plans with their state and file count, and its checks with the command each one runs." width="290"/> <img src="assets/panel-timeline.png" alt="The Timeline tab: one bar per helper of the running build with its time so far, the spread and median of past build steps with the estimate, and the runs of this session with their duration and cost." width="290"/> <img src="assets/panel-settings.png" alt="The Settings tab, where every VBW setting is one click: the model and the effort of each helper in its role's colour, how VBW talks to you, autonomy, the autonomous run and rigor." width="290"/></p>
 
 ## What Is This?
 
