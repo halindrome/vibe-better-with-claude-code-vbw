@@ -65,7 +65,12 @@ refused() {
   run "$VBW" spec sync
   [ "$status" -eq 0 ] || { echo "$output"; false; }
   jq -e '.project | has("leave_out") | not' .vbw/record.json
-  [[ "$output" != *"leaves out"* ]] || { echo "$output"; false; }
+  [[ "$output" != *"leaves out"* && "$output" != *"clean copy"* ]] || { echo "$output"; false; }
+  spec '- data/'
+  "$VBW" spec sync > /dev/null
+  run "$VBW" spec sync
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  [[ "$output" != *"clean copy"* ]] || { echo "$output"; false; }
 }
 
 @test "R205: vbw spec sync copies the listed paths into project.leave_out and names the list; removing the section removes the field" {
@@ -124,6 +129,16 @@ refused() {
   run "$VBW" spec check
   refused "$sum"
   [[ "$output" == *"src/"* && "$output" == *"is not git-ignored"* ]] || { echo "$output"; false; }
+}
+
+@test "R205: an ignored folder holding a force-added tracked file is refused" {
+  local sum
+  sum=$(record_sum)
+  git add -f data/a.bin && git commit -q -m "feat(shop): data tracked"
+  spec '- data/'
+  run "$VBW" spec sync
+  refused "$sum"
+  [[ "$output" == *"line 9"* && "$output" == *"data/"* && "$output" == *"is not git-ignored"* ]] || { echo "$output"; false; }
 }
 
 @test "R205: an untracked path that git does not ignore is refused the same way" {
