@@ -51040,13 +51040,232 @@
         "P168.1",
         "P166.2"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "plugin/lib/cmd-init.sh: init_gitignore is replaced by record_gitignore; on a fresh init, and in an already-initialized project whenever a line was added, vbw init prints exactly one line 'VBW keeps its plan files visible to git through .vbw/.gitignore (runtime/ ignored; record.json, spec.md, map.md un-hidden)' and nothing about it when the file was already complete; after that it prints each record_hidden line prefixed 'vbw: ' on stderr (exit code unchanged: init stays idempotent and succeeds).",
         "plugin/lib/cmd-doctor.sh doctor_project: after the spec line, each record_hidden line is a fail line (doctor_line fail '<the line before the colon-fix>' 'remove that line, or change it to .vbw/runtime/'), so vbw doctor exits 1; nothing is printed when no own file is hidden.",
         "plugin/lib/cmd-approve.sh approve_problems: appends each record_hidden line, so vbw approve refuses with 'the contract is not ready for approval:' and that line (exit 1, no decision, no consent, no commit) and vbw next's contract action names it among its problems (R171). tests/hidden-record.bats fully green on both shells.",
         "plugin/lib/record.sh record_commit: drop the freed sweep (own files a rule hid until the lines were written): with the un-hide lines written by vbw init, no file rule hides an own file any more, so a commit limited to FILE... (vbw todo) takes those files and .vbw/.gitignore along and nothing else, as in a project without such a rule; spec.md and map.md are committed by the next full commit (approve, run end, ship). record_gitignore at every commit (R208.5) and record_hidden stay. tests/hidden-record.bats cases 3 and 4 say so; the file fully green on both shells."
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R208",
+            "text": "vbw init writes .vbw/.gitignore as runtime/, !record.json, !spec.md, !map.md, !.gitignore and prints exactly one line saying VBW keeps its plan files visible to git through .vbw/.gitignore"
+          },
+          "what": "dropped the !map.md line",
+          "files": [
+            "plugin/lib/record.sh"
+          ],
+          "checks": {
+            "C468": "red"
+          },
+          "result": "red",
+          "at": "2026-10-26T16:46:10Z",
+          "head": "5ea8b5678088f1dc7cfdb531070289db0e39c849"
+        },
+        {
+          "rule": {
+            "req": "R208",
+            "text": "in an initialized project vbw init adds only the missing lines, keeps the user's lines, says so once, and leaves a complete file byte-identical and silent when run again"
+          },
+          "what": "always append every line",
+          "files": [
+            "plugin/lib/record.sh"
+          ],
+          "checks": {
+            "C468": "red"
+          },
+          "result": "red",
+          "at": "2026-10-26T16:46:13Z",
+          "head": "5ea8b5678088f1dc7cfdb531070289db0e39c849"
+        },
+        {
+          "rule": {
+            "req": "R208",
+            "text": "with a project-wide *.json or *.md rule in the project's .gitignore, no own file is hidden: VBW's next commit commits the record and .vbw/.gitignore, printing no warning, and the spec is visible to git as an untracked file until the next full commit (approve, run end, ship) takes it, as in a project without such a rule"
+          },
+          "what": "commit with FILE takes spec along",
+          "files": [
+            "plugin/lib/record.sh"
+          ],
+          "checks": {
+            "C464": "red"
+          },
+          "result": "red",
+          "at": "2026-10-26T16:46:16Z",
+          "head": "5ea8b5678088f1dc7cfdb531070289db0e39c849"
+        },
+        {
+          "rule": {
+            "req": "R208",
+            "text": "the same holds for a rule in .git/info/exclude and in a global excludes file"
+          },
+          "what": "dropped the !spec.md line",
+          "files": [
+            "plugin/lib/record.sh"
+          ],
+          "checks": {
+            "C464": "red"
+          },
+          "result": "red",
+          "at": "2026-10-26T16:46:19Z",
+          "head": "5ea8b5678088f1dc7cfdb531070289db0e39c849"
+        },
+        {
+          "rule": {
+            "req": "R208",
+            "text": "an existing project (.vbw/.gitignore holding runtime/ alone) gets the un-hide lines at its next VBW commit, .vbw/.gitignore committed along with the record, leaving .vbw clean"
+          },
+          "what": "no un-hide lines at commit",
+          "files": [
+            "plugin/lib/record.sh"
+          ],
+          "checks": {
+            "C464": "red"
+          },
+          "result": "red",
+          "at": "2026-10-26T16:46:22Z",
+          "head": "5ea8b5678088f1dc7cfdb531070289db0e39c849"
+        },
+        {
+          "rule": {
+            "req": "R208",
+            "text": "with a rule hiding the whole .vbw folder (.vbw/ or *), vbw init prints the hidden file with the rule's source as git check-ignore -v gives it (file:line:pattern) and the fix 'remove that line, or change it to .vbw/runtime/'"
+          },
+          "what": "init says nothing hidden",
+          "files": [
+            "plugin/lib/cmd-init.sh"
+          ],
+          "checks": {
+            "C468": "red"
+          },
+          "result": "red",
+          "at": "2026-10-26T16:46:25Z",
+          "head": "5ea8b5678088f1dc7cfdb531070289db0e39c849"
+        },
+        {
+          "rule": {
+            "req": "R208",
+            "text": "vbw doctor prints the same as a fail line with its fix line and exits 1; without such a rule it says nothing about hidden files"
+          },
+          "what": "doctor ignores hidden",
+          "files": [
+            "plugin/lib/cmd-doctor.sh"
+          ],
+          "checks": {
+            "C468": "red"
+          },
+          "result": "red",
+          "at": "2026-10-26T16:46:28Z",
+          "head": "5ea8b5678088f1dc7cfdb531070289db0e39c849"
+        },
+        {
+          "rule": {
+            "req": "R208",
+            "text": "vbw approve refuses with that message, exit 1, adding no decision, granting no consent (the contract stays NOT APPROVED) and making no commit"
+          },
+          "what": "approve ignores hidden",
+          "files": [
+            "plugin/lib/cmd-approve.sh"
+          ],
+          "checks": {
+            "C464": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-26T16:46:31Z",
+          "head": "5ea8b5678088f1dc7cfdb531070289db0e39c849"
+        },
+        {
+          "rule": {
+            "req": "R208",
+            "text": "record_commit's non-strict form prints a 'vbw: warning:' line naming the hidden file, the rule's source line and the fix, and never commits the hidden file silently"
+          },
+          "what": "no warning",
+          "files": [
+            "plugin/lib/record.sh"
+          ],
+          "checks": {
+            "C464": "red"
+          },
+          "result": "red",
+          "at": "2026-10-26T16:46:34Z",
+          "head": "5ea8b5678088f1dc7cfdb531070289db0e39c849"
+        },
+        {
+          "rule": {
+            "req": "R208",
+            "text": "vbw next names the hidden file among the reasons the contract is not ready instead of offering the approval menu; with the rule narrowed to .vbw/runtime/ it offers approval and the approval commits the record"
+          },
+          "what": "record_hidden reports nothing",
+          "files": [
+            "plugin/lib/record.sh"
+          ],
+          "checks": {
+            "C468": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-26T16:46:36Z",
+          "head": "5ea8b5678088f1dc7cfdb531070289db0e39c849"
+        },
+        {
+          "rule": {
+            "req": "R208",
+            "text": "vbw approve refuses with that message, exit 1, adding no decision, granting no consent (the contract stays NOT APPROVED) and making no commit"
+          },
+          "what": "approve_problems no longer names the hidden file",
+          "files": [
+            "plugin/lib/cmd-approve.sh"
+          ],
+          "checks": {
+            "C464": "red"
+          },
+          "result": "red",
+          "at": "2026-10-26T16:47:48Z",
+          "head": "9080328a561d81fa82d4891e76ec8931fc0292b7",
+          "strengthened": [
+            "tests/hidden-record.bats"
+          ],
+          "pending": [
+            "tests/hidden-record.bats"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R208",
+            "text": "vbw approve refuses with that message, exit 1, adding no decision, granting no consent (the contract stays NOT APPROVED) and making no commit"
+          },
+          "what": "approve_problems no longer names the hidden file",
+          "files": [
+            "plugin/lib/cmd-approve.sh"
+          ],
+          "checks": {
+            "C464": "red"
+          },
+          "result": "red",
+          "at": "2026-10-26T16:48:20Z",
+          "head": "9080328a561d81fa82d4891e76ec8931fc0292b7",
+          "pending": [
+            "tests/hidden-record.bats"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R208",
+            "text": "vbw next names the hidden file among the reasons the contract is not ready instead of offering the approval menu; with the rule narrowed to .vbw/runtime/ it offers approval and the approval commits the record"
+          },
+          "what": "record_hidden prints nothing",
+          "files": [
+            "plugin/lib/record.sh"
+          ],
+          "checks": {
+            "C468": "red"
+          },
+          "result": "red",
+          "at": "2026-10-26T16:49:01Z",
+          "head": "9080328a561d81fa82d4891e76ec8931fc0292b7"
+        }
       ]
     },
     {
@@ -65991,6 +66210,17 @@
         "ended": "2026-10-26T15:27:31Z",
         "cost": {
           "usd": 0.925649
+        }
+      },
+      {
+        "id": "build-20261026T164004Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M43",
+        "started": "2026-10-26T16:40:04Z",
+        "ended": "2026-10-26T16:49:53Z",
+        "cost": {
+          "usd": 0.451057
         }
       }
     ],
