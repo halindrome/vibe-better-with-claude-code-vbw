@@ -116,6 +116,41 @@ prooftime_total() {
        wall: ($wall / 1000)}'
 }
 
+# prooftime_step_waited STEP WAITED: like prooftime_step, but WAITED seconds of
+# the time since the last mark (at most that time) were a wait for a slot, and
+# count into waits instead, so the steps still tile the time.
+prooftime_step_waited() {
+  [ -n "$PROOFTIME_FILE" ] || return 0
+  local now d w
+  now=$(prooftime_clock)
+  d=$(($(prooftime_ms "$now") - $(prooftime_ms "$PROOFTIME_AT")))
+  [ "$d" -ge 0 ] || d=0
+  w=$(($2 * 1000))
+  [ "$w" -ge 0 ] || w=0
+  [ "$w" -le "$d" ] || w=$d
+  prooftime_add "$1" "$(printf '%d.%03d' "$(((d - w) / 1000))" "$(((d - w) % 1000))")"
+  prooftime_add waits "$(printf '%d.%03d' "$((w / 1000))" "$((w % 1000))")"
+  PROOFTIME_AT=$now
+}
+
+# prooftime_split: {steps: [{k, v}], wall} in seconds: every step counted, in the
+# order each was first counted (a command names its own steps; a name may hold
+# spaces, the seconds are the last word), and the time since the timer opened.
+prooftime_split() {
+  local wall=0
+  if [ -n "$PROOFTIME_T0" ]; then
+    wall=$(($(prooftime_ms "$(prooftime_clock)") - $(prooftime_ms "$PROOFTIME_T0")))
+    [ "$wall" -ge 0 ] || wall=0
+  fi
+  {
+    [ -z "$PROOFTIME_FILE" ] || cat "$PROOFTIME_FILE" 2> /dev/null
+  } | jq -R -s -c --argjson wall "$wall" '
+    [split("\n")[] | select(length > 0) | capture("^(?<k>.*) (?<v>[^ ]+)$") | {k, v: (.v | tonumber)}] as $l
+    | {steps: (reduce $l[] as $e ([]; if any(.[]; .k == $e.k) then map(if .k == $e.k then .v += $e.v else . end) else . + [$e] end)
+               | map(.v |= (. * 1000 | round / 1000))),
+       wall: ($wall / 1000)}'
+}
+
 # prooftime_end: close the timer.
 prooftime_end() {
   [ -z "$PROOFTIME_FILE" ] || vbw_guard_drop "$PROOFTIME_FILE"
@@ -142,12 +177,19 @@ PROOFTIME_RANK_JQ='def ranked:
            | sort_by(-.c) | .[:3])};
 '
 
+# PROOFTIME_MIN_JQ: seconds as minutes with one decimal, the way both report lines print them.
+PROOFTIME_MIN_JQ='def min: (. / 6 | round) as $t | "\($t / 10 | floor).\($t % 10)";'
+
+# prooftime_minutes SECONDS: SECONDS as 'X.Y' minutes.
+prooftime_minutes() {
+  jq -rn --argjson s "$1" "$PROOFTIME_MIN_JQ"'$s | min'
+}
+
 # prooftime_lines: from an evidence-shaped object on stdin ({own, causes, checks,
 # commands, test_files}) print the two report lines (the ranking is
 # PROOFTIME_RANK_JQ's).
 prooftime_lines() {
-  jq -r "$PROOFTIME_RANK_JQ"'
-    def min: (. / 6 | round) as $t | "\($t / 10 | floor).\($t % 10)";
+  jq -r "$PROOFTIME_RANK_JQ$PROOFTIME_MIN_JQ"'
     (.own // {}) as $o
     | ([($o.planning // 0), ($o.copies // 0), ($o.tracking // 0), ($o.saving // 0), ($o.record // 0)] | add) as $x
     | ranked as $k
