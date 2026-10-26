@@ -23911,6 +23911,12 @@
           "from": "deep",
           "to": "deep",
           "reason": "Dev blocked P169.3: Task 1 is committed (c0f67415): the scenario now reads mutate_breakdown_line and mutate_steps_line, and both were true in two real runs. But 'bash tools/l3-suite.sh taskbreak' fails twice (2026-10-26, 17:21 and 17:46) on two older facts, so the committed result cannot show passed:true as R207.13 needs. Cause, from the session transcripts: P1.1's Dev runs 'vbw check C1 C2', sees C2 red (shout.sh belongs to P1.2), and blocks the plan ('R1.2/C2 needs shout.sh, but the plan's only file is greet.sh'). The orchestrating session then re-plans (P1.1 gets shout.sh), P1.2 is built before P1.1's breaks run, so 'break made before P1.2 was built' and 'other rule check red at break' fail. 'vbw show plan P1.1' lists R1.2 and C2 with no hint that P1.2 owns that rule. The fix belongs in plugin code (show plan naming the plan that owns each rule, or the Dev prompt), outside this plan's files; making the fixture dodge it would hide a real gap. Decision needed: add a plan for that, then re-run taskbreak."
+        },
+        {
+          "at": "2026-10-26T19:18:40Z",
+          "from": "deep",
+          "to": "deep",
+          "reason": "Dev blocked P169.3: R207.13 break (steps fact forced false in tools/l3-suite.sh) survives C463: its R207 cases only grep the scenario text and read the committed result. Strengthening tests/l3-taskbreak.bats (grep that the facts are set from the tool output and expected) is impossible: the file is shared with C473 (R209), so vbw commit refuses it as not the plan's to commit. Needs a decision: give R207.13 a check file of its own, or allow the shared file."
         }
       ]
     },
@@ -51897,7 +51903,26 @@
         "tools/l3-suite.sh scenario_taskbreak gains two facts read from the tool results of the session's vbw mutate calls (transcripts | transcript_tool_output 'vbw mutate' REGEX, never the screen): mutate_breakdown_line (a line matching \"^VBW.s own work: [0-9]+\\.[0-9] of [0-9]+\\.[0-9] min\") and mutate_steps_line (a line starting '  steps of '); each is an expect so a missing line fails the scenario; the existing facts stay.",
         "Run bash tools/l3-suite.sh taskbreak (a real Claude Code session at rigor deep) and fix what it finds.",
         "Commit tools/l3-results/taskbreak.json with the suite; tests/l3-taskbreak.bats green (its R193 cases included)."
-      ]
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R207",
+            "text": "the taskbreak scenario of tools/l3-suite.sh reads the mutate breakdown from the transcripts' tool results as the facts mutate_breakdown_line and mutate_steps_line, and its committed result from this code (dated 2026-10-26 or later) shows both true"
+          },
+          "what": "steps fact never true",
+          "files": [
+            "tools/l3-suite.sh"
+          ],
+          "checks": {
+            "C463": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-26T19:17:10Z",
+          "head": "1e455c4d89eacd8b8109e5af3f07b82f54ba4387"
+        }
+      ],
+      "note": "R207.13 break (steps fact forced false in tools/l3-suite.sh) survives C463: its R207 cases only grep the scenario text and read the committed result. Strengthening tests/l3-taskbreak.bats (grep that the facts are set from the tool output and expected) is impossible: the file is shared with C473 (R209), so vbw commit refuses it as not the plan's to commit. Needs a decision: give R207.13 a check file of its own, or allow the shared file."
     },
     {
       "id": "P170.1",
@@ -67125,6 +67150,17 @@
         "ended": "2026-10-26T19:12:29Z",
         "cost": {
           "usd": 0.733847
+        }
+      },
+      {
+        "id": "build-20261026T191415Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M43",
+        "started": "2026-10-26T19:14:15Z",
+        "ended": "2026-10-26T19:19:02Z",
+        "cost": {
+          "usd": 0.405194
         }
       }
     ],
