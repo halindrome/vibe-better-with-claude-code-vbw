@@ -15,6 +15,15 @@ $ vbw report
 ! vbw on PATH is /x/cache/2.0.34/bin/vbw (version 2.0.34), not the loaded plugin's: /dev/vbw/plugin (version 2.0.35)
     fix: run /dev/vbw/plugin/bin/vbw, or put /dev/vbw/plugin/bin first on PATH
 ...
+A project rule that hides one of VBW's own files (a rule for the whole `.vbw` folder, such as `.vbw/` or `*`) fails the check. The line names the file and the rule's source as `git check-ignore -v` gives it (file:line:pattern), then the fix line, and `vbw doctor` exits 1:
+
+```
+! .vbw/record.json is hidden from git by .gitignore:3:*
+    fix: remove that line, or change it to .vbw/runtime/
+```
+
+Without such a rule, the doctor says nothing about hidden files.
+
 ### Project state
 
 milestone M1 active
