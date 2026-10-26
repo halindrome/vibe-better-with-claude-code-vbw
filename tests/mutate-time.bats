@@ -268,3 +268,18 @@ C3 red" ] || { echo "$output"; false; }
   [ "$(step waits)" = "0.0" ] || { echo "$STEPS"; false; }
   [ -z "$AFTER" ]
 }
+
+@test "R207: the own-work figure is copies plus tracking plus saving, in minutes with one decimal, of the wall" {
+  # mutate_time_say on a timer of known steps: 100 s of copies, 5 unbroken, 20 broken, 10 of tracking, 20 saving, 160 s wall.
+  run env VBW_LIB="$REPO_ROOT/plugin/lib" VBW_RUNTIME="$PWD/.vbw/runtime" bash -c '
+    . "$VBW_LIB/core.sh"; . "$VBW_LIB/prooftime.sh"; . "$VBW_LIB/cmd-mutate.sh"
+    prooftime_begin
+    n=$(prooftime_clock)
+    PROOFTIME_T0=$(awk -v n="$n" "BEGIN {printf \"%.3f\", n - 160}")
+    PROOFTIME_AT=$n
+    prooftime_add copies 100; prooftime_add unbroken 5; prooftime_add "break R1.1" 20; prooftime_add tracking 10; prooftime_add saving 20
+    mutate_time_say' 2> /dev/null
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  [ "$(printf '%s\n' "$output" | head -n 1)" = "VBW's own work: 2.2 of 2.7 min" ] || { echo "$output"; false; }
+  [ "$(printf '%s\n' "$output" | sed -n 2p)" = "  steps of 160.0 s: copies 100.0, unbroken 5.0, break R1.1 20.0, waits 0.0, saving 20.0" ] || { echo "$output"; false; }
+}
