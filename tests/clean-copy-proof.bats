@@ -159,3 +159,18 @@ store_reads() { jq -c '.runs["check:C1"].reads' "$(git rev-parse --git-common-di
   [ "$(store_reads)" = "$reads" ] || { echo "before: $reads"; echo "after: $(store_reads)"; false; }
   printf '%s\n' "$output" | grep -q '^ran again: 0 of 1 units; top reasons: none$' || { echo "$output"; false; }
 }
+
+@test "R205: a listed path under a folder git ignores as a whole is left out; the rest of that folder is copied" {
+  printf '\n## Clean copy\n\n- data/sub/\n' > "$TEST_ROOT/tail"
+  sed -i.bak '/^## Clean copy/,$d' .vbw/spec.md && rm -f .vbw/spec.md.bak
+  cat "$TEST_ROOT/tail" >> .vbw/spec.md
+  "$VBW" spec sync > /dev/null
+  git add -A && git commit -q -m "chore: list data/sub"
+  "$VBW" approve > /dev/null
+  vbw_run prove
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  [ -f "$PROBE" ] || { echo "no listing"; false; }
+  grep -qx './data/a.bin' "$PROBE" || { echo "data/a.bin is not in the copy:"; cat "$PROBE"; false; }
+  if grep -q '^\./data/sub' "$PROBE"; then echo "something of data/sub is in the copy:"; cat "$PROBE"; false; fi
+  [ -f data/sub/b.bin ]
+}
