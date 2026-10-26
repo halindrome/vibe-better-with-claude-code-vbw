@@ -52337,12 +52337,94 @@
         "P170.2",
         "P170.3"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "tools/l3-suite.sh: a helper transcript_tool_called COMMAND_REGEX beside transcript_tool_output (transcript file names on stdin; succeeds when a Bash tool_use command matches); scenario_taskbreak gains two expects recorded as facts: show_plan_marked (transcripts | transcript_tool_output 'vbw show plan P1\\.1' finds the R1.2 line ending \"[P1.2's, built after this plan]\" and the C2 line carrying \"[P1.2's: red until it is built\") and early_plan_never_blocked (transcripts | transcript_tool_called 'vbw plan block P1\\.1' fails, and the record's P1.1 files are exactly [\"greet.sh\"]); the existing facts and not_tested list stay; nothing is read from the screen; shellcheck clean (bash tools/test.sh --lint).",
         "Run bash tools/l3-suite.sh taskbreak (a real Claude Code session at rigor deep) on this code, with P170.1 to P170.3 built, and fix what it finds inside this plan's files; a failing fact is reported in notes with its cause from the transcripts, never dodged by changing the fixture.",
         "Commit tools/l3-results/taskbreak.json showing passed:true with every fact true (this also gives R207.13 its dated result); tests/l3-taskbreak.bats green in full (its R209, R207 and R193 cases)."
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R209",
+            "text": "scenario_taskbreak reads vbw show plan P1.1's marks (R1.2 built after this plan, C2 red until it is built) from the transcripts' tool results, never the screen, as the fact show_plan_marked"
+          },
+          "what": "mark word changed to before",
+          "files": [
+            "tools/l3-suite.sh"
+          ],
+          "checks": {
+            "C473": "red"
+          },
+          "result": "red",
+          "at": "2026-10-26T19:08:46Z",
+          "head": "0e2cb29f7af2d39fb9c0df4964009e6bfdcae8fd"
+        },
+        {
+          "rule": {
+            "req": "R209",
+            "text": "scenario_taskbreak records early_plan_never_blocked: no vbw plan block P1.1 tool call in the transcripts and P1.1's recorded files still exactly [\"greet.sh\"]; the earlier facts stay"
+          },
+          "what": "block regex misspelled",
+          "files": [
+            "tools/l3-suite.sh"
+          ],
+          "checks": {
+            "C473": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-26T19:08:49Z",
+          "head": "0e2cb29f7af2d39fb9c0df4964009e6bfdcae8fd"
+        },
+        {
+          "rule": {
+            "req": "R209",
+            "text": "the committed taskbreak result from this code (dated 2026-10-26 or later) passed with show_plan_marked and early_plan_never_blocked true"
+          },
+          "what": "show_plan_marked false in result",
+          "files": [
+            "tools/l3-results/taskbreak.json"
+          ],
+          "checks": {
+            "C473": "red"
+          },
+          "result": "red",
+          "at": "2026-10-26T19:08:52Z",
+          "head": "0e2cb29f7af2d39fb9c0df4964009e6bfdcae8fd"
+        },
+        {
+          "rule": {
+            "req": "R209",
+            "text": "scenario_taskbreak records early_plan_never_blocked: no vbw plan block P1.1 tool call in the transcripts and P1.1's recorded files still exactly [\"greet.sh\"]; the earlier facts stay"
+          },
+          "what": "block regex misspelled",
+          "files": [
+            "tools/l3-suite.sh"
+          ],
+          "checks": {
+            "C473": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-26T19:10:30Z",
+          "head": "0e2cb29f7af2d39fb9c0df4964009e6bfdcae8fd"
+        },
+        {
+          "rule": {
+            "req": "R209",
+            "text": "scenario_taskbreak records early_plan_never_blocked: no vbw plan block P1.1 tool call in the transcripts and P1.1's recorded files still exactly [\"greet.sh\"]; the earlier facts stay"
+          },
+          "what": "P1.1 files compared with a different list",
+          "files": [
+            "tools/l3-suite.sh"
+          ],
+          "checks": {
+            "C473": "red"
+          },
+          "result": "red",
+          "at": "2026-10-26T19:11:05Z",
+          "head": "0e2cb29f7af2d39fb9c0df4964009e6bfdcae8fd"
+        }
       ]
     }
   ],
@@ -67025,6 +67107,17 @@
         "ended": "2026-10-26T18:56:19Z",
         "cost": {
           "usd": 0.724261
+        }
+      },
+      {
+        "id": "build-20261026T185741Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M43",
+        "started": "2026-10-26T18:57:41Z",
+        "ended": "2026-10-26T19:12:29Z",
+        "cost": {
+          "usd": 0.733847
         }
       }
     ],
