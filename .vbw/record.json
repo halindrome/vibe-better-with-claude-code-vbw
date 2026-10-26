@@ -1,6 +1,19 @@
 {
   "schema": 4,
-  "lease": null,
+  "lease": {
+    "run": "build-20261026T165137Z",
+    "kind": "build",
+    "started_at": "2026-10-26T16:51:37Z",
+    "files": [
+      "tools/l3-results/greenfield.json",
+      "tools/l3-results/hiddenrecord.json",
+      "tools/l3-suite.sh"
+    ],
+    "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+    "cost": {
+      "usd": 2549.476603
+    }
+  },
   "protected": [
     "tests/adaptive-results.bats",
     "tests/agent-scratch.bats",
@@ -51356,7 +51369,7 @@
         "P168.2",
         "P166.5"
       ],
-      "status": "planned",
+      "status": "building",
       "role": "dev",
       "tasks": [
         "tools/l3-suite.sh: scenario_hiddenrecord, in ALL and the header list: a fresh project whose committed .gitignore holds '*.json'; the user types /vbw:vibe with the greet.sh request and the build runs to the end. Its checks read git and the project's files, never the screen: facts gitignore_rule ('*.json', read from .gitignore), record_committed (git ls-files --error-unmatch .vbw/record.json), unhide_lines (.vbw/.gitignore holds the four un-hide lines), record_commits (git log --format=%H -- .vbw/record.json counted, at least 1); common_checks; result_write hiddenrecord with a fixture text and a not_tested list.",
@@ -55330,6 +55343,13 @@
     {
       "id": "T188",
       "text": "The own-work line (VBW's own work: X of Y min) shows seconds when the wall is under a minute: a mutation run takes seconds and reads '0.0 of 0.0 min' (M43 2026-10-26, R207.5)",
+      "sort": "later",
+      "size": "small",
+      "status": "open"
+    },
+    {
+      "id": "T189",
+      "text": "check-loop-writes.sh sees only builtin writes in the loop body itself: a call to a function that writes with printf (doctor_line in cmd-doctor.sh, found 2026-10-26 in P168.2's hidden-file loop) passes unseen and is left to the reviewer. Teach the tool the repo's writer functions (every function whose body writes with a builtin, found by the tool itself), so such a call in a loop fed by a process substitution is refused like a direct printf",
       "sort": "later",
       "size": "small",
       "status": "open"
