@@ -52036,12 +52036,166 @@
       "after": [
         "P170.1"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "plugin/lib/cmd-show.sh show_work (plan): the JSON gains, per rule: plan (the named plan or null), own (true when own_rules holds the rule or when it names no plan: exactly the rules the listing leaves unmarked), and when not own order: 'done' when the named plan Q is done, 'blocked' when Q is blocked, 'after' when this plan P is no longer in the build waves (done or blocked) and Q is open, otherwise from waves(the milestone of P's phase): 'before' when Q's wave comes earlier, 'after' when later, 'beside' when the same (Q missing from the waves counts as after); per check: own (true when any own rule points at it or when no live rule does) and, when not own, plans (the ids of the plans whose live rules point at it, sorted, unique). Every field the JSON has today stays; a retired rule stays left out of rules.",
         "The text listing: a rule that is not own prints as today followed by ' [Q's, ORDER]' with ORDER one of 'done', 'blocked', 'built before this plan', 'built after this plan', 'built beside this plan'; a check that is not own prints as today followed by ' [Q's: red until it is built, not this plan's to pass]', several plans joined as 'P1.2's and P1.3's'; every own rule and own check, every line of a plan whose rules name no plan, and every line of a plan whose requirements are all [human] stay byte for byte today's.",
         "bats --filter 'R209 show' tests/show-plan-owner.bats green on bash 5 and /bin/bash 3.2 (its agreement case runs vbw mutate on the fixture, its golden cases pin today's listing); tests/mutate-show.bats (the R188 --json case included) and tests/mutate-rule-owner.bats (the T168 retired-rule case) green unchanged."
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R209",
+            "text": "in vbw show plan P, a rule of P's requirements that is not P's own and names another plan Q is listed as today followed by ' [Q's, ORDER]': 'built before this plan' when Q's build wave comes earlier, 'built after this plan' when later, 'built beside this plan' when the same"
+          },
+          "what": "before wording says after",
+          "files": [
+            "plugin/lib/cmd-show.sh"
+          ],
+          "checks": {
+            "C470": "red"
+          },
+          "result": "red",
+          "at": "2026-10-26T18:54:55Z",
+          "head": "1131cdfed62fc3a24bbc55be42eb373ee6ebb3bc",
+          "pending": [
+            "tests/show-plan-owner.bats"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R209",
+            "text": "ORDER is 'done' when Q is done, 'blocked' when Q is blocked, and 'built after this plan' when P is done (out of the build waves) and Q is open"
+          },
+          "what": "done order never chosen",
+          "files": [
+            "plugin/lib/cmd-show.sh"
+          ],
+          "checks": {
+            "C470": "red"
+          },
+          "result": "red",
+          "at": "2026-10-26T18:54:58Z",
+          "head": "1131cdfed62fc3a24bbc55be42eb373ee6ebb3bc",
+          "pending": [
+            "tests/show-plan-owner.bats"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R209",
+            "text": "a rule that is P's own (naming P, naming no plan, or any rule of a requirement P completes, one naming a done plan included) is listed byte for byte as today"
+          },
+          "what": "rule naming no plan no longer own",
+          "files": [
+            "plugin/lib/cmd-show.sh"
+          ],
+          "checks": {
+            "C470": "red"
+          },
+          "result": "red",
+          "at": "2026-10-26T18:55:02Z",
+          "head": "1131cdfed62fc3a24bbc55be42eb373ee6ebb3bc",
+          "pending": [
+            "tests/show-plan-owner.bats"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R209",
+            "text": "a check is listed as today followed by ' [Q's: red until it is built, not this plan's to pass]' when at least one live rule points at it and every live rule pointing at it is another plan's; several plans are joined 'P1.2's and P1.3's'"
+          },
+          "what": "plans joined with comma",
+          "files": [
+            "plugin/lib/cmd-show.sh"
+          ],
+          "checks": {
+            "C470": "red"
+          },
+          "result": "red",
+          "at": "2026-10-26T18:55:05Z",
+          "head": "1131cdfed62fc3a24bbc55be42eb373ee6ebb3bc",
+          "pending": [
+            "tests/show-plan-owner.bats"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R209",
+            "text": "a check pointed at by any own rule, or by no live rule (a retired rule only), is listed exactly as today; a plan whose requirements are all [human] shows no mark"
+          },
+          "what": "check with no live rule marked",
+          "files": [
+            "plugin/lib/cmd-show.sh"
+          ],
+          "checks": {
+            "C470": "red"
+          },
+          "result": "red",
+          "at": "2026-10-26T18:55:08Z",
+          "head": "1131cdfed62fc3a24bbc55be42eb373ee6ebb3bc",
+          "pending": [
+            "tests/show-plan-owner.bats"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R209",
+            "text": "vbw show plan --json keeps every field it has today and adds to each rule plan (the named plan or null), own, and when not own order (done, blocked, before, after, beside); to each check own and, when not own, plans (the ids whose rules it serves)"
+          },
+          "what": "internal q,k fields leak into json",
+          "files": [
+            "plugin/lib/cmd-show.sh"
+          ],
+          "checks": {
+            "C470": "red"
+          },
+          "result": "red",
+          "at": "2026-10-26T18:55:11Z",
+          "head": "1131cdfed62fc3a24bbc55be42eb373ee6ebb3bc",
+          "pending": [
+            "tests/show-plan-owner.bats"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R209",
+            "text": "the two readers agree: the checks of the rules --json marks own are exactly the keys of the checks map a task break records, for the early plan while the other is open and for the completing plan after the other is done"
+          },
+          "what": "own ignores rule number",
+          "files": [
+            "plugin/lib/cmd-show.sh"
+          ],
+          "checks": {
+            "C470": "red"
+          },
+          "result": "red",
+          "at": "2026-10-26T18:55:14Z",
+          "head": "1131cdfed62fc3a24bbc55be42eb373ee6ebb3bc",
+          "pending": [
+            "tests/show-plan-owner.bats"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R209",
+            "text": "a project whose rules name no plan prints exactly today's listing, and its --json marks every rule and check own"
+          },
+          "what": "rule naming no plan gets a plan",
+          "files": [
+            "plugin/lib/cmd-show.sh"
+          ],
+          "checks": {
+            "C470": "red"
+          },
+          "result": "red",
+          "at": "2026-10-26T18:55:17Z",
+          "head": "1131cdfed62fc3a24bbc55be42eb373ee6ebb3bc",
+          "pending": [
+            "tests/show-plan-owner.bats"
+          ]
+        }
       ]
     },
     {
@@ -54693,6 +54847,15 @@
       "status": "open",
       "note": "Lead review of P168.2 (2026-10-26): plugin/lib/cmd-doctor.sh, doctor_project, the hidden-file loop (while IFS= read -r hid; do doctor_line fail ...; done < <(cd \"$VBW_ROOT\" && record_hidden || true)) prints through doctor_line (a printf) in the shell that owns the process substitution's live child. The standard forbids a builtin write there (macOS /bin/bash 3.2 loses a write interrupted by the child's exit: CLAUDE.md, 'No builtin write while the shell has a live child'); tools/check-loop-writes.sh passes only because the write sits inside a called function, which its header leaves to the reviewer. Fix: collect the lines first (hidden=$(cd \"$VBW_ROOT\" && record_hidden) || true), then loop over the variable with a here-string (done <<< \"$hidden\"; [ -n \"$hidden\" ] first), so no child is alive while doctor_line prints; a pipe is not an option because doctor_line sets DOCTOR_FAILED in the main shell. Regression test, shown red first: in tests/hidden-record-commands.bats, cmd-doctor.sh has no loop fed by a process substitution that calls doctor_line (grep on the shell file, not JSON), kept narrow; the doctor fail case stays green under /bin/bash.",
       "phase": "P168"
+    },
+    {
+      "id": "F316",
+      "req": "R205",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "Lead review 2026-10-26, reported by P170.1's Dev: tests/standards.bats test 53 (tools/check-pipefail-grep.sh) fails on tools/l3-suite.sh line 2638, in scenario_leaveout's checks (commit cdf40ac5, P166.5): '\"$VBW\" show contract 2> /dev/null | grep -qxF \"clean copy leaves out: data/\"' pipes into a quiet grep, which stops reading early and under pipefail fails the pipeline with the producer's SIGPIPE. Fix inside tools/l3-suite.sh as the tool's header asks (read the whole input: grep without -q to /dev/null, or capture the output and test it), keeping the fact's meaning; tests/standards.bats green again under /bin/bash, tests/l3-leaveout.bats green, bash tools/test.sh --lint clean. Regression test: the standards test itself is the test (it is red now).",
+      "phase": "P166"
     }
   ],
   "todos": [
@@ -66851,6 +67014,17 @@
         "ended": "2026-10-26T18:44:14Z",
         "cost": {
           "usd": 0.771076
+        }
+      },
+      {
+        "id": "build-20261026T184551Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M43",
+        "started": "2026-10-26T18:45:51Z",
+        "ended": "2026-10-26T18:56:19Z",
+        "cost": {
+          "usd": 0.724261
         }
       }
     ],
