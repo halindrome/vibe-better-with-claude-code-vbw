@@ -285,9 +285,9 @@ deviations() { jq -c '.evidence.deviations' .vbw/record.json; }
   # and leaves the number of traced shell commands in $TEST_ROOT/count.
   trace() {
     # shellcheck disable=SC2016 # expanded by vbw_kernel
-    (cd "$1" && vbw_kernel '. "$VBW_LIB/delivered.sh"; r=$(cat "$VBW_RECORD"); PS4="+ "; set -x
+    (cd "$1" && vbw_kernel '. "$VBW_LIB/delivered.sh"; r=$(cat "$VBW_RECORD"); PS4="+TRACEMARK "; set -x
       delivered_deviations "$r" 2> "$TEST_ROOT/trace"; set +x') 2> /dev/null
-    grep -c '^+' "$TEST_ROOT/trace" > "$TEST_ROOT/count"
+    grep -o 'TRACEMARK' "$TEST_ROOT/trace" | wc -l | tr -d ' ' > "$TEST_ROOT/count"
   }
   cp -R "$PROJECT" "$TEST_ROOT/big"
   many "$PROJECT" 3
