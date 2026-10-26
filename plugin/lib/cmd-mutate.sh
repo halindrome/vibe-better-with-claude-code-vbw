@@ -247,13 +247,9 @@ cmd_mutate() {
         || vbw_die "$i is not a check of the requirements $plan serves: vbw show plan $plan lists them"
     done
   else
-    # The rules the plan owes: those naming it, and every rule of a requirement it completes (no other
-    # open plan serves it). Their checks, each once. A plan owing no rule keeps the checks of its requirements.
-    owed=$(printf '%s' "$record" | jq -c --arg p "$plan" '
-      (.plans[] | select(.id == $p).reqs) as $q
-      | [.plans[] | select(.id != $p and .status != "done") | .reqs[]] as $others
-      | [$q[] | select(. as $r | $others | index($r) == null)] as $done
-      | [.requirements[] | .id as $r | (.rules // [])[] | select((has("retired") | not) and (.plan == $p or ($done | index($r) != null))) | .check] | unique')
+    # The plan's own rules (own_rules, the kernel's one definition): their checks, each once. A plan
+    # owning no rule keeps the checks of its requirements.
+    owed=$(printf '%s' "$record" | jq -c --arg p "$plan" "$VBW_JQ_DEFS"'[own_rules($p)[].check] | unique')
     if [ "$owed" != '[]' ]; then
       ids=$owed
     else
