@@ -51911,12 +51911,116 @@
         "plugin/lib/cmd-mutate.sh"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "plugin/lib/record.sh: VBW_JQ_DEFS gains own_rules($p), the one definition of a plan's own rules, as [{req, n, text, check, plan}] (plan null when the rule names none): the live (not retired) rules of the [auto] requirements with a check that plan $p serves, each either naming $p or belonging to a requirement $p completes (every other plan serving it is done); n is the rule's place in its requirement, retired rules counted; [] for an unknown plan or a plan of [human] requirements only; independent of the phase's tier. owed_rules($p) is rewritten on top of it: own_rules($p) when the plan's phase is standard or deep, [] otherwise (express or no tier); its comment says so. vbw plan done (plan_missing_breaks), steps.sh and road.jq keep counting the same rules: they read req, n, text and the length, which do not change.",
         "plugin/lib/cmd-mutate.sh: the task break without --check takes its check ids from own_rules ([own_rules($p)[].check] | unique, through the kernel's jq definitions) and its inline copy of the owner computation (the $others and $done arrays) is deleted; the fallback when the plan owns no rule (every check of its requirements) and its wording ('owns no rule: the Lead names a plan on each rule, and until then every check of its requirements runs') stay exactly as they are.",
         "Both shells: bats --filter 'R209 kernel' tests/show-plan-owner.bats green on bash 5 and /bin/bash 3.2 (the 'R209 show' cases of that file wait for P170.2); tests/mutate-own-rules.bats, tests/mutate-rule-owner.bats, tests/mutate-plan-done.bats, tests/mutate-show.bats, tests/contract-waves.bats and tests/standards.bats green unchanged."
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R209",
+            "text": "own_rules($p) in VBW_JQ_DEFS gives, as [{req, n, text, check, plan}], the live rules of the [auto] requirements plan $p serves that name $p, while another plan of the requirement is open; [] for an unknown plan or a plan of [human] requirements only"
+          },
+          "what": "named-plan test inverted",
+          "files": [
+            "plugin/lib/record.sh"
+          ],
+          "checks": {
+            "C469": "red"
+          },
+          "result": "red",
+          "at": "2026-10-26T18:41:29Z",
+          "head": "6c33759997bfa3025ed33dbac1f3f6f2be7a13c8"
+        },
+        {
+          "rule": {
+            "req": "R209",
+            "text": "a plan that completes a requirement (every other plan serving it is done) owns every live rule of it, those naming a done plan and those naming no plan (plan null) included"
+          },
+          "what": "completing plan no longer owns all",
+          "files": [
+            "plugin/lib/record.sh"
+          ],
+          "checks": {
+            "C469": "red"
+          },
+          "result": "red",
+          "at": "2026-10-26T18:41:32Z",
+          "head": "6c33759997bfa3025ed33dbac1f3f6f2be7a13c8"
+        },
+        {
+          "rule": {
+            "req": "R209",
+            "text": "own_rules is independent of the phase's tier; owed_rules($p) equals own_rules($p) at standard and deep and is [] at express or without a tier, so vbw plan done, steps.sh and road.jq count the same rules as before"
+          },
+          "what": "deep not owed",
+          "files": [
+            "plugin/lib/record.sh"
+          ],
+          "checks": {
+            "C469": "red"
+          },
+          "result": "red",
+          "at": "2026-10-26T18:41:35Z",
+          "head": "6c33759997bfa3025ed33dbac1f3f6f2be7a13c8"
+        },
+        {
+          "rule": {
+            "req": "R209",
+            "text": "a retired rule is left out of own_rules and the other rules keep their numbers"
+          },
+          "what": "retired kept",
+          "files": [
+            "plugin/lib/record.sh"
+          ],
+          "checks": {
+            "C469": "red"
+          },
+          "result": "red",
+          "at": "2026-10-26T18:41:38Z",
+          "head": "6c33759997bfa3025ed33dbac1f3f6f2be7a13c8"
+        },
+        {
+          "rule": {
+            "req": "R209",
+            "text": "cmd-mutate.sh's task break takes its check ids from own_rules and holds no second definition of the owner computation; its fallback (every check of its requirements) and its 'owns no rule' wording stay"
+          },
+          "what": "only first check",
+          "files": [
+            "plugin/lib/cmd-mutate.sh"
+          ],
+          "checks": {
+            "C469": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-26T18:41:41Z",
+          "head": "6c33759997bfa3025ed33dbac1f3f6f2be7a13c8"
+        },
+        {
+          "rule": {
+            "req": "R209",
+            "text": "cmd-mutate.sh's task break takes its check ids from own_rules and holds no second definition of the owner computation; its fallback (every check of its requirements) and its 'owns no rule' wording stay"
+          },
+          "what": "only first check",
+          "files": [
+            "plugin/lib/cmd-mutate.sh"
+          ],
+          "checks": {
+            "C469": "red"
+          },
+          "result": "red",
+          "at": "2026-10-26T18:43:21Z",
+          "head": "e0aca44d00fc4df86ab1f52a17e9fdef3a3c7b54",
+          "strengthened": [
+            "tests/show-plan-owner.bats"
+          ],
+          "pending": [
+            "tests/show-plan-owner.bats"
+          ]
+        }
       ]
     },
     {
@@ -51951,12 +52055,46 @@
         "plugin/agents/dev.md"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "plugin/agents/dev.md Stage 2, step 1 (Red first): vbw check --expect-red on the plan's own checks only, those vbw show plan leaves unmarked (the line keeps the words 'Red first' and '--expect-red'); step 3 (Green): the step ends when every own check passes (the line keeps 'Green' and 'Never weaken').",
         "One sentence in Stage 2 (with steps 1 to 3): a check vbw show plan marks as another plan's stays red until that plan is built, is never a blocker and never DEVN-04, and is at most named in notes. The DEVN-04 row keeps 'plan cannot work as written' and excludes a file another plan owns for its own marked rule (for example: 'plan cannot work as written (a file outside it that your own checks need, a decision; never a file another plan owns for its marked rule)').",
         "The Mutation bullet's sentence on the task break keeps the words 'task' and 'own rules' on one line (the R193 prompt case of tests/mutate-own-rules.bats) and points at the marks (the rules vbw show plan leaves unmarked); tests/show-plan-owner-prompt.bats, tests/mutate-prompts.bats and tests/mutate-own-rules.bats green; plugin/workflows/building.js is not touched (the Dev already starts with vbw show plan)."
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R209",
+            "text": "dev.md's red-first step runs vbw check --expect-red on the plan's own checks only (those vbw show plan leaves unmarked), and its green step ends when every own check passes"
+          },
+          "what": "dropped the unmarked words from the red-first step",
+          "files": [
+            "plugin/agents/dev.md"
+          ],
+          "checks": {
+            "C471": "red"
+          },
+          "result": "red",
+          "at": "2026-10-26T18:39:00Z",
+          "head": "99a544b6002576a7da27b3557f39cf06a4808246"
+        },
+        {
+          "rule": {
+            "req": "R209",
+            "text": "dev.md says a check marked another plan's stays red until that plan is built, is never a blocker and never DEVN-04, and is at most named in notes; the DEVN-04 row keeps 'plan cannot work as written' and excludes a file another plan owns for its own marked rule"
+          },
+          "what": "made another plan's red check a blocker",
+          "files": [
+            "plugin/agents/dev.md"
+          ],
+          "checks": {
+            "C471": "red"
+          },
+          "result": "red",
+          "at": "2026-10-26T18:39:03Z",
+          "head": "99a544b6002576a7da27b3557f39cf06a4808246"
+        }
       ]
     },
     {
@@ -51971,12 +52109,62 @@
         "docs/proof.md"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "docs",
       "tasks": [
         "docs/workflows.md: the 'vbw show plan P1.2 [--json]' row says the plan's rules and checks are listed with another plan's marked (its own stay unmarked): ' [P1.2's, built after this plan]' on a rule and ' [P1.2's: red until it is built, not this plan's to pass]' on a check, both as printed; the ORDER words 'done', 'blocked', 'built before this plan', 'built after this plan', 'built beside this plan' (with '[P1.2's, done]' and '[P1.2's, blocked]' shown as printed); and the --json fields (plan, own, order on a rule; own, plans on a check).",
         "docs/workflows.md, section '## The mutation check', Task form bullet: a task break runs the checks of the plan's own rules, the ones vbw show plan leaves unmarked; one sentence there says the Dev's red-first and green steps use only the plan's own checks and another plan's red check is no blocker (it stays red until that plan is built).",
         "docs/proof.md, section '### The mutation check', the paragraph on a rule that names its plan: vbw show plan marks another plan's rule and check (both marks as printed), names the ORDER words ('built before this plan', 'built after this plan', 'built beside this plan', 'done', 'blocked'), and says the Dev's red-first and green steps use only the plan's own checks and another plan's red check is no blocker; tests/show-plan-owner-docs.bats green."
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R209",
+            "text": "docs/workflows.md's vbw show plan row names the marks for another plan's rules and checks, and the doc shows both marks as printed and names the ORDER words"
+          },
+          "what": "workflows.md check mark text changed",
+          "files": [
+            "docs/workflows.md"
+          ],
+          "checks": {
+            "C472": "red"
+          },
+          "result": "red",
+          "at": "2026-10-26T18:38:00Z",
+          "head": "99a544b6002576a7da27b3557f39cf06a4808246"
+        },
+        {
+          "rule": {
+            "req": "R209",
+            "text": "docs/workflows.md's task-form bullet points at the rules vbw show plan leaves unmarked, and the doc says red-first and green use only the plan's own checks and another plan's red check is no blocker"
+          },
+          "what": "workflows.md says red check matters",
+          "files": [
+            "docs/workflows.md"
+          ],
+          "checks": {
+            "C472": "red"
+          },
+          "result": "red",
+          "at": "2026-10-26T18:38:14Z",
+          "head": "99a544b6002576a7da27b3557f39cf06a4808246"
+        },
+        {
+          "rule": {
+            "req": "R209",
+            "text": "docs/proof.md's paragraph on a rule that names its plan shows both marks as printed, names the ORDER words, and says the Dev's steps use only the plan's own checks and another plan's red check is no blocker"
+          },
+          "what": "proof.md no blocker removed",
+          "files": [
+            "docs/proof.md"
+          ],
+          "checks": {
+            "C472": "red"
+          },
+          "result": "red",
+          "at": "2026-10-26T18:38:25Z",
+          "head": "99a544b6002576a7da27b3557f39cf06a4808246"
+        }
       ]
     },
     {
@@ -66652,6 +66840,17 @@
         "ended": "2026-10-26T18:28:40Z",
         "cost": {
           "usd": 11.512834
+        }
+      },
+      {
+        "id": "build-20261026T183625Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M43",
+        "started": "2026-10-26T18:36:25Z",
+        "ended": "2026-10-26T18:44:14Z",
+        "cost": {
+          "usd": 0.771076
         }
       }
     ],
