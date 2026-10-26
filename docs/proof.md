@@ -220,6 +220,26 @@ check's `timeout`, which counts only the run. A check whose runner ends without
 leaving a result is recorded as `skipped` (its tail starts `not run:` with the
 reason) and counts as not passed; every other result stands.
 
+### Clean copy: `## Clean copy`
+
+A clean copy brings in the project's git-ignored files. When one ignored folder
+is big and no check needs it (a data folder of many gigabytes), list it under
+`## Clean copy`, one git-ignored path per line, relative to the project root.
+
+```markdown
+## Clean copy
+
+- data/
+```
+
+- A path is relative to the project root, with no `.` or `..` parts, outside `.vbw/` and `.git/`. An absolute path, `..`, `.vbw/` or `.git/` is refused like a bad Test results folder, with its line number. A path named twice is refused with the second line.
+- `vbw spec check` and `vbw spec sync` refuse a path git does not ignore (it is tracked, or untracked and not ignored), naming the spec line and the path: `is not git-ignored: only ignored paths are copied in, so only they can be left out`. The record stays unchanged.
+- A path with nothing at it (it does not exist yet, or not on this computer) is accepted, since there is nothing to leave out. `vbw spec check` says it does not exist here now, so a mistyped path is noticed. A folder whose files alone are ignored is accepted.
+- `vbw spec sync` copies the list into the record (`project.leave_out`, docs/record.md), prints `clean copy leaves out: data/, cache/`, and removes the field when the section is gone.
+- The list is part of the contract: adding a path changes the contract, so it reads NOT APPROVED and the approval question is asked again. `vbw show contract` prints the line `clean copy leaves out: data/, cache/`, and `vbw show contract --changes` names the new list and the old one (`clean copy leaves out: data/, cache/ (was data/)`, `none` for an empty side).
+- Every clean copy (`vbw prove`, `vbw fix done`, `vbw mutate`) skips the listed paths and everything under them, including ignored files inside a listed folder. The other ignored paths are still copied in. A listed path that no longer exists changes nothing, and the next `vbw spec sync` still accepts it.
+- Leaving a path out changes no result: the next proof reuses what it can, as before. No section, no change: every ignored path is copied in.
+
 ## The contract and approval
 
 The contract is the requirements (id, text, proof, and rules when listed), the checks, the plans
@@ -228,7 +248,7 @@ hash is SHA-256 over a canonical rendering of all of it.
 
 `vbw approve`, and `vbw next` before it offers the approval question, first
 compares every section of `.vbw/spec.md` with the record:
-Requirements, Commands, Test files and Test results. A spec that was edited and
+Requirements, Commands, Test files, Test results and Clean copy. A spec that was edited and
 not synced cannot be approved; the refusal reads
 `spec.md and the record differ (vbw spec sync)`.
 Run `vbw spec sync`, then approve.
@@ -819,6 +839,9 @@ The copy builds its own, so a proof never reads stale output from the working
 folder, and nothing it builds lands in the working folder or in another copy.
 Untracked files that are not ignored never enter the copy (D54): to make one
 count, commit it or ignore it.
+
+To keep a big ignored folder out of the copy, list it under
+[`## Clean copy`](#clean-copy-clean-copy).
 
 #### Leftover proof copies
 
