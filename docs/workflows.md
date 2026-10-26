@@ -216,7 +216,7 @@ merely contains `--help` (for example a todo) is still text. The test is
 
 | Command | Who | What |
 |---|---|---|
-| `vbw show plan P1.2 [--json]` | Dev | the plan, its requirements, its checks, its files |
+| `vbw show plan P1.2 [--json]` | Dev | the plan, its requirements, its checks, its files. A rule or check of another plan is marked; the plan's own stay unmarked. A rule of P1.3 reads `... [P1.3's, built after this plan]`, a check only P1.3's rules use reads `... [P1.3's: red until it is built, not this plan's to pass]`. The order is `built before this plan`, `built after this plan`, `built beside this plan`, `done` (`[P1.3's, done]`) or `blocked` (`[P1.3's, blocked]`). `--json` adds `plan`, `own` and `order` to each rule, and `own` and `plans` to each check |
 | `vbw show fix F1 [--json]` | Dev | the fix, its requirement, failing checks and output (with the path of each kept full output, under `.vbw/runtime/output/`), the files it may touch |
 | `vbw check [--expect-red] [C1 ...]` | Dev | run approved checks and report; a failing check's full output is kept in `.vbw/runtime/output/<check>.log` and named under its line, nothing else is written. `--expect-red`: every check must fail (red-first) |
 | `vbw mutate P1.2 R3.1 "what you broke" FILE...` | Dev, Docs | break one rule (or `taskK`) of the plan on purpose and record whether a check noticed; VBW undoes the break. `--queue` sets a rule break aside to run later; `vbw mutate P1.2 --run` runs the queued breaks side by side. Standard and deep only (below) |
@@ -248,10 +248,11 @@ cannot fail, and QA would otherwise find it one round at a time.
 - **Rule form** (`Rn.k`): break rule k of requirement Rn in the named files.
   Only that rule's own check runs. `vbw show plan` numbers the rules this way.
 - **Task form** (`taskK`): break task K. Without `--check`, a task break runs
-  the checks of the plan's own rules: those of every rule that names the plan,
+  the checks of the plan's own rules (a task break's set), the ones `vbw show plan` leaves unmarked:
+  those of every rule that names the plan,
   plus those of the requirements the plan completes. A check shared by several
   of these rules runs once, and no other requirement's check runs. Only `--check
-  ID` narrows the run, to the named checks of the plan's requirements. A plan
+  ID` narrows the run, to the named checks of the plan's requirements. The Dev's red-first and green steps use only the plan's own checks, and another plan's red check is no blocker (it stays red until that plan is built). A plan
   that owns no rule runs the checks of its requirements. If an owed check is red
   on the unbroken code, the command refuses and writes nothing. It names the
   check and three ways out: make it pass and commit, `--check ID`, or `--none
