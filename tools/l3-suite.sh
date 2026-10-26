@@ -2655,7 +2655,7 @@ scenario_leaveout() {
   start="/vbw:vibe"
   checks() {
     local passed=true r="$dir/.vbw/record.json" named=false leave proof=false probe="" without=false
-    (cd "$dir" && "$VBW" show contract 2> /dev/null | grep -qxF 'clean copy leaves out: data/') && named=true
+    (cd "$dir" && "$VBW" show contract 2> /dev/null | grep -xF 'clean copy leaves out: data/' > /dev/null) && named=true
     leave=$(jq -c '.project.leave_out // null' "$r" 2> /dev/null || echo null)
     jq -e '.evidence.passed == true' "$r" > /dev/null 2>&1 && proof=true
     probe=$(cat "$dir/.vbw/runtime/leaveout-probe" 2> /dev/null || true)
