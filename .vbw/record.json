@@ -50325,12 +50325,78 @@
       "after": [
         "P166.1"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "plugin/lib/contract.sh: contract_core and contract_doc add leave_out: .project.leave_out only when present (as results is added), so older contracts keep their hash and a changed list changes the fingerprint; contract_shape follows through contract_core.",
         "plugin/lib/cmd-show.sh: vbw show contract prints, after the saved test results line and only when the record lists paths, one line 'clean copy leaves out: data/, cache/' (the paths as written, joined by ', '); vbw show contract --changes prints '  clean copy leaves out: <new list or none> (was <old list or none>)' when the approved document's list differs (an approved document without the key counts as none).",
         "plugin/lib/cmd-approve.sh approve_problems: the spec comparison also requires (.project.leave_out // null) == (the parsed leave_out paths // null), so an edited, unsynced Clean copy section gives 'spec.md and the record differ (vbw spec sync)' and vbw next's contract action names it (R171) with no code change in next.jq. tests/clean-copy-spec.bats fully green on both shells."
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R205",
+            "text": "vbw show contract prints exactly one line 'clean copy leaves out: data/, cache/' when paths are listed and no such line otherwise"
+          },
+          "what": "show contract line renamed",
+          "files": [
+            "plugin/lib/cmd-show.sh"
+          ],
+          "checks": {
+            "C467": "red"
+          },
+          "result": "red",
+          "at": "2026-10-26T15:08:16Z",
+          "head": "7156bfa4f020c1e4b078594c06a36a1fa7e0d118"
+        },
+        {
+          "rule": {
+            "req": "R205",
+            "text": "vbw show contract --changes names the new list and the old one ('clean copy leaves out: data/, cache/ (was data/)', 'none' for an empty side) when the list changed since the last approval"
+          },
+          "what": "changes ignores leave_out",
+          "files": [
+            "plugin/lib/cmd-show.sh"
+          ],
+          "checks": {
+            "C467": "red"
+          },
+          "result": "red",
+          "at": "2026-10-26T15:08:19Z",
+          "head": "7156bfa4f020c1e4b078594c06a36a1fa7e0d118"
+        },
+        {
+          "rule": {
+            "req": "R205",
+            "text": "an edited, unsynced Clean copy section cannot be approved ('spec.md and the record differ (vbw spec sync)') and vbw next says the contract is not ready with that reason instead of offering the approval question; after the sync vbw next offers approval"
+          },
+          "what": "approve ignores leave_out",
+          "files": [
+            "plugin/lib/cmd-approve.sh"
+          ],
+          "checks": {
+            "C467": "red"
+          },
+          "result": "red",
+          "at": "2026-10-26T15:08:23Z",
+          "head": "7156bfa4f020c1e4b078594c06a36a1fa7e0d118"
+        },
+        {
+          "rule": {
+            "req": "R205",
+            "text": "the list is part of the contract: adding a path changes the fingerprint, the contract reads NOT APPROVED and the approval question is asked again"
+          },
+          "what": "contract_core ignores leave_out",
+          "files": [
+            "plugin/lib/contract.sh"
+          ],
+          "checks": {
+            "C467": "red"
+          },
+          "result": "red",
+          "at": "2026-10-26T15:09:03Z",
+          "head": "7156bfa4f020c1e4b078594c06a36a1fa7e0d118"
+        }
       ]
     },
     {
@@ -50347,12 +50413,125 @@
         "P166.1",
         "P167.1"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "plugin/lib/proofcopy.sh proofcopy_make: before the ignored-path loop, read the record's list once (jq -r '(.project.leave_out // [])[]' \"$VBW_RECORD\", each path's trailing / trimmed, into a local newline-separated list); nothing else about how a copy is made changes.",
         "In the loop, skip every entry p equal to a listed path L or starting with L/ before the build-folder test, so a folder git lists whole, a file, and files git lists one by one under a listed folder are all left out; a listed path that no longer exists matches nothing and changes nothing; build folders are still skipped, links still copied, an unreadable path still dies by name.",
         "The header comment of proofcopy.sh names the rule; tests/clean-copy-proof.bats green on bash 5 and /bin/bash 3.2 (vbw prove, vbw fix done, vbw mutate single form, --run, the one run of Rn.k --none, the unchanged-results case) and tests/proof-build-dirs.bats, tests/prove-clean.bats stay green."
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R205",
+            "text": "when only files inside the listed path are ignored (git lists them one by one), none of them enters the copy either"
+          },
+          "what": "skip only the exact listed path, not files under it",
+          "files": [
+            "plugin/lib/proofcopy.sh"
+          ],
+          "checks": {
+            "C456": "red"
+          },
+          "result": "red",
+          "at": "2026-10-26T15:11:10Z",
+          "head": "7156bfa4f020c1e4b078594c06a36a1fa7e0d118"
+        },
+        {
+          "rule": {
+            "req": "R205",
+            "text": "vbw prove's copy holds the other ignored folder whole and nothing of the listed one, while build folders stay out as before"
+          },
+          "what": "skip only below the listed path, not the path itself",
+          "files": [
+            "plugin/lib/proofcopy.sh"
+          ],
+          "checks": {
+            "C456": "red"
+          },
+          "result": "red",
+          "at": "2026-10-26T15:11:13Z",
+          "head": "7156bfa4f020c1e4b078594c06a36a1fa7e0d118"
+        },
+        {
+          "rule": {
+            "req": "R205",
+            "text": "vbw fix done, vbw mutate's single form, vbw mutate --run and the one run of vbw mutate Rn.k --none make their copies without the listed path"
+          },
+          "what": "skip drops the first listed path",
+          "files": [
+            "plugin/lib/proofcopy.sh"
+          ],
+          "checks": {
+            "C456": "red"
+          },
+          "result": "red",
+          "at": "2026-10-26T15:11:16Z",
+          "head": "7156bfa4f020c1e4b078594c06a36a1fa7e0d118"
+        },
+        {
+          "rule": {
+            "req": "R205",
+            "text": "a spec without the section copies every ignored folder in, as today"
+          },
+          "what": "skip never applies",
+          "files": [
+            "plugin/lib/proofcopy.sh"
+          ],
+          "checks": {
+            "C456": "red"
+          },
+          "result": "red",
+          "at": "2026-10-26T15:11:19Z",
+          "head": "7156bfa4f020c1e4b078594c06a36a1fa7e0d118"
+        },
+        {
+          "rule": {
+            "req": "R205",
+            "text": "leaving a path out changes no result: after listing it, the next proof passes with the same statuses, reuses every unit and the check's read list in the run store is the same"
+          },
+          "what": "build folders copied",
+          "files": [
+            "plugin/lib/proofcopy.sh"
+          ],
+          "checks": {
+            "C456": "red"
+          },
+          "result": "red",
+          "at": "2026-10-26T15:11:22Z",
+          "head": "7156bfa4f020c1e4b078594c06a36a1fa7e0d118"
+        },
+        {
+          "rule": {
+            "req": "R205",
+            "text": "a listed path that no longer exists at copy time changes nothing: the proof passes as before, and the next vbw spec sync accepts the path"
+          },
+          "what": "a listed path with nothing at it dies",
+          "files": [
+            "plugin/lib/proofcopy.sh"
+          ],
+          "checks": {
+            "C456": "red"
+          },
+          "result": "red",
+          "at": "2026-10-26T15:12:20Z",
+          "head": "7156bfa4f020c1e4b078594c06a36a1fa7e0d118"
+        },
+        {
+          "task": 3,
+          "none": "task 3 is the header comment and the green runs of existing tests; no behaviour to break",
+          "at": "2026-10-26T15:12:23Z"
+        },
+        {
+          "task": 1,
+          "none": "task 1 reads the list; broken in the R205.17 break",
+          "at": "2026-10-26T15:12:26Z"
+        },
+        {
+          "task": 2,
+          "none": "task 2 skip loop; broken by R205.15, R205.16 and R205.19 breaks",
+          "at": "2026-10-26T15:12:28Z"
+        }
       ]
     },
     {
@@ -65693,6 +65872,17 @@
         "ended": "2026-10-26T15:01:20Z",
         "cost": {
           "usd": 1.7071
+        }
+      },
+      {
+        "id": "build-20261026T150213Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M43",
+        "started": "2026-10-26T15:02:13Z",
+        "ended": "2026-10-26T15:13:26Z",
+        "cost": {
+          "usd": 0.593593
         }
       }
     ],
