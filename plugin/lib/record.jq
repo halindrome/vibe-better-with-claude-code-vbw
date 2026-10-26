@@ -146,6 +146,10 @@ if type != "object" then ["record must be a JSON object"] else
       | select((type == "array" and length > 0 and length == (unique | length)
           and all(.[]; safe_path and endswith("/") and (split("/") | .[0] != ".vbw" and all(.[:-1][]; . != "" and . != ".")))) | not)
       | "project.results must be a non-empty array of distinct relative folders ending in /, outside .vbw/" ),
+    ( $r.project.leave_out? | select(. != null)
+      | select((type == "array" and length > 0 and length == (unique | length)
+          and all(.[]; safe_path and (rtrimstr("/") | split("/") | .[0] != ".vbw" and .[0] != ".git" and all(.[]; . != "" and . != ".")))) | not)
+      | "project.leave_out must be a non-empty array of distinct relative paths, outside .vbw/ and .git/" ),
     ( $r.project.declined? | select(. != null)
       | ( select(type != "array") | "project.declined must be an array" ),
         ( select(type == "array") | .[]
