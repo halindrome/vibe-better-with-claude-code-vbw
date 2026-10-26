@@ -456,20 +456,25 @@ def waves($m): . as $r
       | (.left | wave($d)) as $ids
       | if ($ids | length) == 0 then .left = [] else .w += [$ids] | .done += $ids | .left |= map(select(.id as $i | any($ids[]; . == $i) | not)) end)
   | .w;
-# owed_rules($p): on the record, the rules plan $p owes the mutation check, one break
-# each (R188, T152, T174), as [{req, n, text}] (n: the rule'"'"'s number in its requirement).
-# At a standard or deep phase: every rule of an [auto] requirement with a check that $p
-# completes (no other open plan serves it), and every rule that names $p. None at
-# express or in a phase without a tier, and never a retired rule (T168), whose place
-# still counts in n. vbw plan done (plan_missing_breaks) and the expected time of a
-# build (steps.sh, road.jq) both count these.
-def owed_rules($p): . as $r | ([.plans[] | select(.id == $p)][0]) as $pl
-  | ([$r.phases[] | select(.id == $pl.phase)][0].tier // "") as $tier
-  | if $pl == null or ($tier | IN("standard", "deep") | not) then [] else
+# own_rules($p): on the record, the one definition of a plan'"'"'s own rules (R209), as
+# [{req, n, text, check, plan}] (n: the rule'"'"'s number in its requirement, retired rules
+# counted; plan: the plan the rule names, null when it names none). The live rules of
+# the [auto] requirements with a check that $p serves, each either naming $p or belonging
+# to a requirement $p completes (every other plan serving it is done). [] for an unknown
+# plan or a plan of [human] requirements only. Independent of the phase'"'"'s tier.
+def own_rules($p): . as $r | ([.plans[] | select(.id == $p)][0]) as $pl
+  | if $pl == null then [] else
       [$pl.reqs[] as $q
         | (all($r.plans[]; .id == $p or .status == "done" or (any(.reqs[]; . == $q) | not))) as $completes
         | select(any($r.checks[]; .req == $q))
         | ($r.requirements[] | select(.id == $q and .proof == "auto")) as $rq
         | ($rq.rules // []) | to_entries[] | select((.value | has("retired") | not) and ($completes or .value.plan == $p))
-        | {req: $q, n: (.key + 1), text: .value.text}] end;
+        | {req: $q, n: (.key + 1), text: .value.text, check: .value.check, plan: (.value.plan // null)}] end;
+# owed_rules($p): the rules plan $p owes the mutation check, one break each (R188, T152,
+# T174): own_rules($p) at a standard or deep phase, [] at express or in a phase without
+# a tier. vbw plan done (plan_missing_breaks) and the expected time of a build (steps.sh,
+# road.jq) count these, by req, n and text.
+def owed_rules($p): . as $r | ([.plans[] | select(.id == $p)][0]) as $pl
+  | ([$r.phases[] | select(.id == $pl.phase)][0].tier // "") as $tier
+  | if $pl == null or ($tier | IN("standard", "deep") | not) then [] else own_rules($p) end;
 '"$(cat "$VBW_LIB/rigor-defs.jq")"
