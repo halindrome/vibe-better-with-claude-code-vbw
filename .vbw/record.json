@@ -53,6 +53,7 @@
     "tests/ci-scope-wiring.bats",
     "tests/ci-scope.bats",
     "tests/ci-shards.bats",
+    "tests/clean-copy-contract.bats",
     "tests/clean-copy-docs.bats",
     "tests/clean-copy-proof.bats",
     "tests/clean-copy-spec.bats",
@@ -116,6 +117,7 @@
     "tests/helper.bats",
     "tests/helpers/run-workflow-all.js",
     "tests/helpers/run-workflow.js",
+    "tests/hidden-record-commands.bats",
     "tests/hidden-record-docs.bats",
     "tests/hidden-record.bats",
     "tests/hook-answers.bats",
@@ -6155,6 +6157,30 @@
       ],
       "files": [
         "tests/l3-hiddenrecord.bats"
+      ]
+    },
+    {
+      "id": "C467",
+      "req": "R205",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/clean-copy-contract.bats"
+      ],
+      "files": [
+        "tests/clean-copy-contract.bats"
+      ]
+    },
+    {
+      "id": "C468",
+      "req": "R208",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/hidden-record-commands.bats"
+      ],
+      "files": [
+        "tests/hidden-record-commands.bats"
       ]
     }
   ],
@@ -15323,22 +15349,22 @@
         },
         {
           "text": "the list is part of the contract: adding a path changes the fingerprint, the contract reads NOT APPROVED and the approval question is asked again",
-          "check": "C455",
+          "check": "C467",
           "plan": "P166.2"
         },
         {
           "text": "vbw show contract prints exactly one line 'clean copy leaves out: data/, cache/' when paths are listed and no such line otherwise",
-          "check": "C455",
+          "check": "C467",
           "plan": "P166.2"
         },
         {
           "text": "vbw show contract --changes names the new list and the old one ('clean copy leaves out: data/, cache/ (was data/)', 'none' for an empty side) when the list changed since the last approval",
-          "check": "C455",
+          "check": "C467",
           "plan": "P166.2"
         },
         {
           "text": "an edited, unsynced Clean copy section cannot be approved ('spec.md and the record differ (vbw spec sync)') and vbw next says the contract is not ready with that reason instead of offering the approval question; after the sync vbw next offers approval",
-          "check": "C455",
+          "check": "C467",
           "plan": "P166.2"
         },
         {
@@ -15480,7 +15506,7 @@
           "plan": "P169.1"
         },
         {
-          "text": "the figures are measured: a check that takes a second on broken code puts at least 1.0 s into the break's entry, more than the unbroken one, and the own-work line is not 'of 0.0 min'",
+          "text": "the figures are measured: a check that takes a second on broken code puts at least 1.0 s into the break's entry, more than the unbroken one, and the steps sum to the wall; the own-work line keeps the proof's rounding to tenths of a minute, so a run under three seconds reads 0.0 min",
           "check": "C461",
           "plan": "P169.1"
         },
@@ -15535,12 +15561,12 @@
       "rules": [
         {
           "text": "vbw init writes .vbw/.gitignore as runtime/, !record.json, !spec.md, !map.md, !.gitignore and prints exactly one line saying VBW keeps its plan files visible to git through .vbw/.gitignore",
-          "check": "C464",
+          "check": "C468",
           "plan": "P168.2"
         },
         {
           "text": "in an initialized project vbw init adds only the missing lines, keeps the user's lines, says so once, and leaves a complete file byte-identical and silent when run again",
-          "check": "C464",
+          "check": "C468",
           "plan": "P168.2"
         },
         {
@@ -15560,12 +15586,12 @@
         },
         {
           "text": "with a rule hiding the whole .vbw folder (.vbw/ or *), vbw init prints the hidden file with the rule's source as git check-ignore -v gives it (file:line:pattern) and the fix 'remove that line, or change it to .vbw/runtime/'",
-          "check": "C464",
+          "check": "C468",
           "plan": "P168.2"
         },
         {
           "text": "vbw doctor prints the same as a fail line with its fix line and exits 1; without such a rule it says nothing about hidden files",
-          "check": "C464",
+          "check": "C468",
           "plan": "P168.2"
         },
         {
@@ -15575,7 +15601,7 @@
         },
         {
           "text": "vbw next names the hidden file among the reasons the contract is not ready instead of offering the approval menu; with the rule narrowed to .vbw/runtime/ it offers approval and the approval commits the record",
-          "check": "C464",
+          "check": "C468",
           "plan": "P168.2"
         },
         {
@@ -50053,15 +50079,14 @@
         "plugin/lib/cmd-init.sh"
       ],
       "after": [],
-      "status": "blocked",
+      "status": "planned",
       "role": "dev",
       "tasks": [
         "plugin/lib/spec.jq reads a '## Clean copy' section (heading test like Test results, case-insensitive): each bullet '- <path>' becomes {path, line} in a new output key leave_out (null without the section, as results is), the path kept exactly as written (its trailing / included). A bullet is a parse error with its line number when the path is absolute, has an empty, '.' or '..' segment, or its first segment is .vbw or .git ('expected \"- <path>\" (a git-ignored path relative to the project root, no \".\" or \"..\", outside .vbw/ and .git/), got: ...'), or when the same path (compared without a trailing /) is named twice ('clean copy path X is named twice'). tests/clean-copy-spec.bats: the parser and the bad-path cases go green.",
         "plugin/lib/record.jq validates project.leave_out when present: a non-empty array of distinct non-empty strings, each a relative path (safe_path: no leading /, no .. segment) with no empty or '.' segment and a first segment that is neither .vbw nor .git; the violation names project.leave_out; a record without the field stays valid at schema 4 (no schema change, like project.results).",
         "plugin/lib/cmd-spec.sh: a verification shared by vbw spec check and vbw spec sync, run before any write, for each listed path (trailing / trimmed): a listed path with nothing at it is accepted (nothing to leave out, so a clone without the data folder syncs its spec), the git checks below applying only to a path that exists, and vbw spec check names it 'spec.md line N: PATH is not here now, so nothing is left out for it yet'; 'spec.md line N: PATH is not git-ignored: only ignored paths are copied in, so only they can be left out' when git lists anything tracked at or under it (git ls-files -z -- PATH), anything untracked and not ignored at or under it (git ls-files -z --others --exclude-standard -- PATH), or when neither git check-ignore -q -- PATH succeeds nor git ls-files -z --others --ignored --exclude-standard -- PATH lists anything (a folder holding only ignored files is accepted). spec_sync_leave_out then writes project.leave_out = the paths as written (deleting the field when the section is absent), printing 'clean copy leaves out: a, b' or 'removed the clean copy list' when the list changes, exactly as spec_sync_results does; vbw spec check appends ', N path(s) left out of the clean copy' when listed. Every refusal is a vbw_die with exit 1 and leaves the record byte-identical. Record-sized data reaches jq through --slurpfile scratch files, never --arg.",
         "plugin/lib/cmd-init.sh init_spec: the starting spec.md gains a '## Clean copy' section after Commands, with an HTML comment in the style of the other sections (what it is for: git-ignored paths such as a huge data folder or caches that the proof's clean copy leaves out, one per line relative to the project root, the rest of the ignored environment still copied in, edit then vbw spec sync) holding an example line '- data/' inside the comment, so a fresh spec parses with leave_out null. tests/clean-copy-spec.bats green on bash 5 and /bin/bash 3.2 for the parts this plan builds (the contract and approval cases wait for P166.2)."
-      ],
-      "note": "Tasks 1-4 are committed and tests/clean-copy-spec.bats cases 1-12 (R205.1-R205.10) pass on bash 5 and /bin/bash 3.2. Cases 13-16 (contract, show contract, --changes, approve/next) wait for P166.2, so C455 stays red. vbw mutate --run refuses to run: 'checks do not pass on the unbroken code' (C455), so no rule break can be recorded and plan done is refused. Nine breaks were prepared (R205.1-R205.10) and need re-running once P166.2 is done: replan so the mutation step of P166.1 runs after P166.2, or split C455 so P166.1 owns its cases."
+      ]
     },
     {
       "id": "P166.2",
@@ -50382,15 +50407,14 @@
         "plugin/lib/record.sh"
       ],
       "after": [],
-      "status": "blocked",
+      "status": "planned",
       "role": "dev",
       "tasks": [
         "plugin/lib/record.sh record_gitignore: writes .vbw/.gitignore as 'runtime/' plus the un-hide lines '!record.json', '!spec.md', '!map.md', '!.gitignore' (that order, one per line) when the file is missing; otherwise appends only the lines that are missing (exact line match), keeping every existing line and leaving a complete file byte-identical; returns 0 when it wrote something and 1 when it changed nothing. It is the one writer of that file (cmd-init.sh's init_gitignore moves here).",
         "record_hidden: for each own file (.vbw/record.json, .vbw/spec.md, .vbw/map.md, .vbw/.gitignore) that exists, is untracked (git ls-files --error-unmatch fails) and that git check-ignore -v -- FILE still reports ignored, one line 'FILE is hidden from git by SOURCE:LINE:PATTERN: remove that line, or change it to .vbw/runtime/' (the source, line number and pattern exactly as git check-ignore -v gives them, e.g. .gitignore:1:.vbw/); prints nothing and returns 1 when no own file is hidden.",
         "record_commit: before listing its own files it runs record_gitignore and always counts .vbw/.gitignore among them, so an existing project gets the lines at its next VBW commit and the file is committed along with the record; then record_hidden: in the non-strict form each line is printed as 'vbw: warning: <line>' on stderr and the commit of the other files goes on; in the strict form the lines are the failure's reason (printed as the reason today is, exit 1, nothing committed). A project with no such rule prints nothing new and commits as today. Untracked own files git no longer ignores are added as today.",
         "tests/hidden-record.bats: the record_commit cases (a *.json or *.md rule in the project's .gitignore, .git/info/exclude and a global excludes file; the existing project; the warning) green on bash 5 and /bin/bash 3.2."
-      ],
-      "note": "Code done and committed (893c1b43): record_gitignore, record_hidden, record_commit; R208.3/.4/.5/.10 cases pass on bash 5 and /bin/bash 3.2 (tests 3,4,5,8,10). The mutation step cannot run: vbw mutate refuses because C464 (tests/hidden-record.bats, the only check of R208.3/4/5/10) is red on unbroken code; tests 1,2,6,7,9 need init/doctor/approve/next, which are P168.2's files (plugin/lib/cmd-init.sh, cmd-doctor.sh, cmd-approve.sh). Needs replanning: run the P168.1 mutation after P168.2 is built, or give R208.3/4/5/10 a check of their own."
+      ]
     },
     {
       "id": "P168.2",
@@ -50475,15 +50499,14 @@
         "plugin/lib/prooftime.sh"
       ],
       "after": [],
-      "status": "blocked",
+      "status": "planned",
       "role": "dev",
       "tasks": [
         "plugin/lib/prooftime.sh prooftime_split: like prooftime_total but general: {steps: [{k, v}] in the order each step was first counted, wall} from the scratch file, so a command names its own steps; prooftime_total is unchanged. A helper prooftime_minutes (seconds to 'X.Y' as prooftime_lines rounds) is shared by the proof line and the new one.",
         "plugin/lib/cmd-mutate.sh single form: the timer opens (prooftime_begin) right before proofcopy_create_slots and the wall ends after the record write; steps: copies (making the copies, proofcopy_verify when it runs, mutate_put, mutate_clean, proofcopy_remove), unbroken (each checks_run_all on the unbroken code), 'break <target>' (each checks_run_all on the broken code; one entry per target, R1.1 or task1), waits (the slot seconds the slots count for the run, read from the run's waits file before and after each run, moved out of the step they fell in so the steps tile the wall), saving (mutate_record's record_update; the read tracking the units count stays in the tracking lines and counts as own work). mutate_time_say prints, after mutate_record's result lines and before slots_say (which moves from mutate_record to its callers), two lines: \"VBW's own work: X of Y min\" (X = copies + saving + tracking, Y the wall, both in minutes with one decimal) and '  steps of W s: copies A, unbroken B, break R1.1 C, waits D, saving E' (seconds with one decimal; every step listed, 0.0 when nothing fell in it; the break entries in the order the targets ran). Nothing else printed changes; the recorded entry, the exit code and the strengthened and pending markings are untouched; every vbw_die before mutate_record prints no breakdown; --queue, task --none and Rn.k --none print none.",
         "plugin/lib/mutate-queue.sh --run: the same timer around proofcopy_create_slots through the recording loop (saving = the loop of mutate_record calls); unbroken is the one run of the unbroken checks; each wave of breaks run side by side is one entry named 'break R1.1' when the wave holds one break and 'breaks R1.1 R1.2' (targets in queue order, space-separated) when it holds several; waits as in the single form; the two lines come after the last result's lines and before the one slots line; the exit code (survivor or stale break) is unchanged. A stale queued break's refusal and the red-on-unbroken refusal print no breakdown.",
         "tests/mutate-time.bats green on bash 5 and /bin/bash 3.2 (the forced wait case holds the only slot from another project); tests/mutate-command.bats, tests/mutate-queue.bats, tests/mutate-pending-check.bats, tests/mutate-rule-none.bats and tests/prove-own-work.bats stay green."
-      ],
-      "note": "Tasks 1-3 are committed. tests/mutate-time.bats passes 10 of 11 on bash 5. The case 'the figures are measured' (R207.5) fails on its last assertion: the own-work line must not end 'of 0.0 min', but the timer measures a wall of only 2.1-2.6 s there (copies 0.3, unbroken 0.3-0.6, break 1.3-1.4, saving 0.2), and minutes round to the nearest tenth like the proof line (round(s/6)), so anything under 3 s reads 0.0. The proof avoids this in prove-own-work.bats by sleeping 13 s. Making it pass would need minutes rounded up, which breaks prove-own-work.bats line 211 (it pins the nearest rounding), or a protected check edited (lengthen the sleep to 4 s+). Needs the Lead or user: fix the check (approved file, not mine to edit) or change the rounding rule."
+      ]
     },
     {
       "id": "P169.2",
@@ -54216,6 +54239,13 @@
       "id": "T186",
       "text": "At vbw init, point out large git-ignored folders the proof's clean copy would copy, as candidates for the Clean copy section (Architect note, M43 planning 2026-10-26; the 500 MB line of R206 covers the slow-disk case after the fact)",
       "sort": "later",
+      "size": "small",
+      "status": "open"
+    },
+    {
+      "id": "T187",
+      "text": "vbw apply refuses a check whose rules are owned by two plans of one milestone that build one after the other (directly, or through a shared file): the earlier plan's mutation step finds the check red on unbroken code and the plan blocks (M43 2026-10-26: P166.1 and P168.1, each sharing its check file with the plan after it; fixed by splitting the files). The Lead's spec gets the same rule in words.",
+      "sort": "next",
       "size": "small",
       "status": "open"
     }
