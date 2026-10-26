@@ -55014,7 +55014,7 @@
       "id": "F317",
       "command": "test",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "test fail"
     }
   ],
@@ -67000,6 +67000,17 @@
         "ended": "2026-10-26T19:40:45Z",
         "cost": {
           "usd": 0.461123
+        }
+      },
+      {
+        "id": "fix-20261026T202903Z",
+        "kind": "fix",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M43",
+        "started": "2026-10-26T20:29:03Z",
+        "ended": "2026-10-26T20:35:22Z",
+        "cost": {
+          "usd": 0.57663
         }
       }
     ],
