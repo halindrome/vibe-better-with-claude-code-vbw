@@ -286,6 +286,24 @@ cannot fail, and QA would otherwise find it one round at a time.
   files that differ from their last commit stop the run, and `vbw plan done`
   names breaks still queued. Only a rule break queues; a task break and
   `--none` run at once.
+- **Where the time went:** a break that ran ends with two lines, after the
+  result lines (and after a survivor's line, which keeps its exit 1):
+
+```
+VBW's own work: 0.4 of 1.2 min
+  steps of 24.6 s: copies 3.1, unbroken 9.0, break R3.1 11.2, waits 0.0, saving 1.3
+```
+
+  Each entry is one step:
+  `copies` is making, breaking, restoring and removing the clean copies;
+  `unbroken` is the checks on the unbroken code;
+  each break has one entry, named by its target (`break R3.1`, `break task2`);
+  with `--run` side by side, one entry per wave names its targets (`breaks R1.1 R1.2`);
+  `waits` is the seconds spent waiting for a computer-wide slot;
+  `saving` is recording the result in the record.
+  The figures are measured by the proof's clock, and the steps sum to the total within rounding.
+  The breakdown changes no verdict, record or exit code.
+  A refusal prints no breakdown, and `--queue` and `--none` print none.
 - **VBW undoes the break.** The named files go back to their last commit,
   whether a check noticed (red) or not (a survivor). The command refuses, and
   writes nothing, if none of the named files differs from their last commit (the
