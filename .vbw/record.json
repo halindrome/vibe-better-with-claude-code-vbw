@@ -54008,6 +54008,13 @@
       "sort": "later",
       "size": "small",
       "status": "open"
+    },
+    {
+      "id": "T186",
+      "text": "At vbw init, point out large git-ignored folders the proof's clean copy would copy, as candidates for the Clean copy section (Architect note, M43 planning 2026-10-26; the 500 MB line of R206 covers the slow-disk case after the fact)",
+      "sort": "later",
+      "size": "small",
+      "status": "open"
     }
   ],
   "decisions": [
