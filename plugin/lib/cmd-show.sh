@@ -367,7 +367,7 @@ show_work() {
       done
     fi
   fi
-  json=$(printf '%s' "$1" | jq -c --arg kind "$2" --arg id "$3" --arg dir "$dir" --argjson have "$have" --argjson names "$names" --argjson fids "$fids" '
+  json=$(printf '%s' "$1" | jq -c --arg kind "$2" --arg id "$3" --arg dir "$dir" --argjson have "$have" --argjson names "$names" --argjson fids "$fids" "$VBW_JQ_DEFS"'
     . as $r
     | def kept($file): if any($have[]; . == $file) then "\($dir)/\($file)" else null end;
       def tests($file): $names[$file] // [];
@@ -379,15 +379,32 @@ show_work() {
       if $kind == "plan" then
         [.plans[] | select(.id == $id)][0] as $p
         | if $p == null then null else
-          {plan: $p,
+          # A retired rule (T168) is not the plan'"'"'s: it is left out, the others keep their addresses.
+          [$p.reqs[] as $q | $r.requirements[] | select(.id == $q and .proof == "auto") | (.rules // []) | to_entries[]
+             | select(.value | has("retired") | not)
+             | {n: "\($q).\(.key + 1)", text: .value.text, check: .value.check, plan: (.value.plan // null), q: $q, k: (.key + 1)}
+             | . as $x | ($r | own_rules($p.id)) as $own
+             | . + {own: (.plan == null or any($own[]; .req == $x.q and .n == $x.k))}
+             | if .own then . else
+                 ([$r.plans[] | select(.id == $x.plan)][0].status // "open") as $qs
+                 | . + {order: (if $qs == "done" then "done" elif $qs == "blocked" then "blocked"
+                     elif $p.status == "done" or $p.status == "blocked" then "after"
+                     else ($r | waves([$r.phases[] | select(.id == $p.phase)][0].milestone)) as $w
+                       | ([$w | to_entries[] | select(any(.value[]; . == $p.id)) | .key][0]) as $mine
+                       | ([$w | to_entries[] | select(any(.value[]; . == $x.plan)) | .key][0]) as $theirs
+                       | if $theirs == null or $mine == null or $theirs > $mine then "after"
+                         elif $theirs < $mine then "before" else "beside" end end)} end
+             | del(.q, .k)] as $rl
+          | {plan: $p,
            requirements: [$p.reqs[] as $q | $r.requirements[] | select(.id == $q) | {id, text, proof,
              other_open_plans: [$r.plans[] | select(.id != $p.id and .status != "done" and any(.reqs[]; . == $q)) | .id]}],
-           # A retired rule (T168) is not the plan'"'"'s: it is left out, the others keep their addresses.
-           rules: [$p.reqs[] as $q | $r.requirements[] | select(.id == $q and .proof == "auto") | (.rules // []) | to_entries[]
-             | select(.value | has("retired") | not)
-             | {n: "\($q).\(.key + 1)", text: .value.text, check: .value.check}],
+           rules: $rl,
            tier: ([$r.phases[] | select(.id == $p.phase)][0].tier // null),
-           checks: checks_for($p.reqs), commands: $r.commands} end
+           checks: (checks_for($p.reqs) | map(.id as $c
+             | ([$rl[] | select(.check == $c)]) as $pts
+             | . + {own: (($pts | length) == 0 or any($pts[]; .own))}
+             | if .own then . else . + {plans: ([$pts[] | select(.own | not) | .plan] | unique)} end)),
+           commands: $r.commands} end
       else
         [.fixes[] | select(.id == $id)][0] as $f
         | if $f == null then null else
@@ -414,7 +431,8 @@ show_work() {
   fi
   printf '%s' "$json" | jq -r "$SHOW_JQ_DEFS"'
     def check_lines: .checks[] | "  \(.id) (\(.req)) " + check_line
-      + (if .last then " — last: \(.last.status)" else "" end);
+      + (if .last then " — last: \(.last.status)" else "" end)
+      + (if .own == false then " [\(.plans | map(. + "\u0027s") | join(" and ")): red until it is built, not this plan\u0027s to pass]" else "" end);
     def full_output: if .kept then "    full output: \(.kept)",
         (if (.failing_tests | length) > 0 then "    failing tests:", (.failing_tests[] | "      " + .)
          else "    failing tests: none recognised in the output; read the full output file" end)
@@ -426,7 +444,8 @@ show_work() {
       (if .plan.tasks then "tasks:", (.plan.tasks | to_entries[] | "  \(.key + 1). \(.value)") else empty end),
       (if (.plan.after | length) > 0 then "after: \(.plan.after | join(", "))" else empty end),
       "requirements:", (.requirements[] | "  \(.id) [\(.proof)] \(.text)"),
-      (if (.rules | length) > 0 then "rules:", (.rules[] | "  \(.n) \(.text) -> \(.check)") else empty end),
+      (if (.rules | length) > 0 then "rules:", (.rules[] | "  \(.n) \(.text) -> \(.check)"
+        + (if .own then "" else " [\(.plan)\u0027s, \({done: "done", blocked: "blocked", before: "built before this plan", after: "built after this plan", beside: "built beside this plan"}[.order])]" end)) else empty end),
       (if .tier == "standard" then "tier: standard (the mutation check asks one break per rule)"
        elif .tier == "deep" then "tier: deep (the mutation check asks one break per rule, plus one per task no rule covers)"
        elif .tier then "tier: \(.tier)" else empty end),
