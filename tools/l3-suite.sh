@@ -2477,7 +2477,7 @@ scenario_taskbreak() {
   fixture="greet.sh in two plans of one requirement, approved by the user before the session: P1.1 greets and has a --help task no rule covers, P1.2 adds shout.sh, a file only it owns (its rule's check is red until P1.2 is built); rigor deep; the user types /vbw:vibe and the build runs to the end"
   start="/vbw:vibe"
   checks() {
-    local passed=true r="$dir/.vbw/record.json" breaks first_head="" tmp later=false first=false red=false recorded=false ran="[]" only=false p12
+    local passed=true r="$dir/.vbw/record.json" breaks first_head="" tmp later=false first=false red=false recorded=false ran="[]" only=false p12 bline=false sline=false
     # Every break of P1.1 that ran checks (a task: a number; --none records no checks).
     breaks=$(jq -c '[.plans[] | select(.id == "P1.1") | (.mutations // [])[] | select(has("task") and has("result"))]' "$r" 2> /dev/null || echo '[]')
     [ "$(printf '%s' "$breaks" | jq 'length')" -ge 1 ] && recorded=true
@@ -2494,6 +2494,8 @@ scenario_taskbreak() {
     p12=$(git -C "$dir" log --reverse --format=%H --grep='^VBW-Plan: P1.2$' | head -n 1)
     if [ -n "$first_head" ] && [ -n "$p12" ] && git -C "$dir" merge-base --is-ancestor "$first_head" "$p12" 2> /dev/null; then first=true; fi
     jq -e '(.plans[] | select(.id == "P1.2") | .status) == "done" and (.requirements[] | select(.id == "R1") | .status) == "proven" and .evidence.checks.C2.status == "pass"' "$r" > /dev/null 2>&1 && later=true
+    transcripts | transcript_tool_output 'vbw mutate' "^VBW.s own work: [0-9]+\\.[0-9] of [0-9]+\\.[0-9] min" && bline=true
+    transcripts | transcript_tool_output 'vbw mutate' '^  steps of ' && sline=true
     say "task breaks of P1.1: $(printf '%s' "$breaks" | jq -c '[.[] | {task, result, checks}]')"
     common_checks
     expect "the Dev recorded a task break on P1.1 ($recorded)" [ "$recorded" = true ]
@@ -2501,10 +2503,13 @@ scenario_taskbreak() {
     expect "the check of the rule P1.1 does not owe was red on the code the break was made against" [ "$red" = true ]
     expect "the break was made on P1.1's code before P1.2 was built" [ "$first" = true ]
     expect "P1.2 was built after it and completed the requirement, its check passing" [ "$later" = true ]
+    expect "a vbw mutate result carried the own-work line ($bline)" [ "$bline" = true ]
+    expect "a vbw mutate result carried the steps line ($sline)" [ "$sline" = true ]
     [ "$failed" -eq 0 ] || passed=false
     result_write taskbreak "$fixture" "${cost_usd:-0}" "$passed" \
-      "$(jq -n --argjson rec "$recorded" --argjson ran "$ran" --argjson red "$red" --argjson first "$first" --argjson later "$later" --argjson b "$breaks" \
+      "$(jq -n --argjson rec "$recorded" --argjson ran "$ran" --argjson red "$red" --argjson first "$first" --argjson later "$later" --argjson b "$breaks" --argjson bl "$bline" --argjson sl "$sline" \
         '{task_break_recorded: $rec, checks_run: $ran, other_rule_check_red_at_break: $red, early_plan_built_first: $first, later_plan_completed: $later,
+          mutate_breakdown_line: $bl, mutate_steps_line: $sl,
           task_breaks: ($b | map({task, result, checks}))}')" \
       '["a task break the Dev answers with --none (it runs no check, so it proves nothing here)","a plan that owns no rule (its refusal is covered by tests/mutate-own-rules.bats)","a rule shared by several plans","a project larger than the greet.sh fixture","the Dev'"'"'s choice of the task to break (the plan lists one no rule covers)"]'
   }
