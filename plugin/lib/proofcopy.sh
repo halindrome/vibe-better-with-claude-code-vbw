@@ -15,6 +15,20 @@
 # second cleanup sees a live owner and leaves it, and a cleanup killed partway
 # leaves a folder whose owner has ended. A copy that will not go prints one
 # warning line and the proof goes on.
+#
+# Left out (R205): the paths listed under ## Clean copy in .vbw/spec.md (the
+# record's project.leave_out) are not copied in: a listed path, or any ignored
+# path under a listed folder, is skipped in every clean copy; a listed path with
+# nothing at it matches nothing. Every other ignored path is still copied.
+#
+# One line about a plain copy (R206): when the copies of a command took the
+# plain way (no copy-on-write clone) for more than 500 MB of ignored data
+# (VBW_PROOFCOPY_PLAIN_KB, a test-only variable, lowers that threshold; equal
+# is silent), proofcopy_create_slots prints one "vbw:" line on stderr naming the
+# three largest top-level ignored paths with their sizes and the way out (the
+# ## Clean copy list in .vbw/spec.md). The sizes (du -sk on the source) are
+# read once per command, while the first copy is made, and only for a plain
+# copy. The line changes no verdict, evidence, record or exit code.
 
 # Build-output folder names (Node, Python, Rust, Go and the like), at any depth.
 PROOFCOPY_BUILD_DIRS='target dist build bin out __pycache__ .pytest_cache .mypy_cache .ruff_cache .tox .next .nuxt .gradle coverage'
@@ -53,6 +67,65 @@ proofcopy_create_slots() {
   proofcopy_sweep
   for ((i = 0; i < $1; i++)); do proofcopy_make; done
   PROOF_COPY=${PROOF_COPIES[0]}
+  proofcopy_plain_say
+}
+
+PROOFCOPY_HOW=''
+PROOFCOPY_SIZES=''
+PROOFCOPY_SAID=''
+
+# proofcopy_plain_say: once per process, sum the plain-copy sizes the first
+# copy recorded and print the one line when they exceed the threshold; then
+# drop the scratch file. Never fails, never changes the caller's result.
+proofcopy_plain_say() {
+  local f=$PROOFCOPY_SIZES total=0 limit=${VBW_PROOFCOPY_PLAIN_KB:-512000} list='' n kb k=0
+  PROOFCOPY_SIZES=''
+  [ -n "$f" ] && [ -f "$f" ] || return 0
+  if [ -z "$PROOFCOPY_SAID" ]; then
+    PROOFCOPY_SAID=1
+    case "$limit" in '' | *[!0-9]*) limit=512000 ;; esac
+    total=$(awk -F'\t' '$1 == "plain" {t += $3} END {printf "%d", t}' "$f" 2> /dev/null) || total=0
+    if [ "${total:-0}" -gt "$limit" ] 2> /dev/null; then
+      while IFS=$'\t' read -r n kb; do
+        [ "${kb:-0}" -gt 0 ] || continue
+        [ "$k" -lt 3 ] || break
+        list="$list${list:+, }$n $(proofcopy_fmt_kb "$kb")"
+        k=$((k + 1))
+      done < <(awk -F'\t' '$1 == "plain" {s[$2] += $3} END {for (n in s) printf "%s\t%d\n", n, s[n]}' "$f" 2> /dev/null | sort -t$'\t' -k2,2nr -k1,1)
+      vbw_out 'vbw: %s of git-ignored data was copied file by file (the disk offers no instant clone): %s; list them under ## Clean copy in .vbw/spec.md, then vbw spec sync\n' "$(proofcopy_fmt_kb "$total")" "$list" >&2
+    fi
+  fi
+  rm -f "$f" 2> /dev/null || true
+  vbw_guard_drop "$f"
+  return 0
+}
+
+# proofcopy_fmt_kb KB: KB as MB (below 1 GB) or GB, one decimal, integer maths.
+proofcopy_fmt_kb() {
+  local t
+  if [ "$1" -lt 1048576 ]; then
+    t=$(($1 * 10 / 1024))
+    printf '%d.%d MB' "$((t / 10))" "$((t % 10))"
+  else
+    t=$(($1 * 10 / 1048576))
+    printf '%d.%d GB' "$((t / 10))" "$((t % 10))"
+  fi
+}
+
+# proofcopy_note PATH: while the first copy of the command is made, record the
+# way the entry was copied and, for a plain copy, its size (du -sk on the
+# source) in the per-process scratch file. Never fails.
+proofcopy_note() {
+  local p=$1 name kb=''
+  [ -n "$PROOFCOPY_SIZES" ] || return 0
+  name=${p%%/*}
+  [ "$name" = "$p" ] && [ ! -d "$VBW_ROOT/$p" ] || name="$name/"
+  if [ "$PROOFCOPY_HOW" = plain ]; then
+    kb=$(du -sk "$VBW_ROOT/$p" 2> /dev/null | awk 'NR == 1 {printf "%d", $1}') || kb=0
+    : "${kb:=0}"
+  fi
+  printf '%s\t%s\t%s\n' "$PROOFCOPY_HOW" "$name" "$kb" >> "$PROOFCOPY_SIZES" 2> /dev/null || true
+  return 0
 }
 
 # proofcopy_sweep: remove the proof copies whose owner has ended. Never fails.
@@ -81,32 +154,72 @@ proofcopy_sweep() {
 
 # proofcopy_make: one more copy, added to PROOF_COPIES.
 proofcopy_make() {
-  local dir p l t real copy
+  local dir p real copy first='' left=''
   dir=$(mktemp -d "$VBW_RUNTIME/proof.$$.XXXXXX") || vbw_die "cannot create a directory in $VBW_RUNTIME"
   vbw_guard_add dir "$dir"
   copy="$dir/tree"
+  if [ "${#PROOF_COPIES[@]}" -eq 0 ]; then first=1; proofcopy_note_open; fi
   PROOF_COPIES+=("$copy")
   PROOF_COPY=$copy
   git -C "$VBW_ROOT" worktree prune 2> /dev/null || true
   git -C "$VBW_ROOT" -c core.hooksPath=/dev/null worktree add -q --detach "$copy" HEAD > /dev/null 2>&1 \
     || { proofcopy_remove; vbw_die "cannot make a clean copy of the committed code (does the project have a commit?)"; }
   real=$(cd -P "$VBW_ROOT" && pwd -P) || vbw_die "cannot resolve $VBW_ROOT"
+  if [ -f "${VBW_RECORD:-}" ]; then
+    left=$(jq -r '(.project.leave_out // [])[]' "$VBW_RECORD" 2> /dev/null) || left=''
+  fi
   while IFS= read -r -d '' p; do
     p=${p%/}
     case "$p" in .git | .git/* | .vbw | .vbw/*) continue ;; esac
     ! proofcopy_is_build_dir "$p" || continue
-    [ ! -e "$copy/$p" ] && [ ! -L "$copy/$p" ] || continue
-    mkdir -p "$copy/$(dirname "$p")"
-    proofcopy_copy "$VBW_ROOT/$p" "$copy/$p" || { proofcopy_remove; vbw_die "cannot copy the ignored path $p into the clean copy (is it readable?)"; }
-    while IFS= read -r -d '' l; do
-      t=$(readlink "$copy/$l")
-      case "$t" in /*) t=$(cd -P "$(dirname "$t")" 2> /dev/null && printf '%s/%s' "$(pwd -P)" "$(basename "$t")") || t=$(readlink "$copy/$l") ;; esac
-      # A link into .vbw (an old proof copy) is the stale-link scan's to report.
-      case "$t" in "$real"/.vbw | "$real"/.vbw/*) ;; "$real" | "$real"/*)
-        vbw_out 'vbw: %s links into the working folder (%s); it is copied as a link\n' "$l" "$(readlink "$copy/$l")" >&2 ;;
-      esac
-    done < <(cd "$copy" && find "$p" -type l -print0)
+    proofcopy_entry "$p"
   done < <(git -C "$VBW_ROOT" ls-files -z --others --ignored --exclude-standard --directory)
+}
+
+# proofcopy_entry P: copy the ignored path P into the copy being made (the
+# caller's locals: copy, real, first, left). A listed path, or one under it, is
+# skipped. A folder that holds a listed path is not copied whole: its children
+# are copied one by one around the listed path, as deep as the path goes, so
+# the data the list spares is never read.
+proofcopy_entry() {
+  local p=$1 L skip='' parent='' c l t
+  while IFS= read -r L; do
+    L=${L%/}
+    [ -n "$L" ] || continue
+    case "$p" in "$L" | "$L"/*) skip=1; break ;; esac
+    case "$L" in "$p"/*) parent=1 ;; esac
+  done <<< "$left"
+  [ -z "$skip" ] || return 0
+  [ ! -e "$copy/$p" ] && [ ! -L "$copy/$p" ] || return 0
+  if [ -n "$parent" ] && [ -d "$VBW_ROOT/$p" ] && [ ! -L "$VBW_ROOT/$p" ]; then
+    mkdir -p "$copy/$p"
+    while IFS= read -r -d '' c; do
+      proofcopy_entry "$p/${c##*/}"
+    done < <(find "$VBW_ROOT/$p" -mindepth 1 -maxdepth 1 -print0)
+    return 0
+  fi
+  mkdir -p "$copy/$(dirname "$p")"
+  proofcopy_copy "$VBW_ROOT/$p" "$copy/$p" || { proofcopy_remove; vbw_die "cannot copy the ignored path $p into the clean copy (is it readable?)"; }
+  [ -z "$first" ] || proofcopy_note "$p"
+  while IFS= read -r -d '' l; do
+    t=$(readlink "$copy/$l")
+    case "$t" in /*) t=$(cd -P "$(dirname "$t")" 2> /dev/null && printf '%s/%s' "$(pwd -P)" "$(basename "$t")") || t=$(readlink "$copy/$l") ;; esac
+    # A link into .vbw (an old proof copy) is the stale-link scan's to report.
+    case "$t" in "$real"/.vbw | "$real"/.vbw/*) ;; "$real" | "$real"/*)
+      vbw_out 'vbw: %s links into the working folder (%s); it is copied as a link\n' "$l" "$(readlink "$copy/$l")" >&2 ;;
+    esac
+  done < <(cd "$copy" && find "$p" -type l -print0)
+}
+
+# proofcopy_note_open: open this process's scratch file of copy sizes; without
+# it every note is a no-op. Never fails.
+proofcopy_note_open() {
+  PROOFCOPY_SIZES=''
+  if [ -n "${VBW_RUNTIME:-}" ] && mkdir -p "$VBW_RUNTIME" 2> /dev/null && : > "$VBW_RUNTIME/proofcopy.$$.sizes" 2> /dev/null; then
+    PROOFCOPY_SIZES=$VBW_RUNTIME/proofcopy.$$.sizes
+    vbw_guard_add file "$PROOFCOPY_SIZES"
+  fi
+  return 0
 }
 
 # proofcopy_warn_stale: read-only scan of the working folder (git-ignored
@@ -135,8 +248,10 @@ proofcopy_warn_stale() {
 proofcopy_copy() {
   local flag=--reflink
   [ "$(uname)" != Darwin ] || flag=-c
+  PROOFCOPY_HOW=clone
   cp -RP "$flag" "$1" "$2" 2> /dev/null && return 0
   rm -rf "$2" 2> /dev/null || true
+  PROOFCOPY_HOW=plain
   cp -RP "$1" "$2" 2> /dev/null && return 0
   chmod -R u+rwx "$2" 2> /dev/null || true
   rm -rf "$2"

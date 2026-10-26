@@ -52,9 +52,9 @@ history() {
 # and leaves the number of traced shell commands in $TEST_ROOT/count.
 scope_trace() {
   # shellcheck disable=SC2016 # expanded by vbw_kernel
-  (cd "$1" && vbw_kernel '. "$VBW_LIB/cmd-prove.sh"; r=$(cat "$VBW_RECORD"); PS4="+ "; set -x
+  (cd "$1" && vbw_kernel '. "$VBW_LIB/cmd-prove.sh"; r=$(cat "$VBW_RECORD"); PS4="+TRACEMARK "; set -x
     prove_scope "$r" 2> "$TEST_ROOT/trace"; set +x') 2> /dev/null
-  grep -c '^+' "$TEST_ROOT/trace" > "$TEST_ROOT/count"
+  grep -o 'TRACEMARK' "$TEST_ROOT/trace" | wc -l | tr -d ' ' > "$TEST_ROOT/count"
 }
 
 @test "R204: the scope check runs the same shell commands for 500 plan commits as for 50, with the same result" {

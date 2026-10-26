@@ -18,10 +18,15 @@ cmd_spec() {
   local parsed
   parsed=$(spec_parse)
   case "$sub" in
+    sync|check) spec_verify_leave_out "$parsed" ;;
+  esac
+  case "$sub" in
     check)
       printf '%s' "$parsed" | jq -r '(.requirements
         | "spec.md: \(length) requirements (\(map(select(.proof == "auto")) | length) auto, \(map(select(.proof == "human")) | length) human)")
-        + (if .commands == null then "" else ", \(.commands | length) command\(if (.commands | length) == 1 then "" else "s" end)" end)'
+        + (if .commands == null then "" else ", \(.commands | length) command\(if (.commands | length) == 1 then "" else "s" end)" end)
+        + (if .leave_out == null then "" else ", \(.leave_out | length) path\(if (.leave_out | length) == 1 then "" else "s" end) left out of the clean copy" end)'
+      spec_gone_notes "$parsed"
       ;;
     sync) spec_sync "$parsed" ;;
     add) spec_add "$parsed" "$1" "$2" ;;
@@ -96,7 +101,47 @@ spec_sync() {
   spec_sync_commands "$(printf '%s' "$1" | jq -c '.commands')"
   spec_sync_results "$(printf '%s' "$1" | jq -c '.results')"
   spec_sync_test_files "$(printf '%s' "$1" | jq -c '.test_files')"
+  spec_sync_leave_out "$(printf '%s' "$1" | jq -c '(.leave_out // null) | if . == null then null else map(.path) end')"
   printf 'record has %s requirements\n' "$(jq '.requirements | length' "$VBW_RECORD")"
+}
+
+# Every Clean copy path must be git-ignored when something is there: only
+# ignored paths are copied in, so only they can be left out. A path with nothing
+# at it is accepted (nothing to leave out). Dies on the first refusal, before any write.
+spec_verify_leave_out() {
+  local line path p
+  while IFS=$'\t' read -r line path; do
+    p="${path%/}"
+    [ -e "$VBW_ROOT/$p" ] || [ -L "$VBW_ROOT/$p" ] || continue
+    if [ -n "$(git -C "$VBW_ROOT" ls-files -z -- "$p" | head -c 1)" ] \
+      || [ -n "$(git -C "$VBW_ROOT" ls-files -z --others --exclude-standard -- "$p" | head -c 1)" ]; then
+      vbw_die "spec.md line $line: $path is not git-ignored: only ignored paths are copied in, so only they can be left out"
+    fi
+    git -C "$VBW_ROOT" check-ignore -q -- "$p" \
+      || [ -n "$(git -C "$VBW_ROOT" ls-files -z --others --ignored --exclude-standard -- "$p" | head -c 1)" ] \
+      || vbw_die "spec.md line $line: $path is not git-ignored: only ignored paths are copied in, so only they can be left out"
+  done < <(printf '%s' "$1" | jq -r '(.leave_out // [])[] | "\(.line)\t\(.path)"')
+}
+
+# vbw spec check notes each listed path with nothing at it, so a mistyped path is noticed.
+spec_gone_notes() {
+  local line path p
+  printf '%s' "$1" | jq -r '(.leave_out // [])[] | "\(.line)\t\(.path)"' | while IFS=$'\t' read -r line path; do
+    p="${path%/}"
+    [ -e "$VBW_ROOT/$p" ] || [ -L "$VBW_ROOT/$p" ] || vbw_out "spec.md line $line: $path is not here now, so nothing is left out for it yet"
+  done
+}
+
+# The record's project.leave_out becomes the spec's Clean copy paths, as written,
+# and goes when the spec has no such section. A changed list needs the user's approval.
+spec_sync_leave_out() {
+  local lf
+  record_read | jq -r --slurpfile f_l <(printf '%s' "$1") '$f_l[0] as $l | (.project.leave_out // null) as $o
+    | select($o != $l)
+    | if $l == null then "removed the clean copy list" else "clean copy leaves out: \($l | join(", "))" end'
+  vbw_scratch lf "$1"
+  record_update '$f_l[0] as $l | if $l == null then .project |= del(.leave_out) else .project.leave_out = $l end' --slurpfile f_l "$lf"
+  vbw_guard_drop "$lf"
 }
 
 # The record's commands become exactly the spec's Commands section; a spec

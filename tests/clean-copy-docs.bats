@@ -1,0 +1,62 @@
+#!/usr/bin/env bats
+# R205: docs/proof.md describes the `## Clean copy` section (one git-ignored path
+# per line, relative to the project root), the refusals of vbw spec check and
+# vbw spec sync (a path git does not ignore, a path that does not exist, a bad
+# path), the contract line vbw show contract prints, that approval and vbw next
+# compare the section with the record, and that every clean copy skips the listed
+# paths while the rest of the ignored environment is copied in; docs/record.md
+# documents project.leave_out. L1: the text of the docs (one line holds each
+# fact; no exact wording).
+
+load helper
+
+PROOF="$REPO_ROOT/docs/proof.md"
+RECORD="$REPO_ROOT/docs/record.md"
+
+# section: the Clean copy section of docs/proof.md (its heading to the next heading of the same depth or higher).
+section() {
+  awk '/^#{2,3} .*Clean copy/ {p=1; print; next} p && /^#{1,3} / {exit} p' "$PROOF"
+}
+
+# has_line TEXT WORD...: one line of TEXT holds every WORD (case-insensitive).
+has_line() {
+  local lines="$1" w
+  shift
+  for w in "$@"; do lines=$(printf '%s\n' "$lines" | grep -iF -- "$w") || { echo "no line holds all of: $*"; return 1; }; done
+}
+
+@test "R205: docs/proof.md has a Clean copy section naming the form: one git-ignored path per line, relative to the project root" {
+  [ -n "$(section)" ] || { echo "docs/proof.md has no Clean copy section"; false; }
+  section | grep -q '^- data/$' || { echo "the section shows no example line"; false; }
+  has_line "$(section)" "git-ignored" "one" "per line"
+  has_line "$(section)" "relative" "project root"
+}
+
+@test "R205: the section states the refusals: not git-ignored (only ignored paths are copied in), does not exist, and a bad path like a Test results folder" {
+  has_line "$(section)" "is not git-ignored" "only ignored paths are copied in"
+  has_line "$(section)" "does not exist"
+  has_line "$(section)" "spec sync" "line"
+  has_line "$(section)" ".." ".vbw/" ".git/"
+}
+
+@test "R205: the section states the contract line, the re-approval and that vbw show contract --changes names a changed path" {
+  has_line "$(section)" "clean copy leaves out:"
+  has_line "$(section)" "contract" "approv"
+  has_line "$(section)" "--changes"
+}
+
+@test "R205: the section says every clean copy skips the listed paths and everything under them, while the other ignored paths are copied in" {
+  has_line "$(section)" "prove" "fix done" "mutate"
+  has_line "$(section)" "everything under"
+  has_line "$(section)" "still copied"
+  has_line "$(section)" "no longer exists"
+}
+
+@test "R205: the approval paragraph lists Clean copy among the sections compared with the record" {
+  sed -n '/^## The contract and approval/,/^### /p' "$PROOF" | grep -q 'Clean copy' || { echo "the compared sections do not name Clean copy"; false; }
+}
+
+@test "R205: docs/record.md documents project.leave_out as the spec's Clean copy list, part of the contract, absent when none" {
+  grep -q '^| `project.leave_out` |' "$RECORD" || { echo "no project.leave_out row"; false; }
+  has_line "$(grep '^| `project.leave_out` |' "$RECORD")" "Clean copy" "contract" "absent"
+}

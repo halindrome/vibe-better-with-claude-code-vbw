@@ -39,7 +39,7 @@ teardown() { vbw_teardown; }
   [ -d .vbw/runtime ]
   [ "$(jq -c -f "$PLUGIN_ROOT/lib/record.jq" .vbw/record.json)" = "[]" ]
   [ "$(jq -r .project.name .vbw/record.json)" = "project with space" ]
-  [ "$(cat .vbw/.gitignore)" = "runtime/" ]
+  [ "$(cat .vbw/.gitignore)" = "$(printf 'runtime/\n!record.json\n!spec.md\n!map.md\n!.gitignore')" ]
   [ ! -e .gitignore ]
   git check-ignore -q .vbw/runtime/x
 }
@@ -54,7 +54,7 @@ teardown() { vbw_teardown; }
   [[ "$output" == *"already initialized"* ]]
   grep -q 'my spec edits' .vbw/spec.md
   cmp .vbw/record.json "$TEST_ROOT/before.json"
-  [ "$(cat .vbw/.gitignore)" = "runtime/" ]
+  [ "$(cat .vbw/.gitignore)" = "$(printf 'runtime/\n!record.json\n!spec.md\n!map.md\n!.gitignore')" ]
 }
 
 @test "vbw init writes nothing outside the project" {

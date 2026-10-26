@@ -8,6 +8,24 @@ commits made since the record was first committed count as its own
 ([docs/proof.md](proof.md#whose-commits-vbw-judges)): ids start again in a new
 record, so an older roadmap's trailers name nothing of it.
 
+## VBW's own files stay visible to git
+
+VBW keeps `.vbw/.gitignore` with `runtime/` and the un-hide lines `!record.json`, `!spec.md`, `!map.md` and `!.gitignore` (the last so a project-wide `*` rule cannot hide the file itself).
+They keep a rule such as `*.json` or `*.md` from hiding the plan files, whether it sits in the project's `.gitignore`, in `.git/info/exclude` or in a global excludes file.
+
+`vbw init` writes these lines to `.vbw/.gitignore` and says so in one line.
+An existing project gets the un-hide lines at its next VBW commit, committed along with the record.
+VBW never edits the project's .gitignore.
+
+**The whole-folder case.** A rule that hides the whole `.vbw/` folder (`.vbw/` or `*`) cannot be undone by any line inside it. VBW then names the hidden file and the rule's source as `git check-ignore -v` gives it (file, line, pattern):
+
+- `vbw init` says so.
+- `vbw doctor` fails with it and exits 1.
+- `vbw approve` refuses with it and commits nothing.
+- Other VBW commits print a `vbw: warning:` naming the hidden file; they never skip it silently.
+
+The fix: remove that line, or change it to .vbw/runtime/
+
 ## Guarantees
 
 - **One writer, atomic:** every mutation takes the project lock, writes a
@@ -82,6 +100,7 @@ record, so an older roadmap's trailers name nothing of it.
 | `project.interview` | optional: the interview's answers kept in the project, `{ "level", "depth", "involvement", "at" }`: all three answers from the allowed values (`plugin/lib/interview.json`) and an ISO-8601 UTC time `at`; no other keys. Absent when the answers are kept private or not given yet. `vbw interview keep project` writes it (docs/interview.md). Added within schema 1: a record without it stays valid, so the schema stays 1 |
 | `project.declined` | optional: the suggestions the user declined, `[{ "text", "at" }]`, each a non-empty `text` and an ISO-8601 UTC time `at`; no other keys. `vbw suggest decline TEXT` appends one (a text equal to an existing one, ignoring case and spacing, is not added again); `vbw suggest list` prints them and `vbw next --json` returns the texts as `declined`. They are never offered again in the project (docs/interview.md). Absent until something is declined. Added within schema 1: a record without it stays valid, so the schema stays 1 |
 | `project.results` | optional: the folders of saved test results named in the spec's `## Test results` section, a non-empty array of unique relative folder paths, each ending in `/`, with no `.` or `..` parts and outside `.vbw/`. `vbw spec sync` writes it and removes it when the spec names none; it is part of the contract, so a change needs approval (docs/proof.md). A passed phase is not checked by QA again for changes only inside these folders. Absent when the spec names none. Added within schema 1: a record without it stays valid, so the schema stays 1 |
+| `project.leave_out` | optional: the git-ignored paths a clean copy leaves out, the spec's `## Clean copy` list: a non-empty array of unique relative paths as written in the spec, with no `.` or `..` parts, not absolute, outside `.vbw/` and `.git/`. `vbw spec sync` writes it and removes it when the spec lists none; it is part of the contract, so a change needs approval (docs/proof.md). Absent when the spec lists none. Added within schema 4: a record without it stays valid, so the schema stays 4 |
 | `milestone` | the current milestone: `id` `M<n>`, non-empty `title`, `status` `active`, `shipped` or `parked` (the loop gave the milestone up, docs/loop.md). `vbw milestone start TITLE` opens the next one after shipping or parking; `vbw milestone rename TITLE` names the current one until it ships |
 | `shipped` | the shipped milestones, in order: `{ "id", "title", "at" }`. The current milestone is in this list exactly when its status is `shipped`. Shipped requirements, plans and checks stay in the record, and their checks keep running in every proof as regression guards |
 | `parked` | optional: the milestones the loop gave up, in order: `{ "id", "title", "at", "reason", "ids"? }`, with `at` an ISO-8601 UTC time, a non-empty `reason` and `ids` the phase, requirement and fix ids (`P<n>`, `R<n>`, `F<n>`) the park freed, no other keys. The next phase, requirement and fix number count past `ids`, since the parked commits keep them in their trailers. The current milestone is in this list exactly when its status is `parked`. A parked milestone's work is reverted by `git revert` commits and removed from `requirements`, `phases`, `plans`, `checks` and `fixes`; its cost is frozen as a ship freezes it. Written only by `vbw loop park` |

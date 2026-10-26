@@ -1,0 +1,20 @@
+{
+  "scenario": "hiddenrecord",
+  "fixture": "greet.sh from scratch in a project whose committed .gitignore holds '*.json'; the user types /vbw:vibe and the build runs to the end",
+  "cost_usd": 0.55,
+  "evidence_level": "L3",
+  "at": "2026-10-26T22:38:27Z",
+  "passed": true,
+  "facts": {
+    "gitignore_rule": "*.json",
+    "record_committed": true,
+    "unhide_lines": true,
+    "record_commits": 6
+  },
+  "not_tested": [
+    "a rule hiding the whole .vbw folder (covered by tests/hidden-record.bats, L1)",
+    "a rule in .git/info/exclude or a global excludes file",
+    "an existing project upgraded from an older .vbw/.gitignore",
+    "the spec file staying untracked until the first full commit"
+  ]
+}

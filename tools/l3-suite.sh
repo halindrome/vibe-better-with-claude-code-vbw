@@ -12,14 +12,14 @@
 # each one's lines print together when it ends.
 #
 # Scenarios: greenfield, reject, resume, change, convert, balanced, docs, qafix,
-# decision, debug, research, edgecase, leftover, recheck, approval, newcomer, senior, panel, steptime, road, pluginoff, tools, legacy, nolegacy, smallchange, costs, loop, plugindir, sessions, taskbreak, fixchecks, failoutput. A user
+# decision, debug, research, edgecase, leftover, recheck, approval, newcomer, senior, panel, steptime, road, pluginoff, tools, legacy, nolegacy, smallchange, costs, loop, plugindir, sessions, taskbreak, fixchecks, failoutput, leaveout, hiddenrecord. A user
 # answers every question with VBW's recommendation unless the scenario says otherwise.
 set -uo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 l3() { bash "$ROOT/tools/l3.sh" "$@"; }
 VBW="$ROOT/plugin/bin/vbw"
-ALL="greenfield reject resume change convert balanced docs qafix decision debug research edgecase leftover recheck approval newcomer senior panel steptime road pluginoff tools legacy nolegacy smallchange costs loop plugindir sessions taskbreak fixchecks failoutput"
+ALL="greenfield reject resume change convert balanced docs qafix decision debug research edgecase leftover recheck approval newcomer senior panel steptime road pluginoff tools legacy nolegacy smallchange costs loop plugindir sessions taskbreak fixchecks failoutput leaveout hiddenrecord"
 RESULTS="$ROOT/tools/l3-results"
 STEPS=60
 
@@ -235,6 +235,24 @@ transcript_tool_output() {
         | split("\n")[]; test($re))' > /dev/null 2>&1
 }
 
+# transcript_tool_called COMMAND_REGEX: reads transcript file names on stdin and
+# succeeds when a Bash tool call has a command matching COMMAND_REGEX. Read from the
+# tool calls in the transcripts, never from screen text.
+transcript_tool_called() {
+  xargs cat 2> /dev/null | jq -se --arg cmd "$1" '
+    any(.[] | select(.type == "assistant") | .message.content[]?
+      | select(.type == "tool_use") | (.input.command // ""); test($cmd))' > /dev/null 2>&1
+}
+
+# unhide_lines_present DIR: succeeds when DIR/.vbw/.gitignore holds the four
+# un-hide lines VBW keeps for its plan files (R208).
+unhide_lines_present() {
+  local l
+  for l in '!record.json' '!spec.md' '!map.md' '!.gitignore'; do
+    grep -qxF -- "$l" "$1/.vbw/.gitignore" 2> /dev/null || return 1
+  done
+}
+
 scenario_greenfield() {
   new_project
   start=$GREET
@@ -247,10 +265,42 @@ scenario_greenfield() {
     if report_line_in_proof_output "^ran again: [0-9]+ of [0-9]+ units; top reasons: "; then ran=true; fi
     expect "a proof's output in the session carried the own-work line ($own)" [ "$own" = true ]
     expect "a proof's output in the session carried the ran-again line ($ran)" [ "$ran" = true ]
+    # R208: the un-hide lines are in VBW's own .vbw/.gitignore and the record is tracked.
+    local unhidden=false
+    if unhide_lines_present "$dir" && git -C "$dir" ls-files --error-unmatch .vbw/record.json > /dev/null 2>&1; then unhidden=true; fi
+    expect "the project's .vbw/.gitignore holds the un-hide lines and the record is tracked ($unhidden)" [ "$unhidden" = true ]
     [ "$failed" -eq 0 ] || passed=false
     result_write greenfield "$fixture" "${cost_usd:-0}" "$passed" \
-      "$(jq -n --argjson o "$own" --argjson r "$ran" '{report_own_work_line: $o, report_ran_again_line: $r}')" \
+      "$(jq -n --argjson o "$own" --argjson r "$ran" --argjson u "$unhidden" '{report_own_work_line: $o, report_ran_again_line: $r, plan_files_unhidden: $u}')" \
       '["acceptance by a human (greet.sh has only auto requirements)","a project larger than the greet.sh fixture, so the figures in the lines are small","the lines on screen: they are read from the tool results in the transcripts, not from what the window showed","a proof that reused units, so the top reasons are mostly never-passed","vbw fix done output (no fix round in this run)"]'
+  }
+}
+
+# A project-wide *.json ignore rule (R208): the committed .gitignore would hide
+# .vbw/record.json. The record is committed anyway, with the un-hide lines in
+# .vbw/.gitignore, judged in git and the project's files, never on screen text.
+scenario_hiddenrecord() {
+  new_project
+  printf '*.json\n' > "$dir/.gitignore"
+  git -C "$dir" add .gitignore && git -C "$dir" commit -qm "chore: ignore json files"
+  start=$GREET
+  fixture="greet.sh from scratch in a project whose committed .gitignore holds '*.json'; the user types /vbw:vibe and the build runs to the end"
+  checks() {
+    common_checks
+    local rule tracked=false unhide=false n=0 passed=true facts
+    rule=$(grep -vE '^[[:space:]]*(#|$)' "$dir/.gitignore" 2> /dev/null | head -n 1)
+    git -C "$dir" ls-files --error-unmatch .vbw/record.json > /dev/null 2>&1 && tracked=true
+    unhide_lines_present "$dir" && unhide=true
+    n=$(git -C "$dir" log --format=%H -- .vbw/record.json 2> /dev/null | wc -l | tr -d ' ')
+    expect "the *.json rule is still in the project's .gitignore (${rule})" [ "$rule" = '*.json' ]
+    expect "the record is committed despite the rule ($tracked)" [ "$tracked" = true ]
+    expect "the un-hide lines are in .vbw/.gitignore ($unhide)" [ "$unhide" = true ]
+    expect "the record has at least one commit ($n)" [ "${n:-0}" -ge 1 ]
+    [ "$failed" -eq 0 ] || passed=false
+    facts=$(jq -n --arg r "$rule" --argjson t "$tracked" --argjson u "$unhide" --argjson n "${n:-0}" \
+      '{gitignore_rule: $r, record_committed: $t, unhide_lines: $u, record_commits: $n}')
+    result_write hiddenrecord "$fixture" "${cost_usd:-0}" "$passed" "$facts" \
+      '["a rule hiding the whole .vbw folder (covered by tests/hidden-record.bats, L1)","a rule in .git/info/exclude or a global excludes file","an existing project upgraded from an older .vbw/.gitignore","the spec file staying untracked until the first full commit"]'
   }
 }
 
@@ -2436,7 +2486,7 @@ scenario_taskbreak() {
   fixture="greet.sh in two plans of one requirement, approved by the user before the session: P1.1 greets and has a --help task no rule covers, P1.2 adds shout.sh, a file only it owns (its rule's check is red until P1.2 is built); rigor deep; the user types /vbw:vibe and the build runs to the end"
   start="/vbw:vibe"
   checks() {
-    local passed=true r="$dir/.vbw/record.json" breaks first_head="" tmp later=false first=false red=false recorded=false ran="[]" only=false p12
+    local passed=true r="$dir/.vbw/record.json" breaks first_head="" tmp later=false first=false red=false recorded=false ran="[]" only=false p12 bline=false sline=false marked=false blocked_early=true files_ok=false cmark=false rmark=false
     # Every break of P1.1 that ran checks (a task: a number; --none records no checks).
     breaks=$(jq -c '[.plans[] | select(.id == "P1.1") | (.mutations // [])[] | select(has("task") and has("result"))]' "$r" 2> /dev/null || echo '[]')
     [ "$(printf '%s' "$breaks" | jq 'length')" -ge 1 ] && recorded=true
@@ -2453,6 +2503,16 @@ scenario_taskbreak() {
     p12=$(git -C "$dir" log --reverse --format=%H --grep='^VBW-Plan: P1.2$' | head -n 1)
     if [ -n "$first_head" ] && [ -n "$p12" ] && git -C "$dir" merge-base --is-ancestor "$first_head" "$p12" 2> /dev/null; then first=true; fi
     jq -e '(.plans[] | select(.id == "P1.2") | .status) == "done" and (.requirements[] | select(.id == "R1") | .status) == "proven" and .evidence.checks.C2.status == "pass"' "$r" > /dev/null 2>&1 && later=true
+    transcripts | transcript_tool_output 'vbw mutate' "^VBW.s own work: [0-9]+\\.[0-9] of [0-9]+\\.[0-9] min" && bline=true
+    transcripts | transcript_tool_output 'vbw mutate' '^  steps of ' && sline=true
+    # R209: vbw show plan P1.1 marks R1.2 and C2 as P1.2's; the Dev of P1.1 never blocks the plan.
+    transcripts | transcript_tool_output 'vbw show plan P1\.1' "R1\\.2.*\\[P1\\.2's, built after this plan\\]$" && rmark=true
+    transcripts | transcript_tool_output 'vbw show plan P1\.1' "C2.*\\[P1\\.2's: red until it is built" && cmark=true
+    [ "$rmark" = true ] && [ "$cmark" = true ] && marked=true
+    transcripts | transcript_tool_called 'vbw plan block P1\.1' || blocked_early=false
+    jq -e '[.plans[] | select(.id == "P1.1") | .files] == [["greet.sh"]]' "$r" > /dev/null 2>&1 && files_ok=true
+    never_blocked=false
+    [ "$blocked_early" = false ] && [ "$files_ok" = true ] && never_blocked=true
     say "task breaks of P1.1: $(printf '%s' "$breaks" | jq -c '[.[] | {task, result, checks}]')"
     common_checks
     expect "the Dev recorded a task break on P1.1 ($recorded)" [ "$recorded" = true ]
@@ -2460,10 +2520,16 @@ scenario_taskbreak() {
     expect "the check of the rule P1.1 does not owe was red on the code the break was made against" [ "$red" = true ]
     expect "the break was made on P1.1's code before P1.2 was built" [ "$first" = true ]
     expect "P1.2 was built after it and completed the requirement, its check passing" [ "$later" = true ]
+    expect "a vbw mutate result carried the own-work line ($bline)" [ "$bline" = true ]
+    expect "a vbw mutate result carried the steps line ($sline)" [ "$sline" = true ]
+    expect "vbw show plan P1.1 marked R1.2 and C2 as P1.2's in a tool result ($marked)" [ "$marked" = true ]
+    expect "no vbw plan block P1.1 call, and P1.1's files are exactly greet.sh ($never_blocked)" [ "$never_blocked" = true ]
     [ "$failed" -eq 0 ] || passed=false
     result_write taskbreak "$fixture" "${cost_usd:-0}" "$passed" \
-      "$(jq -n --argjson rec "$recorded" --argjson ran "$ran" --argjson red "$red" --argjson first "$first" --argjson later "$later" --argjson b "$breaks" \
+      "$(jq -n --argjson rec "$recorded" --argjson ran "$ran" --argjson red "$red" --argjson first "$first" --argjson later "$later" --argjson b "$breaks" --argjson bl "$bline" --argjson sl "$sline" --argjson sm "$marked" --argjson nb "$never_blocked" \
         '{task_break_recorded: $rec, checks_run: $ran, other_rule_check_red_at_break: $red, early_plan_built_first: $first, later_plan_completed: $later,
+          mutate_breakdown_line: $bl, mutate_steps_line: $sl,
+          show_plan_marked: $sm, early_plan_never_blocked: $nb,
           task_breaks: ($b | map({task, result, checks}))}')" \
       '["a task break the Dev answers with --none (it runs no check, so it proves nothing here)","a plan that owns no rule (its refusal is covered by tests/mutate-own-rules.bats)","a rule shared by several plans","a project larger than the greet.sh fixture","the Dev'"'"'s choice of the task to break (the plan lists one no rule covers)"]'
   }
@@ -2548,6 +2614,63 @@ scenario_failoutput() {
       "$(jq -n --arg f "$fix_id" --argjson kf "$kept_file" --argjson kn "$kept_names" --argjson nf "$named_file" --argjson nt "$named_test" --argjson rm "$removed" \
         '{fix: $f, kept_file: $kf, kept_names_failing_test: $kn, show_fix_named_file: $nf, show_fix_named_test: $nt, file_removed_after_pass: $rm}')" \
       '["failing-test names of runners other than the TAP form (tests/show-fix-failing-tests.bats holds those forms)","a failing test file of the single-file form or a failing project command","the wording of what vbw show fix prints (read by a person)","an output longer than the tail the record keeps","a project larger than the greet.sh fixture"]'
+  }
+}
+
+# leaveout_seed: a project ignoring data/ and cache/ (both here, with files), a spec listing data/
+# under Clean copy, one requirement (greet.sh) and a check that, from inside the copy, writes
+# whether data and cache exist there into the project's own runtime folder. Approved, nothing built.
+leaveout_seed() {
+  printf 'data/\ncache/\n' > .gitignore
+  mkdir -p data cache
+  printf 'rows\n' > data/big.csv
+  printf 'tmp\n' > cache/entry.bin
+  printf '# Greetings\n\n## Requirements\n\n- R1 [auto] ./greet.sh Ana prints "Hello, Ana!"\n\n## Clean copy\n\n- data/\n' > .vbw/spec.md
+  "$VBW" spec sync > /dev/null || return 1
+  cat > test_greet.sh <<'SH'
+probe="$(git rev-parse --git-common-dir)/../.vbw/runtime/leaveout-probe"
+d=absent c=absent
+[ -e data ] && d=present
+[ -e cache ] && c=present
+mkdir -p "$(dirname "$probe")" && printf 'data=%s cache=%s\n' "$d" "$c" > "$probe"
+[ "$(sh greet.sh Ana)" = "Hello, Ana!" ]
+SH
+  printf '%s' '{"phases": [{"id": "P1", "title": "Greet", "reqs": ["R1"]}],
+    "plans": [{"id": "P1.1", "phase": "P1", "title": "greet.sh", "reqs": ["R1"], "files": ["greet.sh"], "after": [], "tasks": ["greet.sh prints Hello, NAME!"]}],
+    "checks": [{"id": "C1", "req": "R1", "run": ["sh", "test_greet.sh"], "files": ["test_greet.sh"]}],
+    "rules": [{"req": "R1", "text": "a name is greeted", "check": "C1"}]}' \
+    | "$VBW" apply > /dev/null || return 1
+  git add -A && git commit -qm "chore: plan" || return 1
+  "$VBW" approve > /dev/null || return 1
+}
+
+# leaveout (R205): the user lists an ignored data folder under Clean copy; the build runs to the
+# end. Judged in `vbw show contract` (names the path), the record (project.leave_out, the proof)
+# and a probe the check writes from inside the clean copy (data absent, cache present), never on screen.
+scenario_leaveout() {
+  new_project
+  (cd "$dir" && "$VBW" init > /dev/null && "$VBW" config rigor auto > /dev/null && leaveout_seed) \
+    || { say "setup failed: could not seed the project with an ignored data folder"; return 1; }
+  fixture="greet.sh with a git-ignored data/ folder (listed under Clean copy in the spec) and an ignored cache/ folder, both holding files; one requirement, approved by the user before the session, its check writing from inside the proof's clean copy whether data and cache exist there; rigor auto; the user types /vbw:vibe and the build runs to the end"
+  start="/vbw:vibe"
+  checks() {
+    local passed=true r="$dir/.vbw/record.json" named=false leave proof=false probe="" without=false
+    (cd "$dir" && "$VBW" show contract 2> /dev/null | grep -xF 'clean copy leaves out: data/' > /dev/null) && named=true
+    leave=$(jq -c '.project.leave_out // null' "$r" 2> /dev/null || echo null)
+    jq -e '.evidence.passed == true' "$r" > /dev/null 2>&1 && proof=true
+    probe=$(cat "$dir/.vbw/runtime/leaveout-probe" 2> /dev/null || true)
+    [ "$probe" = "data=absent cache=present" ] && without=true
+    say "contract line: $named; leave_out: $leave; proof passed: $proof; probe: ${probe:-none}"
+    common_checks
+    expect "vbw show contract names the path left out ($named)" [ "$named" = true ]
+    expect "the record's project.leave_out is [data/] ($leave)" [ "$leave" = '["data/"]' ]
+    expect "the proof passed ($proof)" [ "$proof" = true ]
+    expect "the clean copy held no data/ and still held cache/ ($probe)" [ "$without" = true ]
+    [ "$failed" -eq 0 ] || passed=false
+    result_write leaveout "$fixture" "${cost_usd:-0}" "$passed" \
+      "$(jq -n --argjson n "$named" --argjson l "$leave" --argjson p "$proof" --argjson w "$without" \
+        '{contract_names_path: $n, leave_out: $l, proof_passed: $p, copy_without_data: $w}')" \
+      '["a listed path that is a folder whose files alone are ignored (tests/clean-copy-proof.bats holds it)","a clone without the data folder","the fix, mutate and fix-done copies (tests/clean-copy-proof.bats holds them)","the approval question as drawn on screen","a data folder of real size, or a disk without instant clones"]'
   }
 }
 

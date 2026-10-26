@@ -5,8 +5,9 @@
 cmd_init() {
   vbw_project
   if [ -f "$VBW_RECORD" ]; then
-    init_gitignore
+    if record_gitignore; then init_said; fi
     printf 'VBW is already initialized in %s\n' "$VBW_ROOT"
+    init_hidden
     return 0
   fi
   mkdir -p "$VBW_RUNTIME"
@@ -39,7 +40,7 @@ cmd_init() {
   mv "$VBW_RUNTIME/record.init" "$VBW_RECORD"
   # A new project starts with a current glance (written under the lock).
   ( vbw_guard_reset; record_lock; record_glance_write; record_unlock ) || true
-  init_gitignore
+  record_gitignore || true
   printf 'Initialized VBW in %s\n' "$VBW_ROOT"
   printf '  .vbw/spec.md      what you are building (you own this file)\n'
   printf '  .vbw/record.json  the plan of record (written only by vbw)\n'
@@ -47,6 +48,19 @@ cmd_init() {
     printf '\nDetected project commands, not approved yet (vbw prove runs them only after\nyou approve them in the approval menu). Edit or delete them in .vbw/spec.md under Commands:\n'
     printf '%s\n' "$commands" | jq -r 'to_entries[] | "  \(.key): \(.value | join(" "))"'
   fi
+  init_said
+  init_hidden
+}
+
+# The one line about .vbw/.gitignore (record_gitignore wrote something).
+init_said() {
+  printf 'VBW keeps its plan files visible to git through .vbw/.gitignore (runtime/ ignored; record.json, spec.md, map.md un-hidden)\n'
+}
+
+# An own file a rule hides that no line inside .vbw can undo (the whole folder): named on
+# stderr with the rule's source and the fix; init itself still succeeds.
+init_hidden() {
+  ( cd "$VBW_ROOT" && record_hidden ) | sed 's/^/vbw: /' >&2 || true
 }
 
 # init_spec NAME COMMANDS_JSON: the starting spec.md.
@@ -80,12 +94,16 @@ EOF
   # An argv whose words contain no whitespace reads as plain words.
   printf '%s' "$2" | jq -r 'to_entries[] | "- \(.key): " + (.value
     | if any(.[]; test("\\s") or startswith("[")) then tojson else join(" ") end)'
-}
+  cat <<'EOF'
 
-# .vbw/runtime/ (locks, caches, check output) is never committed. VBW ignores it
-# in its own .vbw/.gitignore and never edits the user's .gitignore.
-init_gitignore() {
-  [ -f "$VBW_DIR/.gitignore" ] || printf 'runtime/\n' > "$VBW_DIR/.gitignore"
+## Clean copy
+
+<!-- Git-ignored paths the proof's clean copy leaves out, such as a huge data
+     folder or caches. One per line, relative to the project root; the rest of
+     the ignored environment is still copied in. Edit lines, then vbw spec sync.
+- data/
+-->
+EOF
 }
 
 # Detect the project's own test/lint/build commands as argv arrays (JSON object

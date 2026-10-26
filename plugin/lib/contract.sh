@@ -22,12 +22,13 @@ contract_hash() {
 }
 
 # contract_core RECORD_JSON: the contract's structure (requirements, checks,
-# plans, and results only when present, so older contracts keep their hash),
+# plans, and results and leave_out only when present, so older contracts keep their hash),
 # canonical, without the bytes of any check file.
 contract_core() {
   printf '%s' "$1" | jq -cS '{requirements: [.requirements[] | {id, text, proof} + (if has("rules") then {rules} else {} end)],
                               checks: .checks, plans: [.plans[] | del(.status, .note, .mutations)]}
                              + (if .project.results then {results: .project.results} else {} end)
+                             + (if .project.leave_out then {leave_out: .project.leave_out} else {} end)
                              + (if .test_files then {test_files} else {} end)'
 }
 
@@ -114,5 +115,6 @@ contract_doc() {
     plans: (.plans | map({key: .id, value: del(.status, .note, .mutations)}) | from_entries),
     commands: .commands,
     files: $files} + (if .project.results then {results: .project.results} else {} end)
+    + (if .project.leave_out then {leave_out: .project.leave_out} else {} end)
     + (if .test_files then {test_files} else {} end)'
 }

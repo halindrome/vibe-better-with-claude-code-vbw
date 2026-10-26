@@ -1,5 +1,75 @@
 # Changelog
 
+## [2.1.16] - 2026-10-26
+
+This release exists because of Shahar, a VBW user from the Discord community,
+who wrote a detailed field report of VBW on a real project: the 18 GB ignored
+folder copied into every check, the plan hidden by a `*.json` rule, and the
+time a mutation run takes. Each point below that cites the field report is his.
+Thank you, Shahar.
+
+### Added
+
+- **Leave big git-ignored folders out of the clean copy.** Every proof, fix
+  check and mutation check runs on a clean copy of the project with the
+  git-ignored files copied in, so the checks find their environment. A project
+  with an 18 GB ignored data folder copied it for every check (Shahar's field
+  report, 2026-10-26). The spec's new `## Clean copy` section names the
+  git-ignored paths to leave out, one per line (`- data/`). `vbw spec sync`
+  keeps them in the record, `vbw show contract` lists them (`clean copy leaves
+  out: data/`), and every clean copy skips them while every other ignored path
+  is still copied in. A listed path inside a folder git ignores as a whole
+  (`data/raw/` under an ignored `data/`) is left out too: the folder is copied
+  around it, never whole. A path that git does not ignore is refused by name; a
+  listed path with nothing at it is accepted, since there is nothing to leave
+  out.
+- **A line when a plain copy is big.** On a file system without copy-on-write
+  clones (ext4 and NTFS under WSL copy byte by byte; APFS and btrfs clone
+  instantly), a clean copy that copies more than 500 MB of ignored data prints
+  one line naming the largest ignored folders copied, their sizes and how to
+  leave them out.
+- **`vbw mutate` says where its time went** (Shahar's field report asked where
+  the minutes of a mutation run go on a real project). Every mutation run ends
+  with the two lines the proof prints: `VBW's own work: X of Y min` and `steps
+  of W s: copies A, unbroken B, break R1.1 C, waits D, saving E`, measured,
+  summing to the wall. The breakdown never changes a verdict; a refusal,
+  `--queue` and `--none` print none.
+
+### Fixed
+
+- **VBW's own plan files are never hidden by a project's ignore rule.** A
+  project-wide `*.json` rule in `.gitignore` hid `.vbw/record.json`: VBW's
+  commits silently left the plan out and a fresh clone got none (Shahar's
+  field report, 2026-10-26). `vbw init` now writes un-hide lines (`!record.json`,
+  `!spec.md`, `!map.md`, `!.gitignore`) into VBW's own `.vbw/.gitignore` and
+  says so in one line; an existing project gets them at VBW's next commit. A
+  rule that hides the whole `.vbw` folder, which no line inside it can undo,
+  is named with its source line and the fix by `vbw init`, fails `vbw doctor`,
+  and makes `vbw approve` refuse instead of committing nothing. A commit of
+  VBW's own files never silently skips one.
+- **A Dev no longer blocks on a sibling plan's red check.** When one
+  requirement is split across plans, `vbw show plan` listed every rule and
+  check of the requirement with no owner, and a Dev read another plan's red
+  check as "this plan cannot work" (seen twice in the taskbreak real-user
+  run). A rule that names another plan is now marked `[P1.2's, built after
+  this plan]` (or `built before this plan`, `built beside this plan`, `done`,
+  `blocked`), a check that serves only other plans' rules is marked `[P1.2's:
+  red until it is built, not this plan's to pass]`, and the Dev's red-first
+  and green steps use only the plan's own checks. The mutation step and the
+  listing share one definition of a plan's own rules, so they cannot disagree.
+  `vbw show plan --json` gains `plan`, `own` and `order` on each rule and
+  `own` and `plans` on each check; nothing is removed or renamed.
+- **`vbw doctor` prints its hidden-file lines with no child process alive**
+  (the macOS bash 3.2 rule against interrupted writes).
+
+### Changed
+
+- **The README shows the panel at work.** Its screenshot is now the Now tab
+  beside a running build; the Plan, Timeline and Settings tabs follow it, and
+  [docs/panel.md](docs/panel.md) shows the same.
+
+Sizes, for information: kernel 732 KB (`plugin/bin/vbw` and `plugin/lib`), mods 328 KB (hooks, panel and status line), workflows 73 KB, prompts 102 KB (agents and skills).
+
 ## [2.1.15] - 2026-10-25
 
 ### Fixed

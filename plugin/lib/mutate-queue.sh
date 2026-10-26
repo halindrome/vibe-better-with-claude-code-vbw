@@ -76,10 +76,13 @@ mutate_queue_run() {
   [ "$n" -ge ${#unb[@]} ] || n=${#unb[@]}
   n=$(proofcopy_slots "$n")
   printf 'running %s breaks of %s, %s at a time\n' "${#keep[@]}" "$plan" "$n"
+  mutate_time_begin
   proofcopy_create_slots "$n"
+  mutate_tstep copies
   # Each check once on the unbroken code: a check red there makes every break of it prove nothing.
   if [ ${#unb[@]} -gt 0 ]; then
     bad=$(checks_run_all "$record" "${unb[@]}" | jq -r '[to_entries[] | select(.value.status != "pass") | "\(.key) \(.value.status)"] | join(", ")')
+    mutate_tstep unbroken
     if [ -n "$bad" ]; then
       proofcopy_remove
       checks_end
@@ -89,11 +92,13 @@ mutate_queue_run() {
   fi
   # The breaks, one per copy, a wave at a time: each copy gets its break, runs its
   # rule's check pinned to it (.slot), and goes back to HEAD before the next wave.
-  local units unit res broke=() m
+  local units unit res broke=() m names
   for ((i = 0; i < ${#keep[@]}; i += n)); do
     units='[]'
+    names=
     for ((k = 0; k < n && i + k < ${#keep[@]}; k++)); do
       e=${keep[$((i + k))]}
+      names="$names $(jq -r .target "$e/meta.json")"
       broke=()
       while IFS= read -r -d '' f; do broke+=("$f"); done < <(jq -j '.broke[] + "\u0000"' "$e/meta.json")
       mutate_put "$e" "${PROOF_COPIES[$k]}" "${broke[@]}"
@@ -101,7 +106,9 @@ mutate_queue_run() {
       units=$(printf '%s' "$units" | jq -c --argjson u "$unit" --argjson k "$k" \
         '. + [$u + {name: "break\($k)", out: "break\($k).out", slot: $k}]')
     done
+    mutate_tstep copies
     res=$(checks_run_units "$units")
+    if [ "$k" -gt 1 ]; then mutate_tstep "breaks$names"; else mutate_tstep "break$names"; fi
     for ((k = 0; k < n && i + k < ${#keep[@]}; k++)); do
       e=${keep[$((i + k))]}
       broke=()
@@ -110,7 +117,9 @@ mutate_queue_run() {
       printf '%s' "$res" | jq -c --arg b "break$k" --arg c "$(jq -r .check "$e/meta.json")" '{($c): .[$b]}' > "$e/result.json"
     done
   done
+  mutate_tstep copies
   proofcopy_remove
+  mutate_tstep copies
   checks_end
   # The results, recorded in queue order as the single form records one; the
   # computer-wide wait is said once, at the end.
@@ -127,6 +136,7 @@ mutate_queue_run() {
   done
   rmdir "$(mutate_queue_dir "$plan")" 2> /dev/null || true
   SLOTS_WAITED=$waited SLOTS_LOST=$lost
+  mutate_time_say
   slots_say
   [ "$surv" = 0 ] && [ "$stale" = 0 ]
 }
