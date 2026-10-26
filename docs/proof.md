@@ -824,9 +824,14 @@ environment, not its code, so the copy holds them too. They are copied, not link
 A linked folder would let a proof write into the working folder, and some
 tools refuse a linked `node_modules` outright (pnpm 11 does). A copy behaves as
 the working folder does, and nothing a proof does changes the working folder.
-VBW makes a copy-on-write clone where the file system offers one (APFS on macOS,
-btrfs or XFS on Linux), which is instant and takes no extra space. Where it does
-not, VBW makes a plain copy, which is slower for a large folder.
+VBW makes a copy-on-write clone where the file system offers one (APFS on macOS, btrfs or XFS on Linux), which is instant and takes no extra space. Where it does
+not, VBW makes a plain copy, which is slower for a large folder. When a plain copy
+brings in more than 500 MB of ignored data, the command prints once, on stderr, one
+`vbw:` line naming the largest ignored folders it copied with their sizes (MB or
+GB, one decimal) and the way out: list them under `## Clean copy` in
+`.vbw/spec.md`, then `vbw spec sync` (see [`## Clean copy`](#clean-copy-clean-copy)).
+A copy-on-write clone, 500 MB or less, or nothing ignored prints nothing. The
+line changes no verdict, result or exit code.
 Links that sit inside a copied folder stay links. When one is an absolute link
 into the working folder, VBW prints a `vbw:` line naming it and still copies it
 as it is. If an ignored file or folder cannot be read, the proof stops with an
