@@ -6,8 +6,9 @@
 # line, and in an initialized project adds only the missing lines, keeps the
 # user's lines and leaves the file byte-identical when run again. Every VBW
 # commit of its own files (record_commit) first adds the missing un-hide lines and
-# commits .vbw/.gitignore with the others, so a record.json or spec.md a
-# project-wide *.json or *.md rule would hide is committed (the project's
+# commits .vbw/.gitignore with the others, so a record.json a project-wide *.json
+# rule would hide is committed, and a spec.md a *.md rule would hide is visible to
+# git until the next full commit takes it, as in any project (the project's
 # .gitignore, .git/info/exclude and a global excludes file). When an own file that
 # exists is untracked and still ignored after the lines (a rule such as .vbw/ or *
 # hiding the folder), vbw init prints the rule's source as git check-ignore -v gives
@@ -64,16 +65,18 @@ teardown_file() { fixture_teardown; }
 
 tracked() { git ls-files --error-unmatch -- "$1" > /dev/null 2>&1; }
 
-@test "R208: a project-wide *.json rule in the project's .gitignore no longer hides the record: VBW's next commit commits it, the spec and .vbw/.gitignore" {
+@test "R208: a project-wide *.json rule in the project's .gitignore no longer hides the record: VBW's next commit commits it and .vbw/.gitignore, and the spec is visible to git" {
   printf '*.json\n*.md\n' > .gitignore
   git add .gitignore && git commit -q -m "chore: ignore json and md"
   "$VBW" init > /dev/null
   vbw_run todo add "a note"
   [ "$status" -eq 0 ] || { echo "$output"; false; }
   tracked .vbw/record.json || { git status --porcelain --ignored; false; }
-  tracked .vbw/spec.md
   tracked .vbw/.gitignore
   [ "$(git log -1 --format=%s)" = "chore(vbw): todo T1 added" ] || { git log -3 --oneline; false; }
+  # A commit of the record alone never sweeps the spec in, as in any project; but it is no longer hidden.
+  ! git check-ignore -q -- .vbw/spec.md || { git check-ignore -v -- .vbw/spec.md; false; }
+  git ls-files --others --exclude-standard -- .vbw/spec.md | grep -qx '.vbw/spec.md' || { git status --porcelain --ignored; false; }
   [[ "$output" != *warning* && "$output" != *hidden* ]] || { echo "$output"; false; }
 }
 
@@ -89,7 +92,7 @@ tracked() { git ls-files --error-unmatch -- "$1" > /dev/null 2>&1; }
   "$VBW" init > /dev/null
   "$VBW" todo add "a note" > /dev/null
   tracked .vbw/record.json || { git status --porcelain --ignored; false; }
-  tracked .vbw/spec.md
+  ! git check-ignore -q -- .vbw/spec.md || { git check-ignore -v -- .vbw/spec.md; false; }
 }
 
 @test "R208: an existing project gets the un-hide lines at its next VBW commit, committed along with the record" {

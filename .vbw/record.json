@@ -15570,7 +15570,7 @@
           "plan": "P168.2"
         },
         {
-          "text": "with a project-wide *.json or *.md rule in the project's .gitignore, VBW's next commit commits the record, the spec and .vbw/.gitignore, printing no warning",
+          "text": "with a project-wide *.json or *.md rule in the project's .gitignore, no own file is hidden: VBW's next commit commits the record and .vbw/.gitignore, printing no warning, and the spec is visible to git as an untracked file until the next full commit (approve, run end, ship) takes it, as in a project without such a rule",
           "check": "C464",
           "plan": "P168.1"
         },
@@ -51033,20 +51033,21 @@
       "files": [
         "plugin/lib/cmd-init.sh",
         "plugin/lib/cmd-doctor.sh",
-        "plugin/lib/cmd-approve.sh"
+        "plugin/lib/cmd-approve.sh",
+        "plugin/lib/record.sh"
       ],
       "after": [
         "P168.1",
         "P166.2"
       ],
-      "status": "blocked",
+      "status": "planned",
       "role": "dev",
       "tasks": [
         "plugin/lib/cmd-init.sh: init_gitignore is replaced by record_gitignore; on a fresh init, and in an already-initialized project whenever a line was added, vbw init prints exactly one line 'VBW keeps its plan files visible to git through .vbw/.gitignore (runtime/ ignored; record.json, spec.md, map.md un-hidden)' and nothing about it when the file was already complete; after that it prints each record_hidden line prefixed 'vbw: ' on stderr (exit code unchanged: init stays idempotent and succeeds).",
         "plugin/lib/cmd-doctor.sh doctor_project: after the spec line, each record_hidden line is a fail line (doctor_line fail '<the line before the colon-fix>' 'remove that line, or change it to .vbw/runtime/'), so vbw doctor exits 1; nothing is printed when no own file is hidden.",
-        "plugin/lib/cmd-approve.sh approve_problems: appends each record_hidden line, so vbw approve refuses with 'the contract is not ready for approval:' and that line (exit 1, no decision, no consent, no commit) and vbw next's contract action names it among its problems (R171). tests/hidden-record.bats fully green on both shells."
-      ],
-      "note": "Tasks 1-3 are implemented and C465/C468 pass, but C464 (R208.3/R208.4) goes red once vbw init writes the un-hide lines (task 1): record_commit in plugin/lib/record.sh finds the own files to free by asking git which are still ignored BEFORE record_gitignore runs, and after init has written '!spec.md' nothing is ignored any more, so a project-wide *.md rule no longer makes the next commit take .vbw/spec.md along (tests/hidden-record.bats tests 1 and 2: 'tracked .vbw/spec.md' fails). The fix belongs in record.sh (outside this plan's files): the freed detection must recognise a spec.md/map.md that a project rule would hide without the un-hide line (e.g. probing the same file name in a folder without the un-hide lines). C466 is red for the l3-suite scenario, not this plan's files. I reverted my edits to the three lib files; ask for record.sh to be added to the plan."
+        "plugin/lib/cmd-approve.sh approve_problems: appends each record_hidden line, so vbw approve refuses with 'the contract is not ready for approval:' and that line (exit 1, no decision, no consent, no commit) and vbw next's contract action names it among its problems (R171). tests/hidden-record.bats fully green on both shells.",
+        "plugin/lib/record.sh record_commit: drop the freed sweep (own files a rule hid until the lines were written): with the un-hide lines written by vbw init, no file rule hides an own file any more, so a commit limited to FILE... (vbw todo) takes those files and .vbw/.gitignore along and nothing else, as in a project without such a rule; spec.md and map.md are committed by the next full commit (approve, run end, ship). record_gitignore at every commit (R208.5) and record_hidden stay. tests/hidden-record.bats cases 3 and 4 say so; the file fully green on both shells."
+      ]
     },
     {
       "id": "P168.3",
@@ -57845,6 +57846,17 @@
       "id": "D501",
       "at": "2026-10-26T14:32:44Z",
       "text": "Contract approved: 197 requirements, 463 checks, 520 plans (86f2be235001)"
+    },
+    {
+      "id": "D502",
+      "text": "record_commit never sweeps the spec into a commit of the record alone, with or without a project ignore rule: the un-hide lines written at init keep every own file visible to git, the record and .vbw/.gitignore go in the next commit, and spec.md and map.md go in the next full commit (approve, run end, ship), as in any project. P168.2 gains plugin/lib/record.sh to remove P168.1's sweep of files freed by the lines, which only worked while init did not write them",
+      "why": "Lead dev 2026-10-26: P168.2 blocked on it; one behaviour for every project beats a special case that depends on which command wrote the lines first",
+      "at": "2026-10-26T15:33:07Z"
+    },
+    {
+      "id": "D503",
+      "at": "2026-10-26T16:38:33Z",
+      "text": "Contract approved: 197 requirements, 463 checks, 520 plans (6ccc2935f0f1)"
     }
   ],
   "commands": {
