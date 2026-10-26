@@ -4,8 +4,9 @@
 # relative to the project root. vbw spec sync copies them into the record
 # (project.leave_out, validated by record.jq; a record without the field still
 # validates). vbw spec check and vbw spec sync refuse a listed path that git does
-# not ignore (tracked, or untracked but not ignored) or that does not exist,
-# naming the spec line and the path, and leave the record unchanged; an absolute
+# not ignore (tracked, or untracked but not ignored), naming the spec line and
+# the path, and leave the record unchanged, while a path with nothing at it is
+# accepted (nothing to leave out) and vbw spec check names it; an absolute
 # path, a path with '..', or one under .vbw/ or .git/ is refused like a bad Test
 # results folder. The list is part of the contract (fingerprint, vbw show
 # contract line, --changes), and vbw approve and vbw next compare the section
@@ -143,17 +144,16 @@ refused() {
   [[ "$output" == *"line 9"* && "$output" == *"notes/"* && "$output" == *"is not git-ignored"* ]] || { echo "$output"; false; }
 }
 
-@test "R205: a path that does not exist is refused by name, saying so, and the record is unchanged" {
-  local sum
-  sum=$(record_sum)
+@test "R205: a path with nothing at it is accepted (nothing to leave out), vbw spec check names it as not here now, and the record keeps it" {
   spec '- data/
 - gone/'
   run "$VBW" spec sync
-  refused "$sum"
-  [[ "$output" == *"line 10"* && "$output" == *"gone/"* && "$output" == *"does not exist"* ]] || { echo "$output"; false; }
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  [ "$(jq -c '.project.leave_out' .vbw/record.json)" = '["data/","gone/"]' ] || { jq .project .vbw/record.json; false; }
+  [[ "$output" != *"does not exist"* ]] || { echo "$output"; false; }
   run "$VBW" spec check
-  refused "$sum"
-  [[ "$output" == *"gone/"* && "$output" == *"does not exist"* ]] || { echo "$output"; false; }
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  [[ "$output" == *"gone/"* && "$output" == *"not here now"* ]] || { echo "$output"; false; }
 }
 
 @test "R205: a folder whose files alone are ignored, with nothing tracked or stray inside, is accepted" {

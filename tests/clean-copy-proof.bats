@@ -6,7 +6,7 @@
 # listed, the copy holds the other one whole and nothing of the listed one, also
 # when only files inside the listed path are ignored (git lists them one by one).
 # Build folders are left out as before. A listed path that no longer exists at
-# copy time changes nothing (the next sync refuses it). The proof's results do
+# copy time changes nothing (the next sync accepts it). The proof's results do
 # not change because a path was left out: verdict, reuse decisions and read lists
 # are the same with the list and without it for checks that never read the
 # left-out data. L1: the kernel on a fixture project whose check lists the copy
@@ -120,15 +120,16 @@ store_reads() { jq -c '.runs["check:C1"].reads' "$(git rev-parse --git-common-di
   probe_ok
 }
 
-@test "R205: a listed path that no longer exists at copy time changes nothing; the next sync refuses it" {
+@test "R205: a listed path that no longer exists at copy time changes nothing; the next sync accepts it" {
   rm -rf data
   vbw_run prove
   [ "$status" -eq 0 ] || { echo "$output"; false; }
   jq -e '.evidence.passed == true' .vbw/record.json
   probe_ok
   run "$VBW" spec sync
-  [ "$status" -ne 0 ] || { echo "$output"; false; }
-  [[ "$output" == *"data/"* && "$output" == *"does not exist"* ]] || { echo "$output"; false; }
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  [[ "$output" != *"does not exist"* ]] || { echo "$output"; false; }
+  [ "$(jq -c '.project.leave_out' .vbw/record.json)" = '["data/"]' ] || { jq .project .vbw/record.json; false; }
 }
 
 @test "R205: a spec without the section copies every ignored folder in, as today" {

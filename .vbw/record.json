@@ -15266,7 +15266,7 @@
     },
     {
       "id": "R205",
-      "text": "The user can name git-ignored paths that a proof's clean copy leaves out (community runtime report, 2026-10-26: an 18 GB ignored data folder was copied into every clean copy). A named path that is not git-ignored, or does not exist, is refused by name. The contract (vbw show contract) lists the paths left out, and a clean copy made with them holds none of them, while every other ignored path is still copied in.",
+      "text": "The user can name git-ignored paths that a proof's clean copy leaves out (community runtime report, 2026-10-26: an 18 GB ignored data folder was copied into every clean copy). A named path that is not git-ignored is refused by name; a listed path with nothing at it (not created yet, or absent on this computer) is accepted, since there is nothing to leave out. The contract (vbw show contract) lists the paths left out, and a clean copy made with them holds none of them, while every other ignored path is still copied in.",
       "proof": "auto",
       "status": "open",
       "milestone": "M43",
@@ -15302,7 +15302,7 @@
           "plan": "P166.1"
         },
         {
-          "text": "vbw spec check and vbw spec sync refuse a listed path that does not exist, naming the spec line and the path with 'does not exist', leaving the record unchanged",
+          "text": "vbw spec check and vbw spec sync accept a listed path with nothing at it (nothing to leave out; a clone without the data folder syncs its spec), vbw spec check naming it as not here now so a mistyped path is noticed, and the record keeps the path as written",
           "check": "C455",
           "plan": "P166.1"
         },
@@ -15357,7 +15357,7 @@
           "plan": "P166.3"
         },
         {
-          "text": "a listed path that no longer exists at copy time changes nothing: the proof passes as before and the next vbw spec sync refuses the path as not existing",
+          "text": "a listed path that no longer exists at copy time changes nothing: the proof passes as before, and the next vbw spec sync accepts the path",
           "check": "C456",
           "plan": "P166.3"
         },
@@ -50034,7 +50034,7 @@
       "tasks": [
         "plugin/lib/spec.jq reads a '## Clean copy' section (heading test like Test results, case-insensitive): each bullet '- <path>' becomes {path, line} in a new output key leave_out (null without the section, as results is), the path kept exactly as written (its trailing / included). A bullet is a parse error with its line number when the path is absolute, has an empty, '.' or '..' segment, or its first segment is .vbw or .git ('expected \"- <path>\" (a git-ignored path relative to the project root, no \".\" or \"..\", outside .vbw/ and .git/), got: ...'), or when the same path (compared without a trailing /) is named twice ('clean copy path X is named twice'). tests/clean-copy-spec.bats: the parser and the bad-path cases go green.",
         "plugin/lib/record.jq validates project.leave_out when present: a non-empty array of distinct non-empty strings, each a relative path (safe_path: no leading /, no .. segment) with no empty or '.' segment and a first segment that is neither .vbw nor .git; the violation names project.leave_out; a record without the field stays valid at schema 4 (no schema change, like project.results).",
-        "plugin/lib/cmd-spec.sh: a verification shared by vbw spec check and vbw spec sync, run before any write, for each listed path (trailing / trimmed): 'spec.md line N: PATH does not exist' when nothing is at the path; 'spec.md line N: PATH is not git-ignored: only ignored paths are copied in, so only they can be left out' when git lists anything tracked at or under it (git ls-files -z -- PATH), anything untracked and not ignored at or under it (git ls-files -z --others --exclude-standard -- PATH), or when neither git check-ignore -q -- PATH succeeds nor git ls-files -z --others --ignored --exclude-standard -- PATH lists anything (a folder holding only ignored files is accepted). spec_sync_leave_out then writes project.leave_out = the paths as written (deleting the field when the section is absent), printing 'clean copy leaves out: a, b' or 'removed the clean copy list' when the list changes, exactly as spec_sync_results does; vbw spec check appends ', N path(s) left out of the clean copy' when listed. Every refusal is a vbw_die with exit 1 and leaves the record byte-identical. Record-sized data reaches jq through --slurpfile scratch files, never --arg.",
+        "plugin/lib/cmd-spec.sh: a verification shared by vbw spec check and vbw spec sync, run before any write, for each listed path (trailing / trimmed): a listed path with nothing at it is accepted (nothing to leave out, so a clone without the data folder syncs its spec), the git checks below applying only to a path that exists, and vbw spec check names it 'spec.md line N: PATH is not here now, so nothing is left out for it yet'; 'spec.md line N: PATH is not git-ignored: only ignored paths are copied in, so only they can be left out' when git lists anything tracked at or under it (git ls-files -z -- PATH), anything untracked and not ignored at or under it (git ls-files -z --others --exclude-standard -- PATH), or when neither git check-ignore -q -- PATH succeeds nor git ls-files -z --others --ignored --exclude-standard -- PATH lists anything (a folder holding only ignored files is accepted). spec_sync_leave_out then writes project.leave_out = the paths as written (deleting the field when the section is absent), printing 'clean copy leaves out: a, b' or 'removed the clean copy list' when the list changes, exactly as spec_sync_results does; vbw spec check appends ', N path(s) left out of the clean copy' when listed. Every refusal is a vbw_die with exit 1 and leaves the record byte-identical. Record-sized data reaches jq through --slurpfile scratch files, never --arg.",
         "plugin/lib/cmd-init.sh init_spec: the starting spec.md gains a '## Clean copy' section after Commands, with an HTML comment in the style of the other sections (what it is for: git-ignored paths such as a huge data folder or caches that the proof's clean copy leaves out, one per line relative to the project root, the rest of the ignored environment still copied in, edit then vbw spec sync) holding an example line '- data/' inside the comment, so a fresh spec parses with leave_out null. tests/clean-copy-spec.bats green on bash 5 and /bin/bash 3.2 for the parts this plan builds (the contract and approval cases wait for P166.2)."
       ]
     },
@@ -56689,6 +56689,17 @@
       "text": "A project's git ignore rule that hides VBW's own files: VBW protects them itself through its own .vbw/.gitignore (un-hide lines for record.json, spec.md and map.md, written at init and for existing projects), and names the rule and the fix only when the whole .vbw folder is hidden, which no inner line can undo; VBW never edits the project's .gitignore",
       "why": "Architect's recommendation, chosen by the owner 2026-10-26: fixes the common case for everyone with nothing asked of the user, keeps VBW out of files the user owns; a whole-folder rule is the one case git lets nothing inside fix",
       "at": "2026-10-26T12:39:33Z"
+    },
+    {
+      "id": "D498",
+      "text": "A left-out path listed in the spec with nothing at it is accepted, not refused: there is nothing to leave out, and a clone without the data folder must still sync its spec; vbw spec check names it as not here now; a path that exists and is not git-ignored is still refused",
+      "why": "Lead dev 2026-10-26: the Lead named the cross-machine cost of refusing a missing path (the reporter's own situation); a mistyped path still shows up through the 500 MB line, and a left-out path can never make a proof wrong",
+      "at": "2026-10-26T13:37:39Z"
+    },
+    {
+      "id": "D499",
+      "at": "2026-10-26T14:01:09Z",
+      "text": "Contract approved: 197 requirements, 461 checks, 520 plans (c92d05d5685e)"
     }
   ],
   "commands": {
