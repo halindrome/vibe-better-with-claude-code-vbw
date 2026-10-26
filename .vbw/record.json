@@ -58469,6 +58469,11 @@
       "text": "The rules a plan owes get one definition in the kernel, shared by vbw mutate and vbw show plan (today only cmd-mutate.sh computes it: rules naming the plan, plus every rule of a requirement no other open plan serves; a plan owing none keeps all the checks of its requirements). vbw show plan marks the other plans' rules and checks from it, and the Dev prompt (plugin/agents/dev.md: red first, green, DEVN-04) says a check of another plan's rule stays red until that plan is built and is never a blocker. No new field, no new command",
       "why": "Lead dev 2026-10-26: the taskbreak scenario failed twice today because show plan lists every rule and check of the plan's requirements without saying whose they are, so a Sonnet Dev read a sibling plan's red check as an architectural blocker; one shared definition keeps mutate and show plan from drifting apart",
       "at": "2026-10-26T17:52:31Z"
+    },
+    {
+      "id": "D505",
+      "at": "2026-10-26T18:35:30Z",
+      "text": "Contract approved: 198 requirements, 468 checks, 525 plans (d02e00e2ed70)"
     }
   ],
   "commands": {
