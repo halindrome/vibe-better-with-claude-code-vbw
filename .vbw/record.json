@@ -23942,7 +23942,22 @@
           "to": "deep",
           "reason": "Dev blocked P169.3: R207.13 break (steps fact forced false in tools/l3-suite.sh) survives C463: its R207 cases only grep the scenario text and read the committed result. Strengthening tests/l3-taskbreak.bats (grep that the facts are set from the tool output and expected) is impossible: the file is shared with C473 (R209), so vbw commit refuses it as not the plan's to commit. Needs a decision: give R207.13 a check file of its own, or allow the shared file."
         }
-      ]
+      ],
+      "qa": {
+        "result": "pass",
+        "tier": "deep",
+        "tree": "3382559cc9ab734568f1e168bd09e3234b5d3883475e5c33dede347110cb17d0",
+        "at": "2026-10-26T20:42:14Z",
+        "note": "20/20 checks"
+      },
+      "outcome": {
+        "tier": "deep",
+        "predicted": "deep",
+        "held": true,
+        "fix_rounds": 0,
+        "qa_findings": 0,
+        "escalations": 3
+      }
     },
     {
       "id": "P170",
