@@ -216,6 +216,10 @@ doctor_project() {
   if spec_parse > /dev/null 2>&1; then doctor_line ok "the spec is valid"
   else doctor_line fail "the spec has errors" "vbw spec check shows them"
   fi
+  local hid fix='remove that line, or change it to .vbw/runtime/'
+  while IFS= read -r hid; do
+    [ -z "$hid" ] || doctor_line fail "${hid%: "$fix"}" "$fix"
+  done < <(cd "$VBW_ROOT" && record_hidden || true)
   [ -n "$v" ] && return 0
   if jq -e '.lease != null' "$VBW_RECORD" > /dev/null; then
     doctor_line warn "a run is open ($(jq -r .lease.run "$VBW_RECORD"))" "if no VBW workflow is running: vbw run end"
