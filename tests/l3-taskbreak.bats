@@ -48,3 +48,22 @@ body() { sed -n "/^scenario_$1()/,/^}/p" "$SUITE"; }
     and (.fixture | type == "string" and length > 0) and (.cost_usd | type == "number" and . > 0)
     and (.facts | type == "object") and (.not_tested | type == "array" and length > 0)' "$f"
 }
+
+# R207: the same scenario, run again, records whether the Dev's vbw mutate calls
+# ended with the breakdown (the own-work line and the steps line), read from the
+# tool results in the session transcripts, never from screen text.
+
+@test "R207: the taskbreak scenario reads the mutate breakdown from the transcripts' tool results and records it as a fact" {
+  body taskbreak | grep -q 'mutate_breakdown_line' || { echo "scenario_taskbreak does not record mutate_breakdown_line"; false; }
+  body taskbreak | grep -q 'mutate_steps_line' || { echo "scenario_taskbreak does not record mutate_steps_line"; false; }
+  body taskbreak | grep -qE "transcript_tool_output .*vbw mutate.*VBW.s own work" || { echo "the own-work fact is not read from the mutate tool results"; false; }
+  body taskbreak | grep -qE "transcript_tool_output .*vbw mutate.*steps of" || { echo "the steps fact is not read from the mutate tool results"; false; }
+}
+
+@test "R207: the committed taskbreak result from this code shows the breakdown line in a real session's vbw mutate output" {
+  local f="$RESULTS/taskbreak.json"
+  [ -f "$f" ] || { echo "the taskbreak scenario has not been run: no result is committed"; false; }
+  jq -e '.scenario == "taskbreak" and .passed == true and .evidence_level == "L3"
+    and (.at | type == "string" and . >= "2026-10-26")
+    and .facts.mutate_breakdown_line == true and .facts.mutate_steps_line == true' "$f" || { cat "$f"; false; }
+}

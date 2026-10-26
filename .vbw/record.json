@@ -53,6 +53,9 @@
     "tests/ci-scope-wiring.bats",
     "tests/ci-scope.bats",
     "tests/ci-shards.bats",
+    "tests/clean-copy-docs.bats",
+    "tests/clean-copy-proof.bats",
+    "tests/clean-copy-spec.bats",
     "tests/close-haiku-docs.bats",
     "tests/close-haiku-runs.bats",
     "tests/close-haiku.bats",
@@ -113,6 +116,8 @@
     "tests/helper.bats",
     "tests/helpers/run-workflow-all.js",
     "tests/helpers/run-workflow.js",
+    "tests/hidden-record-docs.bats",
+    "tests/hidden-record.bats",
     "tests/hook-answers.bats",
     "tests/hooks-session-guard.bats",
     "tests/hooks-session-nojq.bats",
@@ -137,7 +142,9 @@
     "tests/l3-costs.bats",
     "tests/l3-greenfield-report.bats",
     "tests/l3-greeting.bats",
+    "tests/l3-hiddenrecord.bats",
     "tests/l3-interview.bats",
+    "tests/l3-leaveout.bats",
     "tests/l3-legacy.bats",
     "tests/l3-loop.bats",
     "tests/l3-panel-comms.bats",
@@ -153,6 +160,7 @@
     "tests/l3-smallchange-added.bats",
     "tests/l3-smallchange.bats",
     "tests/l3-step-time.bats",
+    "tests/l3-taskbreak.bats",
     "tests/l3-testmode.bats",
     "tests/l3-tools.bats",
     "tests/lead-parallel.bats",
@@ -213,6 +221,8 @@
     "tests/mutate-rule-none.bats",
     "tests/mutate-show.bats",
     "tests/mutate-strengthen.bats",
+    "tests/mutate-time-docs.bats",
+    "tests/mutate-time.bats",
     "tests/mutation-docs.bats",
     "tests/mutation-qa.bats",
     "tests/mutation-runs.bats",
@@ -303,6 +313,8 @@
     "tests/proof-causes.bats",
     "tests/proof-copy-cleanup.bats",
     "tests/proof-copy-docs.bats",
+    "tests/proof-copy-plain-docs.bats",
+    "tests/proof-copy-plain.bats",
     "tests/proof-doc-reuse-docs.bats",
     "tests/proof-doc-reuse.bats",
     "tests/proof-full-gate.bats",
@@ -5998,6 +6010,152 @@
         "tests/scope-undone-docs.bats"
       ],
       "timeout": 120
+    },
+    {
+      "id": "C455",
+      "req": "R205",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/clean-copy-spec.bats"
+      ],
+      "files": [
+        "tests/clean-copy-spec.bats"
+      ]
+    },
+    {
+      "id": "C456",
+      "req": "R205",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/clean-copy-proof.bats"
+      ],
+      "files": [
+        "tests/clean-copy-proof.bats"
+      ]
+    },
+    {
+      "id": "C457",
+      "req": "R205",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/clean-copy-docs.bats"
+      ],
+      "files": [
+        "tests/clean-copy-docs.bats"
+      ]
+    },
+    {
+      "id": "C458",
+      "req": "R205",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/l3-leaveout.bats"
+      ],
+      "files": [
+        "tests/l3-leaveout.bats"
+      ]
+    },
+    {
+      "id": "C459",
+      "req": "R206",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/proof-copy-plain.bats"
+      ],
+      "files": [
+        "tests/proof-copy-plain.bats"
+      ]
+    },
+    {
+      "id": "C460",
+      "req": "R206",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/proof-copy-plain-docs.bats"
+      ],
+      "files": [
+        "tests/proof-copy-plain-docs.bats"
+      ]
+    },
+    {
+      "id": "C461",
+      "req": "R207",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/mutate-time.bats"
+      ],
+      "files": [
+        "tests/mutate-time.bats"
+      ]
+    },
+    {
+      "id": "C462",
+      "req": "R207",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/mutate-time-docs.bats"
+      ],
+      "files": [
+        "tests/mutate-time-docs.bats"
+      ]
+    },
+    {
+      "id": "C463",
+      "req": "R207",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "--filter",
+        "R207",
+        "tests/l3-taskbreak.bats"
+      ],
+      "files": [
+        "tests/l3-taskbreak.bats"
+      ]
+    },
+    {
+      "id": "C464",
+      "req": "R208",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/hidden-record.bats"
+      ],
+      "files": [
+        "tests/hidden-record.bats"
+      ]
+    },
+    {
+      "id": "C465",
+      "req": "R208",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/hidden-record-docs.bats"
+      ],
+      "files": [
+        "tests/hidden-record-docs.bats"
+      ]
+    },
+    {
+      "id": "C466",
+      "req": "R208",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/l3-hiddenrecord.bats"
+      ],
+      "files": [
+        "tests/l3-hiddenrecord.bats"
+      ]
     }
   ],
   "project": {
@@ -15112,7 +15270,128 @@
       "proof": "auto",
       "status": "open",
       "milestone": "M43",
-      "rules": []
+      "rules": [
+        {
+          "text": "the spec parser reads a '## Clean copy' section as one path per bullet, kept as written with its line number, and gives null without the section",
+          "check": "C455",
+          "plan": "P166.1"
+        },
+        {
+          "text": "a spec without the section leaves the record without the field, syncs as today and prints nothing about the clean copy",
+          "check": "C455",
+          "plan": "P166.1"
+        },
+        {
+          "text": "vbw spec sync writes the listed paths to project.leave_out, prints 'clean copy leaves out: a, b', and removes the field, saying so, when the section is gone",
+          "check": "C455",
+          "plan": "P166.1"
+        },
+        {
+          "text": "vbw spec check accepts a good list and counts the paths left out of the clean copy",
+          "check": "C455",
+          "plan": "P166.1"
+        },
+        {
+          "text": "an absolute path, a path with '.' or '..' segments, or one under .vbw/ or .git/ is a parse error naming its line, refused like a bad Test results folder; a path named twice is refused with the second line",
+          "check": "C455",
+          "plan": "P166.1"
+        },
+        {
+          "text": "vbw spec check and vbw spec sync refuse a listed path git does not ignore (tracked, or untracked but not ignored) naming the spec line and the path with 'is not git-ignored: only ignored paths are copied in, so only they can be left out', leaving the record unchanged",
+          "check": "C455",
+          "plan": "P166.1"
+        },
+        {
+          "text": "vbw spec check and vbw spec sync refuse a listed path that does not exist, naming the spec line and the path with 'does not exist', leaving the record unchanged",
+          "check": "C455",
+          "plan": "P166.1"
+        },
+        {
+          "text": "a folder whose files alone are ignored, with nothing tracked or stray inside, is accepted",
+          "check": "C455",
+          "plan": "P166.1"
+        },
+        {
+          "text": "record.jq accepts a record without project.leave_out and refuses an empty, duplicated, absolute, '..', .vbw/, .git/, empty-string or non-array list, naming the field",
+          "check": "C455",
+          "plan": "P166.1"
+        },
+        {
+          "text": "vbw init's starting spec.md has a '## Clean copy' section explained in an HTML comment in the style of the other sections, with an example bullet inside the comment, so a fresh spec lists nothing",
+          "check": "C455",
+          "plan": "P166.1"
+        },
+        {
+          "text": "the list is part of the contract: adding a path changes the fingerprint, the contract reads NOT APPROVED and the approval question is asked again",
+          "check": "C455",
+          "plan": "P166.2"
+        },
+        {
+          "text": "vbw show contract prints exactly one line 'clean copy leaves out: data/, cache/' when paths are listed and no such line otherwise",
+          "check": "C455",
+          "plan": "P166.2"
+        },
+        {
+          "text": "vbw show contract --changes names the new list and the old one ('clean copy leaves out: data/, cache/ (was data/)', 'none' for an empty side) when the list changed since the last approval",
+          "check": "C455",
+          "plan": "P166.2"
+        },
+        {
+          "text": "an edited, unsynced Clean copy section cannot be approved ('spec.md and the record differ (vbw spec sync)') and vbw next says the contract is not ready with that reason instead of offering the approval question; after the sync vbw next offers approval",
+          "check": "C455",
+          "plan": "P166.2"
+        },
+        {
+          "text": "vbw prove's copy holds the other ignored folder whole and nothing of the listed one, while build folders stay out as before",
+          "check": "C456",
+          "plan": "P166.3"
+        },
+        {
+          "text": "when only files inside the listed path are ignored (git lists them one by one), none of them enters the copy either",
+          "check": "C456",
+          "plan": "P166.3"
+        },
+        {
+          "text": "vbw fix done, vbw mutate's single form, vbw mutate --run and the one run of vbw mutate Rn.k --none make their copies without the listed path",
+          "check": "C456",
+          "plan": "P166.3"
+        },
+        {
+          "text": "a listed path that no longer exists at copy time changes nothing: the proof passes as before and the next vbw spec sync refuses the path as not existing",
+          "check": "C456",
+          "plan": "P166.3"
+        },
+        {
+          "text": "a spec without the section copies every ignored folder in, as today",
+          "check": "C456",
+          "plan": "P166.3"
+        },
+        {
+          "text": "leaving a path out changes no result: after listing it, the next proof passes with the same statuses, reuses every unit and the check's read list in the run store is the same",
+          "check": "C456",
+          "plan": "P166.3"
+        },
+        {
+          "text": "docs/proof.md has a Clean copy section stating the form, the refusals, the contract line and --changes, and that every clean copy skips the listed paths while the other ignored paths are copied in; its approval paragraph lists Clean copy among the compared sections",
+          "check": "C457",
+          "plan": "P166.4"
+        },
+        {
+          "text": "docs/record.md documents project.leave_out as the spec's Clean copy list, part of the contract, absent when none",
+          "check": "C457",
+          "plan": "P166.4"
+        },
+        {
+          "text": "tools/l3-suite.sh has the leaveout scenario (in ALL and the header) seeding an ignored data folder listed under Clean copy, reading the record, vbw show contract and a probe the check writes from the copy, never the screen",
+          "check": "C458",
+          "plan": "P166.5"
+        },
+        {
+          "text": "the committed tools/l3-results/leaveout.json (L3, passed, dated 2026-10-26 or later) shows the contract naming the path, leave_out ['data/'], a passed proof and a copy without the data",
+          "check": "C458",
+          "plan": "P166.5"
+        }
+      ]
     },
     {
       "id": "R206",
@@ -15120,7 +15399,58 @@
       "proof": "auto",
       "status": "open",
       "milestone": "M43",
-      "rules": []
+      "rules": [
+        {
+          "text": "a plain copy of more than 500 MB of ignored data prints exactly one line on stderr starting 'vbw:' naming the three largest ignored folders with their sizes (GB or MB, one decimal, largest first), not the fourth, and the way out 'list them under ## Clean copy in .vbw/spec.md, then vbw spec sync'",
+          "check": "C459",
+          "plan": "P167.1"
+        },
+        {
+          "text": "the line changes nothing: verdict, evidence, record and exit code are the same with the line and with a threshold too high for it",
+          "check": "C459",
+          "plan": "P167.1"
+        },
+        {
+          "text": "nothing is printed when every ignored path was cloned copy-on-write, however large",
+          "check": "C459",
+          "plan": "P167.1"
+        },
+        {
+          "text": "nothing is printed at exactly 500 MB of plain-copied data (512000 KB); one kilobyte more prints the line",
+          "check": "C459",
+          "plan": "P167.1"
+        },
+        {
+          "text": "VBW_PROOFCOPY_PLAIN_KB, a test-only variable, lowers the threshold so sizes measured with du -sk on small real files print the line",
+          "check": "C459",
+          "plan": "P167.1"
+        },
+        {
+          "text": "nothing is printed when nothing ignored exists",
+          "check": "C459",
+          "plan": "P167.1"
+        },
+        {
+          "text": "with two copy slots the line prints once and each ignored path's size is read once per command, not once per copy",
+          "check": "C459",
+          "plan": "P167.1"
+        },
+        {
+          "text": "the size reading counts in the copies step of VBW's own work (evidence.own.copies)",
+          "check": "C459",
+          "plan": "P167.1"
+        },
+        {
+          "text": "vbw fix done, vbw mutate's single form, vbw mutate --run and the one run of vbw mutate Rn.k --none print the line once when their plain copy exceeds the threshold, and the break's verdict stands",
+          "check": "C459",
+          "plan": "P167.1"
+        },
+        {
+          "text": "docs/proof.md names, beside its copy-on-write paragraph, the 500 MB threshold, the one vbw: line with the largest ignored folders and their sizes, the way out, the three silent cases and that the line changes no result",
+          "check": "C460",
+          "plan": "P167.2"
+        }
+      ]
     },
     {
       "id": "R207",
@@ -15128,15 +15458,152 @@
       "proof": "auto",
       "status": "open",
       "milestone": "M43",
-      "rules": []
+      "rules": [
+        {
+          "text": "a red rule break ends with 'VBW's own work: X of Y min' and '  steps of W s: copies A, unbroken B, break Rn.k C, waits D, saving E' (one decimal each), the steps summing to W within rounding, after the result lines, with the recorded entry's keys and the files' restoration unchanged",
+          "check": "C461",
+          "plan": "P169.1"
+        },
+        {
+          "text": "a survivor keeps its exit 1 and its line, the breakdown following it",
+          "check": "C461",
+          "plan": "P169.1"
+        },
+        {
+          "text": "a task break names its entry 'break taskK'",
+          "check": "C461",
+          "plan": "P169.1"
+        },
+        {
+          "text": "a break caught by a check file waiting for approval keeps its lines, the pending marking and exit 0, the breakdown coming after them",
+          "check": "C461",
+          "plan": "P169.1"
+        },
+        {
+          "text": "the figures are measured: a check that takes a second on broken code puts at least 1.0 s into the break's entry, more than the unbroken one, and the own-work line is not 'of 0.0 min'",
+          "check": "C461",
+          "plan": "P169.1"
+        },
+        {
+          "text": "a refusal (checks red on the unbroken code, a dirty check file, a stale queued break) ends with its message as today and prints no breakdown",
+          "check": "C461",
+          "plan": "P169.1"
+        },
+        {
+          "text": "--queue, task --none and Rn.k --none print no breakdown",
+          "check": "C461",
+          "plan": "P169.1"
+        },
+        {
+          "text": "vbw mutate --run one at a time ends with one entry per break ('break R1.1', 'break R1.2') in queue order after the last result's lines, the entries recorded as before",
+          "check": "C461",
+          "plan": "P169.1"
+        },
+        {
+          "text": "vbw mutate --run with breaks side by side names the wave's targets in one entry ('breaks R1.1 R1.2')",
+          "check": "C461",
+          "plan": "P169.1"
+        },
+        {
+          "text": "waits is the time the run waited for a computer-wide slot (at least 1.0 s when another project held the only slot) and the slots line still comes last, after the breakdown",
+          "check": "C461",
+          "plan": "P169.1"
+        },
+        {
+          "text": "without a wait the waits entry reads 0.0 and nothing follows the breakdown",
+          "check": "C461",
+          "plan": "P169.1"
+        },
+        {
+          "text": "docs/workflows.md's mutation-check section shows the two lines in their printed form, names each step (copies, unbroken, a break named by its target, waves in --run, waits, saving), says the figures are measured and sum to the wall, that the breakdown changes nothing, and that a refusal, --queue and --none print none",
+          "check": "C462",
+          "plan": "P169.2"
+        },
+        {
+          "text": "the taskbreak scenario of tools/l3-suite.sh reads the mutate breakdown from the transcripts' tool results as the facts mutate_breakdown_line and mutate_steps_line, and its committed result from this code (dated 2026-10-26 or later) shows both true",
+          "check": "C463",
+          "plan": "P169.3"
+        }
+      ]
     },
     {
       "id": "R208",
-      "text": "A .vbw/record.json hidden by a git ignore rule (community runtime report, 2026-10-26: a project-wide *.json rule hid it and the clone got no plan) is detected: vbw init says so naming the rule's source line and the fix (!.vbw/record.json in .gitignore), vbw doctor fails with the same, and vbw approve refuses with that message instead of committing nothing; the record's own commits are never silently skipped.",
+      "text": "VBW's own plan files (.vbw/record.json, .vbw/spec.md, .vbw/map.md) are never hidden by a project's git ignore rule for files (community runtime report, 2026-10-26: a project-wide *.json rule hid the record and the clone got no plan): vbw init writes un-hide lines for them in VBW's own .vbw/.gitignore and says so in one line, and an existing project gets those lines the next time VBW commits its files. When a rule hides the whole .vbw folder, which no line inside it can undo, vbw init says so naming the rule's source line and the fix, vbw doctor fails with the same, and vbw approve refuses with that message instead of committing nothing; the record's own commits are never silently skipped.",
       "proof": "auto",
       "status": "open",
       "milestone": "M43",
-      "rules": []
+      "rules": [
+        {
+          "text": "vbw init writes .vbw/.gitignore as runtime/, !record.json, !spec.md, !map.md, !.gitignore and prints exactly one line saying VBW keeps its plan files visible to git through .vbw/.gitignore",
+          "check": "C464",
+          "plan": "P168.2"
+        },
+        {
+          "text": "in an initialized project vbw init adds only the missing lines, keeps the user's lines, says so once, and leaves a complete file byte-identical and silent when run again",
+          "check": "C464",
+          "plan": "P168.2"
+        },
+        {
+          "text": "with a project-wide *.json or *.md rule in the project's .gitignore, VBW's next commit commits the record, the spec and .vbw/.gitignore, printing no warning",
+          "check": "C464",
+          "plan": "P168.1"
+        },
+        {
+          "text": "the same holds for a rule in .git/info/exclude and in a global excludes file",
+          "check": "C464",
+          "plan": "P168.1"
+        },
+        {
+          "text": "an existing project (.vbw/.gitignore holding runtime/ alone) gets the un-hide lines at its next VBW commit, .vbw/.gitignore committed along with the record, leaving .vbw clean",
+          "check": "C464",
+          "plan": "P168.1"
+        },
+        {
+          "text": "with a rule hiding the whole .vbw folder (.vbw/ or *), vbw init prints the hidden file with the rule's source as git check-ignore -v gives it (file:line:pattern) and the fix 'remove that line, or change it to .vbw/runtime/'",
+          "check": "C464",
+          "plan": "P168.2"
+        },
+        {
+          "text": "vbw doctor prints the same as a fail line with its fix line and exits 1; without such a rule it says nothing about hidden files",
+          "check": "C464",
+          "plan": "P168.2"
+        },
+        {
+          "text": "vbw approve refuses with that message, exit 1, adding no decision, granting no consent (the contract stays NOT APPROVED) and making no commit",
+          "check": "C464",
+          "plan": "P168.2"
+        },
+        {
+          "text": "vbw next names the hidden file among the reasons the contract is not ready instead of offering the approval menu; with the rule narrowed to .vbw/runtime/ it offers approval and the approval commits the record",
+          "check": "C464",
+          "plan": "P168.2"
+        },
+        {
+          "text": "record_commit's non-strict form prints a 'vbw: warning:' line naming the hidden file, the rule's source line and the fix, and never commits the hidden file silently",
+          "check": "C464",
+          "plan": "P168.1"
+        },
+        {
+          "text": "docs/record.md names the un-hide lines, that vbw init writes them and an existing project gets them at its next VBW commit, that the project's .gitignore is never edited, the whole-folder case with what init, doctor, approve and other commits say, and the fix",
+          "check": "C465",
+          "plan": "P168.3"
+        },
+        {
+          "text": "docs/diagnostics.md documents the doctor's fail line for a hidden own file, its git check-ignore source and its fix",
+          "check": "C465",
+          "plan": "P168.3"
+        },
+        {
+          "text": "tools/l3-suite.sh has the hiddenrecord scenario (in ALL and the header) seeding a *.json rule and reading git and .vbw/.gitignore, never the screen; its committed result (L3, passed, dated 2026-10-26 or later) shows the record committed, the un-hide lines and at least one record commit",
+          "check": "C466",
+          "plan": "P168.4"
+        },
+        {
+          "text": "the greenfield scenario records plan_files_unhidden and its committed result from this code shows it true",
+          "check": "C466",
+          "plan": "P168.4"
+        }
+      ]
     }
   ],
   "phases": [
@@ -23095,6 +23562,112 @@
         "qa_findings": 6,
         "escalations": 0
       }
+    },
+    {
+      "id": "P166",
+      "title": "The user names git-ignored paths the clean copy leaves out",
+      "reqs": [
+        "R205"
+      ],
+      "milestone": "M43",
+      "goal": "A user whose project has a huge git-ignored folder (data, caches) lists it in .vbw/spec.md and every clean copy VBW makes for a proof, a fix or a mutation check is made without it, while the rest of the ignored environment is still copied in.",
+      "criteria": [
+        "The spec gains a section '## Clean copy' with one path per line ('- data/'), relative to the project root; vbw init's starting spec.md explains it in the same comment style as the other sections; a spec without the section behaves exactly as today (nothing left out).",
+        "vbw spec sync copies the listed paths into the record under one field validated by record.jq (a record without the field still validates, so older projects open unchanged); 'vbw spec check' and 'vbw spec sync' refuse a listed path that git does not ignore (tracked, or untracked but not ignored) or that does not exist, naming the spec line and the path and saying why ('is not git-ignored: only ignored paths are copied in, so only they can be left out' / 'does not exist'), and the record is left unchanged; an absolute path, a path with '..', or one under .vbw/ or .git/ is refused like a bad Test results folder.",
+        "The left-out paths are part of the contract: contract_core and contract_doc include them, so changing the list changes the fingerprint and the approval menu is asked again; 'vbw show contract' prints one line 'clean copy leaves out: data/, cache/' (absent when nothing is listed); 'vbw show contract --changes' names an added or removed path; vbw approve and vbw next compare this spec section with the record like the other sections (R174, R171): an edited, unsynced section cannot be approved and vbw next says the contract is not ready.",
+        "Every clean copy (vbw prove, vbw fix done, vbw mutate single form, --run and the one run of Rn.k --none) skips a listed path and everything under it: with two ignored folders and one listed, the copy holds the other one whole and nothing of the listed one, including when only files inside the listed path are ignored (git lists them one by one); build folders are left out as before; a listed path that no longer exists at copy time changes nothing (the next sync refuses it).",
+        "The proof's results do not change because a path was left out: the proof verdict, reuse decisions and read lists are the same with the list and without it for a project whose checks never read the left-out data.",
+        "docs/proof.md describes the section, the refusals, the contract line and that the copy skips the listed paths; a test file of the requirement area covers each rule above; a new real-user scenario in tools/l3-suite.sh ('leaveout': a project ignoring a data folder, listed in the spec, reaching an approved contract whose 'vbw show contract' names the path and a passed proof) runs and its result is saved under tools/l3-results/."
+      ],
+      "tier": "deep",
+      "reasons": [
+        "requirements: 1",
+        "files: 12 (399873 bytes)",
+        "files: more than 2 in a repository tracking 1161 files",
+        "risk: none",
+        "breaks: R4, R5, R8, R41, R44, R189, R201",
+        "guarded: R10 (C9), R12 (C11), R13 (C12), R14 (C13), R22 (C19), R23 (C20), R24 (C23), R25 (C24), R27 (C21), R28 (C25), R31 (C27), R32 (C28), R33 (C29), R34 (C30), R38 (C33, C34), R40 (C37), R42 (C38), R43 (C42, C43), R45 (C39, C40, C41), R46 (C46), R47 (C47), R48 (C49, C50), R49 (C48), R51 (C52, C53, C66), R59 (C68, C92), R61 (C73, C74, C75, C76, C77), R62 (C78, C79, C80, C81, C82, C83, C93), R64 (C84, C85), R65 (C86, C87, C88, C89, C90), R66 (C95), R69 (C110, C120, C122), R70 (C114), R71 (C115, C121), R72 (C116, C118), R73 (C98), R74 (C99, C100), R78 (C105, C106), R79 (C107), R80 (C108), R81 (C109, C111, C112, C113), R83 (C119), R92 (C131, C132, C133, C134, C135, C136, C137, C138, C139), R93 (C140, C141, C142, C143, C144), R94 (C145, C146, C147, C148), R97 (C153), R98 (C154), R99 (C155), R100 (C156), R101 (C179), R102 (C158, C159), R103 (C160), R104 (C161, C162), R105 (C163), R109 (C168), R110 (C169, C170), R111 (C171, C172, C173, C174, C175), R115 (C181), R116 (C182, C183), R118 (C184), R119 (C180), R121 (C187, C188), R123 (C190, C191), R127 (C194), R131 (C198), R132 (C199), R133 (C195), R134 (C201), R135 (C202), R144 (C208, C209), R147 (C212, C215, C237), R148 (C213, C214, C216, C238), R149 (C217, C218, C219, C220, C221, C222), R150 (C223, C224, C225, C226, C227, C228, C229, C230), R152 (C233, C234), R153 (C235, C236, C239), R160 (C247, C263, C264), R161 (C248, C265, C266), R166 (C253, C254, C255, C256, C267), R167 (C257, C258, C259, C260), R168 (C261, C262), R169 (C268), R170 (C269), R173 (C281, C282, C283, C284, C285, C286, C289), R174 (C279, C280), R175 (C274, C275), R176 (C276, C277, C278), R178 (C290, C291, C292, C293, C294, C295, C296, C311), R179 (C297, C298, C299, C300, C301, C302, C303, C304, C305, C306, C312), R180 (C307, C308, C309, C310), R181 (C313, C314, C315, C316, C317, C318, C319, C320, C321), R182 (C322, C323, C324, C325, C326), R183 (C327), R184 (C328, C329, C330, C331, C332, C333), R185 (C334, C335, C336, C337, C338, C339, C340, C341, C342, C343), R188 (C350, C351, C352, C353, C354, C355, C356, C357, C358, C359), R190 (C374, C375, C376, C377, C378, C379, C380, C381, C382, C383, C384, C385, C386, C387, C388), R191 (C389, C390, C391, C392, C393, C394, C395, C396, C397, C398, C399, C400), R192 (C401, C402, C403, C404, C405, C406, C407, C408, C409, C410), R193 (C411, C412), R194 (C417, C418, C419), R195 (C420, C421, C422), R196 (C415, C416), R197 (C413, C414), R199 (C424, C425, C430), R200 (C426, C427, C431), R202 (C432, C433, C434, C435, C436, C437, C438, C439, C440, C441, C442, C443, C444, C445, C446, C447), R203 (C448, C449, C450), R204 (C451, C452, C453, C454)",
+        "tests: project test command"
+      ],
+      "predicted": "deep"
+    },
+    {
+      "id": "P167",
+      "title": "A big plain copy of ignored data is named with its size and the way out",
+      "reqs": [
+        "R206"
+      ],
+      "milestone": "M43",
+      "goal": "When a proof or mutation run has to copy more than 500 MB of ignored data file by file (the disk offers no instant copy-on-write clone), the user is told which ignored folders cost the most and how to leave them out; a clone or a small copy says nothing.",
+      "criteria": [
+        "proofcopy_copy records, per top-level ignored path it copied, whether the copy-on-write clone succeeded or the plain copy ran, and for a plain copy the size of what it copied, counted once per command (not once per copy slot) and within the 'copies' step of VBW's own work.",
+        "When the plain-copied data of one clean copy exceeds 500 MB, vbw prove, vbw fix done and vbw mutate (single form, --run, Rn.k --none) print exactly one line to stderr starting 'vbw:' naming the up to three largest ignored folders copied with their sizes (MB or GB, one decimal) and the way out ('list them under ## Clean copy in .vbw/spec.md, then vbw spec sync'); the line is printed once even when several copies are made.",
+        "Nothing is printed when every ignored path was cloned copy-on-write, when the plain-copied data is 500 MB or less, or when nothing ignored exists; the line never changes the command's verdict, evidence, record or exit code.",
+        "Tests force the plain-copy path (the clone refused) and the size threshold without creating 500 MB of real data (the size reader is injectable or measured on small files with a lowered threshold through a test-only variable), and show the line absent in the three silent cases; docs/proof.md names the threshold, the line and the way out beside the copy-on-write paragraph."
+      ],
+      "tier": "standard",
+      "reasons": [
+        "requirements: 1",
+        "files: 2 (89516 bytes)",
+        "risk: none",
+        "breaks: R44",
+        "guarded: R12 (C11), R31 (C27), R32 (C28), R43 (C42, C43), R45 (C39, C40, C41), R46 (C46), R47 (C47), R48 (C49, C50), R49 (C48), R61 (C73, C74, C75, C76, C77), R66 (C95), R69 (C110, C120, C122), R70 (C114), R73 (C98), R74 (C99, C100), R78 (C105, C106), R79 (C107), R80 (C108), R81 (C109, C111, C112, C113), R83 (C119), R92 (C131, C132, C133, C134, C135, C136, C137, C138, C139), R93 (C140, C141, C142, C143, C144), R94 (C145, C146, C147, C148), R97 (C153), R98 (C154), R100 (C156), R103 (C160), R104 (C161, C162), R105 (C163), R110 (C169, C170), R111 (C171, C172, C173, C174, C175), R115 (C181), R118 (C184), R131 (C198), R132 (C199), R134 (C201), R135 (C202), R144 (C208, C209), R147 (C212, C215, C237), R148 (C213, C214, C216, C238), R152 (C233, C234), R153 (C235, C236, C239), R160 (C247, C263, C264), R161 (C248, C265, C266), R166 (C253, C254, C255, C256, C267), R167 (C257, C258, C259, C260), R168 (C261, C262), R169 (C268), R170 (C269), R174 (C279, C280), R175 (C274, C275), R176 (C276, C277, C278), R181 (C313, C314, C315, C316, C317, C318, C319, C320, C321), R182 (C322, C323, C324, C325, C326), R183 (C327), R188 (C350, C351, C352, C353, C354, C355, C356, C357, C358, C359), R193 (C411, C412), R194 (C417, C418, C419), R195 (C420, C421, C422), R196 (C415, C416), R197 (C413, C414), R202 (C432, C433, C434, C435, C436, C437, C438, C439, C440, C441, C442, C443, C444, C445, C446, C447), R203 (C448, C449, C450), R204 (C451, C452, C453, C454)",
+        "tests: project test command"
+      ],
+      "predicted": "standard"
+    },
+    {
+      "id": "P168",
+      "title": "VBW's own plan files are never hidden by the project's git ignore rules",
+      "reqs": [
+        "R208"
+      ],
+      "milestone": "M43",
+      "goal": "A project whose .gitignore hides JSON or Markdown files still commits VBW's record, spec and map, and when a rule hides the whole .vbw folder (which nothing inside it can undo) VBW says so by name instead of committing nothing.",
+      "criteria": [
+        "vbw init writes .vbw/.gitignore with 'runtime/' and the un-hide lines '!record.json', '!spec.md', '!map.md' and '!.gitignore' (the last so a project-wide '*' rule cannot hide the file itself), prints one line saying VBW keeps its plan files visible to git through .vbw/.gitignore, and in an already-initialized project adds only the missing lines, keeps every line the user added, and leaves the file byte-identical when run again.",
+        "Every VBW commit of its own files (record_commit: approval, run end, proof, ship, vbw todo, spec sync) first adds the missing un-hide lines to .vbw/.gitignore and commits that file along with the others, so an existing project gets them at its next VBW commit; with the lines present a record.json or spec.md that a project-wide '*.json' or '*.md' rule would hide is committed (shown with such a rule in the project's .gitignore, .git/info/exclude and a global excludes file).",
+        "When an own file that exists is untracked and still ignored after the un-hide lines (a rule such as '.vbw/' or '*' hiding the folder), vbw init prints the rule's source as 'git check-ignore -v' gives it (file, line number, pattern) with the fix ('remove that line, or change it to .vbw/runtime/'); vbw doctor prints the same as a fail line and exits 1; vbw approve refuses with that message, exit 1, adding no decision, granting no consent and making no commit; vbw next names it among the reasons the contract is not ready (R171) instead of offering the approval menu.",
+        "record_commit never skips a hidden own file silently: in its non-strict form it prints a 'vbw: warning:' line naming the file and the rule's source line; in strict form (vbw approve) the reason is the refusal above; a project with no such rule prints nothing new and commits as today.",
+        "docs (docs/proof.md or the page that documents vbw init and vbw doctor, plus docs/record.md where it lists VBW's own files) state the un-hide lines, the whole-folder case and the fix; a test file of the requirement area covers each rule above on both shells; the 'greenfield' real-user scenario is run again and a new scenario ('hiddenrecord': a project whose .gitignore holds '*.json', reaching an approved contract with .vbw/record.json committed) runs, both results saved under tools/l3-results/."
+      ],
+      "tier": "deep",
+      "reasons": [
+        "requirements: 1",
+        "files: 9 (258686 bytes)",
+        "files: more than 2 in a repository tracking 1161 files",
+        "risk: none",
+        "breaks: R4, R5, R8, R41, R189, R201",
+        "guarded: R1 (C1), R2 (C2), R3 (C3), R22 (C19), R23 (C20), R24 (C23), R25 (C24), R28 (C25), R31 (C27), R33 (C29), R34 (C30), R38 (C33, C34), R40 (C37), R42 (C38), R43 (C42, C43), R45 (C39, C40, C41), R46 (C46), R47 (C47), R48 (C49, C50), R49 (C48), R51 (C52, C53, C66), R59 (C68, C92), R61 (C73, C74, C75, C76, C77), R62 (C78, C79, C80, C81, C82, C83, C93), R64 (C84, C85), R65 (C86, C87, C88, C89, C90), R71 (C115, C121), R72 (C116, C118), R79 (C107), R81 (C109, C111, C112, C113), R98 (C154), R99 (C155), R100 (C156), R101 (C179), R109 (C168), R111 (C171, C172, C173, C174, C175), R115 (C181), R116 (C182, C183), R119 (C180), R121 (C187, C188), R123 (C190, C191), R127 (C194), R131 (C198), R132 (C199), R133 (C195), R144 (C208, C209), R146 (C211), R149 (C217, C218, C219, C220, C221, C222), R150 (C223, C224, C225, C226, C227, C228, C229, C230), R153 (C235, C236, C239), R165 (C252), R166 (C253, C254, C255, C256, C267), R167 (C257, C258, C259, C260), R173 (C281, C282, C283, C284, C285, C286, C289), R174 (C279, C280), R178 (C290, C291, C292, C293, C294, C295, C296, C311), R179 (C297, C298, C299, C300, C301, C302, C303, C304, C305, C306, C312), R180 (C307, C308, C309, C310), R184 (C328, C329, C330, C331, C332, C333), R185 (C334, C335, C336, C337, C338, C339, C340, C341, C342, C343), R188 (C350, C351, C352, C353, C354, C355, C356, C357, C358, C359), R190 (C374, C375, C376, C377, C378, C379, C380, C381, C382, C383, C384, C385, C386, C387, C388), R191 (C389, C390, C391, C392, C393, C394, C395, C396, C397, C398, C399, C400), R192 (C401, C402, C403, C404, C405, C406, C407, C408, C409, C410), R199 (C424, C425, C430), R200 (C426, C427, C431), R202 (C432, C433, C434, C435, C436, C437, C438, C439, C440, C441, C442, C443, C444, C445, C446, C447), R203 (C448, C449, C450), R204 (C451, C452, C453, C454)",
+        "tests: project test command"
+      ],
+      "predicted": "deep"
+    },
+    {
+      "id": "P169",
+      "title": "vbw mutate ends with where its time went, step by step",
+      "reqs": [
+        "R207"
+      ],
+      "milestone": "M43",
+      "goal": "A developer running a mutation check sees, at the end, how long VBW spent on each step (copies, the unbroken run, each break's checks, waits for a slot, saving) in the same shape the proof's time line uses, without any change to what the check decides.",
+      "criteria": [
+        "vbw mutate PLAN Rn.k WHAT FILE..., vbw mutate PLAN taskK ... WHAT FILE... and vbw mutate PLAN --run end with a line in the proof's form ('VBW's own work: X of Y min', minutes with one decimal, measured by prooftime.sh's clock, nothing estimated) followed by the split by step: copies (making, checking and removing the clean copies), unbroken (the checks on the unbroken code), one entry per break named by its target ('break R3.1'), waits (seconds spent waiting for a computer-wide slot, the figure slots already count), saving (recording the result); the steps sum to the wall time within rounding.",
+        "The line comes after the result lines (red, survivor, 'caught by the pending one') and before the slots line, for every outcome; the verdict, the recorded mutation entry, the strengthened and pending markings and the exit code are byte-for-byte and value-for-value what they were without the breakdown (tests compare a run's record and exit code with the breakdown's output stripped).",
+        "A refusal (checks red on the unbroken code, a dirty check file, a stale queued break) ends with its refusal message as today and prints no breakdown; --queue and --none run no break and print none.",
+        "docs/workflows.md's mutation-check section shows the line and names its steps; a test file of the requirement area covers each rule above; the 'taskbreak' real-user scenario is run again and its saved result shows the breakdown line."
+      ],
+      "tier": "deep",
+      "reasons": [
+        "requirements: 1",
+        "files: 6 (267557 bytes)",
+        "files: more than 2 in a repository tracking 1161 files",
+        "risk: none",
+        "breaks: R4, R5, R8, R41, R44, R60, R189, R201",
+        "guarded: R13 (C12), R14 (C13), R25 (C24), R28 (C25), R31 (C27), R34 (C30), R39 (C36), R42 (C38), R48 (C49, C50), R50 (C51), R51 (C52, C53, C66), R59 (C68, C92), R61 (C73, C74, C75, C76, C77), R62 (C78, C79, C80, C81, C82, C83, C93), R64 (C84, C85), R65 (C86, C87, C88, C89, C90), R69 (C110, C120, C122), R70 (C114), R72 (C116, C118), R73 (C98), R74 (C99, C100), R75 (C101), R76 (C102, C103), R77 (C104), R78 (C105, C106), R79 (C107), R80 (C108), R81 (C109, C111, C112, C113), R95 (C149, C150), R96 (C151, C152), R99 (C155), R101 (C179), R106 (C164, C165), R107 (C166, C167), R116 (C182, C183), R118 (C184), R123 (C190, C191), R129 (C196), R130 (C197), R134 (C201), R135 (C202), R147 (C212, C215, C237), R148 (C213, C214, C216, C238), R156 (C242, C243), R157 (C244), R158 (C245), R159 (C246), R160 (C247, C263, C264), R162 (C249), R163 (C250), R167 (C257, C258, C259, C260), R173 (C281, C282, C283, C284, C285, C286, C289), R179 (C297, C298, C299, C300, C301, C302, C303, C304, C305, C306, C312), R180 (C307, C308, C309, C310), R182 (C322, C323, C324, C325, C326), R184 (C328, C329, C330, C331, C332, C333), R185 (C334, C335, C336, C337, C338, C339, C340, C341, C342, C343), R186 (C344, C345, C346, C347, C348), R188 (C350, C351, C352, C353, C354, C355, C356, C357, C358, C359), R190 (C374, C375, C376, C377, C378, C379, C380, C381, C382, C383, C384, C385, C386, C387, C388), R191 (C389, C390, C391, C392, C393, C394, C395, C396, C397, C398, C399, C400), R192 (C401, C402, C403, C404, C405, C406, C407, C408, C409, C410), R193 (C411, C412), R194 (C417, C418, C419), R196 (C415, C416), R197 (C413, C414), R199 (C424, C425, C430), R200 (C426, C427, C431), R202 (C432, C433, C434, C435, C436, C437, C438, C439, C440, C441, C442, C443, C444, C445, C446, C447), R203 (C448, C449, C450)",
+        "tests: project test command"
+      ],
+      "predicted": "deep"
     }
   ],
   "plans": [
@@ -49441,6 +50014,311 @@
           ]
         }
       ]
+    },
+    {
+      "id": "P166.1",
+      "phase": "P166",
+      "title": "The spec's Clean copy section: parsed, checked against git, kept in the record",
+      "reqs": [
+        "R205"
+      ],
+      "files": [
+        "plugin/lib/spec.jq",
+        "plugin/lib/cmd-spec.sh",
+        "plugin/lib/record.jq",
+        "plugin/lib/cmd-init.sh"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "plugin/lib/spec.jq reads a '## Clean copy' section (heading test like Test results, case-insensitive): each bullet '- <path>' becomes {path, line} in a new output key leave_out (null without the section, as results is), the path kept exactly as written (its trailing / included). A bullet is a parse error with its line number when the path is absolute, has an empty, '.' or '..' segment, or its first segment is .vbw or .git ('expected \"- <path>\" (a git-ignored path relative to the project root, no \".\" or \"..\", outside .vbw/ and .git/), got: ...'), or when the same path (compared without a trailing /) is named twice ('clean copy path X is named twice'). tests/clean-copy-spec.bats: the parser and the bad-path cases go green.",
+        "plugin/lib/record.jq validates project.leave_out when present: a non-empty array of distinct non-empty strings, each a relative path (safe_path: no leading /, no .. segment) with no empty or '.' segment and a first segment that is neither .vbw nor .git; the violation names project.leave_out; a record without the field stays valid at schema 4 (no schema change, like project.results).",
+        "plugin/lib/cmd-spec.sh: a verification shared by vbw spec check and vbw spec sync, run before any write, for each listed path (trailing / trimmed): 'spec.md line N: PATH does not exist' when nothing is at the path; 'spec.md line N: PATH is not git-ignored: only ignored paths are copied in, so only they can be left out' when git lists anything tracked at or under it (git ls-files -z -- PATH), anything untracked and not ignored at or under it (git ls-files -z --others --exclude-standard -- PATH), or when neither git check-ignore -q -- PATH succeeds nor git ls-files -z --others --ignored --exclude-standard -- PATH lists anything (a folder holding only ignored files is accepted). spec_sync_leave_out then writes project.leave_out = the paths as written (deleting the field when the section is absent), printing 'clean copy leaves out: a, b' or 'removed the clean copy list' when the list changes, exactly as spec_sync_results does; vbw spec check appends ', N path(s) left out of the clean copy' when listed. Every refusal is a vbw_die with exit 1 and leaves the record byte-identical. Record-sized data reaches jq through --slurpfile scratch files, never --arg.",
+        "plugin/lib/cmd-init.sh init_spec: the starting spec.md gains a '## Clean copy' section after Commands, with an HTML comment in the style of the other sections (what it is for: git-ignored paths such as a huge data folder or caches that the proof's clean copy leaves out, one per line relative to the project root, the rest of the ignored environment still copied in, edit then vbw spec sync) holding an example line '- data/' inside the comment, so a fresh spec parses with leave_out null. tests/clean-copy-spec.bats green on bash 5 and /bin/bash 3.2 for the parts this plan builds (the contract and approval cases wait for P166.2)."
+      ]
+    },
+    {
+      "id": "P166.2",
+      "phase": "P166",
+      "title": "The left-out paths are part of the contract, shown, compared at approval and by vbw next",
+      "reqs": [
+        "R205"
+      ],
+      "files": [
+        "plugin/lib/contract.sh",
+        "plugin/lib/cmd-show.sh",
+        "plugin/lib/cmd-approve.sh"
+      ],
+      "after": [
+        "P166.1"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "plugin/lib/contract.sh: contract_core and contract_doc add leave_out: .project.leave_out only when present (as results is added), so older contracts keep their hash and a changed list changes the fingerprint; contract_shape follows through contract_core.",
+        "plugin/lib/cmd-show.sh: vbw show contract prints, after the saved test results line and only when the record lists paths, one line 'clean copy leaves out: data/, cache/' (the paths as written, joined by ', '); vbw show contract --changes prints '  clean copy leaves out: <new list or none> (was <old list or none>)' when the approved document's list differs (an approved document without the key counts as none).",
+        "plugin/lib/cmd-approve.sh approve_problems: the spec comparison also requires (.project.leave_out // null) == (the parsed leave_out paths // null), so an edited, unsynced Clean copy section gives 'spec.md and the record differ (vbw spec sync)' and vbw next's contract action names it (R171) with no code change in next.jq. tests/clean-copy-spec.bats fully green on both shells."
+      ]
+    },
+    {
+      "id": "P166.3",
+      "phase": "P166",
+      "title": "Every clean copy skips the listed paths",
+      "reqs": [
+        "R205"
+      ],
+      "files": [
+        "plugin/lib/proofcopy.sh"
+      ],
+      "after": [
+        "P166.1",
+        "P167.1"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "plugin/lib/proofcopy.sh proofcopy_make: before the ignored-path loop, read the record's list once (jq -r '(.project.leave_out // [])[]' \"$VBW_RECORD\", each path's trailing / trimmed, into a local newline-separated list); nothing else about how a copy is made changes.",
+        "In the loop, skip every entry p equal to a listed path L or starting with L/ before the build-folder test, so a folder git lists whole, a file, and files git lists one by one under a listed folder are all left out; a listed path that no longer exists matches nothing and changes nothing; build folders are still skipped, links still copied, an unreadable path still dies by name.",
+        "The header comment of proofcopy.sh names the rule; tests/clean-copy-proof.bats green on bash 5 and /bin/bash 3.2 (vbw prove, vbw fix done, vbw mutate single form, --run, the one run of Rn.k --none, the unchanged-results case) and tests/proof-build-dirs.bats, tests/prove-clean.bats stay green."
+      ]
+    },
+    {
+      "id": "P166.4",
+      "phase": "P166",
+      "title": "docs: the Clean copy section, its refusals, the contract line and the copy",
+      "reqs": [
+        "R205"
+      ],
+      "files": [
+        "docs/proof.md",
+        "docs/record.md"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "docs",
+      "tasks": [
+        "docs/proof.md gains a '### Clean copy: `## Clean copy`' section next to the Test results one: the form (one git-ignored path per line, relative to the project root, an example '- data/' block), the refusals of vbw spec check and vbw spec sync with their words ('is not git-ignored: only ignored paths are copied in, so only they can be left out', 'does not exist', the spec line named; an absolute path, '..', .vbw/ or .git/ refused like a bad Test results folder), that the list is part of the contract (re-approval, the 'clean copy leaves out:' line of vbw show contract, --changes naming a changed path), and that every clean copy (vbw prove, vbw fix done, vbw mutate) skips the listed paths and everything under them while the other ignored paths are still copied in, a path that no longer exists changing nothing until the next sync refuses it.",
+        "docs/proof.md's approval paragraph ('The contract and approval') lists Clean copy among the sections compared with the record; the clean-copy paragraph of vbw prove links to the new section.",
+        "docs/record.md gains the `project.leave_out` row: the spec's Clean copy list, paths as written, part of the contract, absent when none, added within schema 4. tests/clean-copy-docs.bats green."
+      ]
+    },
+    {
+      "id": "P166.5",
+      "phase": "P166",
+      "title": "Real-user scenario leaveout",
+      "reqs": [
+        "R205"
+      ],
+      "files": [
+        "tools/l3-suite.sh",
+        "tools/l3-results/leaveout.json"
+      ],
+      "after": [
+        "P166.2",
+        "P166.3"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "tools/l3-suite.sh: scenario_leaveout and leaveout_seed, in ALL and the header list. The seed makes a project with a committed .gitignore ignoring data/ and cache/, both folders present with files, a spec whose '## Clean copy' section lists '- data/' and whose one requirement is greet.sh, a seeded check (sh test_greet.sh) that, from inside the copy, writes whether data and cache exist there into the project's own runtime folder (\"$(git rev-parse --git-common-dir)/../.vbw/runtime/leaveout-probe\"), synced and committed; the user types /vbw:vibe and the build runs to the end.",
+        "Its checks read the record and the kernel's output, never the screen: facts contract_names_path (vbw show contract run by the suite prints 'clean copy leaves out: data/'), leave_out (.project.leave_out from the record), proof_passed (.evidence.passed) and copy_without_data (the probe says data absent and cache present); common_checks; result_write leaveout with a fixture text and a not_tested list.",
+        "Run bash tools/l3-suite.sh leaveout (a real Claude Code session, about $1-3), fix what it finds, and commit tools/l3-results/leaveout.json with the scenario; tests/l3-leaveout.bats green."
+      ]
+    },
+    {
+      "id": "P167.1",
+      "phase": "P167",
+      "title": "The plain copy's size, counted once, and the one vbw: line",
+      "reqs": [
+        "R206"
+      ],
+      "files": [
+        "plugin/lib/proofcopy.sh"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "plugin/lib/proofcopy.sh proofcopy_copy sets PROOFCOPY_HOW to clone when the copy-on-write cp succeeded and to plain when the plain cp ran. proofcopy_make records, only while making the first copy of the command (so once per command, never once per copy slot), one line per ignored entry it copied into a per-process scratch file ($VBW_RUNTIME/proofcopy.$$.sizes, guarded like the prooftime file): the way (clone or plain), the entry's top-level name (its first path segment, with / when it is a folder) and, for a plain copy only, its size in KB read with du -sk on the source (so a du stand-in on PATH can answer); this runs inside the copies step of VBW's own work.",
+        "proofcopy_create_slots, after its copies are made, calls proofcopy_plain_say once per process (a flag): it sums the plain sizes per top-level name and, when the total exceeds the threshold (VBW_PROOFCOPY_PLAIN_KB, a test-only variable, default 512000 KB = 500 MB; equal is silent), prints exactly one line to stderr: 'vbw: <total> of git-ignored data was copied file by file (the disk offers no instant clone): <up to three largest nonzero names with sizes, largest first>; list them under ## Clean copy in .vbw/spec.md, then vbw spec sync'. Sizes print in MB with one decimal below 1024 MB and in GB with one decimal from there (integer arithmetic from KB, no bc). Nothing prints when every entry was cloned, when the total is at or under the threshold, or when nothing ignored was copied; the function never changes the caller's exit code, verdict, evidence or record. The scratch file is removed with the copies.",
+        "The header comment names the line and the threshold; tests/proof-copy-plain.bats green on bash 5 and /bin/bash 3.2 (vbw prove, vbw fix done, vbw mutate single form, --run and Rn.k --none; the once-per-command du count; the copies-step attribution; the three silent cases)."
+      ]
+    },
+    {
+      "id": "P167.2",
+      "phase": "P167",
+      "title": "docs: the 500 MB line beside the copy-on-write paragraph",
+      "reqs": [
+        "R206"
+      ],
+      "files": [
+        "docs/proof.md"
+      ],
+      "after": [
+        "P166.4"
+      ],
+      "status": "planned",
+      "role": "docs",
+      "tasks": [
+        "docs/proof.md, right after the copy-on-write sentences of the clean-copy paragraph (within a few lines of them): when more than 500 MB of ignored data is copied file by file because the disk offers no clone, the command prints once, on stderr, one line starting vbw: naming the largest ignored folders copied with their sizes (MB or GB, one decimal) and the way out: list them under ## Clean copy in .vbw/spec.md, then vbw spec sync.",
+        "The same paragraph: a copy-on-write clone, 500 MB or less, or nothing ignored prints nothing, and the line changes no verdict, result or exit code; it links to the Clean copy section.",
+        "tests/proof-copy-plain-docs.bats green; docs/proof.md still reads as one paragraph flow (no duplicated sentences)."
+      ]
+    },
+    {
+      "id": "P168.1",
+      "phase": "P168",
+      "title": "record.sh: the un-hide lines, the hidden-file check and a record_commit that never skips silently",
+      "reqs": [
+        "R208"
+      ],
+      "files": [
+        "plugin/lib/record.sh"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "plugin/lib/record.sh record_gitignore: writes .vbw/.gitignore as 'runtime/' plus the un-hide lines '!record.json', '!spec.md', '!map.md', '!.gitignore' (that order, one per line) when the file is missing; otherwise appends only the lines that are missing (exact line match), keeping every existing line and leaving a complete file byte-identical; returns 0 when it wrote something and 1 when it changed nothing. It is the one writer of that file (cmd-init.sh's init_gitignore moves here).",
+        "record_hidden: for each own file (.vbw/record.json, .vbw/spec.md, .vbw/map.md, .vbw/.gitignore) that exists, is untracked (git ls-files --error-unmatch fails) and that git check-ignore -v -- FILE still reports ignored, one line 'FILE is hidden from git by SOURCE:LINE:PATTERN: remove that line, or change it to .vbw/runtime/' (the source, line number and pattern exactly as git check-ignore -v gives them, e.g. .gitignore:1:.vbw/); prints nothing and returns 1 when no own file is hidden.",
+        "record_commit: before listing its own files it runs record_gitignore and always counts .vbw/.gitignore among them, so an existing project gets the lines at its next VBW commit and the file is committed along with the record; then record_hidden: in the non-strict form each line is printed as 'vbw: warning: <line>' on stderr and the commit of the other files goes on; in the strict form the lines are the failure's reason (printed as the reason today is, exit 1, nothing committed). A project with no such rule prints nothing new and commits as today. Untracked own files git no longer ignores are added as today.",
+        "tests/hidden-record.bats: the record_commit cases (a *.json or *.md rule in the project's .gitignore, .git/info/exclude and a global excludes file; the existing project; the warning) green on bash 5 and /bin/bash 3.2."
+      ]
+    },
+    {
+      "id": "P168.2",
+      "phase": "P168",
+      "title": "vbw init, vbw doctor, vbw approve and vbw next name a hidden own file",
+      "reqs": [
+        "R208"
+      ],
+      "files": [
+        "plugin/lib/cmd-init.sh",
+        "plugin/lib/cmd-doctor.sh",
+        "plugin/lib/cmd-approve.sh"
+      ],
+      "after": [
+        "P168.1",
+        "P166.2"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "plugin/lib/cmd-init.sh: init_gitignore is replaced by record_gitignore; on a fresh init, and in an already-initialized project whenever a line was added, vbw init prints exactly one line 'VBW keeps its plan files visible to git through .vbw/.gitignore (runtime/ ignored; record.json, spec.md, map.md un-hidden)' and nothing about it when the file was already complete; after that it prints each record_hidden line prefixed 'vbw: ' on stderr (exit code unchanged: init stays idempotent and succeeds).",
+        "plugin/lib/cmd-doctor.sh doctor_project: after the spec line, each record_hidden line is a fail line (doctor_line fail '<the line before the colon-fix>' 'remove that line, or change it to .vbw/runtime/'), so vbw doctor exits 1; nothing is printed when no own file is hidden.",
+        "plugin/lib/cmd-approve.sh approve_problems: appends each record_hidden line, so vbw approve refuses with 'the contract is not ready for approval:' and that line (exit 1, no decision, no consent, no commit) and vbw next's contract action names it among its problems (R171). tests/hidden-record.bats fully green on both shells."
+      ]
+    },
+    {
+      "id": "P168.3",
+      "phase": "P168",
+      "title": "docs: the un-hide lines, the whole-folder case and the fix",
+      "reqs": [
+        "R208"
+      ],
+      "files": [
+        "docs/record.md",
+        "docs/diagnostics.md"
+      ],
+      "after": [
+        "P166.4"
+      ],
+      "status": "planned",
+      "role": "docs",
+      "tasks": [
+        "docs/record.md, where it names VBW's own files and their commits: VBW keeps .vbw/.gitignore with runtime/ and the un-hide lines !record.json, !spec.md, !map.md and !.gitignore (the last so a project-wide * rule cannot hide the file itself); vbw init writes them, an existing project gets them at its next VBW commit, and VBW never edits the project's .gitignore.",
+        "docs/record.md: the whole-folder case (a rule such as .vbw/ or * hides the folder and nothing inside can undo it): vbw init says so with the rule's source as git check-ignore -v gives it (file, line, pattern), vbw doctor fails, vbw approve refuses, other VBW commits print a vbw: warning: naming the hidden file, and the fix 'remove that line, or change it to .vbw/runtime/'.",
+        "docs/diagnostics.md, in the vbw doctor section: the fail line for a hidden own file (with its git check-ignore -v source) and its fix line. tests/hidden-record-docs.bats green."
+      ]
+    },
+    {
+      "id": "P168.4",
+      "phase": "P168",
+      "title": "Real-user scenarios: hiddenrecord, and greenfield run again",
+      "reqs": [
+        "R208"
+      ],
+      "files": [
+        "tools/l3-suite.sh",
+        "tools/l3-results/hiddenrecord.json",
+        "tools/l3-results/greenfield.json"
+      ],
+      "after": [
+        "P168.2",
+        "P166.5"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "tools/l3-suite.sh: scenario_hiddenrecord, in ALL and the header list: a fresh project whose committed .gitignore holds '*.json'; the user types /vbw:vibe with the greet.sh request and the build runs to the end. Its checks read git and the project's files, never the screen: facts gitignore_rule ('*.json', read from .gitignore), record_committed (git ls-files --error-unmatch .vbw/record.json), unhide_lines (.vbw/.gitignore holds the four un-hide lines), record_commits (git log --format=%H -- .vbw/record.json counted, at least 1); common_checks; result_write hiddenrecord with a fixture text and a not_tested list.",
+        "scenario_greenfield gains the fact plan_files_unhidden: true when the project's .vbw/.gitignore holds the four un-hide lines and .vbw/record.json is tracked; its existing facts and checks stay.",
+        "Run bash tools/l3-suite.sh greenfield hiddenrecord (real Claude Code sessions), fix what they find, and commit tools/l3-results/greenfield.json and tools/l3-results/hiddenrecord.json with the suite; tests/l3-hiddenrecord.bats green (tests/l3-greenfield-report.bats stays green)."
+      ]
+    },
+    {
+      "id": "P169.1",
+      "phase": "P169",
+      "title": "vbw mutate measures its steps and prints the proof's time line and the split",
+      "reqs": [
+        "R207"
+      ],
+      "files": [
+        "plugin/lib/cmd-mutate.sh",
+        "plugin/lib/mutate-queue.sh",
+        "plugin/lib/prooftime.sh"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "plugin/lib/prooftime.sh prooftime_split: like prooftime_total but general: {steps: [{k, v}] in the order each step was first counted, wall} from the scratch file, so a command names its own steps; prooftime_total is unchanged. A helper prooftime_minutes (seconds to 'X.Y' as prooftime_lines rounds) is shared by the proof line and the new one.",
+        "plugin/lib/cmd-mutate.sh single form: the timer opens (prooftime_begin) right before proofcopy_create_slots and the wall ends after the record write; steps: copies (making the copies, proofcopy_verify when it runs, mutate_put, mutate_clean, proofcopy_remove), unbroken (each checks_run_all on the unbroken code), 'break <target>' (each checks_run_all on the broken code; one entry per target, R1.1 or task1), waits (the slot seconds the slots count for the run, read from the run's waits file before and after each run, moved out of the step they fell in so the steps tile the wall), saving (mutate_record's record_update; the read tracking the units count stays in the tracking lines and counts as own work). mutate_time_say prints, after mutate_record's result lines and before slots_say (which moves from mutate_record to its callers), two lines: \"VBW's own work: X of Y min\" (X = copies + saving + tracking, Y the wall, both in minutes with one decimal) and '  steps of W s: copies A, unbroken B, break R1.1 C, waits D, saving E' (seconds with one decimal; every step listed, 0.0 when nothing fell in it; the break entries in the order the targets ran). Nothing else printed changes; the recorded entry, the exit code and the strengthened and pending markings are untouched; every vbw_die before mutate_record prints no breakdown; --queue, task --none and Rn.k --none print none.",
+        "plugin/lib/mutate-queue.sh --run: the same timer around proofcopy_create_slots through the recording loop (saving = the loop of mutate_record calls); unbroken is the one run of the unbroken checks; each wave of breaks run side by side is one entry named 'break R1.1' when the wave holds one break and 'breaks R1.1 R1.2' (targets in queue order, space-separated) when it holds several; waits as in the single form; the two lines come after the last result's lines and before the one slots line; the exit code (survivor or stale break) is unchanged. A stale queued break's refusal and the red-on-unbroken refusal print no breakdown.",
+        "tests/mutate-time.bats green on bash 5 and /bin/bash 3.2 (the forced wait case holds the only slot from another project); tests/mutate-command.bats, tests/mutate-queue.bats, tests/mutate-pending-check.bats, tests/mutate-rule-none.bats and tests/prove-own-work.bats stay green."
+      ]
+    },
+    {
+      "id": "P169.2",
+      "phase": "P169",
+      "title": "docs: the mutation check's time line and its steps",
+      "reqs": [
+        "R207"
+      ],
+      "files": [
+        "docs/workflows.md"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "docs",
+      "tasks": [
+        "docs/workflows.md 'The mutation check': a new bullet 'Where the time went' showing the two printed lines as they appear (VBW's own work: X of Y min, then the steps line: copies, unbroken, break R3.1, waits, saving).",
+        "The bullet names each step (copies: making, breaking, restoring and removing the clean copies; unbroken: the checks on the unbroken code; one entry per break named by its target, in --run one entry per wave of breaks run side by side naming its targets; waits: the seconds spent waiting for a computer-wide slot; saving: recording the result).",
+        "The bullet says the figures are measured by the proof's clock and the steps sum to the wall within rounding, that the breakdown changes no verdict, record or exit code, and that a refusal prints no breakdown while --queue and --none print none. tests/mutate-time-docs.bats green."
+      ]
+    },
+    {
+      "id": "P169.3",
+      "phase": "P169",
+      "title": "Real-user scenario taskbreak run again, showing the breakdown",
+      "reqs": [
+        "R207"
+      ],
+      "files": [
+        "tools/l3-suite.sh",
+        "tools/l3-results/taskbreak.json"
+      ],
+      "after": [
+        "P169.1",
+        "P168.4"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "tools/l3-suite.sh scenario_taskbreak gains two facts read from the tool results of the session's vbw mutate calls (transcripts | transcript_tool_output 'vbw mutate' REGEX, never the screen): mutate_breakdown_line (a line matching \"^VBW.s own work: [0-9]+\\.[0-9] of [0-9]+\\.[0-9] min\") and mutate_steps_line (a line starting '  steps of '); each is an expect so a missing line fails the scenario; the existing facts stay.",
+        "Run bash tools/l3-suite.sh taskbreak (a real Claude Code session at rigor deep) and fix what it finds.",
+        "Commit tools/l3-results/taskbreak.json with the suite; tests/l3-taskbreak.bats green (its R193 cases included)."
+      ]
     }
   ],
   "fixes": [
@@ -55805,6 +56683,12 @@
       "id": "D496",
       "at": "2026-10-25T15:18:22Z",
       "text": "Shipped M42 Faster proofs on large projects: 3 requirements proven or accepted"
+    },
+    {
+      "id": "D497",
+      "text": "A project's git ignore rule that hides VBW's own files: VBW protects them itself through its own .vbw/.gitignore (un-hide lines for record.json, spec.md and map.md, written at init and for existing projects), and names the rule and the fix only when the whole .vbw folder is hidden, which no inner line can undo; VBW never edits the project's .gitignore",
+      "why": "Architect's recommendation, chosen by the owner 2026-10-26: fixes the common case for everyone with nothing asked of the user, keeps VBW out of files the user owns; a whole-folder rule is the one case git lets nothing inside fix",
+      "at": "2026-10-26T12:39:33Z"
     }
   ],
   "commands": {
@@ -63884,6 +64768,17 @@
         "ended": "2026-10-26T12:33:02Z",
         "cost": {
           "usd": 2.385226
+        }
+      },
+      {
+        "id": "plan-20261026T123946Z",
+        "kind": "plan",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M43",
+        "started": "2026-10-26T12:39:46Z",
+        "ended": "2026-10-26T13:28:33Z",
+        "cost": {
+          "usd": 18.753803
         }
       }
     ],
