@@ -378,26 +378,18 @@ record_hidden() {
 record_commit() {
   local strict=0
   [ "${1:-}" != "--strict" ] || { strict=1; shift; }
-  local msg="$1" own=() changed=() untracked=() freed=() f why hidden
+  local msg="$1" own=() changed=() untracked=() f why hidden
   shift
   local only=("$@")
   (
     # A subshell starts without the parent's traps: it guards only its own lock.
     vbw_guard_reset
     cd "$VBW_ROOT" || exit 1
-    # Own files a project rule hid until now (never committed, so never missed): once the
-    # un-hide lines free them, this commit takes them along, whatever FILE... names.
-    for f in .vbw/spec.md .vbw/record.json .vbw/map.md; do
-      [ -f "$f" ] && ! git ls-files -z --error-unmatch -- "$f" > /dev/null 2>&1 &&
-        git check-ignore -q -- "$f" 2> /dev/null && freed+=("$f")
-    done
     # An existing project gets the un-hide lines at its next VBW commit.
     record_gitignore || true
     if [ ${#only[@]} -gt 0 ]; then
       for f in "${only[@]}"; do [ -f "$f" ] && own+=("$f"); done
-      for f in .vbw/.gitignore ${freed[@]+"${freed[@]}"}; do
-        case " ${own[*]+"${own[*]}"} " in *" $f "*) ;; *) [ -f "$f" ] && own+=("$f") ;; esac
-      done
+      case " ${own[*]+"${own[*]}"} " in *" .vbw/.gitignore "*) ;; *) [ -f .vbw/.gitignore ] && own+=(.vbw/.gitignore) ;; esac
     else
       for f in .vbw/spec.md .vbw/record.json .vbw/map.md .vbw/.gitignore; do [ -f "$f" ] && own+=("$f"); done
       while IFS= read -r -d '' f; do [ -f "$f" ] && own+=("$f"); done \
