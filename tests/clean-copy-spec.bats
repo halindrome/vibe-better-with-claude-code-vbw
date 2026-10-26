@@ -135,6 +135,7 @@ refused() {
   local sum
   sum=$(record_sum)
   git add -f data/a.bin && git commit -q -m "feat(shop): data tracked"
+  printf "more\n" > data/b.bin
   spec '- data/'
   run "$VBW" spec sync
   refused "$sum"
