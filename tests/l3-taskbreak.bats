@@ -83,7 +83,7 @@ body() { sed -n "/^scenario_$1()/,/^}/p" "$SUITE"; }
 
 @test "R209: the scenario records early_plan_never_blocked: no vbw plan block P1.1 tool call, and P1.1's recorded files still exactly greet.sh" {
   body taskbreak | grep -q 'early_plan_never_blocked' || { echo "scenario_taskbreak does not record early_plan_never_blocked"; false; }
-  body taskbreak | grep -qF 'plan block P1.1' || { echo "the scenario does not look for a vbw plan block P1.1 tool call"; false; }
+  body taskbreak | grep -qE "transcript_tool_called 'vbw plan block P1\\\\\.1'" || { echo "the scenario does not look for a vbw plan block P1.1 tool call"; false; }
   body taskbreak | grep -qF '["greet.sh"]' || { echo "the scenario does not hold P1.1's files to [\"greet.sh\"]"; false; }
   for k in task_break_recorded checks_run other_rule_check_red_at_break early_plan_built_first later_plan_completed mutate_breakdown_line mutate_steps_line; do
     body taskbreak | grep -qF "$k" || { echo "the earlier fact $k is gone"; false; }
