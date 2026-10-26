@@ -59093,6 +59093,11 @@
       "text": "F319 (a listed path under a folder git ignores as a whole, data/raw/ under an ignored data/): the clean copy leaves it out by descending into that folder and copying its children one by one around the listed path, as deep as the path goes, never by copying the folder and deleting the path afterwards. vbw spec check and sync keep accepting such a path. The regression test ignores data/ as a whole, lists data/sub/, runs the proof with the probe and expects data/a.bin in the copy and nothing of data/sub",
       "why": "Lead dev 2026-10-26: the list exists to spare the copy cost of a big folder (18 GB in the field report); copy-then-delete pays that cost on a plain copy and only hides it on a clone",
       "at": "2026-10-26T20:44:54Z"
+    },
+    {
+      "id": "D510",
+      "at": "2026-10-26T20:54:44Z",
+      "text": "Contract approved: 198 requirements, 468 checks, 525 plans (4100a3e5c422)"
     }
   ],
   "commands": {
