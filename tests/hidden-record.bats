@@ -116,6 +116,7 @@ tracked() { git ls-files --error-unmatch -- "$1" > /dev/null 2>&1; }
   decisions=$(jq '.decisions | length' .vbw/record.json)
   vbw_run approve
   [ "$status" -eq 1 ] || { echo "$output"; false; }
+  [[ "$output" == *"the contract is not ready for approval:"* ]] || { echo "$output"; false; }
   printf '%s\n' "$output" | grep -qE "$HIDDEN_RE" || { echo "$output"; false; }
   [[ "$output" == *"$FIX"* ]] || { echo "$output"; false; }
   [ "$(git rev-parse HEAD)" = "$head" ]
