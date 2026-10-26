@@ -18,7 +18,7 @@ near() {
 }
 
 @test "R206: the paragraph names the 500 MB threshold of a plain copy and that the line is printed once, on stderr, starting vbw:" {
-  near | grep -q '500 MB' || { near; false; }
+  near | tr '\n' ' ' | grep -Eq 'more than 500 MB' || { near; false; }
   near | grep -q 'vbw:' || { near; false; }
   near | grep -qi 'once' || { near; false; }
 }
