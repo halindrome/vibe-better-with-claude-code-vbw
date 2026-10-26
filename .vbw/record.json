@@ -23972,7 +23972,15 @@
         "guarded: R1 (C1), R2 (C2), R4 (C4), R5 (C5), R8 (C8), R12 (C11), R13 (C12), R14 (C13), R22 (C19), R23 (C20), R24 (C23), R25 (C24), R28 (C25), R31 (C27), R32 (C28), R33 (C29), R34 (C30), R38 (C33, C34), R39 (C36), R42 (C38), R43 (C42, C43), R44 (C44, C45), R45 (C39, C40, C41), R46 (C46), R47 (C47), R48 (C49, C50), R49 (C48), R50 (C51), R51 (C52, C53, C66), R59 (C68, C92), R60 (C72, C94), R61 (C73, C74, C75, C76, C77), R62 (C78, C79, C80, C81, C82, C83, C93), R64 (C84, C85), R65 (C86, C87, C88, C89, C90), R66 (C95), R69 (C110, C120, C122), R70 (C114), R72 (C116, C118), R73 (C98), R74 (C99, C100), R75 (C101), R76 (C102, C103), R77 (C104), R78 (C105, C106), R79 (C107), R80 (C108), R81 (C109, C111, C112, C113), R92 (C131, C132, C133, C134, C135, C136, C137, C138, C139), R93 (C140, C141, C142, C143, C144), R94 (C145, C146, C147, C148), R95 (C149, C150), R96 (C151, C152), R97 (C153), R98 (C154), R99 (C155), R100 (C156), R101 (C179), R102 (C158, C159), R103 (C160), R104 (C161, C162), R105 (C163), R106 (C164, C165), R107 (C166, C167), R110 (C169, C170), R111 (C171, C172, C173, C174, C175), R115 (C181), R116 (C182, C183), R118 (C184), R121 (C187, C188), R123 (C190, C191), R129 (C196), R130 (C197), R131 (C198), R132 (C199), R134 (C201), R135 (C202), R144 (C208, C209), R146 (C211), R147 (C212, C215, C237), R148 (C213, C214, C216, C238), R149 (C217, C218, C219, C220, C221, C222), R150 (C223, C224, C225, C226, C227, C228, C229, C230), R152 (C233, C234), R153 (C235, C236, C239), R156 (C242, C243), R157 (C244), R158 (C245), R159 (C246), R160 (C247, C263, C264), R161 (C248, C265, C266), R162 (C249), R163 (C250), R165 (C252), R166 (C253, C254, C255, C256, C267), R167 (C257, C258, C259, C260), R168 (C261, C262), R169 (C268), R170 (C269), R173 (C281, C282, C283, C284, C285, C286, C289), R174 (C279, C280), R175 (C274, C275), R176 (C276, C277, C278), R177 (C287, C288), R179 (C297, C298, C299, C300, C301, C302, C303, C304, C305, C306, C312), R180 (C307, C308, C309, C310), R181 (C313, C314, C315, C316, C317, C318, C319, C320, C321), R182 (C322, C323, C324, C325, C326), R183 (C327), R184 (C328, C329, C330, C331, C332, C333), R185 (C334, C335, C336, C337, C338, C339, C340, C341, C342, C343), R186 (C344, C345, C346, C347, C348), R188 (C350, C351, C352, C353, C354, C355, C356, C357, C358, C359), R189 (C360, C361, C362, C363, C364, C365, C366, C367, C368, C369, C370, C371, C372, C373), R190 (C374, C375, C376, C377, C378, C379, C380, C381, C382, C383, C384, C385, C386, C387, C388), R191 (C389, C390, C391, C392, C393, C394, C395, C396, C397, C398, C399, C400), R192 (C401, C402, C403, C404, C405, C406, C407, C408, C409, C410), R193 (C411, C412), R194 (C417, C418, C419), R195 (C420, C421, C422), R196 (C415, C416), R197 (C413, C414), R199 (C424, C425, C430), R200 (C426, C427, C431), R201 (C428, C429), R202 (C432, C433, C434, C435, C436, C437, C438, C439, C440, C441, C442, C443, C444, C445, C446, C447), R203 (C448, C449, C450), R204 (C451, C452, C453, C454)",
         "tests: project test command"
       ],
-      "predicted": "standard"
+      "predicted": "standard",
+      "qa": {
+        "result": "fail",
+        "tier": "standard",
+        "tree": "e5b0536e3c1eb83edb15f4f8d14e568d4f2f23f82d91555b519c52c57257d9ec",
+        "at": "2026-10-26T20:41:43Z",
+        "note": "15/16 checks",
+        "rounds": 1
+      }
     }
   ],
   "plans": [
@@ -55040,6 +55048,15 @@
       "attempts": 0,
       "status": "closed",
       "note": "test fail"
+    },
+    {
+      "id": "F318",
+      "req": "R209",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "R209.20 test gap: the tests/l3-taskbreak.bats case 'early_plan_never_blocked' cannot fail when the scenario's block check is wrong. The kernel's own mutation run on P170.5 (tools/l3-suite.sh, 'block regex misspelled') ended as a survivor, twice, with C473 green (record: P170.5 mutations, head 0e2cb29f). Cause: tests/l3-taskbreak.bats line 86 does grep -qF 'plan block P1.1' on the scenario text, and that text also appears in the expect() message ('no vbw plan block P1.1 call...'), so it matches even when the real call 'transcript_tool_called vbw plan block P1\\.1' is misspelled or removed. Then the fact early_plan_never_blocked would be true no matter what the Dev did (an unfound tool call counts as 'never blocked'). Only the files half of the fact is pinned (a mutation on it went red). T192 explains why the Dev could not commit the fix, but no decision accepts this survivor (D506 covers only R207.13). Regression test: in the R209 'early_plan_never_blocked' case, pin the actual call line, e.g. grep -qE \"transcript_tool_called 'vbw plan block P1\\\\\\\\.1'\" on the scenario body (not the expect message), and show it fails when that line is misspelled.",
+      "phase": "P170"
     }
   ],
   "todos": [
