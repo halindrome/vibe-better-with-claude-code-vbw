@@ -1,6 +1,28 @@
 {
   "schema": 4,
-  "lease": null,
+  "lease": {
+    "run": "build-20261026T140145Z",
+    "kind": "build",
+    "started_at": "2026-10-26T14:01:45Z",
+    "files": [
+      "docs/proof.md",
+      "docs/record.md",
+      "docs/workflows.md",
+      "plugin/lib/cmd-init.sh",
+      "plugin/lib/cmd-mutate.sh",
+      "plugin/lib/cmd-spec.sh",
+      "plugin/lib/mutate-queue.sh",
+      "plugin/lib/proofcopy.sh",
+      "plugin/lib/prooftime.sh",
+      "plugin/lib/record.jq",
+      "plugin/lib/record.sh",
+      "plugin/lib/spec.jq"
+    ],
+    "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+    "cost": {
+      "usd": 2534.865409
+    }
+  },
   "protected": [
     "tests/adaptive-results.bats",
     "tests/agent-scratch.bats",
@@ -50029,7 +50051,7 @@
         "plugin/lib/cmd-init.sh"
       ],
       "after": [],
-      "status": "planned",
+      "status": "building",
       "role": "dev",
       "tasks": [
         "plugin/lib/spec.jq reads a '## Clean copy' section (heading test like Test results, case-insensitive): each bullet '- <path>' becomes {path, line} in a new output key leave_out (null without the section, as results is), the path kept exactly as written (its trailing / included). A bullet is a parse error with its line number when the path is absolute, has an empty, '.' or '..' segment, or its first segment is .vbw or .git ('expected \"- <path>\" (a git-ignored path relative to the project root, no \".\" or \"..\", outside .vbw/ and .git/), got: ...'), or when the same path (compared without a trailing /) is named twice ('clean copy path X is named twice'). tests/clean-copy-spec.bats: the parser and the bad-path cases go green.",
@@ -50095,7 +50117,7 @@
         "docs/record.md"
       ],
       "after": [],
-      "status": "planned",
+      "status": "building",
       "role": "docs",
       "tasks": [
         "docs/proof.md gains a '### Clean copy: `## Clean copy`' section next to the Test results one: the form (one git-ignored path per line, relative to the project root, an example '- data/' block), the refusals of vbw spec check and vbw spec sync with their words ('is not git-ignored: only ignored paths are copied in, so only they can be left out', 'does not exist', the spec line named; an absolute path, '..', .vbw/ or .git/ refused like a bad Test results folder), that the list is part of the contract (re-approval, the 'clean copy leaves out:' line of vbw show contract, --changes naming a changed path), and that every clean copy (vbw prove, vbw fix done, vbw mutate) skips the listed paths and everything under them while the other ignored paths are still copied in, a path that no longer exists changing nothing until the next sync refuses it.",
@@ -50137,7 +50159,7 @@
         "plugin/lib/proofcopy.sh"
       ],
       "after": [],
-      "status": "planned",
+      "status": "building",
       "role": "dev",
       "tasks": [
         "plugin/lib/proofcopy.sh proofcopy_copy sets PROOFCOPY_HOW to clone when the copy-on-write cp succeeded and to plain when the plain cp ran. proofcopy_make records, only while making the first copy of the command (so once per command, never once per copy slot), one line per ignored entry it copied into a per-process scratch file ($VBW_RUNTIME/proofcopy.$$.sizes, guarded like the prooftime file): the way (clone or plain), the entry's top-level name (its first path segment, with / when it is a folder) and, for a plain copy only, its size in KB read with du -sk on the source (so a du stand-in on PATH can answer); this runs inside the copies step of VBW's own work.",
@@ -50177,7 +50199,7 @@
         "plugin/lib/record.sh"
       ],
       "after": [],
-      "status": "planned",
+      "status": "building",
       "role": "dev",
       "tasks": [
         "plugin/lib/record.sh record_gitignore: writes .vbw/.gitignore as 'runtime/' plus the un-hide lines '!record.json', '!spec.md', '!map.md', '!.gitignore' (that order, one per line) when the file is missing; otherwise appends only the lines that are missing (exact line match), keeping every existing line and leaving a complete file byte-identical; returns 0 when it wrote something and 1 when it changed nothing. It is the one writer of that file (cmd-init.sh's init_gitignore moves here).",
@@ -50269,7 +50291,7 @@
         "plugin/lib/prooftime.sh"
       ],
       "after": [],
-      "status": "planned",
+      "status": "building",
       "role": "dev",
       "tasks": [
         "plugin/lib/prooftime.sh prooftime_split: like prooftime_total but general: {steps: [{k, v}] in the order each step was first counted, wall} from the scratch file, so a command names its own steps; prooftime_total is unchanged. A helper prooftime_minutes (seconds to 'X.Y' as prooftime_lines rounds) is shared by the proof line and the new one.",
@@ -50289,7 +50311,7 @@
         "docs/workflows.md"
       ],
       "after": [],
-      "status": "planned",
+      "status": "building",
       "role": "docs",
       "tasks": [
         "docs/workflows.md 'The mutation check': a new bullet 'Where the time went' showing the two printed lines as they appear (VBW's own work: X of Y min, then the steps line: copies, unbroken, break R3.1, waits, saving).",
@@ -53976,6 +53998,13 @@
     {
       "id": "T184",
       "text": "Timeline during a proof (owner, 2026-10-25): while vbw prove runs, the Timeline tab says 'No VBW workflow runs in this session right now', which reads as if nothing is happening. Say a proof is running (checks done of total) and point to the Proof tab",
+      "sort": "later",
+      "size": "small",
+      "status": "open"
+    },
+    {
+      "id": "T185",
+      "text": "Store the mutation check's time breakdown (R207) under the plan's mutation entry in the record, so vbw show plan can show where a mutation run's time went (Architect note, M43 planning 2026-10-26)",
       "sort": "later",
       "size": "small",
       "status": "open"
