@@ -12,14 +12,14 @@
 # each one's lines print together when it ends.
 #
 # Scenarios: greenfield, reject, resume, change, convert, balanced, docs, qafix,
-# decision, debug, research, edgecase, leftover, recheck, approval, newcomer, senior, panel, steptime, road, pluginoff, tools, legacy, nolegacy, smallchange, costs, loop, plugindir, sessions, taskbreak, fixchecks, failoutput, leaveout. A user
+# decision, debug, research, edgecase, leftover, recheck, approval, newcomer, senior, panel, steptime, road, pluginoff, tools, legacy, nolegacy, smallchange, costs, loop, plugindir, sessions, taskbreak, fixchecks, failoutput, leaveout, hiddenrecord. A user
 # answers every question with VBW's recommendation unless the scenario says otherwise.
 set -uo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 l3() { bash "$ROOT/tools/l3.sh" "$@"; }
 VBW="$ROOT/plugin/bin/vbw"
-ALL="greenfield reject resume change convert balanced docs qafix decision debug research edgecase leftover recheck approval newcomer senior panel steptime road pluginoff tools legacy nolegacy smallchange costs loop plugindir sessions taskbreak fixchecks failoutput leaveout"
+ALL="greenfield reject resume change convert balanced docs qafix decision debug research edgecase leftover recheck approval newcomer senior panel steptime road pluginoff tools legacy nolegacy smallchange costs loop plugindir sessions taskbreak fixchecks failoutput leaveout hiddenrecord"
 RESULTS="$ROOT/tools/l3-results"
 STEPS=60
 
@@ -235,6 +235,15 @@ transcript_tool_output() {
         | split("\n")[]; test($re))' > /dev/null 2>&1
 }
 
+# unhide_lines_present DIR: succeeds when DIR/.vbw/.gitignore holds the four
+# un-hide lines VBW keeps for its plan files (R208).
+unhide_lines_present() {
+  local l
+  for l in '!record.json' '!spec.md' '!map.md' '!.gitignore'; do
+    grep -qxF -- "$l" "$1/.vbw/.gitignore" 2> /dev/null || return 1
+  done
+}
+
 scenario_greenfield() {
   new_project
   start=$GREET
@@ -247,10 +256,42 @@ scenario_greenfield() {
     if report_line_in_proof_output "^ran again: [0-9]+ of [0-9]+ units; top reasons: "; then ran=true; fi
     expect "a proof's output in the session carried the own-work line ($own)" [ "$own" = true ]
     expect "a proof's output in the session carried the ran-again line ($ran)" [ "$ran" = true ]
+    # R208: the un-hide lines are in VBW's own .vbw/.gitignore and the record is tracked.
+    local unhidden=false
+    if unhide_lines_present "$dir" && git -C "$dir" ls-files --error-unmatch .vbw/record.json > /dev/null 2>&1; then unhidden=true; fi
+    expect "the project's .vbw/.gitignore holds the un-hide lines and the record is tracked ($unhidden)" [ "$unhidden" = true ]
     [ "$failed" -eq 0 ] || passed=false
     result_write greenfield "$fixture" "${cost_usd:-0}" "$passed" \
-      "$(jq -n --argjson o "$own" --argjson r "$ran" '{report_own_work_line: $o, report_ran_again_line: $r}')" \
+      "$(jq -n --argjson o "$own" --argjson r "$ran" --argjson u "$unhidden" '{report_own_work_line: $o, report_ran_again_line: $r, plan_files_unhidden: $u}')" \
       '["acceptance by a human (greet.sh has only auto requirements)","a project larger than the greet.sh fixture, so the figures in the lines are small","the lines on screen: they are read from the tool results in the transcripts, not from what the window showed","a proof that reused units, so the top reasons are mostly never-passed","vbw fix done output (no fix round in this run)"]'
+  }
+}
+
+# A project-wide *.json ignore rule (R208): the committed .gitignore would hide
+# .vbw/record.json. The record is committed anyway, with the un-hide lines in
+# .vbw/.gitignore, judged in git and the project's files, never on screen text.
+scenario_hiddenrecord() {
+  new_project
+  printf '*.json\n' > "$dir/.gitignore"
+  git -C "$dir" add .gitignore && git -C "$dir" commit -qm "chore: ignore json files"
+  start=$GREET
+  fixture="greet.sh from scratch in a project whose committed .gitignore holds '*.json'; the user types /vbw:vibe and the build runs to the end"
+  checks() {
+    common_checks
+    local rule tracked=false unhide=false n=0 passed=true facts
+    rule=$(grep -vE '^[[:space:]]*(#|$)' "$dir/.gitignore" 2> /dev/null | head -n 1)
+    git -C "$dir" ls-files --error-unmatch .vbw/record.json > /dev/null 2>&1 && tracked=true
+    unhide_lines_present "$dir" && unhide=true
+    n=$(git -C "$dir" log --format=%H -- .vbw/record.json 2> /dev/null | wc -l | tr -d ' ')
+    expect "the *.json rule is still in the project's .gitignore (${rule})" [ "$rule" = '*.json' ]
+    expect "the record is committed despite the rule ($tracked)" [ "$tracked" = true ]
+    expect "the un-hide lines are in .vbw/.gitignore ($unhide)" [ "$unhide" = true ]
+    expect "the record has at least one commit ($n)" [ "${n:-0}" -ge 1 ]
+    [ "$failed" -eq 0 ] || passed=false
+    facts=$(jq -n --arg r "$rule" --argjson t "$tracked" --argjson u "$unhide" --argjson n "${n:-0}" \
+      '{gitignore_rule: $r, record_committed: $t, unhide_lines: $u, record_commits: $n}')
+    result_write hiddenrecord "$fixture" "${cost_usd:-0}" "$passed" "$facts" \
+      '["a rule hiding the whole .vbw folder (covered by tests/hidden-record.bats, L1)","a rule in .git/info/exclude or a global excludes file","an existing project upgraded from an older .vbw/.gitignore","the spec file staying untracked until the first full commit"]'
   }
 }
 
