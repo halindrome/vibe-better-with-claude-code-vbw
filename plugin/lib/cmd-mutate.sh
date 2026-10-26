@@ -121,6 +121,46 @@ mutate_rule_none() {
   printf '%s\n%s\n' "$(printf '%s' "$verdict" | jq -r .ok)" "$reason"
 }
 
+# mutate_waits_sum: the seconds the run's units have waited for a slot so far.
+mutate_waits_sum() {
+  [ -f "${CHECK_OUT:-}/waits" ] || { printf '0\n'; return 0; }
+  awk '{ n += $1 } END { print n + 0 }' "$CHECK_OUT/waits"
+}
+
+# mutate_tstep STEP: count the time since the last mark into STEP, less the slot
+# seconds the runs since then waited, which count into waits (MUTATE_WAITS: the
+# sum already moved). Called directly, never in $(...).
+mutate_tstep() {
+  [ -n "$PROOFTIME_FILE" ] || return 0
+  local w
+  w=$(mutate_waits_sum)
+  prooftime_step_waited "$1" "$((w - MUTATE_WAITS))"
+  MUTATE_WAITS=$w
+}
+
+# mutate_time_begin: open the timer of a mutation run.
+mutate_time_begin() {
+  MUTATE_WAITS=0
+  prooftime_begin
+}
+
+# mutate_time_say: the two lines of where the time went (R207), after the result
+# lines; nothing without a timer. Every figure is measured: the steps tile the wall.
+mutate_time_say() {
+  [ -n "$PROOFTIME_FILE" ] || return 0
+  prooftime_step saving
+  prooftime_split | jq -r "$PROOFTIME_MIN_JQ"'
+    def s: (. * 10 | round) as $t | "\($t / 10 | floor).\($t % 10)";
+    def v($k): ([.steps[] | select(.k == $k) | .v] | add // 0);
+    . as $d
+    | ($d | v("copies") + v("saving") + v("tracking")) as $x
+    | "VBW'"'"'s own work: \($x | min) of \($d.wall | min) min",
+      "  steps of \($d.wall | s) s: copies \($d | v("copies") | s), unbroken \($d | v("unbroken") | s), "
+        + ([$d.steps[] | select(.k | test("^breaks? ")) | "\(.k) \(.v | s)"] | join(", "))
+        + ", waits \($d | v("waits") | s), saving \($d | v("saving") | s)"'
+  prooftime_end
+}
+
 cmd_mutate() {
   if [ "${2:-}" = --run ]; then
     [ $# -eq 2 ] || mutate_usage "vbw mutate PLAN --run takes nothing else"
@@ -267,9 +307,11 @@ cmd_mutate() {
   # One red check is the proof (T157): the checks run one at a time, fastest first by their last
   # recorded time (a check never run counts as slowest), until one goes red; a survivor runs them all.
   # A check runs unbroken first, unless a recorded break at this HEAD already ran it (it passed then).
-  local results='{}' order base c one copy bad
+  local results='{}' order base c one copy bad rc=0
+  mutate_time_begin
   proofcopy_create_slots 1
   copy=${PROOF_COPIES[0]}
+  mutate_tstep copies
   base=$(printf '%s' "$record" | jq -c --arg p "$plan" --arg h "$head" \
     '[.plans[] | select(.id == $p) | (.mutations // [])[] | select(.head == $h) | (.checks // {}) | keys[]] | unique')
   order=$(proofreuse_store_read | jq -r --argjson ids "$ids" '.runs as $r
@@ -277,6 +319,7 @@ cmd_mutate() {
   for c in $order; do
     if ! printf '%s' "$base" | jq -e --arg c "$c" 'index($c) != null' > /dev/null; then
       bad=$(checks_run_all "$record" "$c" | jq -r '[to_entries[] | select(.value.status != "pass") | "\(.key) \(.value.status)"] | join(", ")')
+      mutate_tstep unbroken
       if [ -n "$bad" ]; then
         proofcopy_remove
         checks_end
@@ -291,15 +334,22 @@ $ways"
       fi
     fi
     mutate_put "$dir" "$copy" "${broke[@]}"
+    mutate_tstep copies
     one=$(checks_run_all "$record" "$c")
+    mutate_tstep "break $target"
     results=$(printf '%s' "$results" | jq -c --argjson o "$one" '. + $o')
     mutate_clean "$copy" "${broke[@]}"
+    mutate_tstep copies
     printf '%s' "$one" | jq -e 'all(.[]; .status == "pass")' > /dev/null || break
   done
   proofcopy_remove
+  mutate_tstep copies
   checks_end
   mutate_record "$plan" "$target" "$what" "$head" "$results" "$record" "${ruledoc:-}" "${tk:-}" \
-    "$(printf '%s\n' "${files[@]}" | jq -R . | jq -sc .)" ${cfiles[@]+"${cfiles[@]}"}
+    "$(printf '%s\n' "${files[@]}" | jq -R . | jq -sc .)" ${cfiles[@]+"${cfiles[@]}"} || rc=$?
+  mutate_time_say
+  slots_say
+  return "$rc"
 }
 
 # mutate_record PLAN TARGET WHAT HEAD RESULTS RECORD RULEDOC TASK FILES_JSON [CHECK_FILE...]:
@@ -346,11 +396,11 @@ mutate_record() {
   record_update "$COMMIT_SURVIVOR_DEFS"'(.plans[] | select(.id == $p)).mutations += [$e]
     | if $e.result == "survivor" and .lease.kind == "build" and (.plans[] | select(.id == $p).status) == "building"
       then .lease.editable = (((.lease.editable // []) + survivor_files($p)) | unique) else . end' --arg p "$plan" --argjson e "$entry"
+  mutate_tstep saving
   if [ "$result" = survivor ]; then
     [ -z "$ruledoc" ] || what=$(printf '%s' "$ruledoc" | jq -r .text)
     printf 'survivor: %s (%s): %s still pass\n' "$target" "$what" \
       "$(printf '%s' "$marks" | jq -r 'keys | join(", ")')"
-    slots_say
     return 1
   fi
   if [ "$pending" != '[]' ]; then
@@ -363,11 +413,9 @@ mutate_record() {
     fi
     printf '%s' "$marks" | jq -r 'to_entries[] | "\(.key) \(.value)"'
     printf 'the pending file still needs the one approval before the proof\n'
-    slots_say
     return 0
   fi
   printf '%s red: %s\n' "$target" "$what"
   printf '%s' "$marks" | jq -r 'to_entries[] | "\(.key) \(.value)"'
   [ "$strong" = '[]' ] || printf 'strengthened: %s\n' "$(printf '%s' "$strong" | jq -r 'join(", ")')"
-  slots_say
 }
