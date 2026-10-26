@@ -12,14 +12,14 @@
 # each one's lines print together when it ends.
 #
 # Scenarios: greenfield, reject, resume, change, convert, balanced, docs, qafix,
-# decision, debug, research, edgecase, leftover, recheck, approval, newcomer, senior, panel, steptime, road, pluginoff, tools, legacy, nolegacy, smallchange, costs, loop, plugindir, sessions, taskbreak, fixchecks, failoutput. A user
+# decision, debug, research, edgecase, leftover, recheck, approval, newcomer, senior, panel, steptime, road, pluginoff, tools, legacy, nolegacy, smallchange, costs, loop, plugindir, sessions, taskbreak, fixchecks, failoutput, leaveout. A user
 # answers every question with VBW's recommendation unless the scenario says otherwise.
 set -uo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 l3() { bash "$ROOT/tools/l3.sh" "$@"; }
 VBW="$ROOT/plugin/bin/vbw"
-ALL="greenfield reject resume change convert balanced docs qafix decision debug research edgecase leftover recheck approval newcomer senior panel steptime road pluginoff tools legacy nolegacy smallchange costs loop plugindir sessions taskbreak fixchecks failoutput"
+ALL="greenfield reject resume change convert balanced docs qafix decision debug research edgecase leftover recheck approval newcomer senior panel steptime road pluginoff tools legacy nolegacy smallchange costs loop plugindir sessions taskbreak fixchecks failoutput leaveout"
 RESULTS="$ROOT/tools/l3-results"
 STEPS=60
 
@@ -2548,6 +2548,63 @@ scenario_failoutput() {
       "$(jq -n --arg f "$fix_id" --argjson kf "$kept_file" --argjson kn "$kept_names" --argjson nf "$named_file" --argjson nt "$named_test" --argjson rm "$removed" \
         '{fix: $f, kept_file: $kf, kept_names_failing_test: $kn, show_fix_named_file: $nf, show_fix_named_test: $nt, file_removed_after_pass: $rm}')" \
       '["failing-test names of runners other than the TAP form (tests/show-fix-failing-tests.bats holds those forms)","a failing test file of the single-file form or a failing project command","the wording of what vbw show fix prints (read by a person)","an output longer than the tail the record keeps","a project larger than the greet.sh fixture"]'
+  }
+}
+
+# leaveout_seed: a project ignoring data/ and cache/ (both here, with files), a spec listing data/
+# under Clean copy, one requirement (greet.sh) and a check that, from inside the copy, writes
+# whether data and cache exist there into the project's own runtime folder. Approved, nothing built.
+leaveout_seed() {
+  printf 'data/\ncache/\n' > .gitignore
+  mkdir -p data cache
+  printf 'rows\n' > data/big.csv
+  printf 'tmp\n' > cache/entry.bin
+  printf '# Greetings\n\n## Requirements\n\n- R1 [auto] ./greet.sh Ana prints "Hello, Ana!"\n\n## Clean copy\n\n- data/\n' > .vbw/spec.md
+  "$VBW" spec sync > /dev/null || return 1
+  cat > test_greet.sh <<'SH'
+probe="$(git rev-parse --git-common-dir)/../.vbw/runtime/leaveout-probe"
+d=absent c=absent
+[ -e data ] && d=present
+[ -e cache ] && c=present
+mkdir -p "$(dirname "$probe")" && printf 'data=%s cache=%s\n' "$d" "$c" > "$probe"
+[ "$(sh greet.sh Ana)" = "Hello, Ana!" ]
+SH
+  printf '%s' '{"phases": [{"id": "P1", "title": "Greet", "reqs": ["R1"]}],
+    "plans": [{"id": "P1.1", "phase": "P1", "title": "greet.sh", "reqs": ["R1"], "files": ["greet.sh"], "after": [], "tasks": ["greet.sh prints Hello, NAME!"]}],
+    "checks": [{"id": "C1", "req": "R1", "run": ["sh", "test_greet.sh"], "files": ["test_greet.sh"]}],
+    "rules": [{"req": "R1", "text": "a name is greeted", "check": "C1"}]}' \
+    | "$VBW" apply > /dev/null || return 1
+  git add -A && git commit -qm "chore: plan" || return 1
+  "$VBW" approve > /dev/null || return 1
+}
+
+# leaveout (R205): the user lists an ignored data folder under Clean copy; the build runs to the
+# end. Judged in `vbw show contract` (names the path), the record (project.leave_out, the proof)
+# and a probe the check writes from inside the clean copy (data absent, cache present), never on screen.
+scenario_leaveout() {
+  new_project
+  (cd "$dir" && "$VBW" init > /dev/null && "$VBW" config rigor auto > /dev/null && leaveout_seed) \
+    || { say "setup failed: could not seed the project with an ignored data folder"; return 1; }
+  fixture="greet.sh with a git-ignored data/ folder (listed under Clean copy in the spec) and an ignored cache/ folder, both holding files; one requirement, approved by the user before the session, its check writing from inside the proof's clean copy whether data and cache exist there; rigor auto; the user types /vbw:vibe and the build runs to the end"
+  start="/vbw:vibe"
+  checks() {
+    local passed=true r="$dir/.vbw/record.json" named=false leave proof=false probe="" without=false
+    (cd "$dir" && "$VBW" show contract 2> /dev/null | grep -qxF 'clean copy leaves out: data/') && named=true
+    leave=$(jq -c '.project.leave_out // null' "$r" 2> /dev/null || echo null)
+    jq -e '.evidence.passed == true' "$r" > /dev/null 2>&1 && proof=true
+    probe=$(cat "$dir/.vbw/runtime/leaveout-probe" 2> /dev/null || true)
+    [ "$probe" = "data=absent cache=present" ] && without=true
+    say "contract line: $named; leave_out: $leave; proof passed: $proof; probe: ${probe:-none}"
+    common_checks
+    expect "vbw show contract names the path left out ($named)" [ "$named" = true ]
+    expect "the record's project.leave_out is [data/] ($leave)" [ "$leave" = '["data/"]' ]
+    expect "the proof passed ($proof)" [ "$proof" = true ]
+    expect "the clean copy held no data/ and still held cache/ ($probe)" [ "$without" = true ]
+    [ "$failed" -eq 0 ] || passed=false
+    result_write leaveout "$fixture" "${cost_usd:-0}" "$passed" \
+      "$(jq -n --argjson n "$named" --argjson l "$leave" --argjson p "$proof" --argjson w "$without" \
+        '{contract_names_path: $n, leave_out: $l, proof_passed: $p, copy_without_data: $w}')" \
+      '["a listed path that is a folder whose files alone are ignored (tests/clean-copy-proof.bats holds it)","a clone without the data folder","the fix, mutate and fix-done copies (tests/clean-copy-proof.bats holds them)","the approval question as drawn on screen","a data folder of real size, or a disk without instant clones"]'
   }
 }
 
