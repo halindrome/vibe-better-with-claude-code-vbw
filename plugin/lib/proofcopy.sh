@@ -154,7 +154,7 @@ proofcopy_sweep() {
 
 # proofcopy_make: one more copy, added to PROOF_COPIES.
 proofcopy_make() {
-  local dir p l t real copy first='' left='' L skip
+  local dir p real copy first='' left=''
   dir=$(mktemp -d "$VBW_RUNTIME/proof.$$.XXXXXX") || vbw_die "cannot create a directory in $VBW_RUNTIME"
   vbw_guard_add dir "$dir"
   copy="$dir/tree"
@@ -171,27 +171,44 @@ proofcopy_make() {
   while IFS= read -r -d '' p; do
     p=${p%/}
     case "$p" in .git | .git/* | .vbw | .vbw/*) continue ;; esac
-    skip=''
-    while IFS= read -r L; do
-      L=${L%/}
-      [ -n "$L" ] || continue
-      case "$p" in "$L" | "$L"/*) skip=1; break ;; esac
-    done <<< "$left"
-    [ -z "$skip" ] || continue
     ! proofcopy_is_build_dir "$p" || continue
-    [ ! -e "$copy/$p" ] && [ ! -L "$copy/$p" ] || continue
-    mkdir -p "$copy/$(dirname "$p")"
-    proofcopy_copy "$VBW_ROOT/$p" "$copy/$p" || { proofcopy_remove; vbw_die "cannot copy the ignored path $p into the clean copy (is it readable?)"; }
-    [ -z "$first" ] || proofcopy_note "$p"
-    while IFS= read -r -d '' l; do
-      t=$(readlink "$copy/$l")
-      case "$t" in /*) t=$(cd -P "$(dirname "$t")" 2> /dev/null && printf '%s/%s' "$(pwd -P)" "$(basename "$t")") || t=$(readlink "$copy/$l") ;; esac
-      # A link into .vbw (an old proof copy) is the stale-link scan's to report.
-      case "$t" in "$real"/.vbw | "$real"/.vbw/*) ;; "$real" | "$real"/*)
-        vbw_out 'vbw: %s links into the working folder (%s); it is copied as a link\n' "$l" "$(readlink "$copy/$l")" >&2 ;;
-      esac
-    done < <(cd "$copy" && find "$p" -type l -print0)
+    proofcopy_entry "$p"
   done < <(git -C "$VBW_ROOT" ls-files -z --others --ignored --exclude-standard --directory)
+}
+
+# proofcopy_entry P: copy the ignored path P into the copy being made (the
+# caller's locals: copy, real, first, left). A listed path, or one under it, is
+# skipped. A folder that holds a listed path is not copied whole: its children
+# are copied one by one around the listed path, as deep as the path goes, so
+# the data the list spares is never read.
+proofcopy_entry() {
+  local p=$1 L skip='' parent='' c l t
+  while IFS= read -r L; do
+    L=${L%/}
+    [ -n "$L" ] || continue
+    case "$p" in "$L" | "$L"/*) skip=1; break ;; esac
+    case "$L" in "$p"/*) parent=1 ;; esac
+  done <<< "$left"
+  [ -z "$skip" ] || return 0
+  [ ! -e "$copy/$p" ] && [ ! -L "$copy/$p" ] || return 0
+  if [ -n "$parent" ] && [ -d "$VBW_ROOT/$p" ] && [ ! -L "$VBW_ROOT/$p" ]; then
+    mkdir -p "$copy/$p"
+    while IFS= read -r -d '' c; do
+      proofcopy_entry "$p/${c##*/}"
+    done < <(find "$VBW_ROOT/$p" -mindepth 1 -maxdepth 1 -print0)
+    return 0
+  fi
+  mkdir -p "$copy/$(dirname "$p")"
+  proofcopy_copy "$VBW_ROOT/$p" "$copy/$p" || { proofcopy_remove; vbw_die "cannot copy the ignored path $p into the clean copy (is it readable?)"; }
+  [ -z "$first" ] || proofcopy_note "$p"
+  while IFS= read -r -d '' l; do
+    t=$(readlink "$copy/$l")
+    case "$t" in /*) t=$(cd -P "$(dirname "$t")" 2> /dev/null && printf '%s/%s' "$(pwd -P)" "$(basename "$t")") || t=$(readlink "$copy/$l") ;; esac
+    # A link into .vbw (an old proof copy) is the stale-link scan's to report.
+    case "$t" in "$real"/.vbw | "$real"/.vbw/*) ;; "$real" | "$real"/*)
+      vbw_out 'vbw: %s links into the working folder (%s); it is copied as a link\n' "$l" "$(readlink "$copy/$l")" >&2 ;;
+    esac
+  done < <(cd "$copy" && find "$p" -type l -print0)
 }
 
 # proofcopy_note_open: open this process's scratch file of copy sizes; without
