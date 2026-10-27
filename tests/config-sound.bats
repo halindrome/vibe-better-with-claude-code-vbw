@@ -49,11 +49,14 @@ teardown() { vbw_teardown; }
 @test "an unknown sound is refused with the list of folders and changes nothing" {
   "$VBW" config set sound darth > /dev/null
   cp "$SETTINGS" "$TEST_ROOT/before.json"
-  local v
+  # The list is the folders as shipped: "off, a, b, ... or z".
+  local v names list
+  names=$(for d in "$PLUGIN_ROOT"/assets/audio/*/; do basename "$d"; done | LC_ALL=C sort)
+  list="off, $(printf '%s\n' "$names" | sed '$d' | paste -sd ',' - | sed 's/,/, /g') or $(printf '%s\n' "$names" | tail -n 1)"
   for v in nosuch DARTH ../darth "" assets; do
     vbw_run config set sound "$v"
     [ "$status" -ne 0 ] || { echo "'$v' accepted"; false; }
-    [[ "$output" == *"sound must be off, arnold, charlize or darth (or default)"* ]] || { echo "$output"; false; }
+    [[ "$output" == *"sound must be $list (or default)"* ]] || { echo "$output"; false; }
   done
   cmp "$SETTINGS" "$TEST_ROOT/before.json"
 }

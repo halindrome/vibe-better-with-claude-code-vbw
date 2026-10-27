@@ -210,7 +210,7 @@ test('on a version without mods the sound command does not exist and the panel s
 
 // The sound setting (T18, record.settings.sound): soundFor(choice) is what the panel plays.
 test('soundFor: a chosen folder plays only its own assets', () => {
-  for (const folder of ['arnold', 'charlize', 'darth']) {
+  for (const folder of ['arnold', 'charlize', 'darth', 'eric', 'homer', 'peter', 'stephen']) {
     const seen = new Set()
     for (let i = 0; i < 50; i++) seen.add(soundFor(folder, () => i / 50).asset)
     assert.ok(seen.size >= 1)
