@@ -342,21 +342,23 @@ $ways"
   mutate_tstep copies
   checks_end
   mutate_record "$plan" "$target" "$what" "$head" "$results" "$record" "${ruledoc:-}" "${tk:-}" \
-    "$(printf '%s\n' "${files[@]}" | jq -R . | jq -sc .)" ${cfiles[@]+"${cfiles[@]}"} || rc=$?
+    "$(printf '%s\n' "${files[@]}" | jq -R . | jq -sc .)" || rc=$?
   mutate_time_say
   slots_say
   return "$rc"
 }
 
-# mutate_record PLAN TARGET WHAT HEAD RESULTS RECORD RULEDOC TASK FILES_JSON [CHECK_FILE...]:
+# mutate_record PLAN TARGET WHAT HEAD RESULTS RECORD RULEDOC TASK FILES_JSON:
 # record one break's results (the checks it ran broken) under the plan and say
 # what they show; exit 1 for a survivor. RULEDOC is the rule's {req, text, check}
 # (empty for a task), TASK the task's number (empty for a rule); CHECK_WAITING is
-# the files checks_begin found waiting for approval.
+# the files checks_begin found waiting for approval. The pending and strengthened
+# files come from strengthen_files, the one definition of the files a plan may
+# strengthen (R210, R217), never from the files of the checks the break ran.
 mutate_record() {
   local plan="$1" target="$2" what="$3" head="$4" results="$5" record="$6" ruledoc="$7" tk="$8" filesj="$9"
-  shift 9
-  local cfiles=("$@") f
+  local sfiles f
+  sfiles=$(printf '%s' "$record" | jq -c --arg p "$plan" "$VBW_JQ_DEFS"'strengthen_files($p)')
   # What was recorded for this target before: a survivor, if the last one was.
   local prior='' strong='[]' marks result entry pending='[]' survived=0
   marks=$(printf '%s' "$results" | jq -c 'map_values(if .status == "pass" then "green" else "red" end)')
@@ -367,14 +369,15 @@ mutate_record() {
       | [(.mutations // [])[] | select(has("result") and (if $rule != null then .rule == {req: $rule.req, text: $rule.text} else .task == $k end))] | last
       | if . != null and .result == "survivor" then .head else empty end' 2> /dev/null) || prior=''
     if [ -n "$prior" ]; then
-      strong=$(for f in ${cfiles[@]+"${cfiles[@]}"}; do git diff --quiet "$prior" HEAD -- "$f" 2> /dev/null || printf '%s\n' "$f"; done | jq -R . | jq -sc 'map(select(length > 0))')
+      strong=$(printf '%s' "$sfiles" | jq -r '.[]' | while IFS= read -r f; do git diff --quiet "$prior" HEAD -- "$f" 2> /dev/null || printf '%s\n' "$f"; done | jq -R . | jq -sc 'map(select(length > 0))')
     fi
   fi
   if [ "$result" = red ] && [ -n "${CHECK_WAITING:-}" ]; then
     # The check files that went red and wait for approval, and whether an earlier survivor of this
     # target ran that very check at another commit (so the approved version let the break through).
-    pending=$(printf '%s' "$record" | jq -c --argjson marks "$marks" --arg w "$CHECK_WAITING" \
-      '[.checks[] | select($marks[.id] == "red") | .files // [] | .[]] | unique | map(select(. as $f | ($w | split("\n")) | index($f) != null))')
+    pending=$(printf '%s' "$record" | jq -c --arg p "$plan" --argjson marks "$marks" --arg w "$CHECK_WAITING" "$VBW_JQ_DEFS"'strengthen_files($p) as $sf
+      | [.checks[] | select($marks[.id] == "red") | .files // [] | .[]] | unique
+      | map(select(. as $f | ($sf | index($f) != null) and (($w | split("\n")) | index($f) != null)))')
     if [ "$pending" != '[]' ]; then
       printf '%s' "$record" | jq -e --arg p "$plan" --arg h "$head" --argjson rule "${ruledoc:-null}" --argjson k "${tk:-0}" --argjson marks "$marks" '.plans[] | select(.id == $p)
         | any((.mutations // [])[]; has("result") and .result == "survivor" and .head != $h
