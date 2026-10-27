@@ -315,7 +315,8 @@ what was approved:
   `vbw: waiting for approval (changed since approved): tests/pay.sh` on stderr.
 - When a phase is built and not yet proved, `vbw next` returns `approve` with
   `detail.files`: every edited test file, sorted. Review them with
-  `vbw show contract --changes`, then approve once.
+  `vbw show contract --changes`, which prints the whole diff of each edited
+  file (every hunk, committed or not), then approve once.
 - `vbw prove` refuses and names the files: `check files changed since it was
   approved are waiting for approval: tests/pay.sh: review them, then /vbw:approve`.
   Nothing is proved.
@@ -1338,9 +1339,10 @@ suite therefore pays for the checks a break needs, not for every check.
 
 - A check that notices the break is **red**: the rule is covered.
 - A test that cannot fail, because every check stays green, is a **survivor**.
-  The Dev strengthens it in place, in the check file of that rule's own
-  requirement (never another's, never weakened), then repeats the same break
-  until it is red. After two attempts that stay green the Dev blocks the plan.
+  The Dev strengthens it in place, in a check file that a check of the plan's
+  own rules names (one shared with other requirements' checks included). It
+  must never weaken an assertion. Then it repeats the same break until it is
+  red. After two attempts that stay green the Dev blocks the plan.
 - `vbw plan done` waits for the breaks: at standard it refuses until each
   approved rule of the requirements the plan completes has a red break, and
   lists the rules missing one. A rule that names its plan (`plan` in the
@@ -1374,6 +1376,8 @@ approved check; caught by the pending one: FILE...` and exits 0. Without an
 earlier survivor of that target, it says a check file waiting for approval
 caught the break and names it. The pending file still needs the one approval
 before the proof, as below.
+
+After a survivor, `vbw commit PLAN "<msg>" FILE` commits a check file that a check of the plan's own rules names, shared with other requirements or not, with the plan's trailers; a check file that no check of the plan's own rules names, and any check file before a survivor, is refused by name.
 
 A strengthened check file adds one approval. The build finishes, then `vbw next`
 asks you to approve the file before the proof, and `vbw prove` refuses until
