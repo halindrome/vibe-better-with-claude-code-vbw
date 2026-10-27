@@ -1383,8 +1383,10 @@ When a break stays green on the approved check but a strengthened check file
 that waits for approval catches it, `vbw mutate` prints `TARGET survives the
 approved check; caught by the pending one: FILE...` and exits 0. Without an
 earlier survivor of that target, it says a check file waiting for approval
-caught the break and names it. The pending file still needs the one approval
-before the proof, as below.
+caught the break and names it. The pending file is one the plan may
+strengthen, a file of its own rules' checks, and still needs the one approval
+before the proof, as below. The strengthened files are files of its own rules'
+checks too, changed since the earlier survivor of that target.
 
 After a survivor, `vbw commit PLAN "<msg>" FILE` commits a check file that a check of the plan's own rules names, shared with other requirements or not, with the plan's trailers; a check file that no check of the plan's own rules names, and any check file before a survivor, is refused by name.
 
