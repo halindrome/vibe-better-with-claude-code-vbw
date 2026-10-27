@@ -53075,7 +53075,7 @@
         "plugin/hooks/common.jq"
       ],
       "after": [],
-      "status": "blocked",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "record.sh: in VBW_JQ_DEFS beside own_rules, def strengthen_files($p): [] while the plan has no recorded survivor, else the files of the checks named by own_rules($p), unique (the check files a plan may strengthen once a survivor is recorded)",
@@ -53083,7 +53083,138 @@
         "cmd-mutate.sh: a survivor in a build run writes lease.editable from strengthen_files; mutate_record's strengthened (files changed since the prior survivor's head) and pending (red check files waiting for approval) are judged over those files; no COMMIT_SURVIVOR_DEFS left",
         "cmd-prove.sh: PROVE_SCOPE_JQ and PROVE_SCOPE_THEN_JQ read strengthen_files from VBW_JQ_DEFS (the record version of the commit's time included); common.jq keeps reading lease.editable (comment says where the list comes from); tests/mutate-strengthen.bats, tests/mutate-pending-check.bats, tests/scope-*.bats and tests/hooks-guard*.bats green under /bin/bash"
       ],
-      "note": "Tasks 1-4 built and committed (record.sh strengthen_files; commit, mutate, prove, common.jq read it). C474 stays red on 1 case and the scope tests on 1, both test-file faults outside this plan's files. (a) tests/mutate-strengthen.bats case 'a strengthened shared check file lets the build finish': the fixture's tests/shared.sh ends with 'true', and tests/pay.sh is 'sh src/pay.sh > /dev/null && sh tests/shared.sh', so the strengthened line 2 of shared.sh ([ \"$(sh src/pay.sh)\" = paid ]) never decides the exit status (no set -e); the break stays green, 'survivor: C1 still pass', and R210.5 can never be shown. Fix: the strengthened line must fail the script (e.g. strengthen_shared appends '|| exit 1', or the fixture drops the trailing 'true' / uses sh -e). (b) tests/scope-of-its-time.bats case 'a check file a survivor let the plan strengthen, renamed afterwards, keeps that commit in scope': its fixture plan has a survivor but R1 has no rules, so under the new definition (files of the checks of the plan's own rules) strengthen_files is []; the fixture needs a rule on R1 naming C1. Both need a replan that adds those test files; the 'R210 changes:' case is P171.2's."
+      "mutations": [
+        {
+          "rule": {
+            "req": "R210",
+            "text": "the kernel holds one definition of the check files a plan may strengthen (the files of the checks of its own rules, open once a survivor is recorded), in record.sh's shared jq defs beside own_rules; cmd-commit.sh holds no second one"
+          },
+          "what": "cmd-commit.sh holds a second COMMIT_SURVIVOR_DEFS",
+          "files": [
+            "plugin/lib/cmd-commit.sh"
+          ],
+          "checks": {
+            "C474": "red"
+          },
+          "result": "red",
+          "at": "2026-10-27T02:30:18Z",
+          "head": "80ec888d7d302c00f221bb83e82f9384cc347e78",
+          "pending": [
+            "tests/mutate-strengthen.bats"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R210",
+            "text": "after a survivor of the plan's rule, the file guard lets a build agent write a check file that a check of the plan's own rules names, one shared with another requirement's check included; a file only another requirement's check names stays protected; before any survivor every check file is protected"
+          },
+          "what": "survivor opens no lease files",
+          "files": [
+            "plugin/lib/cmd-mutate.sh"
+          ],
+          "checks": {
+            "C474": "red"
+          },
+          "result": "red",
+          "at": "2026-10-27T02:30:22Z",
+          "head": "80ec888d7d302c00f221bb83e82f9384cc347e78",
+          "pending": [
+            "tests/mutate-strengthen.bats"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R210",
+            "text": "after a survivor, vbw commit PLAN MSG FILE commits a check file named by a check of the plan's own rules, shared or not, with the plan's VBW-Plan and VBW-Req trailers"
+          },
+          "what": "commit never accepts a strengthen file",
+          "files": [
+            "plugin/lib/cmd-commit.sh"
+          ],
+          "checks": {
+            "C474": "red"
+          },
+          "result": "red",
+          "at": "2026-10-27T02:30:25Z",
+          "head": "80ec888d7d302c00f221bb83e82f9384cc347e78",
+          "pending": [
+            "tests/mutate-strengthen.bats"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R210",
+            "text": "a check file that no check of the plan's own rules names, or any check file before a survivor of the plan, is refused by name with the rule stated and a Next line; the words 'no other requirement's check file is the plan's to commit' are gone"
+          },
+          "what": "strengthen_files open before any survivor",
+          "files": [
+            "plugin/lib/record.sh"
+          ],
+          "checks": {
+            "C474": "red"
+          },
+          "result": "red",
+          "at": "2026-10-27T02:30:28Z",
+          "head": "80ec888d7d302c00f221bb83e82f9384cc347e78",
+          "pending": [
+            "tests/mutate-strengthen.bats"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R210",
+            "text": "after the commit, the same break run again prints 'TARGET survives the approved check; caught by the pending one: F', exits 0, records the break red with pending [F] and strengthened [F], and says the pending file still needs the one approval before the proof"
+          },
+          "what": "strengthened never recorded",
+          "files": [
+            "plugin/lib/cmd-mutate.sh"
+          ],
+          "checks": {
+            "C474": "red"
+          },
+          "result": "red",
+          "at": "2026-10-27T02:30:32Z",
+          "head": "80ec888d7d302c00f221bb83e82f9384cc347e78",
+          "pending": [
+            "tests/mutate-strengthen.bats"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R210",
+            "text": "the strengthened shared file waits for the approval: after the build vbw next asks for it by name, vbw prove refuses until it is approved, and the proof's scope check counts the commit as the plan's"
+          },
+          "what": "scope check ignores strengthen_files",
+          "files": [
+            "plugin/lib/cmd-prove.sh"
+          ],
+          "checks": {
+            "C474": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-27T02:30:35Z",
+          "head": "80ec888d7d302c00f221bb83e82f9384cc347e78"
+        },
+        {
+          "rule": {
+            "req": "R210",
+            "text": "the strengthened shared file waits for the approval: after the build vbw next asks for it by name, vbw prove refuses until it is approved, and the proof's scope check counts the commit as the plan's"
+          },
+          "what": "scope check ignores strengthen_files in both layers",
+          "files": [
+            "plugin/lib/cmd-prove.sh"
+          ],
+          "checks": {
+            "C474": "red"
+          },
+          "result": "red",
+          "at": "2026-10-27T02:31:34Z",
+          "head": "80ec888d7d302c00f221bb83e82f9384cc347e78",
+          "pending": [
+            "tests/mutate-strengthen.bats"
+          ]
+        }
+      ]
     },
     {
       "id": "P171.2",
@@ -53222,7 +53353,7 @@
         "plugin/lib/cmd-show.sh"
       ],
       "after": [],
-      "status": "blocked",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "cmd-apply.sh (R212): judged on the merged record before any write, for every requirement of the current milestone with live rules: when some name a plan and others none, apply_refuse 'R5: 2 of 3 rules name a plan: name one on every rule or on none' (counts from the live rules); apply_next arm; every mode",
@@ -53231,7 +53362,189 @@
         "cmd-show.sh roadmap: a blocked plan's line ends with ': <note>' as vbw show plan's does",
         "tests/apply-*.bats, tests/mutate-*.bats, tests/show-plan-owner.bats, tests/build-pace.bats, tests/refusal-next-step.bats and tests/kernel-show.bats green under /bin/bash (the Lead made tests/apply-narrow.bats name a plan on every rule or none; the other fixtures already do); a fixture the new refusals still catch is named in notes, never edited (check files are the user's)"
       ],
-      "note": "C480 (R212) cannot pass: tests/apply-refusal-modes.bats line ~183 uses replan_edit '(.requirements[]|select(.id==\"R1\")).rules = [.rules[0], {...retired}]'; jq evaluates the right side on the record root, so .rules[0] is null and the record gets a rule without text (vbw: record is corrupt: R1 has a rule without text). The kernel code is done and committed (b8bd71cd, be269545); C477 and C483 pass; with '.rules |= [.[0], {...}]' in a scratch copy both R212 cases pass. Needs the check file corrected (user approval); mutation step not run. Also: tests/mutate-rule-owner.bats T152 and tests/show-plan-owner.bats setup name a plan on only some rules of a requirement, which R212 now refuses."
+      "mutations": [
+        {
+          "rule": {
+            "req": "R211",
+            "text": "in every mode, a check whose live rules name two undone plans of the milestone, one in the other's after directly or through a chain, is refused before anything changes, naming the check and both plans and why, with the mode's name and a Next line; the record is unchanged"
+          },
+          "what": "after-direction b-after-a ignored",
+          "files": [
+            "plugin/lib/cmd-apply.sh"
+          ],
+          "checks": {
+            "C477": "red"
+          },
+          "result": "red",
+          "at": "2026-10-27T02:40:43Z",
+          "head": "80ec888d7d302c00f221bb83e82f9384cc347e78",
+          "pending": [
+            "tests/apply-refusal-modes.bats"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R211",
+            "text": "the same refusal when the two plans share a file under the wave rule, with no after between them"
+          },
+          "what": "shared file ignored",
+          "files": [
+            "plugin/lib/cmd-apply.sh"
+          ],
+          "checks": {
+            "C477": "red"
+          },
+          "result": "red",
+          "at": "2026-10-27T02:40:46Z",
+          "head": "80ec888d7d302c00f221bb83e82f9384cc347e78",
+          "pending": [
+            "tests/apply-refusal-modes.bats"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R212",
+            "text": "in every mode, a requirement whose live rules, as the document leaves them, name a plan on some and not others is refused naming the requirement and the counts, with the mode's name and a Next line; the record is unchanged"
+          },
+          "what": "mixed never refused",
+          "files": [
+            "plugin/lib/cmd-apply.sh"
+          ],
+          "checks": {
+            "C480": "red"
+          },
+          "result": "red",
+          "at": "2026-10-27T02:40:50Z",
+          "head": "80ec888d7d302c00f221bb83e82f9384cc347e78",
+          "pending": [
+            "tests/apply-refusal-modes.bats"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R212",
+            "text": "a --patch reword that names a plan on one rule, or takes it off one, and leaves the requirement mixed is refused the same way"
+          },
+          "what": "patch reword ignored",
+          "files": [
+            "plugin/lib/cmd-apply.sh"
+          ],
+          "checks": {
+            "C480": "red"
+          },
+          "result": "red",
+          "at": "2026-10-27T02:40:53Z",
+          "head": "80ec888d7d302c00f221bb83e82f9384cc347e78",
+          "pending": [
+            "tests/apply-refusal-modes.bats"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R211",
+            "text": "no refusal when the check's rules name one plan or none, when one of the two plans is done, or when the plans build beside each other; a retired rule counts for nothing"
+          },
+          "what": "done plans counted",
+          "files": [
+            "plugin/lib/cmd-apply.sh"
+          ],
+          "checks": {
+            "C477": "red"
+          },
+          "result": "red",
+          "at": "2026-10-27T02:40:56Z",
+          "head": "80ec888d7d302c00f221bb83e82f9384cc347e78",
+          "pending": [
+            "tests/apply-refusal-modes.bats"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R212",
+            "text": "every rule naming a plan, or none naming one, is accepted; retired rules are not counted"
+          },
+          "what": "retired rules counted",
+          "files": [
+            "plugin/lib/cmd-apply.sh"
+          ],
+          "checks": {
+            "C480": "red"
+          },
+          "result": "red",
+          "at": "2026-10-27T02:41:00Z",
+          "head": "80ec888d7d302c00f221bb83e82f9384cc347e78",
+          "pending": [
+            "tests/apply-refusal-modes.bats"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R213",
+            "text": "a full apply that re-sends a blocked plan as is keeps its status blocked, its note and its recorded breaks; vbw show plan and vbw show roadmap print the reason after the apply"
+          },
+          "what": "full apply drops note",
+          "files": [
+            "plugin/lib/cmd-apply.sh"
+          ],
+          "checks": {
+            "C483": "red"
+          },
+          "result": "red",
+          "at": "2026-10-27T02:41:03Z",
+          "head": "80ec888d7d302c00f221bb83e82f9384cc347e78"
+        },
+        {
+          "rule": {
+            "req": "R213",
+            "text": "vbw apply --add and --patch keep the note the same way"
+          },
+          "what": "add and patch drop note",
+          "files": [
+            "plugin/lib/cmd-apply.sh"
+          ],
+          "checks": {
+            "C483": "red"
+          },
+          "result": "red",
+          "at": "2026-10-27T02:41:06Z",
+          "head": "80ec888d7d302c00f221bb83e82f9384cc347e78"
+        },
+        {
+          "rule": {
+            "req": "R213",
+            "text": "a plan without a note gains none from an apply; the note goes only when a kernel command changes the plan's status (vbw plan reset, vbw plan done)"
+          },
+          "what": "plan gains note",
+          "files": [
+            "plugin/lib/cmd-apply.sh"
+          ],
+          "checks": {
+            "C483": "red"
+          },
+          "result": "red",
+          "at": "2026-10-27T02:41:09Z",
+          "head": "80ec888d7d302c00f221bb83e82f9384cc347e78"
+        },
+        {
+          "task": 4,
+          "what": "roadmap omits note",
+          "files": [
+            "plugin/lib/cmd-show.sh"
+          ],
+          "checks": {
+            "C477": "green",
+            "C478": "green",
+            "C479": "green",
+            "C480": "green",
+            "C481": "green",
+            "C482": "green",
+            "C483": "red"
+          },
+          "result": "red",
+          "at": "2026-10-27T02:42:04Z",
+          "head": "80ec888d7d302c00f221bb83e82f9384cc347e78"
+        }
+      ]
     },
     {
       "id": "P172.2",
@@ -53251,12 +53564,95 @@
       "after": [
         "P171.3"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "plugin/agents/lead.md: rule 6 Lean checks says a check's rules belong to one plan: when several plans of a requirement build one after the other, each plan's rules get a check of their own (a separate test file, or the same file with a case filter that is a distinct check); rule 7 Rules says the plan is named on every rule of the requirement or on none, and that vbw apply refuses both",
         "docs/proof.md Rules section: the R211 refusal and its reason (the earlier plan's mutation step would find the check red on unbroken code); docs/workflows.md's list of what vbw apply refuses: a check whose rules name two plans that build one after the other, and a requirement whose rules name a plan on only some; its vbw apply row: a started plan comes back unchanged and keeps its status, note and breaks",
         "docs/record.md: the requirements row (plan on every rule of the requirement or on none, refused otherwise) and the plans row (the note survives every vbw apply, as mutations do; it goes with vbw plan done or reset)"
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R211",
+            "text": "the Lead's brief says a check's rules belong to one plan: plans of a requirement that build one after the other give each plan's rules a check of their own (a separate test file, or the same file with a case filter as a distinct check)"
+          },
+          "what": "lead: dropped 'one after the other'",
+          "files": [
+            "plugin/agents/lead.md"
+          ],
+          "checks": {
+            "C478": "red"
+          },
+          "result": "red",
+          "at": "2026-10-27T02:25:04Z",
+          "head": "80ec888d7d302c00f221bb83e82f9384cc347e78"
+        },
+        {
+          "rule": {
+            "req": "R212",
+            "text": "the Lead's brief rule 7 (Rules) says the plan is named on every rule of the requirement or on none"
+          },
+          "what": "lead rule 7: dropped every rule/none",
+          "files": [
+            "plugin/agents/lead.md"
+          ],
+          "checks": {
+            "C481": "red"
+          },
+          "result": "red",
+          "at": "2026-10-27T02:25:07Z",
+          "head": "80ec888d7d302c00f221bb83e82f9384cc347e78"
+        },
+        {
+          "rule": {
+            "req": "R211",
+            "text": "docs/proof.md's Rules section and docs/workflows.md's list of what vbw apply refuses name the refusal and its reason (red on unbroken code)"
+          },
+          "what": "docs: dropped unbroken / one after the other (proof.md and workflows.md)",
+          "files": [
+            "docs/proof.md",
+            "docs/workflows.md"
+          ],
+          "checks": {
+            "C479": "red"
+          },
+          "result": "red",
+          "at": "2026-10-27T02:25:11Z",
+          "head": "80ec888d7d302c00f221bb83e82f9384cc347e78"
+        },
+        {
+          "rule": {
+            "req": "R212",
+            "text": "docs/workflows.md's list of what vbw apply refuses and docs/record.md's requirements row say a plan is named on every rule or on none"
+          },
+          "what": "record.md: dropped or on none",
+          "files": [
+            "docs/record.md"
+          ],
+          "checks": {
+            "C482": "red"
+          },
+          "result": "red",
+          "at": "2026-10-27T02:25:14Z",
+          "head": "80ec888d7d302c00f221bb83e82f9384cc347e78"
+        },
+        {
+          "rule": {
+            "req": "R213",
+            "text": "docs/record.md's plans row and docs/workflows.md's vbw apply row say a started plan keeps its note with its status and breaks across every vbw apply"
+          },
+          "what": "record.md: dropped note survives apply",
+          "files": [
+            "docs/record.md"
+          ],
+          "checks": {
+            "C484": "red"
+          },
+          "result": "red",
+          "at": "2026-10-27T02:25:17Z",
+          "head": "80ec888d7d302c00f221bb83e82f9384cc347e78"
+        }
       ]
     },
     {
@@ -67928,6 +68324,17 @@
         "ended": "2026-10-27T02:07:24Z",
         "cost": {
           "usd": 1.558793
+        }
+      },
+      {
+        "id": "build-20261027T022039Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M44",
+        "started": "2026-10-27T02:20:39Z",
+        "ended": "2026-10-27T02:43:26Z",
+        "cost": {
+          "usd": 1.063721
         }
       }
     ],
