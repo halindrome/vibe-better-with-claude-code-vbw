@@ -71,6 +71,7 @@ proofcopy_create_slots() {
 }
 
 PROOFCOPY_HOW=''
+PROOFCOPY_LEFT=()
 PROOFCOPY_SIZES=''
 PROOFCOPY_SAID=''
 
@@ -154,7 +155,8 @@ proofcopy_sweep() {
 
 # proofcopy_make: one more copy, added to PROOF_COPIES.
 proofcopy_make() {
-  local dir p real copy first='' left=''
+  local dir p real copy first='' l
+  PROOFCOPY_LEFT=()
   dir=$(mktemp -d "$VBW_RUNTIME/proof.$$.XXXXXX") || vbw_die "cannot create a directory in $VBW_RUNTIME"
   vbw_guard_add dir "$dir"
   copy="$dir/tree"
@@ -166,7 +168,10 @@ proofcopy_make() {
     || { proofcopy_remove; vbw_die "cannot make a clean copy of the committed code (does the project have a commit?)"; }
   real=$(cd -P "$VBW_ROOT" && pwd -P) || vbw_die "cannot resolve $VBW_ROOT"
   if [ -f "${VBW_RECORD:-}" ]; then
-    left=$(jq -r '(.project.leave_out // [])[]' "$VBW_RECORD" 2> /dev/null) || left=''
+    while IFS= read -r l; do
+      l=${l%/}
+      [ -z "$l" ] || PROOFCOPY_LEFT+=("$l")
+    done < <(jq -r '(.project.leave_out // [])[]' "$VBW_RECORD" 2> /dev/null)
   fi
   while IFS= read -r -d '' p; do
     p=${p%/}
@@ -177,18 +182,16 @@ proofcopy_make() {
 }
 
 # proofcopy_entry P: copy the ignored path P into the copy being made (the
-# caller's locals: copy, real, first, left). A listed path, or one under it, is
+# caller's locals: copy, real, first; the list is PROOFCOPY_LEFT). A listed path, or one under it, is
 # skipped. A folder that holds a listed path is not copied whole: its children
 # are copied one by one around the listed path, as deep as the path goes, so
 # the data the list spares is never read.
 proofcopy_entry() {
   local p=$1 L skip='' parent='' c l t
-  while IFS= read -r L; do
-    L=${L%/}
-    [ -n "$L" ] || continue
+  for L in ${PROOFCOPY_LEFT[@]+"${PROOFCOPY_LEFT[@]}"}; do
     case "$p" in "$L" | "$L"/*) skip=1; break ;; esac
     case "$L" in "$p"/*) parent=1 ;; esac
-  done <<< "$left"
+  done
   [ -z "$skip" ] || return 0
   [ ! -e "$copy/$p" ] && [ ! -L "$copy/$p" ] || return 0
   if [ -n "$parent" ] && [ -d "$VBW_ROOT/$p" ] && [ ! -L "$VBW_ROOT/$p" ]; then
