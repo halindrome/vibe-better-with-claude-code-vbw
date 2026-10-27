@@ -188,6 +188,8 @@ lib() { vbw_kernel '. "$VBW_LIB/proofcopy.sh"; '"$1"; }
     PROOFCOPY_LEFT=(data)
     proofcopy_entry data
     proofcopy_entry cache
+    proofcopy_entry data/sub
+    [ ! -e "$copy/data/sub" ] || { echo "data/sub was copied although under the listed data/"; exit 1; }
     [ ! -e "$copy/data" ] || { echo "data/ was copied although listed"; exit 1; }
     [ -f "$copy/cache/c.txt" ] || { echo "cache/ was not copied"; exit 1; }
     PROOFCOPY_LEFT=()
