@@ -1,20 +1,25 @@
 #!/usr/bin/env bats
-# R188 (P140; docs/proof.md, docs/guards.md) and R210 (T192): a test that cannot
-# fail is strengthened in place during the build, and waits for one approval.
+# R188 (P140; docs/proof.md, docs/guards.md), R210 (T192) and R217: a test that
+# cannot fail is strengthened in place during the build, and waits for one approval.
 # Once vbw mutate records a survivor in a build run, the check files a plan may
 # strengthen open for the run's agents: the files of the checks named by the
-# plan's own rules (own_rules), a file shared with another requirement's check
-# included (R210); every other check file stays protected. The kernel holds one
-# definition of those files, in the shared jq defs of plugin/lib/record.sh, read
-# by vbw commit, the build lease's editable list, the proof's scope check and the
-# pending/strengthened logic of vbw mutate. vbw commit PLAN commits such a file
-# with the plan's trailers (a check file with no survivor in that plan, or one
-# that no check of the plan's own rules names, is refused by name, with the rule
-# and a next step), and the proof's scope check does not count that commit as
-# outside the plan. The changed check file lets the build finish, then vbw next
-# asks for one approval naming it before the proof, and vbw prove refuses until
-# it is given; vbw show contract --changes prints the whole diff under the
-# changed test file line. L1: the kernel and the hooks on a fixture project.
+# plan's own rules, a file shared with another requirement's check included; every
+# other check file stays protected. The kernel holds one definition of those files
+# (strengthen_files, in the shared jq defs of plugin/lib/record.sh, beside
+# own_rules); its cases below pin each reader:
+#   - the file guard: before a survivor a build agent cannot write a check file,
+#     after it the plan's files open and another requirement's own file stays denied;
+#   - vbw commit PLAN: commits such a file with the plan's trailers, and refuses
+#     one with no survivor or outside the plan's own rules, by name, with a next step;
+#   - the lease's editable list: lease.editable holds exactly those files;
+#   - the proof's scope check: does not count that commit as outside the plan;
+#   - vbw mutate's pending and strengthened lists: drawn from strengthen_files
+#     only (a shared file inside it is pending and strengthened; a check file
+#     outside it, or any file before the plan's first survivor, is neither).
+# The changed check file lets the build finish, then vbw next asks for one
+# approval naming it before the proof, and vbw prove refuses until it is given;
+# vbw show contract --changes prints the whole diff under the changed test file
+# line. L1: the kernel and the hooks on a fixture project.
 
 load helper
 load fixture-helper
