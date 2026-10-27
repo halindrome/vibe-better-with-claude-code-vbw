@@ -25113,7 +25113,15 @@
           "to": "deep",
           "reason": "Dev blocked P175.2: Task 1 needs an R217 case added to tests/mutate-pending-check-docs.bats, but that file is protected by C495 and the guard refuses any edit ('the contract is fixed while building'). The file has no R217 case, so C495 is red only because nothing matches. The case must be added through the contract (approved check file), then the docs tasks can proceed."
         }
-      ]
+      ],
+      "qa": {
+        "result": "fail",
+        "tier": "deep",
+        "tree": "3105598cbc464d8bad7e8aa693ed0e7a75d446eb500bd0d52f5399bfcde7a56c",
+        "at": "2026-10-27T15:53:11Z",
+        "note": "17/18 checks",
+        "rounds": 1
+      }
     },
     {
       "id": "P176",
