@@ -54877,13 +54877,108 @@
         "plugin/lib/proofcopy.sh"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "Tests first (red): 'R218:' self-test cases in tests/output-child-exit.bats (planted learns to write several files, in one or two directories): refused and named at the calling line, with the writer's name and its FILE:LINE after it: a planted function 'say() { printf ... }' called in a loop fed by a process substitution; a writer defined in a second file under another DIR; a two-step chain (a calls b, b writes with echo >&2); passing: a function whose body writes through vbw_out, '( printf ... )', 'printf ... | cat' or 'printf ... > \"$f\"' called in such a loop, and a writer called as '$(say x)', 'say x > file', 'say x | cat' or inside a pipe-fed loop; the vbw_die-in-a-loop acceptance stays as it is; a 'R218:' wording-and-standards case asserts the tool's header states the writer-function rule and no longer the 'reviewer's to judge' sentence, AGENTS.md's 'No builtin write while the shell has a live child' line says a call to a function that writes counts as the write, the tool has no mapfile, readarray or associative array and passes bash -n under /bin/bash; the header of tests/output-child-exit.bats names the widened rule",
         "tools/check-loop-writes.sh: a first pass over every shell file under all DIRs (one awk program fed every file, or one run per file whose output is gathered) collects the writer functions: a function whose body holds a builtin write that the existing writes() rules judge to run in the function's shell, then to a fixed point the functions that call a writer under the same rules (not in a command or process substitution, a subshell, a pipeline stage, the background, a pipe-fed loop, nor redirected into a file); the loop pass refuses a call to a writer in the loop's own shell like a printf, printing FILE:LINE:text of the calling line and then the writer's name and where it writes (FILE:LINE), exit 1; bash 3.2 and awk only, guarded array expansions, nothing written outside the repository; the header replaces the reviewer sentence with the rule",
         "The shipped-code case (plugin/bin, lib, hooks, scripts) on the widened rule: expected green (a scan during planning found no writer function called in a loop body: consent_grant writes only into a file and calls consent_file in a command substitution; proofcopy_entry writes through vbw_out or into a file); if the finished tool refuses a call in plugin/lib/cmd-approve.sh or plugin/lib/proofcopy.sh, fix it as the rule prescribes (vbw_out, or the producer piped into the loop) in that file and name the fix in the commit; a refusal in any other shipped file blocks the plan with the finding",
         "AGENTS.md's 'No builtin write while the shell has a live child' line (CLAUDE.md is a symlink: one edit); bash tools/test.sh --lint green; under /bin/bash: bats tests/output-child-exit.bats and tests/standards.bats green"
+      ],
+      "mutations": [
+        {
+          "task": 3,
+          "what": "a shipped process-substitution loop in proofcopy.sh writes with printf",
+          "files": [
+            "plugin/lib/proofcopy.sh"
+          ],
+          "checks": {
+            "C496": "red"
+          },
+          "result": "red",
+          "at": "2026-10-27T14:38:22Z",
+          "head": "c49b55b5808458d52acfd854b88732e2c3c42a8a"
+        },
+        {
+          "rule": {
+            "req": "R218",
+            "text": "the tool collects, across every shell file under all the DIRs it is given, the writer functions: a function whose body holds a builtin write that the tool's rules judge to run in the function's shell, and, to a fixed point, a function whose body calls a writer under those rules; a function writing through vbw_out, '( printf ... )', 'printf ... | cat' or 'printf ... > \"$f\"' is not a writer"
+          },
+          "what": "the writer search stops after one pass (no fixed point)",
+          "files": [
+            "tools/check-loop-writes.sh"
+          ],
+          "checks": {
+            "C496": "red"
+          },
+          "result": "red",
+          "at": "2026-10-27T14:38:49Z",
+          "head": "c49b55b5808458d52acfd854b88732e2c3c42a8a"
+        },
+        {
+          "rule": {
+            "req": "R218",
+            "text": "inside a loop fed by a process substitution, a call to a writer function in the loop's own shell is refused like a direct printf: FILE:LINE:text of the calling line, then the writer's name and where it writes (FILE:LINE), exit 1; a writer defined in another file under another DIR is known; a two-step chain (a calls b, b writes with echo >&2) is refused at the call of a"
+          },
+          "what": "the refusal no longer names where the writer writes",
+          "files": [
+            "tools/check-loop-writes.sh"
+          ],
+          "checks": {
+            "C496": "red"
+          },
+          "result": "red",
+          "at": "2026-10-27T14:38:53Z",
+          "head": "c49b55b5808458d52acfd854b88732e2c3c42a8a"
+        },
+        {
+          "rule": {
+            "req": "R218",
+            "text": "a writer called in a command substitution, a subshell, a pipeline, the background, a loop fed by a pipe, or with its output redirected into a file passes, under the redirection rules the tool applies to printf; the vbw_die-in-a-loop acceptance holds"
+          },
+          "what": "a writer or write sent to the background or &> a file is refused",
+          "files": [
+            "tools/check-loop-writes.sh"
+          ],
+          "checks": {
+            "C496": "red"
+          },
+          "result": "red",
+          "at": "2026-10-27T14:38:56Z",
+          "head": "c49b55b5808458d52acfd854b88732e2c3c42a8a"
+        },
+        {
+          "rule": {
+            "req": "R218",
+            "text": "the shipped code (plugin/bin, plugin/lib, plugin/hooks, plugin/scripts) passes the widened rule"
+          },
+          "what": "printf -v counts as a write again, so the shipped vbw_scratch_json is a writer",
+          "files": [
+            "tools/check-loop-writes.sh"
+          ],
+          "checks": {
+            "C496": "red"
+          },
+          "result": "red",
+          "at": "2026-10-27T14:39:00Z",
+          "head": "c49b55b5808458d52acfd854b88732e2c3c42a8a"
+        },
+        {
+          "rule": {
+            "req": "R218",
+            "text": "the tool's header states the writer-function rule in place of the 'reviewer's to judge' sentence, AGENTS.md's 'No builtin write while the shell has a live child' line says a call to a function that writes counts as the write, the header of tests/output-child-exit.bats names the widened rule, and the tool stays bash 3.2 and awk only (no mapfile, readarray or associative array; bash -n under /bin/bash)"
+          },
+          "what": "AGENTS.md's live-child line no longer counts a call to a function that writes",
+          "files": [
+            "AGENTS.md"
+          ],
+          "checks": {
+            "C496": "red"
+          },
+          "result": "red",
+          "at": "2026-10-27T14:39:03Z",
+          "head": "c49b55b5808458d52acfd854b88732e2c3c42a8a"
+        }
       ]
     },
     {
@@ -55299,12 +55394,46 @@
         "P177.2",
         "P175.2"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "docs",
       "tasks": [
         "Red first: run C503 (bats --print-output-on-failure --filter R220 tests/rules-docs.bats): the two cases are written and red today; read their greps (the refusal list bullet holds 'case filter', 'no case name' or 'matches no case', 'never because none exist'; the table row's Refusal cell holds 'no case name' and its Next cell equals apply_next's answer; docs/proof.md's Checks section has a 'case filter' sentence with 'apply' and 'match a case' or 'matches at least one case')",
         "docs/workflows.md: the list of what vbw apply refuses gains a bullet: a check running a bats file with a case filter that matches no case name in the file, named with the check and the file: a new check is red because its cases fail, never because none exist; the 'Every refusal and its next step' table gains the row '| `vbw apply`: a bats check (`tests/x.bats`) whose case filter matches no case name in the file | write the cases the filter names into tests/x.bats (each @test name matching the pattern), see them fail with the runner, then send the document again; or correct the pattern |'",
         "docs/proof.md, the Checks section (the run row of the checks table, or the words beside it): a case filter (bats --filter) must match a case in the file at apply time, the Lead writing the failing cases at planning; PATH=\"/bin:$PATH\" bats tests/rules-docs.bats green"
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R220",
+            "text": "docs/workflows.md's list of what vbw apply refuses names the empty-filter refusal (the check, the file, the reason: red because its cases fail, never because none exist) and its 'Every refusal and its next step' table has a row whose Next cell is the kernel's words; docs/proof.md's Checks section says a case filter must match a case in the file at apply time"
+          },
+          "what": "proof.md: case filter need not match",
+          "files": [
+            "docs/proof.md"
+          ],
+          "checks": {
+            "C503": "red"
+          },
+          "result": "red",
+          "at": "2026-10-27T14:32:32Z",
+          "head": "5c4e71889ed4a76ee7082a2e688025ded2a6be07"
+        },
+        {
+          "rule": {
+            "req": "R220",
+            "text": "docs/workflows.md's list of what vbw apply refuses names the empty-filter refusal (the check, the file, the reason: red because its cases fail, never because none exist) and its 'Every refusal and its next step' table has a row whose Next cell is the kernel's words; docs/proof.md's Checks section says a case filter must match a case in the file at apply time"
+          },
+          "what": "workflows bullet reason removed",
+          "files": [
+            "docs/workflows.md"
+          ],
+          "checks": {
+            "C503": "red"
+          },
+          "result": "red",
+          "at": "2026-10-27T14:32:43Z",
+          "head": "5c4e71889ed4a76ee7082a2e688025ded2a6be07"
+        }
       ]
     }
   ],
@@ -70176,6 +70305,17 @@
         "ended": "2026-10-27T14:28:22Z",
         "cost": {
           "usd": 1.817896
+        }
+      },
+      {
+        "id": "build-20261027T143104Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M45",
+        "started": "2026-10-27T14:31:04Z",
+        "ended": "2026-10-27T14:40:17Z",
+        "cost": {
+          "usd": 1.402724
         }
       }
     ],
