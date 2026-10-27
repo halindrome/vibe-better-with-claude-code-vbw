@@ -224,8 +224,12 @@ def unreadable_calls:
   ("(?<i>\"(?:\\\\.|[^\"\\\\])*\"|'(?:\\\\.|[^'\\\\])*'|`(?:\\\\.|[^`\\\\])*`|\\((?:\\g<i>|,)*\\)|\\[(?:\\g<i>|,)*\\]|\\{(?:\\g<i>|,)*\\}|[^,()\\[\\]{}'\"`]){0}"
    + "(?<![.\\w])(?<n1>open|unlink|mkdir|rmdir|rename|file_put_contents)\\s*\\((?<a1>(?:\\g<i>|,)*)\\)"
    + "|\\b(?<p2>os|fs|File|FileUtils|shutil|Dir)(?:\\s*\\.\\s*promises)?\\s*\\.\\s*(?<m2>remove|unlink|unlinkSync|rmdir|rmdirSync|mkdir|mkdirSync|makedirs|write|writeFile|writeFileSync|binwrite|appendFile|appendFileSync|createWriteStream|delete|rm|rmSync|rm_f|rm_rf|rmtree|mkdir_p|touch|truncate|chmod|rename|renameSync|replace|move|mv|copy|copyfile|copy2|copytree|cp|cp_r|copyFile|copyFileSync)\\s*\\((?<a2>(?:\\g<i>|,)*)\\)"
-   + "|(?<![.\\w])Path\\s*\\((?<a3>(?:\\g<i>|,)*)\\)\\s*\\.\\s*(?<m3>write_text|write_bytes|unlink|touch|mkdir|rmdir|rename|replace|open)\\s*\\((?<b3>(?:\\g<i>|,)*)\\)"
+   + "|(?:(?<![.\\w])|(?<=\\bpathlib\\.))Path\\s*\\((?<a3>(?:\\g<i>|,)*)\\)\\s*\\.\\s*(?<m3>write_text|write_bytes|unlink|touch|mkdir|rmdir|rename|replace|open)\\s*\\((?<b3>(?:\\g<i>|,)*)\\)"
    + "|(?<![\\w.)\\]])(?<r4>\\((?:\\g<i>|,)*\\))\\s*\\.\\s*(?:write_text|write_bytes)\\s*\\((?:\\g<i>|,)*\\)"
+   + "|\\.\\s*(?<m6>writeFile|writeFileSync|appendFile|appendFileSync|createWriteStream|rmSync|rmdirSync|mkdirSync|unlinkSync|makedirs|rmtree)\\s*\\((?<a6>(?:\\g<i>|,)*)\\)"
+   + "|(?<![.\\w])(?<m9>writeFile|writeFileSync|appendFile|appendFileSync|createWriteStream|rmSync|rmdirSync|mkdirSync|unlinkSync)\\s*\\((?<a9>(?:\\g<i>|,)*)\\)"
+   + "|\\b(?<p7>os|fs|File|FileUtils|shutil|Dir)\\s*\\.\\s*(?<m7>remove|unlink|rmdir|mkdir|write|binwrite|delete|rm|rm_f|rm_rf|mkdir_p|touch|truncate|chmod|rename|replace|move|mv|copy|cp|cp_r)[ \\t]+(?<a7>[^(\\s;\\n][^;\\n]*)"
+   + "|(?<![.\\w])(?<n8>open)[ \\t]+(?<a8>[^(\\s;\\n][^;\\n]*)"
    + "|(?<![.\\w])(?<n5>unlink|mkdir|rmdir|rename)[ \\t]+(?<a5>\\$[^;\\n]*)") as $re
   | def args: [match("(?<j>\"(?:\\\\.|[^\"\\\\])*\"|'(?:\\\\.|[^'\\\\])*'|`(?:\\\\.|[^`\\\\])*`|\\((?:\\g<j>|,)*\\)|\\[(?:\\g<j>|,)*\\]|\\{(?:\\g<j>|,)*\\}|[^,()\\[\\]{}'\"`]){0}\\s*((?:\\g<j>)*)(?:,|$)"; "g").captures[] | select(.name == null) | .string | sub("\\s+$"; "") | sub("^\\s+"; "")] | map(select(length > 0));
     def literal: test("^['\"]") or (test("^`") and (contains("${") | not));
@@ -252,10 +256,14 @@ def unreadable_calls:
          | if $c.n1 == "open" then $a | open_unreadable
            elif $c.n1 == "rename" then $a | rename_unreadable
            else ($a[0] // "'") | literal | not end
-       elif $c.p2 != null then
-         ($c.a2 | args) as $a
-         | if $c.m2 | test("^(rename|renameSync|replace|move|mv)$") then $a | rename_unreadable
-           elif $c.m2 | test("^(copy|copyfile|copy2|copytree|cp|cp_r|copyFile|copyFileSync)$") then ($a[1] // "'") | literal | not
+       elif $c.m6 != null or $c.m9 != null then
+         (($c.a6 // $c.a9) | args) as $a | ($a[0] // "'") | literal | not
+       elif $c.n8 != null then
+         ($c.a8 | args) | open_unreadable
+       elif $c.p2 != null or $c.p7 != null then
+         (($c.a2 // $c.a7) | args) as $a | ($c.m2 // $c.m7) as $m
+         | if $m | test("^(rename|renameSync|replace|move|mv)$") then $a | rename_unreadable
+           elif $m | test("^(copy|copyfile|copy2|copytree|cp|cp_r|copyFile|copyFileSync)$") then ($a[1] // "'") | literal | not
            else ($a[0] // "'") | literal | not end
        elif $c.m3 != null then
          ($c.a3 | args) as $p | ($c.b3 | args) as $b
