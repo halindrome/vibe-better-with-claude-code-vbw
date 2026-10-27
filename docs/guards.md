@@ -266,7 +266,8 @@ A command that contains none of the words any rule needs (`rm`, `git`, `vbw`,
   `sh -c jq` startup) is at most 20 ms per call, judged for each guard alone,
   measured by `tools/bench-hooks.sh` in the release run (CI runs it on every
   pull request), including on a 20 KB heredoc command. CPU time, so waiting for
-  a busy machine never counts. Measured in October 2026 (an M1 Max Mac and
+  a busy machine never counts, and a case over its budget is measured once more
+  before it is judged (the bench says so): a slow hook is slow twice. Measured in October 2026 (an M1 Max Mac and
   GitHub's macOS runners): the file guard about 4 to 5 ms, the Bash guard about
   10 to 13 ms, the answer hook about 1 ms. A real slowdown
   (an added subprocess costs several ms) still shows. When the machine is too
