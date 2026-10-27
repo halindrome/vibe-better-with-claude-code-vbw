@@ -25203,7 +25203,15 @@
         "guarded: R13 (C12), R14 (C13), R15 (C14), R24 (C23), R25 (C24), R28 (C25), R31 (C27), R39 (C36), R44 (C44, C45), R50 (C51), R60 (C72, C94), R61 (C73, C74, C75, C76, C77), R69 (C110, C120, C122), R70 (C114), R73 (C98), R74 (C99, C100), R75 (C101), R77 (C104), R78 (C105, C106), R79 (C107), R80 (C108), R81 (C109, C111, C112, C113), R83 (C119), R95 (C149, C150), R96 (C151, C152), R99 (C155), R101 (C179), R106 (C164, C165), R107 (C166, C167), R116 (C182, C183), R118 (C184), R120 (C185), R123 (C190, C191), R128 (C200), R129 (C196), R130 (C197), R134 (C201), R135 (C202), R147 (C212, C215, C237), R148 (C213, C214, C216, C238), R149 (C217, C218, C219, C220, C221, C222), R150 (C223, C224, C225, C226, C227, C228, C229, C230), R151 (C231, C232), R157 (C244), R158 (C245), R159 (C246), R160 (C247, C263, C264), R163 (C250), R165 (C252), R166 (C253, C254, C255, C256, C267), R167 (C257, C258, C259, C260), R177 (C287, C288), R178 (C290, C291, C292, C293, C294, C295, C296, C311), R179 (C297, C298, C299, C300, C301, C302, C303, C304, C305, C306, C312), R180 (C307, C308, C309, C310), R181 (C313, C314, C315, C316, C317, C318, C319, C320, C321), R182 (C322, C323, C324, C325, C326), R184 (C328, C329, C330, C331, C332, C333), R185 (C334, C335, C336, C337, C338, C339, C340, C341, C342, C343), R186 (C344, C345, C346, C347, C348), R190 (C374, C375, C376, C377, C378, C379, C380, C381, C382, C383, C384, C385, C386, C387, C388), R192 (C401, C402, C403, C404, C405, C406, C407, C408, C409, C410), R193 (C411, C412), R194 (C417, C418, C419), R197 (C413, C414), R198 (C423), R203 (C448, C449, C450), R207 (C461, C462, C463), R209 (C469, C470, C471, C472, C473)",
         "tests: project test command"
       ],
-      "predicted": "deep"
+      "predicted": "deep",
+      "qa": {
+        "result": "fail",
+        "tier": "standard",
+        "tree": "922648f09e403a4028aaa64f9b9558bf7d7072887df70faeb8c441548f8123ab",
+        "at": "2026-10-27T15:53:48Z",
+        "note": "15/18 checks",
+        "rounds": 1
+      }
     },
     {
       "id": "P178",
@@ -58089,6 +58097,15 @@
       "attempts": 0,
       "status": "open",
       "note": "A JS write called on any receiver other than fs/os/etc is NOT refused when the target is a variable: node -e \"require('fs').writeFileSync(p, 'x')\" passes, while require('fs').writeFileSync('src/other.js','x') is refused. Same for destructured calls (writeFileSync(p,'x') after const {writeFileSync} = require('fs')) and any 'x.writeFile(p, ...)'. Cause: program_writes reads the generic '.(writeFile|writeFileSync|appendFile|appendFileSync|createWriteStream|unlink|unlinkSync|rmSync|rmdirSync|mkdirSync|makedirs|rmtree|truncate)(' head on any receiver, but unreadable_calls only knows the receivers os|fs|File|FileUtils|shutil|Dir. require('fs').writeFileSync(...) is the usual node -e form, so the F323 hole stays open for Node. Regression test: node -e \"require('fs').writeFileSync(p, 'x')\" and a heredoc form must get the 'cannot name' refusal.",
+      "phase": "P177"
+    },
+    {
+      "id": "F326",
+      "req": "R219",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "Ruby and Perl calls written without parentheses are NOT refused when the target is a variable: ruby -e 'File.write p, \"x\"', ruby -e 'File.delete p', ruby -e 'FileUtils.rm_rf d', perl -e 'open FH, \">\", $p' all pass, while the same calls with a literal path ('File.write \"src/pay.py\", \"x\"') get the R76 refusal. Cause: program_writes allows an optional parenthesis after the os|fs|File|FileUtils|shutil|Dir method and after open/unlink/mkdir (\\(?), but unreadable_calls requires a literal '(' for those heads (only unlink/mkdir/rmdir/rename with a $ target are handled without one). Paren-less calls are normal Ruby and Perl, and the goal names both. The docs/guards.md sentence 'a write whose target the guard cannot read ... is refused' is false for these. Regression test: ruby -e 'File.write p, \"x\"' and perl -e 'open FH, \">\", $p' get the 'cannot name' refusal.",
       "phase": "P177"
     }
   ],
