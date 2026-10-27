@@ -56955,6 +56955,13 @@
       "sort": "next",
       "size": "small",
       "status": "done"
+    },
+    {
+      "id": "T193",
+      "text": "Widen the R211 refusal: two plans of the same wave whose rules share one check face the same hazard as consecutive plans (the first Dev's mutation step runs the check before the other Dev has committed; a race, so it fails only sometimes). The Lead's brief already says a check's rules belong to one plan; the kernel refusal should cover any two open plans sharing a check (Architect note, M44 planning 2026-10-27)",
+      "sort": "later",
+      "size": "small",
+      "status": "open"
     }
   ],
   "decisions": [
