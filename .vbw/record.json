@@ -59760,6 +59760,11 @@
       "text": "Order for 2.1.17 (lead, owner asked for a proper reorder 2026-10-27): 1. T192 (a Dev may strengthen a survivor's check file shared with other requirements, the edit waiting for approval); 2. T187, T191 and T190 together as one vbw apply plan (refuse a check whose rules two consecutive plans own; refuse a requirement naming a plan on only some rules; keep a started plan's note across a full apply); 3. the M43 QA wording notes as a docs-only requirement (P166 criterion 2, docs/proof.md missing-path wording, a path with a space cannot be listed, the skip check re-reads the list per entry). Later: T184, T185, T186, T188, T189, then T10 (medium, after per D491).",
       "why": "T192 first because it closes a hole in the proof itself: a test the mutation step found unable to fail stays weak whenever its file is shared, the normal case under the one-file-per-area rule, on every deep and standard build. The apply refusals and the note loss are planning-time and record-integrity fixes in one area (vbw apply) and cost time, not trust; the Lead can already avoid T187 by splitting files. The Architect ranked T187 first only because it was the one item sorted next at triage.",
       "at": "2026-10-27T01:00:53Z"
+    },
+    {
+      "id": "D514",
+      "at": "2026-10-27T01:50:35Z",
+      "text": "Contract approved: 203 requirements, 482 checks, 531 plans (1005bc868d62)"
     }
   ],
   "commands": {
