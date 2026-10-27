@@ -56326,7 +56326,7 @@
     {
       "id": "T190",
       "text": "A full vbw apply (the planning workflow's) keeps a started plan's status and recorded breaks but drops its note (the blocked reason): seen 2026-10-26 on P169.3 after P170 was planned; the reason survived only in the phase's escalations. Keep the note with the status",
-      "sort": "later",
+      "sort": "next",
       "size": "small",
       "status": "open"
     },
