@@ -25212,12 +25212,19 @@
       ],
       "predicted": "deep",
       "qa": {
-        "result": "fail",
+        "result": "pass",
         "tier": "standard",
-        "tree": "922648f09e403a4028aaa64f9b9558bf7d7072887df70faeb8c441548f8123ab",
-        "at": "2026-10-27T15:53:48Z",
-        "note": "15/18 checks",
-        "rounds": 1
+        "tree": "d2b5f27babfd66e1524213028420fec7d382d2ee16c22d25d2f9cbc242612e25",
+        "at": "2026-10-27T16:37:32Z",
+        "note": "6/6 checks"
+      },
+      "outcome": {
+        "tier": "deep",
+        "predicted": "deep",
+        "held": true,
+        "fix_rounds": 3,
+        "qa_findings": 3,
+        "escalations": 0
       }
     },
     {
@@ -58093,7 +58100,7 @@
       "req": "R219",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "pathlib.Path(p).write_text('x') with p a variable is NOT refused, while pathlib.Path('src/pay.py').write_text('x') is. Cause: unreadable_calls in plugin/hooks/guard-bash.jq anchors Path with (?<![.\\w]), so the 'pathlib.' form is skipped, but program_writes uses \\bPath( and reads it as a write call head. The criterion says every call head program_writes reads is judged. Probe: run the Bash guard hook on 'python3 -c \"import pathlib; pathlib.Path(p).write_text(1)\"' under a lease: no answer (allowed). Regression test: a case in tests/guard-interpreters.bats where 'pathlib.Path(p).write_text' / 'pathlib.Path(d, \"x\").unlink()' on a build lease gets the 'cannot name' refusal.",
       "phase": "P177"
     },
@@ -58102,7 +58109,7 @@
       "req": "R219",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "A JS write called on any receiver other than fs/os/etc is NOT refused when the target is a variable: node -e \"require('fs').writeFileSync(p, 'x')\" passes, while require('fs').writeFileSync('src/other.js','x') is refused. Same for destructured calls (writeFileSync(p,'x') after const {writeFileSync} = require('fs')) and any 'x.writeFile(p, ...)'. Cause: program_writes reads the generic '.(writeFile|writeFileSync|appendFile|appendFileSync|createWriteStream|unlink|unlinkSync|rmSync|rmdirSync|mkdirSync|makedirs|rmtree|truncate)(' head on any receiver, but unreadable_calls only knows the receivers os|fs|File|FileUtils|shutil|Dir. require('fs').writeFileSync(...) is the usual node -e form, so the F323 hole stays open for Node. Regression test: node -e \"require('fs').writeFileSync(p, 'x')\" and a heredoc form must get the 'cannot name' refusal.",
       "phase": "P177"
     },
@@ -58111,7 +58118,7 @@
       "req": "R219",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "Ruby and Perl calls written without parentheses are NOT refused when the target is a variable: ruby -e 'File.write p, \"x\"', ruby -e 'File.delete p', ruby -e 'FileUtils.rm_rf d', perl -e 'open FH, \">\", $p' all pass, while the same calls with a literal path ('File.write \"src/pay.py\", \"x\"') get the R76 refusal. Cause: program_writes allows an optional parenthesis after the os|fs|File|FileUtils|shutil|Dir method and after open/unlink/mkdir (\\(?), but unreadable_calls requires a literal '(' for those heads (only unlink/mkdir/rmdir/rename with a $ target are handled without one). Paren-less calls are normal Ruby and Perl, and the goal names both. The docs/guards.md sentence 'a write whose target the guard cannot read ... is refused' is false for these. Regression test: ruby -e 'File.write p, \"x\"' and perl -e 'open FH, \">\", $p' get the 'cannot name' refusal.",
       "phase": "P177"
     }
