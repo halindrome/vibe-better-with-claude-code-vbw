@@ -16466,6 +16466,22 @@
           "check": "C496"
         }
       ]
+    },
+    {
+      "id": "R219",
+      "text": "The Bash guard refuses, on a build or fix lease, an inline interpreter program (python, node, perl, ruby and the other interpreters it reads, from a heredoc or a -c/-e argument) whose file-writing call names its target through a variable, an expression or another call rather than a literal path, saying the guard cannot read where the program writes and naming the fix (a literal path, or the Edit tool); a literal path is judged as today, and a program that writes nothing passes (F323: on 2026-10-27 two Devs' python heredocs wrote protected check files through a variable, unseen by the guard)",
+      "proof": "auto",
+      "status": "open",
+      "milestone": "M45",
+      "rules": []
+    },
+    {
+      "id": "R220",
+      "text": "vbw apply refuses, naming the check and the file, a check whose command filters a test file by case name (bats --filter PATTERN) when the pattern matches no case name in the file as committed: the Lead writes the failing cases at planning, so a new check is red because its cases fail, never because none exist (M45, 2026-10-27: four of nine new checks were red on an empty match and the Devs had to write the cases during the build, into protected files)",
+      "proof": "auto",
+      "status": "open",
+      "milestone": "M45",
+      "rules": []
     }
   ],
   "phases": [
@@ -24872,7 +24888,7 @@
         "The header of tests/mutate-strengthen.bats names only what the file's cases assert, each named reader (vbw commit, the lease's editable list, the file guard, the proof's scope check, vbw mutate's pending and strengthened lists) having a case in the file; the new case pinning that vbw mutate's pending and strengthened lists come from strengthen_files($p) (a waiting file of a check the break ran but the plan may not strengthen stays out of both) lives in that file and is shown red before the code change.",
         "docs/proof.md's paragraph on 'caught by the pending one' and docs/record.md's mutations description say the pending and strengthened files are among the files the plan may strengthen (the files of its own rules' checks), pinned by one case in the docs test of the area (tests/mutate-pending-check-docs.bats), not a new file."
       ],
-      "tier": "standard",
+      "tier": "deep",
       "reasons": [
         "requirements: 1",
         "files: 6 (162732 bytes)",
@@ -24882,7 +24898,15 @@
         "guarded: R12 (C11), R25 (C24), R28 (C25), R31 (C27), R32 (C28), R33 (C29), R38 (C33, C34), R40 (C37), R43 (C42, C43), R44 (C44, C45), R45 (C39, C40, C41), R46 (C46), R47 (C47), R48 (C49, C50), R49 (C48), R66 (C95), R69 (C110, C120, C122), R70 (C114), R73 (C98), R74 (C99, C100), R78 (C105, C106), R79 (C107), R80 (C108), R81 (C109, C111, C112, C113), R92 (C131, C132, C133, C134, C135, C136, C137, C138, C139), R93 (C140, C141, C142, C143, C144), R94 (C145, C146, C147, C148), R97 (C153), R98 (C154), R99 (C155), R100 (C156), R101 (C179), R103 (C160), R104 (C161, C162), R105 (C163), R110 (C169, C170), R111 (C171, C172, C173, C174, C175), R115 (C181), R118 (C184), R119 (C180), R121 (C187, C188), R123 (C190, C191), R127 (C194), R131 (C198), R132 (C199), R133 (C195), R134 (C201), R135 (C202), R144 (C208, C209), R147 (C212, C215, C237), R148 (C213, C214, C216, C238), R149 (C217, C218, C219, C220, C221, C222), R150 (C223, C224, C225, C226, C227, C228, C229, C230), R152 (C233, C234), R153 (C235, C236, C239), R160 (C247, C263, C264), R161 (C248, C265, C266), R166 (C253, C254, C255, C256, C267), R167 (C257, C258, C259, C260), R168 (C261, C262), R169 (C268), R170 (C269), R173 (C281, C282, C283, C284, C285, C286, C289), R174 (C279, C280), R175 (C274, C275), R176 (C276, C277, C278), R178 (C290, C291, C292, C293, C294, C295, C296, C311), R179 (C297, C298, C299, C300, C301, C302, C303, C304, C305, C306, C312), R180 (C307, C308, C309, C310), R181 (C313, C314, C315, C316, C317, C318, C319, C320, C321), R182 (C322, C323, C324, C325, C326), R183 (C327), R188 (C350, C351, C352, C353, C354, C355, C356, C357, C358, C359), R192 (C401, C402, C403, C404, C405, C406, C407, C408, C409, C410), R193 (C411, C412), R194 (C417, C418, C419), R195 (C420, C421, C422), R196 (C415, C416), R197 (C413, C414), R202 (C432, C433, C434, C435, C436, C437, C438, C439, C440, C441, C442, C443, C444, C445, C446, C447), R203 (C448, C449, C450), R204 (C451, C452, C453, C454), R205 (C455, C456, C457, C458, C467), R206 (C459, C460), R207 (C461, C462, C463), R208 (C464, C465, C466, C468), R209 (C469, C470, C471, C472, C473), R210 (C474, C475, C476), R211 (C477, C478, C479), R212 (C480, C481, C482), R213 (C483, C484), R214 (C485, C486, C487)",
         "tests: project test command"
       ],
-      "predicted": "standard"
+      "predicted": "standard",
+      "escalations": [
+        {
+          "at": "2026-10-27T13:17:04Z",
+          "from": "standard",
+          "to": "deep",
+          "reason": "Dev blocked P175.2: Task 1 needs an R217 case added to tests/mutate-pending-check-docs.bats, but that file is protected by C495 and the guard refuses any edit ('the contract is fixed while building'). The file has no R217 case, so C495 is red only because nothing matches. The case must be added through the contract (approved check file), then the docs tasks can proceed."
+        }
+      ]
     },
     {
       "id": "P176",
@@ -54618,13 +54642,14 @@
       "after": [
         "P174.2"
       ],
-      "status": "planned",
+      "status": "blocked",
       "role": "dev",
       "tasks": [
         "Tests first (red): a 'R217:' case in tests/mutate-pending-check-docs.bats asserts docs/proof.md's 'caught by the pending one' paragraph (The mutation check section) and docs/record.md's plans row (the mutations description) say the pending and strengthened files are among the files the plan may strengthen (the files of its own rules' checks)",
         "docs/proof.md: the paragraph says the pending file is one the plan may strengthen (a file of its own rules' checks), and strengthened names such files changed since the earlier survivor",
         "docs/record.md plans row: strengthened and pending are files the plan may strengthen (the files of its own rules' checks); bats tests/mutate-pending-check-docs.bats green"
-      ]
+      ],
+      "note": "Task 1 needs an R217 case added to tests/mutate-pending-check-docs.bats, but that file is protected by C495 and the guard refuses any edit ('the contract is fixed while building'). The file has no R217 case, so C495 is red only because nothing matches. The case must be added through the contract (approved check file), then the docs tasks can proceed."
     },
     {
       "id": "P176.1",
@@ -69482,6 +69507,17 @@
         "ended": "2026-10-27T13:12:02Z",
         "cost": {
           "usd": 1.659895
+        }
+      },
+      {
+        "id": "build-20261027T131536Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M45",
+        "started": "2026-10-27T13:15:36Z",
+        "ended": "2026-10-27T13:17:21Z",
+        "cost": {
+          "usd": 0.839203
         }
       }
     ],
