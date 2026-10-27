@@ -56347,7 +56347,7 @@
       "text": "vbw apply refuses a check whose rules are owned by two plans of one milestone that build one after the other (directly, or through a shared file): the earlier plan's mutation step finds the check red on unbroken code and the plan blocks (M43 2026-10-26: P166.1 and P168.1, each sharing its check file with the plan after it; fixed by splitting the files). The Lead's spec gets the same rule in words.",
       "sort": "next",
       "size": "small",
-      "status": "open"
+      "status": "done"
     },
     {
       "id": "T188",
