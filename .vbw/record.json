@@ -53230,12 +53230,52 @@
         "P171.1",
         "P172.1"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "cmd-show.sh show_contract_changes: for each 'changed test file F' line, find the commit holding the approved content (walk git log --format=%H -- F newest first, hash each version with vbw_sha256 until it equals the approved snapshot's hash) and print git diff <commit> -- F in full under the line, indented like the other lines, every hunk, the working file as it is now (committed or not)",
         "when no version of F in the project's git history has the approved hash, print one indented line ('the approved content of F is not in the project's git history, so no diff can be shown') and no diff",
         "the diff is plain text for the router to show: git -c color.ui=never diff --no-ext-diff; tests/kernel-work.bats, tests/testfiles-*.bats and tests/mutate-strengthen.bats green under /bin/bash"
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R210",
+            "text": "vbw show contract --changes prints, under each changed test file line, the complete diff between the approved content and the file as it is now, every hunk, committed or not"
+          },
+          "what": "diff cut to first 4 lines",
+          "files": [
+            "plugin/lib/cmd-show.sh"
+          ],
+          "checks": {
+            "C475": "red"
+          },
+          "result": "red",
+          "at": "2026-10-27T02:51:33Z",
+          "head": "f8b83aea4be77750b95c17fad1f13c7363e01dcf",
+          "pending": [
+            "tests/mutate-strengthen.bats"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R210",
+            "text": "when the approved content of a changed test file is not in the project's git history, --changes says so in one line and prints no diff"
+          },
+          "what": "never say missing history",
+          "files": [
+            "plugin/lib/cmd-show.sh"
+          ],
+          "checks": {
+            "C475": "red"
+          },
+          "result": "red",
+          "at": "2026-10-27T02:51:36Z",
+          "head": "f8b83aea4be77750b95c17fad1f13c7363e01dcf",
+          "pending": [
+            "tests/mutate-strengthen.bats"
+          ]
+        }
       ]
     },
     {
@@ -53671,13 +53711,117 @@
       "after": [
         "P172.2"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "docs/proof.md Clean copy section: quote the missing-path sentence as cmd-spec.sh prints it (spec.md line N: PATH is not here now, so nothing is left out for it yet), replacing 'says it does not exist here now'; say a listed path is one word per line: a path with a space cannot be listed and is refused with its line number like a Test results folder with a space, quoting the refusal's wording (expected \"- <path>\" ...)",
         "proofcopy.sh proofcopy_make: parse project.leave_out once per copy into the bash array PROOFCOPY_LEFT (each path without its trailing slash), one jq call, none when the record is absent",
         "proofcopy.sh proofcopy_entry: read only PROOFCOPY_LEFT (guarded expansion ${PROOFCOPY_LEFT[@]+\"${PROOFCOPY_LEFT[@]}\"} under set -u, bash 3.2, no mapfile): no here-string, no jq call and no record read per ignored entry; the descent around a listed path (D509) unchanged",
         "tests/clean-copy-docs.bats, tests/clean-copy-spec.bats, tests/clean-copy-proof.bats, tests/proof-copy*.bats and tests/standards.bats green under /bin/bash; the mutation step breaks the wording in cmd-spec.sh and the one-word regex in spec.jq to show the pins catch them, and restores them"
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R214",
+            "text": "docs/proof.md's Clean copy section quotes the missing-path sentence exactly as cmd-spec.sh prints it (spec.md line N: PATH is not here now, so nothing is left out for it yet); 'does not exist here now' is gone"
+          },
+          "what": "docs say 'does not exist here now' again",
+          "files": [
+            "docs/proof.md"
+          ],
+          "checks": {
+            "C485": "red"
+          },
+          "result": "red",
+          "at": "2026-10-27T02:52:20Z",
+          "head": "f8b83aea4be77750b95c17fad1f13c7363e01dcf"
+        },
+        {
+          "rule": {
+            "req": "R214",
+            "text": "vbw spec check prints that one sentence for a listed path with nothing at it: the kernel-side pin of the words the docs quote"
+          },
+          "what": "kernel wording changed",
+          "files": [
+            "plugin/lib/cmd-spec.sh"
+          ],
+          "checks": {
+            "C486": "red"
+          },
+          "result": "red",
+          "at": "2026-10-27T02:52:24Z",
+          "head": "f8b83aea4be77750b95c17fad1f13c7363e01dcf"
+        },
+        {
+          "rule": {
+            "req": "R214",
+            "text": "docs/proof.md says a listed path is one word per line: a path with a space cannot be listed and is refused with its line number, quoting the refusal's 'expected \"- <path>\"' wording"
+          },
+          "what": "docs drop the one-word sentence",
+          "files": [
+            "docs/proof.md"
+          ],
+          "checks": {
+            "C485": "red"
+          },
+          "result": "red",
+          "at": "2026-10-27T02:52:27Z",
+          "head": "f8b83aea4be77750b95c17fad1f13c7363e01dcf"
+        },
+        {
+          "rule": {
+            "req": "R214",
+            "text": "a line like '- my data/' is refused by vbw spec check and vbw spec sync with its line number and that wording; the record is unchanged"
+          },
+          "what": "leave-out regex accepts spaces",
+          "files": [
+            "plugin/lib/spec.jq"
+          ],
+          "checks": {
+            "C486": "red"
+          },
+          "result": "red",
+          "at": "2026-10-27T02:52:30Z",
+          "head": "f8b83aea4be77750b95c17fad1f13c7363e01dcf"
+        },
+        {
+          "rule": {
+            "req": "R214",
+            "text": "proofcopy_make parses project.leave_out once per copy into the bash array PROOFCOPY_LEFT and proofcopy_entry reads only it (no here-string, no jq call, no record read per ignored entry), with the expansion guarded under set -u; the existing clean-copy cases pass unchanged"
+          },
+          "what": "entry skips only exact path, not children",
+          "files": [
+            "plugin/lib/proofcopy.sh"
+          ],
+          "checks": {
+            "C487": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-27T02:52:33Z",
+          "head": "f8b83aea4be77750b95c17fad1f13c7363e01dcf"
+        },
+        {
+          "rule": {
+            "req": "R214",
+            "text": "proofcopy_make parses project.leave_out once per copy into the bash array PROOFCOPY_LEFT and proofcopy_entry reads only it (no here-string, no jq call, no record read per ignored entry), with the expansion guarded under set -u; the existing clean-copy cases pass unchanged"
+          },
+          "what": "entry skips only exact path, not children",
+          "files": [
+            "plugin/lib/proofcopy.sh"
+          ],
+          "checks": {
+            "C487": "red"
+          },
+          "result": "red",
+          "at": "2026-10-27T02:53:39Z",
+          "head": "8e6c203da892a74772a79131e08041e25abbea6f",
+          "strengthened": [
+            "tests/clean-copy-proof.bats"
+          ],
+          "pending": [
+            "tests/clean-copy-proof.bats"
+          ]
+        }
       ]
     }
   ],
@@ -68335,6 +68479,17 @@
         "ended": "2026-10-27T02:43:26Z",
         "cost": {
           "usd": 1.063721
+        }
+      },
+      {
+        "id": "build-20261027T024432Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M44",
+        "started": "2026-10-27T02:44:32Z",
+        "ended": "2026-10-27T02:54:55Z",
+        "cost": {
+          "usd": 0.491827
         }
       }
     ],
