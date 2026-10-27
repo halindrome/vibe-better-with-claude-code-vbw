@@ -95,6 +95,9 @@ apply_next() {
     *" has no rule "*) echo "name a rule by its place among its requirement's rules: vbw show req Rn lists them as Rn.k" ;;
     *"rules name a plan: name one"*) echo "name a plan on every rule of the requirement, or on none (vbw apply --patch rewords a rule: {\"rule\": \"Rn.k\", \"plan\": \"P1.1\"})" ;;
     *" is owned by two plans that build "*) echo "give each plan's rules a check of their own (a separate test file, or the same file with a case filter as a distinct check), or move the rules to one plan" ;;
+    *" with a case filter ("*" that matches no case name"*)
+      local file=${1#* runs }
+      echo "write the cases the filter names into ${file%% with a case filter*} (each @test name matching the pattern), see them fail with the runner, then send the document again; or correct the pattern" ;;
     *"a retired rule stays as it is"*) echo "leave the retired rule as it is; add a new rule with {req, text, check} for the behaviour that stands now" ;;
     *"a patch changes each rule once"*) echo "keep one entry per rule address in the patch" ;;
     *"is already a phase"*) echo "give the new phase an unused id, or change the existing phase with a full apply" ;;
@@ -116,6 +119,54 @@ apply_next() {
     *"is express: one plan"*) echo "merge the phase's plans into one, or raise the phase's tier to standard" ;;
     *) echo "fix what the message names in the document, then run vbw apply again (vbw doctor checks the record)" ;;
   esac
+}
+
+# apply_empty_filter DOCFILE: for each check of the document that runs bats with a case filter
+# (R220; env and timeout wrappers skipped), a refusal message when the pattern, an unanchored
+# extended regular expression, matches no @test name of the .bats files the argv names, as they
+# stand in the project folder. The kernel reads the files; it never runs the runner.
+apply_empty_filter() {
+  jq -r '(.checks // [])[]? | select(type == "object") | . as $c | (.run // []) | select(type == "array" and all(.[]; type == "string")) as $a
+    | ({i: 0} | until(.i >= ($a | length) or ($a[.i] | IN("env", "timeout") | not);
+        if $a[.i] == "env" then .i += 1 | until(.i >= ($a | length) or ($a[.i] | test("^[A-Za-z_][A-Za-z0-9_]*=|^-") | not); .i += 1)
+        else .i += 1 | until(.i >= ($a | length) or ($a[.i] | test("^-|^[0-9.]+[smhd]?$") | not); .i += 1) end) | .i) as $s
+    | select($s < ($a | length) and ($a[$s] | split("/") | last) == "bats")
+    | (reduce $a[$s + 1:][] as $w ({skip: null, pat: null, f: false, words: []};
+        if .skip != null then (if .skip == "pat" then .pat = $w else . end) | .skip = null
+        elif $w == "--filter" or $w == "-f" then .skip = "pat" | .f = true
+        elif ($w | startswith("--filter=")) then .pat = ($w | ltrimstr("--filter=")) | .f = true
+        elif $w | IN("-j", "--jobs", "--filter-tags", "--filter-status", "--formatter", "-F", "--report-formatter", "--output", "--gather-test-outputs-in", "--setup-suite-file") then .skip = "x"
+        elif ($w | startswith("-")) then .
+        else .words += [$w] end))
+    | select(.f and (.pat | type) == "string" and (.words | length) > 0)
+    | ([$c.id, .pat] + .words) | join("\u001f")' "$1" 2> /dev/null \
+    | while IFS=$'\037' read -r id pat words; do
+      local w f names='' shown='' sep='' list wl
+      IFS=$'\037' read -r -a wl <<< "$words"
+      for w in ${wl[@]+"${wl[@]}"}; do
+        list=()
+        if [ -d "$VBW_ROOT/$w" ]; then
+          for f in "$VBW_ROOT/$w"/*.bats; do
+            if [ -f "$f" ]; then list+=("${f#"$VBW_ROOT"/}"); fi
+          done
+        else
+          list+=("$w")
+        fi
+        for f in ${list[@]+"${list[@]}"}; do
+          if [ -f "$VBW_ROOT/$f" ]; then
+            shown="$shown$sep$f"
+            names=$names$'\n'$(sed -n -E -e 's/^[[:space:]]*@test[[:space:]]+"(.*)"[[:space:]]*\{.*$/\1/p' -e "s/^[[:space:]]*@test[[:space:]]+'(.*)'[[:space:]]*\{.*\$/\\1/p" "$VBW_ROOT/$f")
+          else
+            shown="$shown$sep$f (missing)"
+          fi
+          sep=', '
+        done
+      done
+      [ -n "$shown" ] || continue
+      if ! grep -q -E -e "$pat" 2> /dev/null <<< "$names"; then
+        printf '%s\n' "$id runs $shown with a case filter (--filter '$pat') that matches no case name in the file: the Lead writes the failing cases at planning, so a new check is red because its cases fail, never because none exist"
+      fi
+    done
 }
 
 # apply_refuse MESSAGE: every refusal names the mode it came from (R156) and ends with its next step (R162).
@@ -418,6 +469,7 @@ cmd_apply() {
           elif $wa != null and $wa == $wb then "\($c) is owned by two plans that build beside each other (a shared wave): \($a) and \($b); the first Dev'"'"'s mutation step would run \($c) before the other Dev committed, a race that fails only sometimes"
           else empty end][0]) as $order
     | $mixed // $order // empty' "$merged" 2> /dev/null | head -n 1) || true
+  [ -n "$problem" ] || problem=$(apply_empty_filter "$df" | head -n 1) || true
   [ -n "$problem" ] || problem=$(record_violation "$merged") || true
   rm -f "$merged"
   vbw_guard_drop "$merged"
