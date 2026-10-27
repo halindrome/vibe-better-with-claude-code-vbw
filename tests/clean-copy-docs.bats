@@ -32,9 +32,10 @@ has_line() {
   has_line "$(section)" "relative" "project root"
 }
 
-@test "R205: the section states the refusals: not git-ignored (only ignored paths are copied in), does not exist, and a bad path like a Test results folder" {
+@test "R205 R214: the section states the refusals: not git-ignored (only ignored paths are copied in), the kernel's exact words for a listed path with nothing at it, and a bad path like a Test results folder" {
   has_line "$(section)" "is not git-ignored" "only ignored paths are copied in"
-  has_line "$(section)" "does not exist"
+  has_line "$(section)" "spec.md line" "is not here now, so nothing is left out for it yet"
+  ! section | grep -qi "does not exist here now" || { echo "the old wording 'does not exist here now' is still there"; false; }
   has_line "$(section)" "spec sync" "line"
   has_line "$(section)" ".." ".vbw/" ".git/"
 }
@@ -59,4 +60,10 @@ has_line() {
 @test "R205: docs/record.md documents project.leave_out as the spec's Clean copy list, part of the contract, absent when none" {
   grep -q '^| `project.leave_out` |' "$RECORD" || { echo "no project.leave_out row"; false; }
   has_line "$(grep '^| `project.leave_out` |' "$RECORD")" "Clean copy" "contract" "absent"
+}
+
+@test "R214: the section says a listed path is one word per line: a path with a space cannot be listed and is refused with its line number, in the kernel's expected \"- <path>\" words" {
+  has_line "$(section)" "one word" "line"
+  has_line "$(section)" "space" "line number"
+  section | grep -qF 'expected "- <path>"' || { echo "the refusal's wording (expected \"- <path>\" ...) is not quoted"; false; }
 }

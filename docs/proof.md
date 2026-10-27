@@ -233,8 +233,9 @@ is big and no check needs it (a data folder of many gigabytes), list it under
 ```
 
 - A path is relative to the project root, with no `.` or `..` parts, outside `.vbw/` and `.git/`. An absolute path, `..`, `.vbw/` or `.git/` is refused like a bad Test results folder, with its line number. A path named twice is refused with the second line.
+- A listed path is one word per line: a path with a space in it cannot be listed. A line like `- my data/` is refused, like a Test results folder with a space, with its line number and the words `expected "- <path>" (a git-ignored path relative to the project root, ...)`.
 - `vbw spec check` and `vbw spec sync` refuse a path git does not ignore (it is tracked, or untracked and not ignored), naming the spec line and the path: `is not git-ignored: only ignored paths are copied in, so only they can be left out`. The record stays unchanged.
-- A path with nothing at it (it does not exist yet, or not on this computer) is accepted, since there is nothing to leave out. `vbw spec check` says it does not exist here now, so a mistyped path is noticed. A folder whose files alone are ignored is accepted.
+- A path with nothing at it (it does not exist yet, or not on this computer) is accepted, since there is nothing to leave out. `vbw spec check` says so, so a mistyped path is noticed: `spec.md line N: PATH is not here now, so nothing is left out for it yet`. A folder whose files alone are ignored is accepted.
 - `vbw spec sync` copies the list into the record (`project.leave_out`, docs/record.md), prints `clean copy leaves out: data/, cache/`, and removes the field when the section is gone.
 - The list is part of the contract: adding a path changes the contract, so it reads NOT APPROVED and the approval question is asked again. `vbw show contract` prints the line `clean copy leaves out: data/, cache/`, and `vbw show contract --changes` names the new list and the old one (`clean copy leaves out: data/, cache/ (was data/)`, `none` for an empty side).
 - Every clean copy (`vbw prove`, `vbw fix done`, `vbw mutate`) skips the listed paths and everything under them, including ignored files inside a listed folder. The other ignored paths are still copied in. A listed path that no longer exists changes nothing, and the next `vbw spec sync` still accepts it.
@@ -315,7 +316,8 @@ what was approved:
   `vbw: waiting for approval (changed since approved): tests/pay.sh` on stderr.
 - When a phase is built and not yet proved, `vbw next` returns `approve` with
   `detail.files`: every edited test file, sorted. Review them with
-  `vbw show contract --changes`, then approve once.
+  `vbw show contract --changes`, which prints the whole diff of each edited
+  file (every hunk, committed or not), then approve once.
 - `vbw prove` refuses and names the files: `check files changed since it was
   approved are waiting for approval: tests/pay.sh: review them, then /vbw:approve`.
   Nothing is proved.
@@ -404,6 +406,11 @@ R1 [auto] A customer can pay once
   address as `added rule`, `removed rule`, `reworded rule`, `retired rule`,
   `moved rule` or `changed rule`, for example
   `retired rule R1.2: Paying twice is refused (R4 lets a customer pay twice)`.
+- `vbw apply` refuses a check whose rules are owned by two plans that build
+  one after the other (one in the other's `after`, or sharing a file): the
+  earlier plan's mutation step would find the check red on unbroken code,
+  because the later plan has not built its part yet. Give each plan's rules a
+  check of their own.
 - When a requirement's text or proof changes, `vbw spec sync` resets its rules
   to pending, so the Lead restates them.
 - A requirement approved before rules existed (no requirement has a `rules`
@@ -1338,9 +1345,10 @@ suite therefore pays for the checks a break needs, not for every check.
 
 - A check that notices the break is **red**: the rule is covered.
 - A test that cannot fail, because every check stays green, is a **survivor**.
-  The Dev strengthens it in place, in the check file of that rule's own
-  requirement (never another's, never weakened), then repeats the same break
-  until it is red. After two attempts that stay green the Dev blocks the plan.
+  The Dev strengthens it in place, in a check file that a check of the plan's
+  own rules names (one shared with other requirements' checks included). It
+  must never weaken an assertion. Then it repeats the same break until it is
+  red. After two attempts that stay green the Dev blocks the plan.
 - `vbw plan done` waits for the breaks: at standard it refuses until each
   approved rule of the requirements the plan completes has a red break, and
   lists the rules missing one. A rule that names its plan (`plan` in the
@@ -1374,6 +1382,8 @@ approved check; caught by the pending one: FILE...` and exits 0. Without an
 earlier survivor of that target, it says a check file waiting for approval
 caught the break and names it. The pending file still needs the one approval
 before the proof, as below.
+
+After a survivor, `vbw commit PLAN "<msg>" FILE` commits a check file that a check of the plan's own rules names, shared with other requirements or not, with the plan's trailers; a check file that no check of the plan's own rules names, and any check file before a survivor, is refused by name.
 
 A strengthened check file adds one approval. The build finishes, then `vbw next`
 asks you to approve the file before the proof, and `vbw prove` refuses until

@@ -12,6 +12,9 @@
 #   work.
 # - A machine too busy to measure: when that startup alone (measured first) is above
 #   the hook limit, the bench prints one line saying so, judges nothing and exits 0.
+# - A case over its budget is measured once more before it is judged, and a line
+#   says so with the first measure (D517): a machine busy for one measure is not a
+#   slow hook, and a slow hook is slow twice.
 # A real regression still shows: an added subprocess costs several ms, and the 20 KB
 # heredoc case catches work that grows faster than the input.
 # Every input is measured on the small record, on a record of more than 2 MB
@@ -148,6 +151,13 @@ cpu_pair() {
           printf "%.1f %.1f\n", sum[0] * 1000 / runs, sum[1] * 1000 / runs }' "$log"
 }
 
+# within COST BUDGET: whether a cost in ms is at or below a budget in ms.
+within() { perl -e 'exit($ARGV[0] <= $ARGV[1] ? 0 : 1)' -- "$1" "$2"; }
+
+# again LABEL FIRST BUDGET: the line printed before a case over its budget is
+# measured once more (D517); FIRST is the first measure as the case's line words it.
+again() { printf '%s: measured again: the first measure gave %s, above the budget of %s ms\n' "$1" "$2" "$3"; }
+
 # Measure the platform's sh and jq startup first, before the test records are
 # built: above the hook limit, the machine is too busy to judge anything.
 read -r startup _ < <(cpu_pair /dev/null "jq -n empty" "jq -n empty")
@@ -270,9 +280,14 @@ guards() {
     fi
     read -r shell total < <(cpu_pair "$file" "$baseline" "$hook")
     own=$(perl -e 'printf "%.1f", $ARGV[0] - $ARGV[1]' -- "$total" "$shell")
+    if ! within "$own" "$BUDGET_MS"; then
+      again "guard ($input$label)" "$own ms own CPU per call (sh and jq startup $shell ms)" "$BUDGET_MS"
+      read -r shell total < <(cpu_pair "$file" "$baseline" "$hook")
+      own=$(perl -e 'printf "%.1f", $ARGV[0] - $ARGV[1]' -- "$total" "$shell")
+    fi
     line=$(printf 'guard (%s%s): %s ms own CPU per call (sh and jq startup %s ms); budget %s ms' \
       "$input" "$label" "$own" "$shell" "$BUDGET_MS")
-    if perl -e 'exit($ARGV[0] <= $ARGV[1] ? 0 : 1)' -- "$own" "$BUDGET_MS"; then
+    if within "$own" "$BUDGET_MS"; then
       printf '%s\n' "$line"
     else
       printf '%s: OVER\n' "$line" >&2
@@ -317,6 +332,10 @@ statusline() {
   fi
   cmd="CLAUDE_CONFIG_DIR='$cfg' NO_COLOR=1 bash '$PLUGIN/scripts/vbw-statusline.sh'"
   read -r _ total < <(cpu_pair "$work/statusline.json" true "$cmd")
+  if ! within "$total" "$STATUS_MS"; then
+    again "status line$label" "$total ms CPU per call" "$STATUS_MS"
+    read -r _ total < <(cpu_pair "$work/statusline.json" true "$cmd")
+  fi
   if ! jq -e '.session == "bench" and .usd == 1.25' "$dir/.vbw/runtime/cost.bench.json" > /dev/null 2>&1; then
     printf 'status line%s: the cost side file was not written, so the measure left the write out\n' "$label" >&2
     status=1
@@ -324,7 +343,7 @@ statusline() {
   rm -f "$dir/.vbw/runtime/cost.bench.json" "$dir/.vbw/runtime/step.json" "$dir/.vbw/runtime/run-open"
   rm -rf "$cfg"
   line=$(printf 'status line%s: %s ms CPU per call; budget %s ms' "$label" "$total" "$STATUS_MS")
-  if perl -e 'exit($ARGV[0] <= $ARGV[1] ? 0 : 1)' -- "$total" "$STATUS_MS"; then
+  if within "$total" "$STATUS_MS"; then
     printf '%s\n' "$line"
   else
     printf '%s: OVER\n' "$line" >&2
@@ -361,8 +380,13 @@ handback() {
   base="cd '$proj' && bash -c : && jq -n empty && sh -c : && sh '$work/earlier-setting.sh'"
   read -r shell total < <(cpu_pair "$work/handback.json" "$base" "$cmd")
   own=$(perl -e 'printf "%.1f", $ARGV[1] - $ARGV[0]' -- "$shell" "$total")
+  if ! within "$own" "$HANDBACK_MS"; then
+    again "status line (VBW off)" "$own ms own CPU per call (a bash, a jq and a sh startup and the earlier status line: $shell ms)" "$HANDBACK_MS"
+    read -r shell total < <(cpu_pair "$work/handback.json" "$base" "$cmd")
+    own=$(perl -e 'printf "%.1f", $ARGV[1] - $ARGV[0]' -- "$shell" "$total")
+  fi
   line=$(printf 'status line (VBW off): %s ms own CPU per call (a bash, a jq and a sh startup and the earlier status line: %s ms); budget %s ms' "$own" "$shell" "$HANDBACK_MS")
-  if perl -e 'exit($ARGV[0] <= $ARGV[1] ? 0 : 1)' -- "$own" "$HANDBACK_MS"; then
+  if within "$own" "$HANDBACK_MS"; then
     printf '%s\n' "$line"
   else
     printf '%s: OVER\n' "$line" >&2
@@ -393,9 +417,13 @@ loaded() {
     return 0
   fi
   read -r _ total < <(cpu_pair "$work/loaded.json" true "$cmd")
+  if ! within "$total" "$STATUS_MS"; then
+    again "status line (loaded copy)" "$total ms CPU per call" "$STATUS_MS"
+    read -r _ total < <(cpu_pair "$work/loaded.json" true "$cmd")
+  fi
   rm -f "$work/.vbw/runtime/cost.loaded-bench.json"
   line=$(printf 'status line (loaded copy): %s ms CPU per call; budget %s ms' "$total" "$STATUS_MS")
-  if perl -e 'exit($ARGV[0] <= $ARGV[1] ? 0 : 1)' -- "$total" "$STATUS_MS"; then
+  if within "$total" "$STATUS_MS"; then
     printf '%s\n' "$line"
   else
     printf '%s: OVER\n' "$line" >&2

@@ -174,3 +174,28 @@ store_reads() { jq -c '.runs["check:C1"].reads' "$(git rev-parse --git-common-di
   if grep -q '^\./data/sub' "$PROBE"; then echo "something of data/sub is in the copy:"; cat "$PROBE"; false; fi
   [ -f data/sub/b.bin ]
 }
+
+# R214: the leave-out list is parsed once per copy (proofcopy_make fills the bash
+# array PROOFCOPY_LEFT, the listed paths without their trailing slash), and
+# proofcopy_entry reads only that array: no here-string over a raw list, no jq
+# call and no record read per ignored entry.
+lib() { vbw_kernel '. "$VBW_LIB/proofcopy.sh"; '"$1"; }
+
+@test "R214: proofcopy_entry reads the parsed list only: with PROOFCOPY_LEFT set, no raw list text and no record, the listed path is skipped and its sibling copied; an empty list under set -u copies as well" {
+  run lib 'set -u
+    copy="$VBW_RUNTIME/unit"; mkdir -p "$copy"; real=$(cd -P "$VBW_ROOT" && pwd -P); first=""
+    unset VBW_RECORD left
+    PROOFCOPY_LEFT=(data)
+    proofcopy_entry data
+    proofcopy_entry cache
+    proofcopy_entry data/sub
+    [ ! -e "$copy/data/sub" ] || { echo "data/sub was copied although under the listed data/"; exit 1; }
+    [ ! -e "$copy/data" ] || { echo "data/ was copied although listed"; exit 1; }
+    [ -f "$copy/cache/c.txt" ] || { echo "cache/ was not copied"; exit 1; }
+    PROOFCOPY_LEFT=()
+    proofcopy_entry target
+    [ -f "$copy/target/out" ] || { echo "target/ was not copied with an empty list"; exit 1; }
+    echo done'
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  [ "$(printf '%s\n' "$output" | tail -n 1)" = done ] || { echo "$output"; false; }
+}

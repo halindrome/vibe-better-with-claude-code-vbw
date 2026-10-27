@@ -1,5 +1,55 @@
 # Changelog
 
+## [2.1.17] - 2026-10-27
+
+### Added
+
+- **A Dev can strengthen a check that other requirements share.** When the
+  mutation step finds a test that cannot fail (a survivor), the Dev strengthens
+  the test file. Until now `vbw commit` refused that file when another
+  requirement's check also used it, and the Dev blocked. After `vbw mutate`
+  records a survivor, the check files that a check of the plan's own rules
+  names open for the plan, shared with other requirements or not; a check file
+  none of the plan's own rules' checks name is still refused by name. One
+  definition of these files (`strengthen_files` in the kernel) is read by
+  `vbw commit`, the build lease, the file guard and the proof's scope check, so
+  they cannot disagree. The edit waits for the user's one approval before the
+  proof, as every check edit does.
+- **The whole diff at approval.** `vbw show contract --changes` prints, under
+  each changed test file, the whole diff between the approved content and the
+  file as it is now, committed or not, every hunk included; when the approved
+  content is not in the project's git history it says so in one line. The
+  `/vbw:vibe` approval step shows that diff before asking.
+- **`vbw apply` refuses two plan layouts that cannot be built.** A check whose
+  rules two plans of one milestone own, when those plans build one after the
+  other (an `after` link, a chain, or a shared file): the earlier plan's
+  mutation step would find the check red on unbroken code (seen twice in M43).
+  And a requirement whose rules name an owning plan on only some of them: every
+  rule names a plan, or none does, so each rule's owner is defined for `vbw show
+  plan` and for the task break. Both refusals name the check or the requirement
+  and both plans, and say what to change. The Lead's brief states the two rules.
+  A project in the middle of a milestone whose record already holds a mixed
+  requirement is refused at its next `vbw apply` until the rules are patched
+  (`vbw apply --patch` with `{"rule": "R5.2", "plan": "P1.1"}` on each rule, or
+  the plan taken off every rule).
+- **A blocked plan keeps its reason.** A full `vbw apply` of a later phase kept
+  a started plan's status and recorded breaks but dropped its note (the reason
+  it blocked). The note is kept too, and `vbw show roadmap` prints a blocked
+  plan's note under the plan.
+
+### Fixed
+
+- **The Clean copy documentation is exact.** `docs/proof.md` quotes `vbw spec
+  check`'s missing-path sentence as the kernel prints it and says a listed path
+  is one word per line (a path with a space cannot be listed, as for a `Test
+  results` folder). The clean copy reads the leave-out list once per copy, not
+  once per ignored entry.
+- **The Docs agent's survivor rule matched the kernel.** Its prompt still said
+  to strengthen only the check file of the rule's own requirement, so a Docs
+  plan would have blocked where the kernel now lets it strengthen a shared file.
+
+Sizes, for information: kernel 736 KB (`plugin/bin/vbw` and `plugin/lib`), mods 328 KB (hooks, panel and status line), workflows 73 KB, prompts 102 KB (agents and skills).
+
 ## [2.1.16] - 2026-10-26
 
 This release exists because of Shahar, a VBW user from the Discord community,

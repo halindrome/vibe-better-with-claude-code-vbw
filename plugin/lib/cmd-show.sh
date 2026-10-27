@@ -28,7 +28,7 @@ cmd_show() {
              ((.phases[] | select(.milestone == $r.milestone.id)) as $ph
                | "  \($ph.id) \($ph.title) [\($ph | phase_status($r))]",
                  ($r.plans[] | select(.phase == $ph.id)
-                   | "    \(.id) \(.title) [\(.status)]\(if (.after | length) > 0 then " after \(.after | join(", "))" else "" end)"))
+                   | "    \(.id) \(.title) [\(.status)]\(if (.after | length) > 0 then " after \(.after | join(", "))" else "" end)\(if .status == "blocked" and .note then ": " + .note else "" end)"))
            end)'
       ;;
     phase)
@@ -243,7 +243,8 @@ show_contract_changes() {
     printf 'no earlier approval in this clone: the whole contract is new (vbw show contract)\n'
     return 0
   fi
-  contract_doc "$1" | jq -r --slurpfile old "$before" "$SHOW_JQ_DEFS"'
+  local lines line f want h c diff
+  lines=$(contract_doc "$1" | jq -r --slurpfile old "$before" "$SHOW_JQ_DEFS"'
     . as $new | $old[0] as $old
     | [ ($new.requirements | to_entries[] | select($old.requirements[.key] == null)
           | "added requirement \(.key) [\(.value.proof)] \(.value.text)"),
@@ -301,7 +302,31 @@ show_contract_changes() {
           | "saved test results folders: \(($new.results // []) | if length == 0 then "none" else join(", ") end) (was \(($old.results // []) | if length == 0 then "none" else join(", ") end))"),
         (select(($old.leave_out // []) != ($new.leave_out // []))
           | "clean copy leaves out: \(($new.leave_out // []) | if length == 0 then "none" else join(", ") end) (was \(($old.leave_out // []) | if length == 0 then "none" else join(", ") end))") ]
-    | if length == 0 then "no changes since the last approval" else "changes since the last approval:", (.[] | "  " + .) end'
+    | if length == 0 then "no changes since the last approval" else "changes since the last approval:", (.[] | "  " + .) end')
+  # Under each changed test file: the whole diff between the approved content
+  # (found by hash in the file's git history) and the file as it is now.
+  while IFS= read -r line; do
+    printf '%s\n' "$line"
+    case "$line" in
+      "  changed test file "*) ;;
+      *) continue ;;
+    esac
+    f=${line#"  changed test file "}
+    want=$(jq -r --arg f "$f" '.files[$f]' "$before")
+    c=
+    for h in $(git -C "$VBW_ROOT" log --format=%H -- "$f" 2> /dev/null); do
+      if [ "$(git -C "$VBW_ROOT" show "$h:$f" 2> /dev/null | vbw_sha256)" = "$want" ]; then
+        c=$h
+        break
+      fi
+    done
+    if [ -z "$c" ]; then
+      printf "    the approved content of %s is not in the project's git history, so no diff can be shown\n" "$f"
+    else
+      diff=$(git -C "$VBW_ROOT" -c color.ui=never diff --no-ext-diff "$c" -- "$f")
+      printf '%s\n' "$diff" | sed 's/^/    /'
+    fi
+  done <<< "$lines"
 }
 
 # jq helpers for rendering checks. An argv is shown shell-quoted where needed.

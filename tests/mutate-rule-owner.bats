@@ -87,7 +87,7 @@ status_of() { jq -r --arg p "$1" '.plans[] | select(.id == $p) | .status' .vbw/r
 }
 
 @test "T152: a rule's plan must serve the rule's requirement" {
-  run bash -c 'jq ".rules[0].plan = \"P9.9\"" | "$1" apply' _ "$VBW" <<< "$(plan_doc "" "")"
+  run bash -c 'jq ".rules[].plan = \"P9.9\"" | "$1" apply' _ "$VBW" <<< "$(plan_doc "" "")"
   [ "$status" -ne 0 ] || { echo "$output"; false; }
   [[ "$output" == *"P9.9"* ]] || { echo "$output"; false; }
 }

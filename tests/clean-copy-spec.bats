@@ -151,7 +151,7 @@ refused() {
   [[ "$output" == *"line 9"* && "$output" == *"notes/"* && "$output" == *"is not git-ignored"* ]] || { echo "$output"; false; }
 }
 
-@test "R205: a path with nothing at it is accepted (nothing to leave out), vbw spec check names it as not here now, and the record keeps it" {
+@test "R205 R214: a path with nothing at it is accepted (nothing to leave out), vbw spec check names it in the words docs/proof.md quotes, and the record keeps it" {
   spec '- data/
 - gone/'
   run "$VBW" spec sync
@@ -161,6 +161,8 @@ refused() {
   run "$VBW" spec check
   [ "$status" -eq 0 ] || { echo "$output"; false; }
   [[ "$output" == *"gone/"* && "$output" == *"not here now"* ]] || { echo "$output"; false; }
+  # The one sentence docs/proof.md quotes (tests/clean-copy-docs.bats pins the quote), so the two cannot drift apart.
+  printf '%s\n' "$output" | grep -qxF 'spec.md line 10: gone/ is not here now, so nothing is left out for it yet' || { echo "not the exact sentence: $output"; false; }
 }
 
 @test "R205: a folder whose files alone are ignored, with nothing tracked or stray inside, is accepted" {
@@ -208,4 +210,18 @@ refused() {
   sed -n '/^## Clean copy$/,/-->/p' .vbw/spec.md | grep -q 'vbw spec sync' || { cat .vbw/spec.md; false; }
   sed -n '/^## Clean copy$/,/-->/p' .vbw/spec.md | grep -q '^- [a-z]*/$' || { cat .vbw/spec.md; false; }
   parsed | jq -e '.leave_out == null and .errors == []' || { parsed; false; }
+}
+
+@test "R214: a listed path is one word: a line with a space ('- my data/') is refused by vbw spec sync and vbw spec check with its line number and the expected \"- <path>\" wording; the record is unchanged" {
+  local sum
+  sum=$(record_sum)
+  spec '- my data/'
+  run "$VBW" spec sync
+  refused "$sum"
+  [[ "$output" == *"line 9"* && "$output" == *'expected "- <path>"'* ]] || { echo "$output"; false; }
+  run "$VBW" spec check
+  [ "$status" -ne 0 ] || { echo "spec check accepted a path with a space: $output"; false; }
+  [[ "$output" == *"line 9"* && "$output" == *'expected "- <path>"'* ]] || { echo "$output"; false; }
+  [ "$(record_sum)" = "$sum" ]
+  parsed | jq -e '.errors | length == 1 and (.[0] | startswith("line 9: expected \"- <path>\""))' || { parsed; false; }
 }
