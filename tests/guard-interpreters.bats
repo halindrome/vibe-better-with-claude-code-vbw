@@ -147,7 +147,16 @@ lease() {
            "node -e \"fs.writeFileSync(\\\`\\\${d}/x\\\`, 'y')\"" \
            "ruby -e 'File.write(p, \"x\")'" \
            "perl -e 'open(F, \">\", \$p); print F \"x\"'" \
-           "php -r 'file_put_contents(\$p, \"x\");'"; do
+           "php -r 'file_put_contents(\$p, \"x\");'" \
+           "python3 -c \"import pathlib; pathlib.Path(p).write_text(1)\"" \
+           "python3 -c \"import pathlib; pathlib.Path(d, 'x').unlink()\"" \
+           "node -e \"require('fs').writeFileSync(p, 'x')\"" \
+           "node -e \"const {writeFileSync} = require('fs'); writeFileSync(p, 'x')\"" \
+           "node -e \"w.writeFile(p, 'x')\"" \
+           "ruby -e 'File.write p, \"x\"'" \
+           "ruby -e 'File.delete p'" \
+           "ruby -e 'FileUtils.rm_rf d'" \
+           "perl -e 'open FH, \">\", \$p'"; do
     run dev_shell "$c"
     unreadable "$c"
   done
