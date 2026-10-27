@@ -94,6 +94,11 @@ session that is proving: a project's tests give one result whoever proves them,
 and the figures a test records under a session id are its own, never the
 prover's (docs/costs.md).
 
+A case filter (`bats --filter`) must match a case in the file when `vbw apply`
+runs, so the Lead writes the failing cases at planning; otherwise `vbw apply`
+refuses, because a new check is red because its cases fail, never because none
+exist.
+
 ### Checks run in parallel
 
 ```text

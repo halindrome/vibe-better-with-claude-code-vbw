@@ -351,7 +351,10 @@ problem when:
   they share a wave, the first Dev's mutation step would run the check before
   the other Dev committed, a race that fails only sometimes;
 - a requirement's rules name a plan on only some of them: every rule names a
-  plan, or none does.
+  plan, or none does;
+- a check running a bats file with a case filter (`--filter`) that
+  matches no case name in the file, naming the check and the file: a new check
+  is red because its cases fail, never because none exist.
 
 An accepted document stores each requirement's rules in the record
 (docs/record.md): the requirement's retired rules stay, and the document's
@@ -504,6 +507,7 @@ Each refusal below ends with `Next: ` and the step in the right column
 | `vbw apply`: an unknown field, or a tier that is not `express`, `standard` or `deep` | Remove the field, or set a valid tier |
 | `vbw apply`: a phase or plan or check id already in use (`--add`) | Use an unused id, or change the existing one with `--patch` or a full apply |
 | `vbw apply`: a requirement of another milestone, or already covered by a phase | Take it out of the document; for `--add`, when the covering phase of this milestone has not started, change that phase with a full apply instead |
+| `vbw apply`: a bats check (`tests/x.bats`) whose case filter matches no case name in the file | write the cases the filter names into tests/x.bats (each @test name matching the pattern), see them fail with the runner, then send the document again; or correct the pattern |
 | `vbw apply`: a started plan or phase changed or dropped | Put it back as the record has it (`vbw show plan ID`) and add a new plan or phase for further work |
 | `vbw apply`: a missing rule, or a rule naming no check of its requirement | Add one rule per condition, each with its check |
 | `vbw apply`: a check whose rules two plans own that build one after the other, or beside each other (a shared wave) | give each plan's rules a check of their own (a separate test file, or the same file with a case filter as a distinct check), or move the rules to one plan |
