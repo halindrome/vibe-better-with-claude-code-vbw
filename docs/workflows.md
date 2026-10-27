@@ -225,7 +225,7 @@ merely contains `--help` (for example a todo) is still text. The test is
 | `vbw plan done P1.2` / `vbw plan block P1.2 "reason"` | Dev | the plan's outcome. `done` is verified: none of the plan's files has uncommitted changes, and the checks of the requirements it completes pass. The plan also needs a commit with its `VBW-Plan` trailer (`vbw commit`); without one, every file must be committed in `HEAD` (for example by the approval commit) and a check of its requirements must pass, or `done` is refused and names the failing check. A blocked plan stops only the plans that depend on it (docs/next.md). `block` refuses a plan that is already done, says so, and changes nothing; reset the plan first if it must be built again |
 | `vbw fix done F1` or `vbw fix done F8 F9` | Lead (the fix round's closing step, run by the workflow) | verified (several fixes in one command run the checks they serve once; one that cannot close is named, the others still close, and the exit code is non-zero): no uncommitted changes in the files it may touch, and the checks of every finished requirement those files serve pass; then awaiting proof. While check files wait for the user's approval it runs no check: it names them, and the fixes await the proof after the approval |
 | `vbw fix check F1 < check.json` | Dev | in a fix that QA opened: register the regression test as a check of the finding's requirement. The JSON has `run` and `files`, and optionally `exit`, `output`, `timeout`, `alone`. It waits for the user's approval before the proof (docs/proof.md) |
-| `vbw apply < plan.json` | Lead | replace phases, plans and checks, and set each `auto` requirement's rules, in one validated write (refused while a build or fix run is open; a plan that has started must come back unchanged; a requirement that another milestone owns or that a phase of another milestone already covers is refused with the `vbw apply --add` message, and nothing is written) |
+| `vbw apply < plan.json` | Lead | replace phases, plans and checks, and set each `auto` requirement's rules, in one validated write (refused while a build or fix run is open; a plan that has started must come back unchanged and keeps its status, note and breaks across every `vbw apply`; a requirement that another milestone owns or that a phase of another milestone already covers is refused with the `vbw apply --add` message, and nothing is written) |
 | `vbw apply --patch < patch.json` | Lead | change only the plans, checks and rules in the document; everything else stays byte for byte as it was |
 | `vbw apply --add < phase.json` | router | add one new phase with its plans, checks and rules to the milestone; every other phase, plan, check and rule stays as it was |
 
@@ -343,7 +343,13 @@ problem when:
   ("the rule ... names C9, which is not a check of R1 in this plan");
 - a rule is for a `human` requirement;
 - an `auto` requirement of the plan's phases lists no rules (`R1 lists no
-  rules`), counting rules the record already holds that are not retired.
+  rules`), counting rules the record already holds that are not retired;
+- a check's rules name two plans of the milestone that build
+  one after the other, directly or by sharing a file, naming the check and both
+  plans (the earlier plan's mutation step would find the check red on unbroken
+  code);
+- a requirement's rules name a plan on only some of them: every rule names a
+  plan, or none does.
 
 An accepted document stores each requirement's rules in the record
 (docs/record.md): the requirement's retired rules stay, and the document's
