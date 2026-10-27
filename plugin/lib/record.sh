@@ -470,6 +470,15 @@ def own_rules($p): . as $r | ([.plans[] | select(.id == $p)][0]) as $pl
         | ($r.requirements[] | select(.id == $q and .proof == "auto")) as $rq
         | ($rq.rules // []) | to_entries[] | select((.value | has("retired") | not) and ($completes or .value.plan == $p))
         | {req: $q, n: (.key + 1), text: .value.text, check: .value.check, plan: (.value.plan // null)}] end;
+# strengthen_files($p): the check files plan $p may strengthen (R210): [] while the plan has
+# no survivor among its recorded mutations, else the files of the checks of its own rules
+# (own_rules), unique, a file shared with another requirement'"'"'s check included. vbw commit,
+# the lease a survivor opens, vbw mutate and the proof'"'"'s scope check all read this one.
+def strengthen_files($p): . as $r
+  | if any(([$r.plans[] | select(.id == $p)][0].mutations // [])[]; .result == "survivor") then
+      ([$r | own_rules($p)[].check] | unique) as $ids
+      | [$r.checks[] | select(.id as $c | $ids | index($c) != null) | (.files // [])[]] | unique
+    else [] end;
 # owed_rules($p): the rules plan $p owes the mutation check, one break each (R188, T152,
 # T174): own_rules($p) at a standard or deep phase, [] at express or in a phase without
 # a tier. vbw plan done (plan_missing_breaks) and the expected time of a build (steps.sh,
