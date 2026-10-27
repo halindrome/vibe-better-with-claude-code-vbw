@@ -94,7 +94,7 @@ apply_next() {
     "a rule address takes"*) echo "give {\"rule\": \"Rn.k\", \"text\": \"the new words\"} (check and plan may change too) to reword a rule, or {\"rule\": \"Rn.k\", \"retire\": \"why\"} to retire it" ;;
     *" has no rule "*) echo "name a rule by its place among its requirement's rules: vbw show req Rn lists them as Rn.k" ;;
     *"rules name a plan: name one"*) echo "name a plan on every rule of the requirement, or on none (vbw apply --patch rewords a rule: {\"rule\": \"Rn.k\", \"plan\": \"P1.1\"})" ;;
-    *"red on unbroken code"*) echo "give each plan's rules a check of their own (a separate test file, or the same file with a case filter as a distinct check), or move the rules to one plan" ;;
+    *" is owned by two plans that build "*) echo "give each plan's rules a check of their own (a separate test file, or the same file with a case filter as a distinct check), or move the rules to one plan" ;;
     *"a retired rule stays as it is"*) echo "leave the retired rule as it is; add a new rule with {req, text, check} for the behaviour that stands now" ;;
     *"a patch changes each rule once"*) echo "keep one entry per rule address in the patch" ;;
     *"is already a phase"*) echo "give the new phase an unused id, or change the existing phase with a full apply" ;;
@@ -389,8 +389,8 @@ cmd_apply() {
   vbw_guard_add file "$merged"
   jq "$filter | .protected = ([(.checks // [])[]? | objects | .files? | arrays | .[] | strings] | unique)" --slurpfile f_d "$df" --slurpfile f_tiers "$tf" --slurpfile f_pd "$pf" --slurpfile f_ops "$of" --argjson patch "$patch" --argjson add "$add" --arg mode "$(printf '%s' "$record" | jq -r '.settings.rigor // "auto"')" "$VBW_RECORD" > "$merged" 2> /dev/null \
     || apply_internal "cannot merge the plan into the record"
-  # Judged on the merged record: a mixed requirement (R212) and a check owned by two plans that
-  # build in order (R211); both leave the record unchanged.
+  # Judged on the merged record: a mixed requirement (R212) and a check owned by two plans not yet
+  # built, one after the other (R211) or beside each other in a wave (R215); all leave the record unchanged.
   problem=$(jq -r "$VBW_JQ_DEFS"'.milestone.id as $m
     | ([.phases[] | select(.milestone == $m) | .id]) as $mine
     | [.plans[] | select(.phase as $p | any($mine[]; . == $p))] as $plans
@@ -399,15 +399,24 @@ cmd_apply() {
         | "\($q.id): \($n) of \($live | length) rules name a plan: name one on every rule or on none"][0]) as $mixed
     # up($id): the plans $id builds after, directly or through a chain.
     | def up($id): reduce range(0; $plans | length) as $_ ([$id]; . + [.[] | . as $i | $plans[] | select(.id == $i) | (.after // [])[]] | unique) | map(select(. != $id));
+    # The waves of the merged record as vbw next would place them with no plan blocked: a blocked plan builds again.
+    ((.plans |= map(if .status == "blocked" then .status = "planned" else . end)) | waves($m)) as $wv
+    | def widx($i): [range(0; $wv | length) | select(any($wv[.][]; . == $i))][0];
     ([.requirements[] | select(.milestone == $m) | (.rules // [])[] | select((has("retired") | not) and has("plan")) | {check, plan}] | unique) as $owned
     | ([[$owned[].check] | unique | .[] | . as $c
         | ([$owned[] | select(.check == $c) | .plan] | unique | map(. as $i | select(any($plans[]; .id == $i and .status != "done")))) as $ps
         | range(0; $ps | length) as $x | range($x + 1; $ps | length) as $y | $ps[$x] as $a | $ps[$y] as $b
         | ([$plans[] | select(.id == $a)][0]) as $pa | ([$plans[] | select(.id == $b)][0]) as $pb
+        | (widx($a)) as $wa | (widx($b)) as $wb
         | (if (up($b) | index($a)) != null then "\($b) builds after \($a)"
            elif (up($a) | index($b)) != null then "\($a) builds after \($b)"
-           elif overlaps($pa.files; $pb.files) then "\($a) and \($b) share a file" else empty end) as $why
-        | "\($c) is owned by two plans that build one after the other (\($why)): \($a) and \($b); the earlier plan'"'"'s mutation step would find \($c) red on unbroken code"][0]) as $order
+           elif overlaps($pa.files; $pb.files) then "\($a) and \($b) share a file"
+           elif $wa == null or $wb == null or $wa == $wb then null
+           elif $wa < $wb then "\($a) builds in an earlier wave than \($b)"
+           else "\($b) builds in an earlier wave than \($a)" end) as $why
+        | if $why != null then "\($c) is owned by two plans that build one after the other (\($why)): \($a) and \($b); the earlier plan'"'"'s mutation step would find \($c) red on unbroken code"
+          elif $wa != null and $wa == $wb then "\($c) is owned by two plans that build beside each other (a shared wave): \($a) and \($b); the first Dev'"'"'s mutation step would run \($c) before the other Dev committed, a race that fails only sometimes"
+          else empty end][0]) as $order
     | $mixed // $order // empty' "$merged" 2> /dev/null | head -n 1) || true
   [ -n "$problem" ] || problem=$(record_violation "$merged") || true
   rm -f "$merged"
