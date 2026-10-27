@@ -28,7 +28,7 @@ cmd_show() {
              ((.phases[] | select(.milestone == $r.milestone.id)) as $ph
                | "  \($ph.id) \($ph.title) [\($ph | phase_status($r))]",
                  ($r.plans[] | select(.phase == $ph.id)
-                   | "    \(.id) \(.title) [\(.status)]\(if (.after | length) > 0 then " after \(.after | join(", "))" else "" end)"))
+                   | "    \(.id) \(.title) [\(.status)]\(if (.after | length) > 0 then " after \(.after | join(", "))" else "" end)\(if .status == "blocked" and .note then ": " + .note else "" end)"))
            end)'
       ;;
     phase)
