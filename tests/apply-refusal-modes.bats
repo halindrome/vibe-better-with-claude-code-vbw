@@ -104,11 +104,20 @@ add_with() { printf '%s' "$ADD" | jq -c "$1"; }
 r211_named() {
   [[ "$output" == *"$1"* && "$output" == *"$2"* && "$output" == *"$3"* ]] || { echo "does not name $1, $2 and $3: $output"; return 1; }
   [[ "$output" == *"unbroken code"* ]] || { echo "does not say why (red on unbroken code): $output"; return 1; }
-  next_line
+  last_line_is "$TWO_OWNER_NEXT"
 }
-# next_line: the refusal's last line is its next step.
-next_line() {
-  [[ "$(printf '%s\n' "$output" | sed '/^[[:space:]]*$/d' | tail -n 1)" == "Next: "?* ]] || { echo "no next step: $output"; return 1; }
+# last_line_is TEXT: the refusal's last line is its next step, word for word (R216).
+last_line_is() {
+  local last
+  last=$(printf '%s\n' "$output" | sed '/^[[:space:]]*$/d' | tail -n 1)
+  [ "$last" = "$1" ] || { echo "the last line is not '$1': $output"; return 1; }
+}
+TWO_OWNER_NEXT="Next: give each plan's rules a check of their own (a separate test file, or the same file with a case filter as a distinct check), or move the rules to one plan"
+MIXED_NEXT='Next: name a plan on every rule of the requirement, or on none (vbw apply --patch rewords a rule: {"rule": "Rn.k", "plan": "P1.1"})'
+# beside_named CHECK A B: the refusal says the two plans build beside each other, and ends with the two-owner next step.
+beside_named() {
+  [[ "$output" == *"$1 is owned by two plans that build beside each other (a shared wave): $2 and $3; the first Dev's mutation step would run $1 before the other Dev committed, a race that fails only sometimes"* ]] || { echo "not the beside words for $1, $2, $3: $output"; return 1; }
+  last_line_is "$TWO_OWNER_NEXT"
 }
 # r2_two_plans AFTER FILES: FULL with P2.2 (after AFTER, files FILES) and C2's rules naming P2.1 and P2.2.
 r2_two_plans() {
@@ -116,7 +125,7 @@ r2_two_plans() {
     | .rules = [.rules[] | if .req == \"R2\" then . + {plan: \"P2.1\"} else . end] + [{req: \"R2\", text: \"a receipt is mailed\", check: \"C2\", plan: \"P2.2\"}]"
 }
 
-@test "R211: full apply refuses a check whose rules name two plans that build one after the other, through after, a chain or a shared file, naming the check and both plans, why, and the next step; the record is unchanged" {
+@test "R211 R216: full apply refuses a check whose rules name two plans that build one after the other, through after, a chain or a shared file, naming the check and both plans, why, and the next step; the record is unchanged" {
   refused_as full "full apply" "$(r2_two_plans '["P2.1"]' '["src/d.txt"]')"
   r211_named C2 P2.1 P2.2
   # The same through a shared file, with no after.
@@ -129,7 +138,7 @@ r2_two_plans() {
   r211_named C2 P2.1 P2.3
 }
 
-@test "R211: --add and --patch refuse the same, naming their mode" {
+@test "R211 R216: --add and --patch refuse the same, naming their mode" {
   refused_as add "--add" "$(add_with '.plans += [{id: "P3.2", phase: "P3", title: "Refund mail", reqs: ["R3"], files: ["src/r2.txt"], after: ["P3.1"]}]
     | .rules = [{req: "R3", text: "a refund is paid", check: "C3", plan: "P3.1"}, {req: "R3", text: "a refund is mailed", check: "C3", plan: "P3.2"}]')"
   r211_named C3 P3.1 P3.2
@@ -138,7 +147,7 @@ r2_two_plans() {
   r211_named C2 P2.1 P2.2
 }
 
-@test "R211: no refusal when the check's rules name one plan or none, when one of the two plans is done, or when the plans build beside each other; a retired rule counts for nothing" {
+@test "R211: no refusal when the check's rules name one plan or none, when one of the two plans is done, or when the check belongs to a requirement of another milestone; a retired rule counts for nothing" {
   # Both rules name P2.1: one owner.
   replan_accepted full "$(full_with '.plans += [{id: "P2.2", phase: "P2", title: "Receipt mail", reqs: ["R2"], files: ["src/d.txt"], after: ["P2.1"], tasks: ["mail"]}]
     | .rules = [.rules[] | if .req == "R2" then . + {plan: "P2.1"} else . end] + [{req: "R2", text: "a receipt is mailed", check: "C2", plan: "P2.1"}]')"
@@ -147,26 +156,27 @@ r2_two_plans() {
     | .rules += [{req: "R2", text: "a receipt is mailed", check: "C2"}]')"
   # P1.1 is done, P1.2 builds after it: C1's rules may name both.
   replan_accepted full "$(full_with '.rules = [.rules[] | if .req == "R1" then . + {plan: "P1.1"} else . end] + [{req: "R1", text: "a card is refused", check: "C1", plan: "P1.2"}]')"
-  # P2.1 and P2.2 share no file and no after: they build beside each other.
-  replan_accepted full "$(full_with '.plans += [{id: "P2.2", phase: "P2", title: "Receipt mail", reqs: ["R2"], files: ["src/d.txt"], after: [], tasks: ["mail"]}]
-    | .rules = [.rules[] | if .req == "R2" then . + {plan: "P2.1"} else . end] + [{req: "R2", text: "a receipt is mailed", check: "C2", plan: "P2.2"}]')"
   # A retired rule naming the later plan is nothing.
   replan_edit '(.requirements[] | select(.id == "R2")).rules += [{text: "a receipt is faxed", check: "C2", plan: "P2.2", retired: "fax dropped"}]'
   replan_accepted full "$(full_with '.plans += [{id: "P2.2", phase: "P2", title: "Receipt mail", reqs: ["R2"], files: ["src/d.txt"], after: ["P2.1"], tasks: ["mail"]}]
     | .rules = [.rules[] | if .req == "R2" then . + {plan: "P2.1"} else . end]')"
   [ "$(replan_part '[.requirements[] | select(.id == "R2")][0].rules | map([.plan, .retired])')" = '[["P2.1",null],["P2.2","fax dropped"]]' ]
+  # A check of another milestone's requirement: R2 moves to M0, its rules name P2.1 and P2.2 beside each other.
+  replan_edit '.shipped = [{id: "M0", title: "Old", at: "2026-01-01T00:00:00Z"}] | (.requirements[] | select(.id == "R2")) |= (.milestone = "M0" | .rules = [{text: "a receipt is shown", check: "C2", plan: "P2.1"}, {text: "a receipt is mailed", check: "C2", plan: "P2.2"}])
+    | (.plans[] | select(.id == "P2.2")).after = []'
+  replan_accepted patch '{"plans": [{"id": "P2.2", "phase": "P2", "title": "Receipt mail", "reqs": ["R2"], "files": ["src/d.txt"], "after": []}]}'
 }
 
-@test "R212: every mode refuses a requirement whose live rules name a plan on only some, naming the requirement and the counts, with its next step; the record is unchanged" {
+@test "R212 R216: every mode refuses a requirement whose live rules name a plan on only some, naming the requirement and the counts, with its next step; the record is unchanged" {
   refused_as full "full apply" "$(full_with '.rules += [{req: "R1", text: "a card is refused", check: "C1", plan: "P1.1"}]')"
   [[ "$output" == *"R1: 1 of 2 rules name a plan"* ]] || { echo "$output"; false; }
-  next_line
+  last_line_is "$MIXED_NEXT"
   refused_as add "--add" "$(add_with '.rules += [{req: "R3", text: "a refund is mailed", check: "C3", plan: "P3.1"}]')"
   [[ "$output" == *"R3: 1 of 2 rules name a plan"* ]] || { echo "$output"; false; }
-  next_line
+  last_line_is "$MIXED_NEXT"
   refused_as patch "--patch" '{"rules": [{"req": "R1", "text": "a card is refused", "check": "C1", "plan": "P1.1"}]}'
   [[ "$output" == *"R1: 1 of 2 rules name a plan"* ]] || { echo "$output"; false; }
-  next_line
+  last_line_is "$MIXED_NEXT"
 }
 
 @test "R212: a patch reword that names a plan on one rule and leaves the requirement mixed is refused; every rule naming a plan, or none, is accepted; retired rules are not counted" {
@@ -183,4 +193,38 @@ r2_two_plans() {
   replan_edit '(.requirements[] | select(.id == "R1")).rules |= [.[0], {text: "an old rule", check: "C1", retired: "gone"}]'
   replan_accepted patch '{"rules": [{"req": "R1", "text": "a card is refused", "check": "C1", "plan": "P1.1"}]}'
   [ "$(replan_part '[.requirements[] | select(.id == "R1")][0].rules | map([.plan, .retired])')" = '[["P1.1",null],[null,"gone"],["P1.1",null]]' ]
+}
+
+@test "R215 R216: every mode refuses a check whose rules name two plans that build beside each other (a shared wave), naming the check and both plans, the race, and the next step; the record is unchanged" {
+  refused_as full "full apply" "$(r2_two_plans '[]' '["src/d.txt"]')"
+  beside_named C2 P2.1 P2.2
+  refused_as add "--add" "$(add_with '.plans += [{id: "P3.2", phase: "P3", title: "Refund mail", reqs: ["R3"], files: ["src/r2.txt"], after: []}]
+    | .rules = [{req: "R3", text: "a refund is paid", check: "C3", plan: "P3.1"}, {req: "R3", text: "a refund is mailed", check: "C3", plan: "P3.2"}]')"
+  beside_named C3 P3.1 P3.2
+  refused_as patch "--patch" '{"plans": [{"id": "P2.2", "phase": "P2", "title": "Receipt mail", "reqs": ["R2"], "files": ["src/d.txt"], "after": []}],
+    "rules": [{"req": "R2", "text": "a receipt is shown", "check": "C2", "plan": "P2.1"}, {"req": "R2", "text": "a receipt is mailed", "check": "C2", "plan": "P2.2"}]}'
+  beside_named C2 P2.1 P2.2
+}
+
+@test "R215 R216: a pair in an earlier and a later wave with no tie between them is refused with the ordered words and the wave reason" {
+  # P2.3 shares nothing with P2.1; P2.2 builds after P2.3, so P2.1 is in wave 1 and P2.2 in wave 2.
+  refused_as full "full apply" "$(full_with '.plans += [{id: "P2.3", phase: "P2", title: "Receipt print", reqs: ["R2"], files: ["src/e.txt"], after: [], tasks: ["print"]},
+      {id: "P2.2", phase: "P2", title: "Receipt mail", reqs: ["R2"], files: ["src/d.txt"], after: ["P2.3"], tasks: ["mail"]}]
+    | .rules = [.rules[] | if .req == "R2" then . + {plan: "P2.1"} else . end] + [{req: "R2", text: "a receipt is mailed", check: "C2", plan: "P2.2"}]')"
+  [[ "$output" == *"C2 is owned by two plans that build one after the other (P2.1 builds in an earlier wave than P2.2): P2.1 and P2.2; the earlier plan's mutation step would find C2 red on unbroken code"* ]] || { echo "$output"; false; }
+  last_line_is "$TWO_OWNER_NEXT"
+}
+
+@test "R215 R216: a pair with one plan blocked is refused like an open pair, with and without a blocked plan the later one waits for" {
+  # P2.1 blocked, P2.2 beside it.
+  replan_edit '(.plans[] | select(.id == "P2.1")) |= (.status = "blocked" | .note = "waiting")'
+  refused_as full "full apply" "$(r2_two_plans '[]' '["src/d.txt"]')"
+  beside_named C2 P2.1 P2.2
+  # P2.3 blocked too, and P2.2 waits for it: P2.1 is in an earlier wave.
+  replan_edit '.plans += [{id: "P2.3", phase: "P2", title: "Receipt print", reqs: ["R2"], files: ["src/e.txt"], after: [], status: "blocked", note: "waiting", tasks: ["print"]}]'
+  refused_as full "full apply" "$(full_with '.plans += [{id: "P2.3", phase: "P2", title: "Receipt print", reqs: ["R2"], files: ["src/e.txt"], after: [], tasks: ["print"]},
+      {id: "P2.2", phase: "P2", title: "Receipt mail", reqs: ["R2"], files: ["src/d.txt"], after: ["P2.3"], tasks: ["mail"]}]
+    | .rules = [.rules[] | if .req == "R2" then . + {plan: "P2.1"} else . end] + [{req: "R2", text: "a receipt is mailed", check: "C2", plan: "P2.2"}]')"
+  [[ "$output" == *"P2.1 builds in an earlier wave than P2.2"* ]] || { echo "$output"; false; }
+  last_line_is "$TWO_OWNER_NEXT"
 }
