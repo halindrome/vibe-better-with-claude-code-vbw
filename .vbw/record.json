@@ -56340,7 +56340,7 @@
     {
       "id": "T192",
       "text": "A survivor of vbw mutate cannot be fixed when the rule's check file is shared with other requirements' checks (filtered cases in one file, as the lean-tests rule asks): vbw commit refuses the file as 'no other requirement's check file is the plan's to commit' (P170.5, 2026-10-26: tests/l3-taskbreak.bats holds C473 of R209 beside C463 of R207 and R193's cases). Let the Dev strengthen a check file that its own rule's check names, the edit waiting for approval as any check edit; the user sees the whole diff at the approval",
-      "sort": "later",
+      "sort": "next",
       "size": "small",
       "status": "open"
     }
