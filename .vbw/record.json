@@ -71211,5 +71211,26 @@
       "at": "2026-10-16T02:28:25Z",
       "reason": "scope violation: 32f17ce8f51d (P144.3) changed tests/panel/r189/now-box.test.mjs, which is not in the plan"
     }
-  ]
+  ],
+  "recommendation": {
+    "at": "2026-10-27T12:16:31Z",
+    "top": {
+      "text": "Fix the Timeline tab during a proof: while `vbw prove` runs it says 'No VBW workflow runs in this session right now', which reads as if nothing is happening. Make it say a proof is running (checks done of total) and point to the Proof tab.",
+      "size": "small",
+      "reason": "D513 set the order after M44 as T184, T185, T186, T188, T189, then T10, and M44 has shipped (D516), so T184 is the next item the record names.",
+      "source": "T184"
+    },
+    "runners": [
+      {
+        "text": "Store the mutation check's time breakdown (R207) under the plan's mutation entry in the record, so `vbw show plan` can show where a mutation run's time went.",
+        "size": "small",
+        "source": "T185"
+      },
+      {
+        "text": "At `vbw init`, point out large git-ignored folders the proof's clean copy would copy, as candidates for the Clean copy section of the spec.",
+        "size": "small",
+        "source": "T186"
+      }
+    ]
+  }
 }
