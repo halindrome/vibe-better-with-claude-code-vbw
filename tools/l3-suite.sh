@@ -722,8 +722,8 @@ scenario_approval() {
     expect "each question's fingerprint is named by exactly one approval" [ "$each" = true ]
     [ "$failed" -eq 0 ] || passed=false
     result_write approval "$fixture" "${cost_usd:-0}" "$passed" \
-      "$(jq -n --arg fp "${asked_fp:-}" --argjson shown "$options_shown" --argjson e "$pressed" --argjson ok "$named" --argjson n "$n" \
-        '{fingerprint: $fp, choice_shown: $shown, approved_by_enter: ($e and $ok and $n == 1), decisions: $n}')" \
+      "$(jq -n --arg fp "${asked_fp:-}" --argjson shown "$options_shown" --argjson e "$pressed" --argjson ok "$named" --argjson each "$each" --argjson n "$n" --argjson asked "$asked_n" \
+        '{fingerprint: $fp, choice_shown: $shown, approved_by_enter: ($e and $ok and $each and $n == $asked), decisions: $n}')" \
       '["the answer Not yet or the user'"'"'s own words","an approval after the contract changed under the question","typing /vbw:approve (covered by the kernel tests)","a project larger than the greet.sh and farewell.sh fixture"]'
   }
 }

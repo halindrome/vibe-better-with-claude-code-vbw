@@ -29,6 +29,11 @@ body() { sed -n '/^scenario_approval()/,/^}/p' "$SUITE"; }
   body | grep -qF "'[\""
 }
 
+@test "R61: the result's approved_by_enter fact holds for one approval per question asked (a fix that edits a test asks again), never for one approval only" {
+  body | grep -q 'approved_by_enter: (\$e and \$ok and \$each and \$n == \$asked)' || { echo "the fact is not pressed, named, each named once and one approval per question"; false; }
+  ! body | grep -q '\$n == 1' || { echo "the fact still requires exactly one approval; the checks accept one per question asked"; false; }
+}
+
 @test "R61: a committed result of it is honest: L3, passed, the choice was shown and Enter approved the shown contract; none is committed before it ran" {
   if [ ! -f "$RESULT" ]; then skip "approval has not been run: its status is not run"; fi
   jq -e '.scenario == "approval" and .evidence_level == "L3" and .passed == true
