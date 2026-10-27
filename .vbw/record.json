@@ -24454,7 +24454,22 @@
           "to": "deep",
           "reason": "Dev blocked P171.1: Tasks 1-4 built and committed (record.sh strengthen_files; commit, mutate, prove, common.jq read it). C474 stays red on 1 case and the scope tests on 1, both test-file faults outside this plan's files. (a) tests/mutate-strengthen.bats case 'a strengthened shared check file lets the build finish': the fixture's tests/shared.sh ends with 'true', and tests/pay.sh is 'sh src/pay.sh > /dev/null && sh tests/shared.sh', so the strengthened line 2 of shared.sh ([ \"$(sh src/pay.sh)\" = paid ]) never decides the exit status (no set -e); the break stays green, 'survivor: C1 still pass', and R210.5 can never be shown. Fix: the strengthened line must fail the script (e.g. strengthen_shared appends '|| exit 1', or the fixture drops the trailing 'true' / uses sh -e). (b) tests/scope-of-its-time.bats case 'a check file a survivor let the plan strengthen, renamed afterwards, keeps that commit in scope': its fixture plan has a survivor but R1 has no rules, so under the new definition (files of the checks of the plan's own rules) strengthen_files is []; the fixture needs a rule on R1 naming C1. Both need a replan that adds those test files; the 'R210 changes:' case is P171.2's."
         }
-      ]
+      ],
+      "qa": {
+        "result": "pass",
+        "tier": "deep",
+        "tree": "2b596c70114f1867a261db80458ef10d3b4f534f201d7567d0511342a7ecd692",
+        "at": "2026-10-27T03:40:41Z",
+        "note": "22/22 checks"
+      },
+      "outcome": {
+        "tier": "deep",
+        "predicted": "deep",
+        "held": true,
+        "fix_rounds": 0,
+        "qa_findings": 0,
+        "escalations": 1
+      }
     },
     {
       "id": "P172",
