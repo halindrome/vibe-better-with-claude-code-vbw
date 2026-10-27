@@ -150,8 +150,9 @@ three_rules() {
   apply_patch '{"rules": [{"rule": "R1.2", "text": "paying twice is refused with a message"}]}'
   [ "$status" -eq 0 ] || { echo "$output"; false; }
   [ "$(rules_of R1)" = '[{"check":"C1","text":"paying works"},{"check":"C1","text":"paying twice is refused with a message"},{"check":"C1","text":"a refused card is named"}]' ]
-  # The check and the plan are reached by address too.
-  apply_patch '{"checks": [{"id": "C4", "req": "R1", "run": ["sh", "tests/c1.sh"], "files": ["tests/c1.sh"]}], "rules": [{"rule": "R1.3", "check": "C4", "plan": "P1.2"}]}'
+  # The check and the plan are reached by address too (the plan on every rule of R1: R212).
+  [ "$(part '[.requirements[] | select(.id == "R1")][0].rules | map(.plan)')" = '[null,null,null]' ]
+  apply_patch '{"checks": [{"id": "C4", "req": "R1", "run": ["sh", "tests/c1.sh"], "files": ["tests/c1.sh"]}], "rules": [{"rule": "R1.1", "plan": "P1.2"}, {"rule": "R1.2", "plan": "P1.2"}, {"rule": "R1.3", "check": "C4", "plan": "P1.2"}]}'
   [ "$status" -eq 0 ] || { echo "$output"; false; }
   [ "$(part '[.requirements[] | select(.id == "R1")][0].rules[2]')" = '{"check":"C4","plan":"P1.2","text":"a refused card is named"}' ]
 }
@@ -162,7 +163,7 @@ three_rules() {
   [ "$status" -eq 0 ] || { echo "$output"; false; }
   [ "$(rules_of R1)" = '[{"check":"C1","text":"paying works"},{"check":"C1","retired":"R1 now allows a second payment","text":"paying twice is refused"},{"check":"C1","text":"a refused card is named"}]' ]
   # A patch by words and a full apply leave the retired rule where it is.
-  apply_patch '{"rules": [{"req": "R1", "text": "a refused card is named", "check": "C1", "plan": "P1.1"}, {"req": "R1", "text": "a receipt follows", "check": "C1"}]}'
+  apply_patch '{"rules": [{"req": "R1", "text": "a refused card is named", "check": "C1"}, {"req": "R1", "text": "a receipt follows", "check": "C1"}]}'
   [ "$status" -eq 0 ] || { echo "$output"; false; }
   [ "$(part '[.requirements[] | select(.id == "R1")][0].rules | map([.text, .retired])')" = '[["paying works",null],["paying twice is refused","R1 now allows a second payment"],["a refused card is named",null],["a receipt follows",null]]' ]
   run bash -c 'printf "%s" "$2" | "$1" apply' _ "$VBW" "$DOC"

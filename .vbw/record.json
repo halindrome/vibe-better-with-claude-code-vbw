@@ -6,6 +6,7 @@
     "tests/agent-scratch.bats",
     "tests/apply-beside-started.bats",
     "tests/apply-foreign-req.bats",
+    "tests/apply-keeps-mutations.bats",
     "tests/apply-narrow.bats",
     "tests/apply-refusal-modes.bats",
     "tests/apply-reopen.bats",
@@ -400,6 +401,8 @@
     "tests/road-skill.bats",
     "tests/router-spec-rules.bats",
     "tests/router-triage-line.bats",
+    "tests/rules-docs.bats",
+    "tests/rules-prompts.bats",
     "tests/rules.bats",
     "tests/run-confirm.bats",
     "tests/scope-undone-docs.bats",
@@ -6250,6 +6253,202 @@
       ],
       "files": [
         "tests/l3-taskbreak.bats"
+      ]
+    },
+    {
+      "id": "C474",
+      "req": "R210",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "--filter",
+        "R210:",
+        "tests/mutate-strengthen.bats"
+      ],
+      "files": [
+        "tests/mutate-strengthen.bats"
+      ]
+    },
+    {
+      "id": "C475",
+      "req": "R210",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "--filter",
+        "R210 changes:",
+        "tests/mutate-strengthen.bats"
+      ],
+      "files": [
+        "tests/mutate-strengthen.bats"
+      ]
+    },
+    {
+      "id": "C476",
+      "req": "R210",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "--filter",
+        "R210",
+        "tests/mutate-pending-check-docs.bats"
+      ],
+      "files": [
+        "tests/mutate-pending-check-docs.bats"
+      ]
+    },
+    {
+      "id": "C477",
+      "req": "R211",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "--filter",
+        "R211",
+        "tests/apply-refusal-modes.bats"
+      ],
+      "files": [
+        "tests/apply-refusal-modes.bats"
+      ]
+    },
+    {
+      "id": "C478",
+      "req": "R211",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "--filter",
+        "R211",
+        "tests/rules-prompts.bats"
+      ],
+      "files": [
+        "tests/rules-prompts.bats"
+      ]
+    },
+    {
+      "id": "C479",
+      "req": "R211",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "--filter",
+        "R211",
+        "tests/rules-docs.bats"
+      ],
+      "files": [
+        "tests/rules-docs.bats"
+      ]
+    },
+    {
+      "id": "C480",
+      "req": "R212",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "--filter",
+        "R212",
+        "tests/apply-refusal-modes.bats"
+      ],
+      "files": [
+        "tests/apply-refusal-modes.bats"
+      ]
+    },
+    {
+      "id": "C481",
+      "req": "R212",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "--filter",
+        "R212",
+        "tests/rules-prompts.bats"
+      ],
+      "files": [
+        "tests/rules-prompts.bats"
+      ]
+    },
+    {
+      "id": "C482",
+      "req": "R212",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "--filter",
+        "R212",
+        "tests/rules-docs.bats"
+      ],
+      "files": [
+        "tests/rules-docs.bats"
+      ]
+    },
+    {
+      "id": "C483",
+      "req": "R213",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "--filter",
+        "R213",
+        "tests/apply-keeps-mutations.bats"
+      ],
+      "files": [
+        "tests/apply-keeps-mutations.bats"
+      ]
+    },
+    {
+      "id": "C484",
+      "req": "R213",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "--filter",
+        "R213",
+        "tests/rules-docs.bats"
+      ],
+      "files": [
+        "tests/rules-docs.bats"
+      ]
+    },
+    {
+      "id": "C485",
+      "req": "R214",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "--filter",
+        "R214",
+        "tests/clean-copy-docs.bats"
+      ],
+      "files": [
+        "tests/clean-copy-docs.bats"
+      ]
+    },
+    {
+      "id": "C486",
+      "req": "R214",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "--filter",
+        "R214",
+        "tests/clean-copy-spec.bats"
+      ],
+      "files": [
+        "tests/clean-copy-spec.bats"
+      ]
+    },
+    {
+      "id": "C487",
+      "req": "R214",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "--filter",
+        "R214",
+        "tests/clean-copy-proof.bats"
+      ],
+      "files": [
+        "tests/clean-copy-proof.bats"
       ]
     }
   ],
@@ -15825,7 +16024,53 @@
       "proof": "auto",
       "status": "open",
       "milestone": "M44",
-      "rules": []
+      "rules": [
+        {
+          "text": "the kernel holds one definition of the check files a plan may strengthen (the files of the checks of its own rules, open once a survivor is recorded), in record.sh's shared jq defs beside own_rules; cmd-commit.sh holds no second one",
+          "check": "C474",
+          "plan": "P171.1"
+        },
+        {
+          "text": "after a survivor of the plan's rule, the file guard lets a build agent write a check file that a check of the plan's own rules names, one shared with another requirement's check included; a file only another requirement's check names stays protected; before any survivor every check file is protected",
+          "check": "C474",
+          "plan": "P171.1"
+        },
+        {
+          "text": "after a survivor, vbw commit PLAN MSG FILE commits a check file named by a check of the plan's own rules, shared or not, with the plan's VBW-Plan and VBW-Req trailers",
+          "check": "C474",
+          "plan": "P171.1"
+        },
+        {
+          "text": "a check file that no check of the plan's own rules names, or any check file before a survivor of the plan, is refused by name with the rule stated and a Next line; the words 'no other requirement's check file is the plan's to commit' are gone",
+          "check": "C474",
+          "plan": "P171.1"
+        },
+        {
+          "text": "after the commit, the same break run again prints 'TARGET survives the approved check; caught by the pending one: F', exits 0, records the break red with pending [F] and strengthened [F], and says the pending file still needs the one approval before the proof",
+          "check": "C474",
+          "plan": "P171.1"
+        },
+        {
+          "text": "the strengthened shared file waits for the approval: after the build vbw next asks for it by name, vbw prove refuses until it is approved, and the proof's scope check counts the commit as the plan's",
+          "check": "C474",
+          "plan": "P171.1"
+        },
+        {
+          "text": "vbw show contract --changes prints, under each changed test file line, the complete diff between the approved content and the file as it is now, every hunk, committed or not",
+          "check": "C475",
+          "plan": "P171.2"
+        },
+        {
+          "text": "when the approved content of a changed test file is not in the project's git history, --changes says so in one line and prints no diff",
+          "check": "C475",
+          "plan": "P171.2"
+        },
+        {
+          "text": "docs/proof.md, docs/record.md, docs/guards.md, the Dev prompt (step 4 and DEVN-04) and the router's approve step say the rule in the same words: the checks of the plan's own rules, shared files included, the rest refused by name, the whole diff shown before the approval question",
+          "check": "C476",
+          "plan": "P171.3"
+        }
+      ]
     },
     {
       "id": "R211",
@@ -15833,7 +16078,33 @@
       "proof": "auto",
       "status": "open",
       "milestone": "M44",
-      "rules": []
+      "rules": [
+        {
+          "text": "in every mode, a check whose live rules name two undone plans of the milestone, one in the other's after directly or through a chain, is refused before anything changes, naming the check and both plans and why, with the mode's name and a Next line; the record is unchanged",
+          "check": "C477",
+          "plan": "P172.1"
+        },
+        {
+          "text": "the same refusal when the two plans share a file under the wave rule, with no after between them",
+          "check": "C477",
+          "plan": "P172.1"
+        },
+        {
+          "text": "no refusal when the check's rules name one plan or none, when one of the two plans is done, or when the plans build beside each other; a retired rule counts for nothing",
+          "check": "C477",
+          "plan": "P172.1"
+        },
+        {
+          "text": "the Lead's brief says a check's rules belong to one plan: plans of a requirement that build one after the other give each plan's rules a check of their own (a separate test file, or the same file with a case filter as a distinct check)",
+          "check": "C478",
+          "plan": "P172.2"
+        },
+        {
+          "text": "docs/proof.md's Rules section and docs/workflows.md's list of what vbw apply refuses name the refusal and its reason (red on unbroken code)",
+          "check": "C479",
+          "plan": "P172.2"
+        }
+      ]
     },
     {
       "id": "R212",
@@ -15841,7 +16112,33 @@
       "proof": "auto",
       "status": "open",
       "milestone": "M44",
-      "rules": []
+      "rules": [
+        {
+          "text": "in every mode, a requirement whose live rules, as the document leaves them, name a plan on some and not others is refused naming the requirement and the counts, with the mode's name and a Next line; the record is unchanged",
+          "check": "C480",
+          "plan": "P172.1"
+        },
+        {
+          "text": "a --patch reword that names a plan on one rule, or takes it off one, and leaves the requirement mixed is refused the same way",
+          "check": "C480",
+          "plan": "P172.1"
+        },
+        {
+          "text": "every rule naming a plan, or none naming one, is accepted; retired rules are not counted",
+          "check": "C480",
+          "plan": "P172.1"
+        },
+        {
+          "text": "the Lead's brief rule 7 (Rules) says the plan is named on every rule of the requirement or on none",
+          "check": "C481",
+          "plan": "P172.2"
+        },
+        {
+          "text": "docs/workflows.md's list of what vbw apply refuses and docs/record.md's requirements row say a plan is named on every rule or on none",
+          "check": "C482",
+          "plan": "P172.2"
+        }
+      ]
     },
     {
       "id": "R213",
@@ -15849,7 +16146,28 @@
       "proof": "auto",
       "status": "open",
       "milestone": "M44",
-      "rules": []
+      "rules": [
+        {
+          "text": "a full apply that re-sends a blocked plan as is keeps its status blocked, its note and its recorded breaks; vbw show plan and vbw show roadmap print the reason after the apply",
+          "check": "C483",
+          "plan": "P172.1"
+        },
+        {
+          "text": "vbw apply --add and --patch keep the note the same way",
+          "check": "C483",
+          "plan": "P172.1"
+        },
+        {
+          "text": "a plan without a note gains none from an apply; the note goes only when a kernel command changes the plan's status (vbw plan reset, vbw plan done)",
+          "check": "C483",
+          "plan": "P172.1"
+        },
+        {
+          "text": "docs/record.md's plans row and docs/workflows.md's vbw apply row say a started plan keeps its note with its status and breaks across every vbw apply",
+          "check": "C484",
+          "plan": "P172.2"
+        }
+      ]
     },
     {
       "id": "R214",
@@ -15857,7 +16175,28 @@
       "proof": "auto",
       "status": "open",
       "milestone": "M44",
-      "rules": []
+      "rules": [
+        {
+          "text": "docs/proof.md's Clean copy section quotes the missing-path sentence exactly as cmd-spec.sh prints it (spec.md line N: PATH is not here now, so nothing is left out for it yet); 'does not exist here now' is gone",
+          "check": "C485"
+        },
+        {
+          "text": "vbw spec check prints that one sentence for a listed path with nothing at it: the kernel-side pin of the words the docs quote",
+          "check": "C486"
+        },
+        {
+          "text": "docs/proof.md says a listed path is one word per line: a path with a space cannot be listed and is refused with its line number, quoting the refusal's 'expected \"- <path>\"' wording",
+          "check": "C485"
+        },
+        {
+          "text": "a line like '- my data/' is refused by vbw spec check and vbw spec sync with its line number and that wording; the record is unchanged",
+          "check": "C486"
+        },
+        {
+          "text": "proofcopy_make parses project.leave_out once per copy into the bash array PROOFCOPY_LEFT and proofcopy_entry reads only it (no here-string, no jq call, no record read per ignored entry), with the expansion guarded under set -u; the existing clean-copy cases pass unchanged",
+          "check": "C487"
+        }
+      ]
     }
   ],
   "phases": [
@@ -24069,6 +24408,93 @@
         "qa_findings": 1,
         "escalations": 0
       }
+    },
+    {
+      "id": "P171",
+      "title": "A weak test in a shared test file can be made stronger",
+      "reqs": [
+        "R210"
+      ],
+      "milestone": "M44",
+      "goal": "When VBW's mutation step (it breaks the code on purpose to see whether a test notices) finds a test that cannot fail, the Dev can strengthen that test even when its file also holds other requirements' tests, the user sees the whole change before approving it, and the same break then turns the test red.",
+      "criteria": [
+        "The kernel has one definition (in the shared jq defs of plugin/lib/record.sh, beside own_rules) of the check files a plan may strengthen: the files of the checks named by the plan's own rules (own_rules), opened once a survivor is recorded in that plan's build run. vbw commit PLAN, the build lease's editable list written by vbw mutate, the file guard (plugin/hooks/common.jq), the proof's scope check (PROVE_SCOPE_JQ and PROVE_SCOPE_THEN_JQ in cmd-prove.sh) and the pending/strengthened logic of mutate_record all read that one definition; COMMIT_SURVIVOR_DEFS in cmd-commit.sh no longer holds a second one.",
+        "Given a check file that holds C1 (a check of one of the plan's own rules) and C2 (a check of another requirement, or of another plan's rule), after vbw mutate records a survivor of the plan's rule: vbw commit PLAN MSG FILE commits the file with the plan's VBW-Plan and VBW-Req trailers, and the file guard lets the Dev write it during the build run. Before any survivor of that plan, the guard and vbw commit refuse the file as today.",
+        "A check file that no check of the plan's own rules names (one listed only by other requirements' checks or other plans' rules' checks) is still refused by vbw commit, naming the file, with a message that states the new rule (the current wording 'no other requirement's check file is the plan's to commit' is replaced); the refusal ends with the next step. A plan with no recorded survivor is refused as today.",
+        "The strengthened file waits for the user's approval before the proof as any check edit: after the build finishes, vbw next asks to approve the edited file by name, vbw prove refuses until it is approved, and under a loop the loop approves and records a decision naming the file (existing behaviour, still held by tests).",
+        "The whole diff is shown at the approval: vbw show contract --changes prints, under each 'changed test file F' line, the complete difference between the content the approval covered and the file as it is now (committed or not), every hunk included, so the user sees that other requirements' cases in the same file were not weakened; when the approved content cannot be found in the project's git history, it says so in one line instead of printing nothing or a wrong diff. The router's approve step (plugin/skills/vibe/SKILL.md) shows that diff to the user before the approval question.",
+        "The survivor can be re-run: after the commit, vbw mutate PLAN Rn.k with the same break runs the strengthened file and prints 'TARGET survives the approved check; caught by the pending one: F', exits 0, records the break as red with pending [F] and strengthened [F], and says the pending file still needs the one approval before the proof.",
+        "vbw prove's scope check counts the commit of the shared check file as the plan's: no 'changed F, which is not in the plan' violation, judged by the record version of the commit's time as for a plan's own files.",
+        "Docs and prompts say the new rule in the same words: plugin/agents/dev.md step 4 (survivor line) and DEVN-04, docs/proof.md's mutation-check survivor paragraph and the vbw commit section, docs/record.md's lease editable description. The cases live in tests/mutate-strengthen.bats (the 'any other check file is refused' case is edited to the new rule, not stacked) plus a docs case in the existing docs test of the area; each is shown red before the code change."
+      ],
+      "tier": "deep",
+      "reasons": [
+        "requirements: 1",
+        "files: 12 (335175 bytes)",
+        "files: more than 2 in a repository tracking 1183 files",
+        "risk: none",
+        "breaks: R80, R156, R188, R196, R205",
+        "guarded: R1 (C1), R2 (C2), R12 (C11), R13 (C12), R14 (C13), R15 (C14), R22 (C19), R23 (C20), R24 (C23), R25 (C24), R26 (C22), R28 (C25), R31 (C27), R32 (C28), R33 (C29), R37 (C35), R38 (C33, C34), R39 (C36), R40 (C37), R43 (C42, C43), R44 (C44, C45), R45 (C39, C40, C41), R46 (C46), R47 (C47), R48 (C49, C50), R49 (C48), R50 (C51), R60 (C72, C94), R61 (C73, C74, C75, C76, C77), R65 (C86, C87, C88, C89, C90), R66 (C95), R67 (C96), R69 (C110, C120, C122), R70 (C114), R72 (C116, C118), R73 (C98), R74 (C99, C100), R75 (C101), R76 (C102, C103), R77 (C104), R78 (C105, C106), R79 (C107), R81 (C109, C111, C112, C113), R83 (C119), R92 (C131, C132, C133, C134, C135, C136, C137, C138, C139), R93 (C140, C141, C142, C143, C144), R94 (C145, C146, C147, C148), R95 (C149, C150), R96 (C151, C152), R97 (C153), R98 (C154), R99 (C155), R100 (C156), R101 (C179), R102 (C158, C159), R103 (C160), R104 (C161, C162), R105 (C163), R106 (C164, C165), R107 (C166, C167), R110 (C169, C170), R111 (C171, C172, C173, C174, C175), R115 (C181), R116 (C182, C183), R118 (C184), R119 (C180), R120 (C185), R121 (C187, C188), R122 (C189), R123 (C190, C191), R127 (C194), R128 (C200), R129 (C196), R130 (C197), R131 (C198), R132 (C199), R133 (C195), R134 (C201), R135 (C202), R144 (C208, C209), R146 (C211), R147 (C212, C215, C237), R148 (C213, C214, C216, C238), R149 (C217, C218, C219, C220, C221, C222), R150 (C223, C224, C225, C226, C227, C228, C229, C230), R151 (C231, C232), R152 (C233, C234), R153 (C235, C236, C239), R157 (C244), R158 (C245), R159 (C246), R160 (C247, C263, C264), R161 (C248, C265, C266), R162 (C249), R163 (C250), R165 (C252), R166 (C253, C254, C255, C256, C267), R167 (C257, C258, C259, C260), R168 (C261, C262), R169 (C268), R170 (C269), R171 (C270), R173 (C281, C282, C283, C284, C285, C286, C289), R174 (C279, C280), R175 (C274, C275), R176 (C276, C277, C278), R177 (C287, C288), R178 (C290, C291, C292, C293, C294, C295, C296, C311), R179 (C297, C298, C299, C300, C301, C302, C303, C304, C305, C306, C312), R180 (C307, C308, C309, C310), R181 (C313, C314, C315, C316, C317, C318, C319, C320, C321), R182 (C322, C323, C324, C325, C326), R183 (C327), R186 (C344, C345, C346, C347, C348), R190 (C374, C375, C376, C377, C378, C379, C380, C381, C382, C383, C384, C385, C386, C387, C388), R191 (C389, C390, C391, C392, C393, C394, C395, C396, C397, C398, C399, C400), R192 (C401, C402, C403, C404, C405, C406, C407, C408, C409, C410), R193 (C411, C412), R194 (C417, C418, C419), R195 (C420, C421, C422), R197 (C413, C414), R198 (C423), R201 (C428, C429), R202 (C432, C433, C434, C435, C436, C437, C438, C439, C440, C441, C442, C443, C444, C445, C446, C447), R203 (C448, C449, C450), R204 (C451, C452, C453, C454), R206 (C459, C460), R207 (C461, C462, C463), R208 (C464, C465, C466, C468), R209 (C469, C470, C471, C472, C473)",
+        "tests: project test command"
+      ],
+      "predicted": "deep"
+    },
+    {
+      "id": "P172",
+      "title": "Planning refusals that stop a red mutation baseline, and a kept blocked reason",
+      "reqs": [
+        "R211",
+        "R212",
+        "R213"
+      ],
+      "milestone": "M44",
+      "goal": "vbw apply (the command that writes the Lead's plan into the record) refuses, before writing anything, a layout that would make a plan's mutation step fail on unbroken code or leave a rule's owner undefined, and re-planning a later phase never loses why a plan was blocked.",
+      "criteria": [
+        "R211 refusal: in every mode (full apply, --add, --patch), judging the record as the document would leave it, when a check's live (not retired) rules name two different plans A and B of the current milestone, neither done, and B builds after A (A is in B's after, directly or through a chain, or A's and B's files overlap under the wave rule of record.sh so they never share a wave), vbw apply refuses before anything changes, naming the check and both plans and saying why (the earlier plan's mutation step would find the check red on unbroken code), prefixed with the mode's name (R156) and ending with a Next line (R162: give each plan's rules a check of their own, or move the rules to one plan). The record is unchanged, shown by a byte comparison in the test.",
+        "R211 edges: no refusal when the rules naming the check all name one plan, or none names a plan, or one of the two plans is done, or the check belongs to another milestone's requirement; a retired rule counts for nothing. apply_next gains an arm for the new message.",
+        "R211 in words: plugin/agents/lead.md states the rule in Stage 2 (rule 6 Lean checks or rule 7 Rules): a check's rules belong to one plan; when several plans of a requirement build one after the other, each plan's rules get a check of their own (a separate test file, or the same file with a case filter that is a distinct check). A prompt test pins the words; docs/proof.md's Rules text and the apply refusal list name the refusal.",
+        "R212 refusal: in every mode, when a requirement's live rules, as the document leaves them, name a plan on some rules and not on others, vbw apply refuses naming the requirement and the counts (for example 'R5: 2 of 3 rules name a plan: name one on every rule or on none'), with the mode's name and a Next line; the record is unchanged. A --patch reword that adds or removes plan on one rule and leaves the requirement mixed is refused the same way. Every rule naming a plan, or none naming one, is accepted; retired rules are not counted.",
+        "R212 in words: plugin/agents/lead.md rule 7 says the plan is named on every rule of the requirement or on none; docs/record.md's requirements row (rules) says the same.",
+        "R213: after vbw plan block P1.1 REASON, a full apply that re-sends P1.1 as is (planning a later phase) keeps P1.1's status blocked, its mutations and its note: vbw show plan P1.1 and vbw show roadmap print the reason as before the apply. The same holds for --add and --patch. A plan without a note gains none; the note goes only when a kernel command changes the plan's status (vbw plan done, the reset to planned), as today.",
+        "Tests: the two refusals and the kept note are cases in the existing apply test files of their areas (tests/apply-refusal-modes.bats for the refusals, each asserting the mode name, the Next line and the unchanged record; tests/apply-keeps-mutations.bats for the note beside the kept mutations), each shown red first; no new test file unless the area has none."
+      ],
+      "tier": "deep",
+      "reasons": [
+        "requirements: 3",
+        "files: 12 (305958 bytes)",
+        "files: more than 2 in a repository tracking 1183 files",
+        "risk: none",
+        "breaks: R80, R156, R188, R196, R205",
+        "guarded: R12 (C11), R13 (C12), R14 (C13), R22 (C19), R23 (C20), R24 (C23), R25 (C24), R27 (C21), R28 (C25), R31 (C27), R32 (C28), R33 (C29), R38 (C33, C34), R39 (C36), R40 (C37), R43 (C42, C43), R44 (C44, C45), R45 (C39, C40, C41), R46 (C46), R47 (C47), R48 (C49, C50), R49 (C48), R50 (C51), R60 (C72, C94), R61 (C73, C74, C75, C76, C77), R66 (C95), R69 (C110, C120, C122), R70 (C114), R71 (C115, C121), R73 (C98), R74 (C99, C100), R75 (C101), R76 (C102, C103), R77 (C104), R78 (C105, C106), R79 (C107), R81 (C109, C111, C112, C113), R92 (C131, C132, C133, C134, C135, C136, C137, C138, C139), R93 (C140, C141, C142, C143, C144), R94 (C145, C146, C147, C148), R95 (C149, C150), R96 (C151, C152), R97 (C153), R98 (C154), R99 (C155), R100 (C156), R101 (C179), R102 (C158, C159), R103 (C160), R104 (C161, C162), R105 (C163), R106 (C164, C165), R107 (C166, C167), R110 (C169, C170), R111 (C171, C172, C173, C174, C175), R115 (C181), R116 (C182, C183), R118 (C184), R119 (C180), R121 (C187, C188), R123 (C190, C191), R127 (C194), R129 (C196), R130 (C197), R131 (C198), R132 (C199), R133 (C195), R134 (C201), R135 (C202), R144 (C208, C209), R147 (C212, C215, C237), R148 (C213, C214, C216, C238), R149 (C217, C218, C219, C220, C221, C222), R150 (C223, C224, C225, C226, C227, C228, C229, C230), R152 (C233, C234), R153 (C235, C236, C239), R157 (C244), R158 (C245), R159 (C246), R160 (C247, C263, C264), R161 (C248, C265, C266), R162 (C249), R163 (C250), R166 (C253, C254, C255, C256, C267), R167 (C257, C258, C259, C260), R168 (C261, C262), R169 (C268), R170 (C269), R173 (C281, C282, C283, C284, C285, C286, C289), R174 (C279, C280), R175 (C274, C275), R176 (C276, C277, C278), R177 (C287, C288), R178 (C290, C291, C292, C293, C294, C295, C296, C311), R179 (C297, C298, C299, C300, C301, C302, C303, C304, C305, C306, C312), R180 (C307, C308, C309, C310), R181 (C313, C314, C315, C316, C317, C318, C319, C320, C321), R182 (C322, C323, C324, C325, C326), R183 (C327), R186 (C344, C345, C346, C347, C348), R191 (C389, C390, C391, C392, C393, C394, C395, C396, C397, C398, C399, C400), R192 (C401, C402, C403, C404, C405, C406, C407, C408, C409, C410), R193 (C411, C412), R194 (C417, C418, C419), R195 (C420, C421, C422), R197 (C413, C414), R202 (C432, C433, C434, C435, C436, C437, C438, C439, C440, C441, C442, C443, C444, C445, C446, C447), R203 (C448, C449, C450), R204 (C451, C452, C453, C454), R206 (C459, C460), R207 (C461, C462, C463), R208 (C464, C465, C466, C468), R209 (C469, C470, C471, C472, C473)",
+        "tests: project test command"
+      ],
+      "predicted": "deep"
+    },
+    {
+      "id": "P173",
+      "title": "The Clean copy documentation matches the kernel, and the leave-out list is read once per copy",
+      "reqs": [
+        "R214"
+      ],
+      "milestone": "M44",
+      "goal": "The Clean copy section of docs/proof.md says exactly what the kernel prints and accepts, and a clean copy (the throwaway copy of the committed code that checks run in) parses the list of left-out paths once instead of once for every ignored file.",
+      "criteria": [
+        "docs/proof.md's Clean copy section quotes the kernel's wording for a listed path with nothing at it exactly as plugin/lib/cmd-spec.sh prints it ('spec.md line N: PATH is not here now, so nothing is left out for it yet'), replacing 'says it does not exist here now'; the case in tests/clean-copy-docs.bats that asserts 'does not exist' is edited to the exact words (not stacked), and a case in tests/clean-copy-spec.bats pins the same literal on the kernel side so the two cannot drift apart.",
+        "docs/proof.md says a listed path is one word per line: a path containing a space cannot be listed, and such a line is refused with its line number as a Test results folder with a space is; the docs quote the refusal's wording ('expected \"- <path>\" ...'). A case in tests/clean-copy-spec.bats shows a line like '- my data/' refused by vbw spec check and vbw spec sync with its line number and the record unchanged.",
+        "proofcopy_make (plugin/lib/proofcopy.sh) parses project.leave_out once per copy into a bash array; proofcopy_entry reads only that parsed form: no here-string, no jq call and no record read per ignored entry. A unit test calls proofcopy_entry with the parsed list set and no raw list text and sees the listed path skipped and a sibling copied; every existing case of tests/clean-copy-proof.bats (descent around a listed path per D509 included) passes unchanged.",
+        "Bash 3.2 rules hold: the array expansion is guarded under set -u, no mapfile, and tests/standards.bats stays green."
+      ],
+      "tier": "deep",
+      "reasons": [
+        "requirements: 1",
+        "files: 4 (114925 bytes)",
+        "files: more than 2 in a repository tracking 1183 files",
+        "risk: none",
+        "breaks: R80, R188, R196, R205",
+        "guarded: R12 (C11), R31 (C27), R32 (C28), R43 (C42, C43), R44 (C44, C45), R45 (C39, C40, C41), R46 (C46), R47 (C47), R48 (C49, C50), R49 (C48), R61 (C73, C74, C75, C76, C77), R66 (C95), R69 (C110, C120, C122), R70 (C114), R73 (C98), R74 (C99, C100), R78 (C105, C106), R79 (C107), R81 (C109, C111, C112, C113), R83 (C119), R92 (C131, C132, C133, C134, C135, C136, C137, C138, C139), R93 (C140, C141, C142, C143, C144), R94 (C145, C146, C147, C148), R97 (C153), R98 (C154), R100 (C156), R103 (C160), R104 (C161, C162), R105 (C163), R110 (C169, C170), R111 (C171, C172, C173, C174, C175), R115 (C181), R118 (C184), R131 (C198), R132 (C199), R134 (C201), R135 (C202), R144 (C208, C209), R147 (C212, C215, C237), R148 (C213, C214, C216, C238), R149 (C217, C218, C219, C220, C221, C222), R152 (C233, C234), R153 (C235, C236, C239), R160 (C247, C263, C264), R161 (C248, C265, C266), R166 (C253, C254, C255, C256, C267), R167 (C257, C258, C259, C260), R168 (C261, C262), R169 (C268), R170 (C269), R174 (C279, C280), R175 (C274, C275), R176 (C276, C277, C278), R181 (C313, C314, C315, C316, C317, C318, C319, C320, C321), R182 (C322, C323, C324, C325, C326), R183 (C327), R193 (C411, C412), R194 (C417, C418, C419), R195 (C420, C421, C422), R197 (C413, C414), R202 (C432, C433, C434, C435, C436, C437, C438, C439, C440, C441, C442, C443, C444, C445, C446, C447), R203 (C448, C449, C450), R204 (C451, C452, C453, C454), R206 (C459, C460), R209 (C469, C470, C471, C472, C473)",
+        "tests: project test command"
+      ],
+      "predicted": "deep"
     }
   ],
   "plans": [
@@ -52617,6 +53043,152 @@
           "head": "0e2cb29f7af2d39fb9c0df4964009e6bfdcae8fd"
         }
       ]
+    },
+    {
+      "id": "P171.1",
+      "phase": "P171",
+      "title": "One kernel definition of the files a plan may strengthen: commit, lease, mutate and the scope check read it",
+      "reqs": [
+        "R210"
+      ],
+      "files": [
+        "plugin/lib/record.sh",
+        "plugin/lib/cmd-commit.sh",
+        "plugin/lib/cmd-mutate.sh",
+        "plugin/lib/cmd-prove.sh",
+        "plugin/hooks/common.jq"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "record.sh: in VBW_JQ_DEFS beside own_rules, def strengthen_files($p): [] while the plan has no recorded survivor, else the files of the checks named by own_rules($p), unique (the check files a plan may strengthen once a survivor is recorded)",
+        "cmd-commit.sh: drop COMMIT_SURVIVOR_DEFS; a named file outside the plan's files is accepted when strengthen_files (VBW_JQ_DEFS) lists it; otherwise refused by name with the rule in words (after a survivor of vbw mutate PLAN, a check file of a check of the plan's own rules; a file only other requirements' or other plans' checks name is never the plan's to commit) and a Next line",
+        "cmd-mutate.sh: a survivor in a build run writes lease.editable from strengthen_files; mutate_record's strengthened (files changed since the prior survivor's head) and pending (red check files waiting for approval) are judged over those files; no COMMIT_SURVIVOR_DEFS left",
+        "cmd-prove.sh: PROVE_SCOPE_JQ and PROVE_SCOPE_THEN_JQ read strengthen_files from VBW_JQ_DEFS (the record version of the commit's time included); common.jq keeps reading lease.editable (comment says where the list comes from); tests/mutate-strengthen.bats, tests/mutate-pending-check.bats, tests/scope-*.bats and tests/hooks-guard*.bats green under /bin/bash"
+      ]
+    },
+    {
+      "id": "P171.2",
+      "phase": "P171",
+      "title": "vbw show contract --changes prints the whole diff of each changed test file",
+      "reqs": [
+        "R210"
+      ],
+      "files": [
+        "plugin/lib/cmd-show.sh"
+      ],
+      "after": [
+        "P171.1",
+        "P172.1"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "cmd-show.sh show_contract_changes: for each 'changed test file F' line, find the commit holding the approved content (walk git log --format=%H -- F newest first, hash each version with vbw_sha256 until it equals the approved snapshot's hash) and print git diff <commit> -- F in full under the line, indented like the other lines, every hunk, the working file as it is now (committed or not)",
+        "when no version of F in the project's git history has the approved hash, print one indented line ('the approved content of F is not in the project's git history, so no diff can be shown') and no diff",
+        "the diff is plain text for the router to show: git -c color.ui=never diff --no-ext-diff; tests/kernel-work.bats, tests/testfiles-*.bats and tests/mutate-strengthen.bats green under /bin/bash"
+      ]
+    },
+    {
+      "id": "P171.3",
+      "phase": "P171",
+      "title": "Docs, the Dev prompt and the router say the strengthening rule in the same words",
+      "reqs": [
+        "R210"
+      ],
+      "files": [
+        "docs/proof.md",
+        "docs/record.md",
+        "docs/guards.md",
+        "docs/workflows.md",
+        "plugin/agents/dev.md",
+        "plugin/skills/vibe/SKILL.md"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "docs/proof.md: the mutation-check survivor paragraph (the Dev strengthens the test in a check file named by a check of the plan's own rules, one shared with other requirements' cases included, never weakening an assertion), the vbw commit paragraph (a check file that no check of the plan's own rules names is refused by name) and 'Test files edited while building' (vbw show contract --changes prints the whole diff of each edited file, every hunk)",
+        "docs/record.md lease editable, docs/guards.md's protected check file row and docs/workflows.md's vbw commit row: the same words, the old 'that no other requirement uses' gone",
+        "plugin/agents/dev.md step 4 survivor line: strengthen the check file a check of the plan's own rules names, shared with other requirements or not, never weaken; DEVN-04 row: never a check file a survivor opened, shared or not",
+        "plugin/skills/vibe/SKILL.md approve step: for test files edited during the build (detail.files) run vbw show contract --changes and show each file's whole diff to the user before the approval question"
+      ]
+    },
+    {
+      "id": "P172.1",
+      "phase": "P172",
+      "title": "vbw apply refuses two owners of one check that build in order, and a requirement naming a plan on only some rules; a blocked plan keeps its note",
+      "reqs": [
+        "R211",
+        "R212",
+        "R213"
+      ],
+      "files": [
+        "plugin/lib/cmd-apply.sh",
+        "plugin/lib/cmd-show.sh"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "cmd-apply.sh (R212): judged on the merged record before any write, for every requirement of the current milestone with live rules: when some name a plan and others none, apply_refuse 'R5: 2 of 3 rules name a plan: name one on every rule or on none' (counts from the live rules); apply_next arm; every mode",
+        "cmd-apply.sh (R211): on the merged record, for every check of a current-milestone requirement, the distinct undone plans of the milestone its live rules name; a pair where one reaches the other through after (directly or through a chain) or whose files overlap (record.sh overlaps, '*' included) is refused naming the check and both plans and why (the earlier plan's mutation step would find the check red on unbroken code); apply_next arm (give each plan's rules a check of their own: a separate test file, or the same file with a case filter as a distinct check; or move the rules to one plan); every mode",
+        "cmd-apply.sh (R213): the merged plan list keeps the old plan's note as it keeps mutations, in the full apply, --add and --patch; vbw plan done and reset still drop it",
+        "cmd-show.sh roadmap: a blocked plan's line ends with ': <note>' as vbw show plan's does",
+        "tests/apply-*.bats, tests/mutate-*.bats, tests/show-plan-owner.bats, tests/build-pace.bats, tests/refusal-next-step.bats and tests/kernel-show.bats green under /bin/bash (the Lead made tests/apply-narrow.bats name a plan on every rule or none; the other fixtures already do); a fixture the new refusals still catch is named in notes, never edited (check files are the user's)"
+      ]
+    },
+    {
+      "id": "P172.2",
+      "phase": "P172",
+      "title": "The Lead's brief and the docs state the two planning rules and the kept note",
+      "reqs": [
+        "R211",
+        "R212",
+        "R213"
+      ],
+      "files": [
+        "plugin/agents/lead.md",
+        "docs/proof.md",
+        "docs/workflows.md",
+        "docs/record.md"
+      ],
+      "after": [
+        "P171.3"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "plugin/agents/lead.md: rule 6 Lean checks says a check's rules belong to one plan: when several plans of a requirement build one after the other, each plan's rules get a check of their own (a separate test file, or the same file with a case filter that is a distinct check); rule 7 Rules says the plan is named on every rule of the requirement or on none, and that vbw apply refuses both",
+        "docs/proof.md Rules section: the R211 refusal and its reason (the earlier plan's mutation step would find the check red on unbroken code); docs/workflows.md's list of what vbw apply refuses: a check whose rules name two plans that build one after the other, and a requirement whose rules name a plan on only some; its vbw apply row: a started plan comes back unchanged and keeps its status, note and breaks",
+        "docs/record.md: the requirements row (plan on every rule of the requirement or on none, refused otherwise) and the plans row (the note survives every vbw apply, as mutations do; it goes with vbw plan done or reset)"
+      ]
+    },
+    {
+      "id": "P173.1",
+      "phase": "P173",
+      "title": "Clean copy docs match the kernel; the leave-out list is parsed once per copy",
+      "reqs": [
+        "R214"
+      ],
+      "files": [
+        "docs/proof.md",
+        "plugin/lib/proofcopy.sh",
+        "plugin/lib/cmd-spec.sh",
+        "plugin/lib/spec.jq"
+      ],
+      "after": [
+        "P172.2"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "docs/proof.md Clean copy section: quote the missing-path sentence as cmd-spec.sh prints it (spec.md line N: PATH is not here now, so nothing is left out for it yet), replacing 'says it does not exist here now'; say a listed path is one word per line: a path with a space cannot be listed and is refused with its line number like a Test results folder with a space, quoting the refusal's wording (expected \"- <path>\" ...)",
+        "proofcopy.sh proofcopy_make: parse project.leave_out once per copy into the bash array PROOFCOPY_LEFT (each path without its trailing slash), one jq call, none when the record is absent",
+        "proofcopy.sh proofcopy_entry: read only PROOFCOPY_LEFT (guarded expansion ${PROOFCOPY_LEFT[@]+\"${PROOFCOPY_LEFT[@]}\"} under set -u, bash 3.2, no mapfile): no here-string, no jq call and no record read per ignored entry; the descent around a listed path (D509) unchanged",
+        "tests/clean-copy-docs.bats, tests/clean-copy-spec.bats, tests/clean-copy-proof.bats, tests/proof-copy*.bats and tests/standards.bats green under /bin/bash; the mutation step breaks the wording in cmd-spec.sh and the one-word regex in spec.jq to show the pins catch them, and restores them"
+      ]
     }
   ],
   "fixes": [
@@ -67228,6 +67800,17 @@
         "ended": "2026-10-26T22:25:44Z",
         "cost": {
           "usd": 1.620591
+        }
+      },
+      {
+        "id": "plan-20261027T010634Z",
+        "kind": "plan",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M44",
+        "started": "2026-10-27T01:06:34Z",
+        "ended": "2026-10-27T01:48:50Z",
+        "cost": {
+          "usd": 14.113517
         }
       }
     ],

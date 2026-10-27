@@ -56,3 +56,38 @@ kept() { jq -e '[.plans[] | select(.id == "P1.1") | .mutations[] | select(.resul
   doc src/log.sh | "$VBW" apply > /dev/null
   kept
 }
+
+# R213 (T190): a started plan's note (its blocked reason) is kernel evidence like its
+# status and breaks: no mode of vbw apply drops it; vbw show plan and vbw show roadmap
+# print it after the apply as before.
+note_kept() {
+  jq -e '.plans[] | select(.id == "P1.1") | .status == "blocked" and .note == "waits for the receipt API"' .vbw/record.json \
+    || { echo "after $1:"; jq '.plans' .vbw/record.json; return 1; }
+  "$VBW" show plan P1.1 | grep -qF '[blocked]: waits for the receipt API' || { echo "after $1, vbw show plan lost the reason:"; "$VBW" show plan P1.1; return 1; }
+  "$VBW" show roadmap | grep -qF 'waits for the receipt API' || { echo "after $1, vbw show roadmap lost the reason:"; "$VBW" show roadmap; return 1; }
+}
+
+@test "R213: a full apply, a patch and an --add keep a blocked plan's note with its status and breaks; vbw show plan and vbw show roadmap print the reason" {
+  "$VBW" plan block P1.1 "waits for the receipt API" > /dev/null
+  note_kept "the block"
+  doc | "$VBW" apply > /dev/null
+  note_kept "a full apply"
+  doc | jq -c '{plans, checks}' | "$VBW" apply --patch > /dev/null
+  note_kept "a patch"
+  printf '# Shop\n\n## Requirements\n\n- R1 [auto] A customer can pay\n- R2 [auto] A customer gets a receipt\n' > .vbw/spec.md
+  "$VBW" spec sync > /dev/null
+  jq -nc '{phases: [{id: "P2", title: "Receipt", reqs: ["R2"], goal: "g", criteria: ["c"], tier: "standard"}],
+    plans: [{id: "P2.1", phase: "P2", title: "Receipt", reqs: ["R2"], files: ["src/receipt.sh"], after: []}],
+    checks: [{id: "C2", req: "R2", run: ["sh", "tests/receipt.sh"], files: ["tests/receipt.sh"]}],
+    rules: [{req: "R2", text: "a receipt is printed", check: "C2"}]}' | "$VBW" apply --add > /dev/null
+  note_kept "an --add"
+  kept
+}
+
+@test "R213: a plan without a note gains none from an apply; the note goes only with a status change (vbw plan reset)" {
+  doc | "$VBW" apply > /dev/null
+  jq -e '.plans[] | select(.id == "P1.1") | has("note") | not' .vbw/record.json || { jq '.plans' .vbw/record.json; false; }
+  "$VBW" plan block P1.1 "waits for the receipt API" > /dev/null
+  "$VBW" plan reset P1.1 > /dev/null
+  jq -e '.plans[] | select(.id == "P1.1") | .status == "planned" and (has("note") | not)' .vbw/record.json || { jq '.plans' .vbw/record.json; false; }
+}
