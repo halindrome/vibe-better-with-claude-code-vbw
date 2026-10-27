@@ -25157,7 +25157,22 @@
           "to": "deep",
           "reason": "Dev blocked P176.1: Task 1 needs the R218 self-test cases written into tests/output-child-exit.bats, but C496 lists that file as protected and the guard denies every write to it while building (Bash and Edit). The file has no R218 cases yet (C496 is red as expected). The contract needs the approved check file to hold the R218 tests before the build, or C496 must not protect a file the plan has to write. No code changed."
         }
-      ]
+      ],
+      "qa": {
+        "result": "pass",
+        "tier": "deep",
+        "tree": "b7378ea0c5c325634baf6d91f0d38a4c3b649ba43aa1efce0ad3ae9a3e19d042",
+        "at": "2026-10-27T15:53:28Z",
+        "note": "18/18 checks"
+      },
+      "outcome": {
+        "tier": "deep",
+        "predicted": "standard",
+        "held": false,
+        "fix_rounds": 0,
+        "qa_findings": 0,
+        "escalations": 1
+      }
     },
     {
       "id": "P177",
@@ -58065,6 +58080,15 @@
       "attempts": 0,
       "status": "open",
       "note": "pathlib.Path(p).write_text('x') with p a variable is NOT refused, while pathlib.Path('src/pay.py').write_text('x') is. Cause: unreadable_calls in plugin/hooks/guard-bash.jq anchors Path with (?<![.\\w]), so the 'pathlib.' form is skipped, but program_writes uses \\bPath( and reads it as a write call head. The criterion says every call head program_writes reads is judged. Probe: run the Bash guard hook on 'python3 -c \"import pathlib; pathlib.Path(p).write_text(1)\"' under a lease: no answer (allowed). Regression test: a case in tests/guard-interpreters.bats where 'pathlib.Path(p).write_text' / 'pathlib.Path(d, \"x\").unlink()' on a build lease gets the 'cannot name' refusal.",
+      "phase": "P177"
+    },
+    {
+      "id": "F325",
+      "req": "R219",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "A JS write called on any receiver other than fs/os/etc is NOT refused when the target is a variable: node -e \"require('fs').writeFileSync(p, 'x')\" passes, while require('fs').writeFileSync('src/other.js','x') is refused. Same for destructured calls (writeFileSync(p,'x') after const {writeFileSync} = require('fs')) and any 'x.writeFile(p, ...)'. Cause: program_writes reads the generic '.(writeFile|writeFileSync|appendFile|appendFileSync|createWriteStream|unlink|unlinkSync|rmSync|rmdirSync|mkdirSync|makedirs|rmtree|truncate)(' head on any receiver, but unreadable_calls only knows the receivers os|fs|File|FileUtils|shutil|Dir. require('fs').writeFileSync(...) is the usual node -e form, so the F323 hole stays open for Node. Regression test: node -e \"require('fs').writeFileSync(p, 'x')\" and a heredoc form must get the 'cannot name' refusal.",
       "phase": "P177"
     }
   ],
