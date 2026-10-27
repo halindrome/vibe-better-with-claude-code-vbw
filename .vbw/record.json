@@ -56333,7 +56333,7 @@
     {
       "id": "T191",
       "text": "A requirement whose rules name a plan on some rules only (mixed) leaves the unnamed rules' owner undefined: vbw show plan leaves them unmarked while the task break of a non-completing plan skips their checks (the Lead's known cost in P170, 2026-10-26). Have vbw apply refuse a mixed requirement (name a plan on every rule or on none), so the question never arises",
-      "sort": "later",
+      "sort": "next",
       "size": "small",
       "status": "open"
     },
