@@ -147,7 +147,7 @@ r2_two_plans() {
   r211_named C2 P2.1 P2.2
 }
 
-@test "R211: no refusal when the check's rules name one plan or none, when one of the two plans is done, or when the check belongs to a requirement of another milestone; a retired rule counts for nothing" {
+@test "R211 R215: no refusal when the check's rules name one plan or none, when one of the two plans is done, or when the check belongs to a requirement of another milestone; a retired rule counts for nothing" {
   # Both rules name P2.1: one owner.
   replan_accepted full "$(full_with '.plans += [{id: "P2.2", phase: "P2", title: "Receipt mail", reqs: ["R2"], files: ["src/d.txt"], after: ["P2.1"], tasks: ["mail"]}]
     | .rules = [.rules[] | if .req == "R2" then . + {plan: "P2.1"} else . end] + [{req: "R2", text: "a receipt is mailed", check: "C2", plan: "P2.1"}]')"

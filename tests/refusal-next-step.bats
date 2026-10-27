@@ -108,7 +108,7 @@ add_with() { printf '%s' "$ADD" | jq -c "$1"; }
   confirm_refusal P1.1
 }
 
-@test "R162: every refusal of a full apply ends with its next step" {
+@test "R162 R216: every refusal of a full apply ends with its next step" {
   replan_start P1.1
   apply_refusal full "not JSON" 'not json {'
   apply_refusal full "not an object" '[]'
@@ -144,7 +144,7 @@ add_with() { printf '%s' "$ADD" | jq -c "$1"; }
   apply_refusal full "an open run" "$FULL"
 }
 
-@test "R162: every refusal of vbw apply --add ends with its next step" {
+@test "R162 R216: every refusal of vbw apply --add ends with its next step" {
   apply_refusal add "not JSON" 'not json {'
   apply_refusal add "no phases" '{"plans": []}'
   apply_refusal add "an unknown phase field" "$(add_with '.phases[0].colour = "red"')"
@@ -170,7 +170,7 @@ add_with() { printf '%s' "$ADD" | jq -c "$1"; }
   apply_refusal add "an open run" "$ADD"
 }
 
-@test "R162: every refusal of vbw apply --patch ends with its next step" {
+@test "R162 R216: every refusal of vbw apply --patch ends with its next step" {
   replan_start P1.1
   apply_refusal patch "not JSON" 'not json {'
   apply_refusal patch "phases" '{"phases": []}'
