@@ -345,11 +345,11 @@ problem when:
 - an `auto` requirement of the plan's phases lists no rules (`R1 lists no
   rules`), counting rules the record already holds that are not retired;
 - a check's rules name two plans of the milestone that are not yet built,
-  order or not, naming the check and both plans: when they build one after
-  the other, directly, by sharing a file or by an earlier wave, the earlier
-  plan's mutation step would find the check red on unbroken code; when they
-  share a wave, the first Dev's mutation step would run the check before the
-  other Dev committed, a race that fails only sometimes;
+  order or not, naming the check and both plans: when they build
+  one after the other (directly, by sharing a file or by an earlier wave), the
+  earlier plan's mutation step would find the check red on unbroken code; when
+  they share a wave, the first Dev's mutation step would run the check before
+  the other Dev committed, a race that fails only sometimes;
 - a requirement's rules name a plan on only some of them: every rule names a
   plan, or none does.
 
