@@ -108,6 +108,7 @@ def lease_write_denial($lease; $record):
     "\(.) cannot be written during a \($lease.kind) run: its agents only read\nNext: leave \(.) as it is; report the change you need in your result for the session that started the run"
   elif scratch_path then empty
   elif $lease.kind == "plan" and test_path then empty
+  # lease.editable of a build run: strengthen_files (lib/record.sh), written by vbw mutate at a survivor
   elif $lease.kind == "build" and (. as $p | any($lease.editable[]?; . == $p)) then empty
   elif $lease.kind == "fix" and (. as $p | any($lease.editable[]?; . == $p)) then empty
   elif $lease.kind == "fix" and ((($lease.editable // []) | length) > 0 or $lease.new_tests == true) and (. as $p | any($record.protected[]?; . == $p)) then
