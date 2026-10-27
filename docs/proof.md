@@ -406,10 +406,13 @@ R1 [auto] A customer can pay once
   address as `added rule`, `removed rule`, `reworded rule`, `retired rule`,
   `moved rule` or `changed rule`, for example
   `retired rule R1.2: Paying twice is refused (R4 lets a customer pay twice)`.
-- `vbw apply` refuses a check whose rules are owned by two plans that build
-  one after the other (one in the other's `after`, or sharing a file): the
-  earlier plan's mutation step would find the check red on unbroken code,
-  because the later plan has not built its part yet. Give each plan's rules a
+- `vbw apply` refuses a check whose rules are owned by two plans not yet
+  built, order or not. When they build one after the other (one in the other's
+  `after`, sharing a file, or in an earlier wave), the earlier plan's mutation
+  step would find the check red on unbroken code, because the later plan has
+  not built its part yet. When they share a wave, they build beside each
+  other: the first Dev's mutation step would run the check before the other
+  Dev committed, a race that fails only sometimes. Give each plan's rules a
   check of their own.
 - When a requirement's text or proof changes, `vbw spec sync` resets its rules
   to pending, so the Lead restates them.

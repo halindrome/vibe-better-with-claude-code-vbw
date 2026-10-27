@@ -344,10 +344,12 @@ problem when:
 - a rule is for a `human` requirement;
 - an `auto` requirement of the plan's phases lists no rules (`R1 lists no
   rules`), counting rules the record already holds that are not retired;
-- a check's rules name two plans of the milestone that build
-  one after the other, directly or by sharing a file, naming the check and both
-  plans (the earlier plan's mutation step would find the check red on unbroken
-  code);
+- a check's rules name two plans of the milestone that are not yet built,
+  order or not, naming the check and both plans: when they build one after
+  the other, directly, by sharing a file or by an earlier wave, the earlier
+  plan's mutation step would find the check red on unbroken code; when they
+  share a wave, the first Dev's mutation step would run the check before the
+  other Dev committed, a race that fails only sometimes;
 - a requirement's rules name a plan on only some of them: every rule names a
   plan, or none does.
 
@@ -504,6 +506,8 @@ Each refusal below ends with `Next: ` and the step in the right column
 | `vbw apply`: a requirement of another milestone, or already covered by a phase | Take it out of the document; for `--add`, when the covering phase of this milestone has not started, change that phase with a full apply instead |
 | `vbw apply`: a started plan or phase changed or dropped | Put it back as the record has it (`vbw show plan ID`) and add a new plan or phase for further work |
 | `vbw apply`: a missing rule, or a rule naming no check of its requirement | Add one rule per condition, each with its check |
+| `vbw apply`: a check whose rules two plans own that build one after the other, or beside each other (a shared wave) | give each plan's rules a check of their own (a separate test file, or the same file with a case filter as a distinct check), or move the rules to one plan |
+| `vbw apply`: a requirement whose rules name a plan on only some of them | name a plan on every rule of the requirement, or on none (vbw apply --patch rewords a rule: {"rule": "Rn.k", "plan": "P1.1"}) |
 | `vbw apply`: a tier below its floor, or an express phase with two plans | Raise the tier, or merge the plans |
 | `vbw apply`: a build or fix run is open | End the run (`vbw run end`), then plan again |
 | `vbw run start`: an unknown plan or fix | Check the id with `vbw status` |
