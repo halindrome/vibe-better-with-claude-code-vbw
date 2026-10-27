@@ -47,7 +47,10 @@ has_line() {
   grep -i 'vbw commit' "$DOCS/proof.md" | grep -i 'own rules' | grep -qi 'refused' \
     || { echo "docs/proof.md: no vbw commit sentence says a check file no check of the plan's own rules names is refused"; false; }
   has_line "$DOCS/record.md" '`editable`' "own rules" "survivor"
+  has_line "$DOCS/record.md" '`editable`' "survivor" "shared with other requirements"
   has_line "$DOCS/guards.md" "survivor" "own rules"
+  has_line "$DOCS/guards.md" "survivor" "shared with other requirements"
+  has_line "$DOCS/workflows.md" "vbw commit" "own rules" "refused"
   ! grep -qi "no other requirement uses" "$DOCS/record.md" "$DOCS/guards.md" || { echo "the old rule (that no other requirement uses) is still worded in docs/record.md or docs/guards.md"; false; }
   has_line "$PLUGIN_ROOT/agents/dev.md" "survivor" "own rules" "never weaken"
   grep -E '^\| DEVN-04' "$PLUGIN_ROOT/agents/dev.md" | grep -qi 'survivor' || { echo "dev.md: the DEVN-04 row does not exclude a check file a survivor opened"; false; }
