@@ -24493,7 +24493,22 @@
           "to": "deep",
           "reason": "Dev blocked P172.1: C480 (R212) cannot pass: tests/apply-refusal-modes.bats line ~183 uses replan_edit '(.requirements[]|select(.id==\"R1\")).rules = [.rules[0], {...retired}]'; jq evaluates the right side on the record root, so .rules[0] is null and the record gets a rule without text (vbw: record is corrupt: R1 has a rule without text). The kernel code is done and committed (b8bd71cd, be269545); C477 and C483 pass; with '.rules |= [.[0], {...}]' in a scratch copy both R212 cases pass. Needs the check file corrected (user approval); mutation step not run. Also: tests/mutate-rule-owner.bats T152 and tests/show-plan-owner.bats setup name a plan on only some rules of a requirement, which R212 now refuses."
         }
-      ]
+      ],
+      "qa": {
+        "result": "pass",
+        "tier": "deep",
+        "tree": "3c8f0ebc27a3922390ae56865cae2617fa52c55e33b60ab4b18170a02a614889",
+        "at": "2026-10-27T03:40:14Z",
+        "note": "20/20 checks"
+      },
+      "outcome": {
+        "tier": "deep",
+        "predicted": "deep",
+        "held": true,
+        "fix_rounds": 0,
+        "qa_findings": 0,
+        "escalations": 1
+      }
     },
     {
       "id": "P173",
