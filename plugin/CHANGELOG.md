@@ -1,5 +1,57 @@
 # Changelog
 
+## [2.1.18] - 2026-10-27
+
+### Added
+
+- **Four new voices.** The panel's "needs you" sound can now be Eric, Homer,
+  Peter or Stephen as well as Arnold, Charlize or Darth: `vbw config set sound
+  homer` picks one, `default` plays a random clip of any voice, `off` plays
+  none. A wrong name is refused with the list of the voices shipped.
+- **The Bash guard stops a program that writes a file it cannot name.** During a
+  build or fix (and every other run), an inline program a Dev types (`python3
+  -c`, `node -e`, `perl -e`, `ruby -e`, `php -r`, `lua -e`, `deno eval`, `bun -e`,
+  or the same fed through a heredoc) whose file-writing call gives its target
+  through a variable, an expression or another call is refused, with the call
+  quoted and the fix named: write the literal path in the program, or use the
+  Edit tool (Write for a new file). A literal path is judged exactly as before,
+  and a program that only reads or prints passes. Until now such a program
+  could write a protected test file unseen (it happened twice in one build:
+  `p = 'tests/x.bats'; open(p, 'w')`). The guard still costs about 13 ms per
+  call against its 20 ms budget.
+- **`vbw apply` refuses a test check whose case filter names no case.** A check
+  that runs `bats --filter PATTERN FILE` is refused when the pattern matches no
+  `@test` name in the file as it stands, in every mode, naming the check and the
+  file and ending with the next step: write the cases first, see them fail, then
+  send the plan again. The Lead's brief now says the failing cases of a filtered
+  check are written at planning. Until now such a check was "red" only because
+  the runner found nothing, and the Devs had to write the cases during the build
+  into files the guard protects.
+- **`vbw apply` refuses a check two open plans own, in any order.** The 2.1.17
+  refusal covered plans that build one after the other; it now also covers two
+  plans that build beside each other in one wave (the first Dev's mutation step
+  would run the check before the other Dev committed, a race that fails only
+  sometimes). The message says which case it is, and every `vbw apply` refusal
+  ends with a Next line of its own, pinned word for word, so none can fall back
+  to the generic advice.
+
+### Fixed
+
+- **`vbw mutate` names pending and strengthened files from one definition.** The
+  files a break reports as "caught by the pending one" or as strengthened are
+  now the files the plan may strengthen (those of its own rules' checks), never
+  the files of whatever checks the break happened to run; a check file of another
+  requirement that waits for approval no longer appears in either list. The
+  queued-break path passed a leftover list of check files that the kernel
+  ignored; it is gone. `docs/proof.md` and `docs/record.md` say the same.
+- **The loop-writes standard sees a function that writes.** The maintainers'
+  check for the macOS bash 3.2 interrupted-write fault now finds the functions
+  that print in their own shell, across the repository, and refuses a call to
+  one inside a loop fed by a process substitution as it refuses a direct
+  `printf`, naming the writer and the line where it prints.
+
+Sizes, for information: kernel 740 KB (`plugin/bin/vbw` and `plugin/lib`), mods 334 KB (hooks, panel and status line), workflows 72 KB, prompts 102 KB (agents and skills).
+
 ## [2.1.17] - 2026-10-27
 
 ### Added
