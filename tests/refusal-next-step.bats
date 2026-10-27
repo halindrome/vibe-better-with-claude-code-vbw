@@ -48,10 +48,18 @@ next_step() {
   [[ "$last" == *"Next: "?* ]] || { printf '%s: no next step at the end of the refusal:\n%s\n' "$1" "$2"; return 1; }
 }
 
-# apply_refusal MODE WHAT DOC: vbw apply in MODE refuses DOC with a next step.
+FALLBACK_NEXT='Next: fix what the message names in the document, then run vbw apply again (vbw doctor checks the record)'
+
+# apply_refusal MODE WHAT DOC [fallback]: vbw apply in MODE refuses DOC with a next step that is
+# an arm of its own (R216), not the fallback arm's text. A fourth argument "fallback" marks a record
+# validation (record_violation) that takes the fallback by design.
 apply_refusal() {
   replan_refused "$1" "$3" || { echo "$2"; return 1; }
   next_step "apply ($1): $2" "$output"
+  if [ "${4:-}" != fallback ]; then
+    [ "$(printf '%s\n' "$output" | sed '/^[[:space:]]*$/d' | tail -n 1)" != "$FALLBACK_NEXT" ] \
+      || { printf 'apply (%s): %s takes the fallback arm, not an arm of its own:\n%s\n' "$1" "$2" "$output"; return 1; }
+  fi
 }
 
 full_with() { printf '%s' "$FULL" | jq -c "$1"; }
@@ -109,8 +117,10 @@ add_with() { printf '%s' "$ADD" | jq -c "$1"; }
   apply_refusal full "an unknown phase field" "$(full_with '.phases[0].colour = "red"')"
   apply_refusal full "an unknown plan field" "$(full_with '.plans[0].file = "x"')"
   apply_refusal full "an invalid tier" "$(full_with '.phases[0].tier = "fast"')"
-  apply_refusal full "an unknown requirement" "$(full_with '(.plans[] | select(.id == "P2.1")).reqs = ["R9"]')"
-  apply_refusal full "a plan for no phase" "$(full_with '.plans += [{id: "P9.1", phase: "P9", title: "x", reqs: ["R2"], files: ["src/x.txt"], after: []}]')"
+  # A record validation (record_violation): it takes the fallback arm by design.
+  apply_refusal full "an unknown requirement" "$(full_with '(.plans[] | select(.id == "P2.1")).reqs = ["R9"]')" fallback
+  # A record validation (record_violation): it takes the fallback arm by design.
+  apply_refusal full "a plan for no phase" "$(full_with '.plans += [{id: "P9.1", phase: "P9", title: "x", reqs: ["R2"], files: ["src/x.txt"], after: []}]')" fallback
   apply_refusal full "a changed started plan" "$(full_with '(.plans[] | select(.id == "P1.1")).files += ["src/extra.txt"]')"
   apply_refusal full "a dropped started plan" "$(full_with '.plans |= map(select(.id != "P1.1")) | (.plans[] | select(.id == "P1.2")).after = []')"
   apply_refusal full "a renamed started phase" "$(full_with '(.phases[] | select(.id == "P1")).title = "Checkout"')"
@@ -166,7 +176,8 @@ add_with() { printf '%s' "$ADD" | jq -c "$1"; }
   apply_refusal patch "phases" '{"phases": []}'
   apply_refusal patch "an unknown plan field" '{"plans": [{"id": "P2.2", "phase": "P2", "title": "Receipt mail", "reqs": ["R2"], "files": ["src/c.txt"], "after": [], "colour": "red"}]}'
   apply_refusal patch "a changed started plan" '{"plans": [{"id": "P1.1", "phase": "P1", "title": "Pay form", "reqs": ["R1"], "files": ["src/a.txt", "src/z.txt"], "after": []}]}'
-  apply_refusal patch "a plan for no phase" '{"plans": [{"id": "P9.1", "phase": "P9", "title": "x", "reqs": ["R2"], "files": ["src/x.txt"], "after": []}]}'
+  # A record validation (record_violation): it takes the fallback arm by design.
+  apply_refusal patch "a plan for no phase" '{"plans": [{"id": "P9.1", "phase": "P9", "title": "x", "reqs": ["R2"], "files": ["src/x.txt"], "after": []}]}' fallback
   apply_refusal patch "a rule naming no check" '{"rules": [{"req": "R1", "text": "a second rule", "check": "C9"}]}'
   "$VBW" run start build P2.1 > /dev/null
   apply_refusal patch "an open run" '{"plans": [{"id": "P2.2", "phase": "P2", "title": "Receipt mail", "reqs": ["R2"], "files": ["src/c.txt"], "after": []}]}'
@@ -253,4 +264,16 @@ blocks() {
   VBW_SESSION_ID=s1 "$VBW" run start build P2.1 > /dev/null
   blocks "a failed file guard" Write "$(fin Write src/c.txt vbw:dev)" "$copy"
   blocks "a failed Bash guard" Bash "$(bin 'ls' vbw:dev)" "$copy"
+}
+
+# R216: apply_next answers the two-owner and mixed-owner messages with arms of their own.
+@test "R216: apply_next answers the two-owner (ordered and beside) and mixed-owner messages with their own arms" {
+  local two="give each plan's rules a check of their own (a separate test file, or the same file with a case filter as a distinct check), or move the rules to one plan"
+  local mixed='name a plan on every rule of the requirement, or on none (vbw apply --patch rewords a rule: {"rule": "Rn.k", "plan": "P1.1"})'
+  local ordered="C2 is owned by two plans that build one after the other (P2.2 builds after P2.1): P2.1 and P2.2; the earlier plan's mutation step would find C2 red on unbroken code"
+  local beside="C2 is owned by two plans that build beside each other (a shared wave): P2.1 and P2.2; the first Dev's mutation step would run C2 before the other Dev committed, a race that fails only sometimes"
+  local m="R1: 1 of 2 rules name a plan: name one on every rule or on none" got
+  got=$(VBW_LIB="$PLUGIN_ROOT/lib" bash -c 'source "$VBW_LIB/cmd-apply.sh"; apply_next "$1"; apply_next "$2"; apply_next "$3"' _ "$ordered" "$beside" "$m")
+  [ "$got" = "$two"$'\n'"$two"$'\n'"$mixed" ] || { printf 'apply_next answered:\n%s\n' "$got"; false; }
+  [[ "$got" != *"fix what the message names"* ]]
 }
