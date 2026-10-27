@@ -6462,7 +6462,7 @@
   "milestone": {
     "id": "M44",
     "title": "Proof integrity and planning-time refusals",
-    "status": "active"
+    "status": "shipped"
   },
   "shipped": [
     {
@@ -6674,6 +6674,11 @@
       "id": "M43",
       "title": "Clean copies, the hidden record and mutation timing on real projects",
       "at": "2026-10-26T22:28:47Z"
+    },
+    {
+      "id": "M44",
+      "title": "Proof integrity and planning-time refusals",
+      "at": "2026-10-27T09:38:46Z"
     }
   ],
   "requirements": [
@@ -60449,6 +60454,11 @@
       "id": "D515",
       "at": "2026-10-27T02:58:55Z",
       "text": "Contract approved: 203 requirements, 482 checks, 531 plans (cf148559afd2)"
+    },
+    {
+      "id": "D516",
+      "at": "2026-10-27T09:38:46Z",
+      "text": "Shipped M44 Proof integrity and planning-time refusals: 5 requirements proven or accepted"
     }
   ],
   "commands": {
@@ -70832,6 +70842,10 @@
             "usd": 0,
             "at": "2026-10-27T01:04:32Z"
           }
+        },
+        "total": {
+          "usd": 28.679921,
+          "sessions": 40
         }
       }
     }
@@ -71197,26 +71211,5 @@
       "at": "2026-10-16T02:28:25Z",
       "reason": "scope violation: 32f17ce8f51d (P144.3) changed tests/panel/r189/now-box.test.mjs, which is not in the plan"
     }
-  ],
-  "recommendation": {
-    "at": "2026-10-26T22:30:49Z",
-    "top": {
-      "text": "T187: make `vbw apply` (the command that turns the plan into VBW's record) refuse a check whose rules belong to two plans built one after the other when both plans' tests sit in the same test file, and put the same rule in words in the Lead's instructions. In M43 this exact setup blocked two plans (P166.1 and P168.1) on code that was not broken, because the earlier plan's mutation step (where VBW deliberately breaks the code to prove the tests notice) saw the later plan's tests red before that plan existed.",
-      "size": "small",
-      "reason": "It is the only backlog item sorted 'next', it fixes a planning defect that cost two blocked plans and a contract correction (D500) in the milestone just shipped, and it is small: a refusal at planning time plus one sentence in the Lead's spec.",
-      "source": "T187"
-    },
-    "runners": [
-      {
-        "text": "T192: let a Dev strengthen a test that the mutation step found unable to fail (a 'survivor') even when that test lives in a file shared with other requirements' tests. Today `vbw commit` refuses the shared file, so the weak test stays on record as a known gap (as happened with R207.13 in P170.5, D506). The edit would still wait for the user's approval like any change to an approved test.",
-        "size": "small",
-        "source": "T192"
-      },
-      {
-        "text": "T191: have `vbw apply` refuse a requirement that names an owning plan on only some of its rules. A half-named requirement leaves nobody clearly responsible for the unnamed rules, so `vbw show plan` cannot mark them and a plan's task break skips their checks (the Lead's known cost in P170). Requiring 'every rule named, or none' removes the ambiguity at planning time.",
-        "size": "small",
-        "source": "T191"
-      }
-    ]
-  }
+  ]
 }
