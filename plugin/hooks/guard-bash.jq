@@ -231,7 +231,8 @@ def unreadable_calls:
     def literal: test("^['\"]") or (test("^`") and (contains("${") | not));
     # The mode of an open: the second argument or mode=...; null when none is given.
     def mode_arg: ((.[1:] | map(select(test("^mode\\s*=[^=]"))) | .[0]) | select(. != null) | sub("^mode\\s*=\\s*"; ""))
-      // (.[1] // null | select(. != null and (test("^[A-Za-z_]\\w*\\s*=[^=]") | not)));
+      // (.[1] // null | select(. != null and (test("^[A-Za-z_]\\w*\\s*=[^=]") | not)))
+      // null;
     # Perl opens take ">", ">>", "+<" and a path; Python modes hold w, a, x or +.
     def open_unreadable:
       . as $a | ($a | mode_arg) as $m
