@@ -94,8 +94,9 @@ strengthen() {
 }
 
 @test "R196: a pending file with no earlier survivor of the target: caught by a check file waiting for approval, named, without claiming it survived the approved one" {
-  printf '[ "$(sh src/pay.sh)" = paid ]\n' > tests/pay.sh
-  git commit -q -am "test(pay): check what is printed"
+  # Another target's survivor opens strengthen_files; R1.1 itself has none.
+  survivor task1
+  strengthen
   break_pay R1.1
   [ "$status" -eq 0 ] || { echo "$output"; false; }
   printf '%s\n' "$output" | grep -v '^vbw:' | grep 'waiting for approval' | grep -q 'tests/pay\.sh' || { echo "$output"; false; }
