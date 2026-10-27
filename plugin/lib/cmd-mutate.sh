@@ -388,10 +388,10 @@ mutate_record() {
     + {what: $what, files: $files, checks: $marks, result: $result, at: $at, head: $head}
     + (if ($strong | length) > 0 then {strengthened: $strong} else {} end)
     + (if ($pending | length) > 0 then {pending: $pending} else {} end)')
-  # A survivor of a plan of the open build run opens its check files for the run (R188.33).
-  record_update "$COMMIT_SURVIVOR_DEFS"'(.plans[] | select(.id == $p)).mutations += [$e]
+  # A survivor of a plan of the open build run opens the files the plan may strengthen for the run (strengthen_files, R210).
+  record_update "$VBW_JQ_DEFS"'(.plans[] | select(.id == $p)).mutations += [$e]
     | if $e.result == "survivor" and .lease.kind == "build" and (.plans[] | select(.id == $p).status) == "building"
-      then .lease.editable = (((.lease.editable // []) + survivor_files($p)) | unique) else . end' --arg p "$plan" --argjson e "$entry"
+      then .lease.editable = (((.lease.editable // []) + strengthen_files($p)) | unique) else . end' --arg p "$plan" --argjson e "$entry"
   mutate_tstep saving
   if [ "$result" = survivor ]; then
     [ -z "$ruledoc" ] || what=$(printf '%s' "$ruledoc" | jq -r .text)
