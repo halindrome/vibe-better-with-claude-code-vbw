@@ -24900,7 +24900,7 @@
         "Wording: the tool's header replaces 'A function the body calls writes in the same shell and is not seen: such a call is the reviewer's to judge' with the writer-function rule; AGENTS.md's 'No builtin write while the shell has a live child' line says a call to a function that writes counts as the write (CLAUDE.md is a symlink to AGENTS.md, so one edit); the header of tests/output-child-exit.bats names the widened rule.",
         "The tool stays bash 3.2 and awk only (no mapfile, no associative arrays; guarded array expansions under set -u), writes nothing outside the repository, and passes bash tools/test.sh --lint (shellcheck over tools/); tests/standards.bats stays green."
       ],
-      "tier": "standard",
+      "tier": "deep",
       "reasons": [
         "requirements: 1",
         "files: 5 (53305 bytes)",
@@ -24910,7 +24910,15 @@
         "guarded: R21 (C16), R24 (C23), R31 (C27), R32 (C28), R71 (C115, C121), R73 (C98), R79 (C107), R81 (C109, C111, C112, C113), R83 (C119), R92 (C131, C132, C133, C134, C135, C136, C137, C138, C139), R93 (C140, C141, C142, C143, C144), R128 (C200), R149 (C217, C218, C219, C220, C221, C222), R152 (C233, C234), R164 (C251), R166 (C253, C254, C255, C256, C267), R167 (C257, C258, C259, C260), R170 (C269), R174 (C279, C280), R178 (C290, C291, C292, C293, C294, C295, C296, C311), R181 (C313, C314, C315, C316, C317, C318, C319, C320, C321), R183 (C327), R205 (C455, C456, C457, C458, C467), R206 (C459, C460), R208 (C464, C465, C466, C468), R214 (C485, C486, C487)",
         "tests: project test command"
       ],
-      "predicted": "standard"
+      "predicted": "standard",
+      "escalations": [
+        {
+          "at": "2026-10-27T12:57:52Z",
+          "from": "standard",
+          "to": "deep",
+          "reason": "Dev blocked P176.1: Task 1 needs the R218 self-test cases written into tests/output-child-exit.bats, but C496 lists that file as protected and the guard denies every write to it while building (Bash and Edit). The file has no R218 cases yet (C496 is red as expected). The contract needs the approved check file to hold the R218 tests before the build, or C496 must not protect a file the plan has to write. No code changed."
+        }
+      ]
     }
   ],
   "plans": [
@@ -54238,13 +54246,182 @@
         "tests/refusal-next-step.bats"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "Tests first (red): in tests/apply-refusal-modes.bats add the R215 cases on the replan fixture: every mode (full, --add, --patch) refuses C2 whose rules name P2.1 and P2.2 when the two share a wave (no after, no shared file), with the words 'C2 is owned by two plans that build beside each other (a shared wave): P2.1 and P2.2; the first Dev's mutation step would run C2 before the other Dev committed, a race that fails only sometimes'; a pair in an earlier and a later wave with no tie between them (P2.2 after a new P2.3 that shares nothing with P2.1) is refused with the ordered words and WHY 'P2.1 builds in an earlier wave than P2.2'; a pair with one plan blocked (replan_edit sets P2.1 blocked, with and without a blocked P2.3 that P2.2 waits for) is refused like an open pair; the R211 no-refusal case's 'build beside each other' acceptance becomes the beside refusal (edited, not stacked) and gains the accepted edge of a check of another milestone's requirement (replan_edit moves R2 to milestone M0 with rules naming P2.1 and P2.2, then a --patch of P2.2 is accepted); a last_line_is helper that compares the refusal's last line to the whole pinned 'Next: ...' text replaces next_line in the R211, R212 and R215 cases (ordered and beside two-owner: 'Next: give each plan's rules a check of their own (a separate test file, or the same file with a case filter as a distinct check), or move the rules to one plan'; mixed-owner: 'Next: name a plan on every rule of the requirement, or on none (vbw apply --patch rewords a rule: {\"rule\": \"Rn.k\", \"plan\": \"P1.1\"})'); those cases are named 'R211 R216:', 'R212 R216:' and 'R215 R216:' so the R215 and R216 checks (bats --filter) run them; replan_refused keeps the byte comparison of the record",
         "Tests first (red): in tests/refusal-next-step.bats the apply_refusal helper also asserts the refusal's Next line is not the fallback arm's text ('fix what the message names in the document, then run vbw apply again (vbw doctor checks the record)'); the 'an unknown requirement' and 'a plan for no phase' cases are marked in the file (a comment and a helper argument) as record validations (record_violation) that take the fallback by design; a new case 'R216: apply_next answers the two-owner (ordered and beside) and mixed-owner messages with their own arms' loads plugin/lib/cmd-apply.sh in a bash -c with VBW_LIB set (as vbw_kernel does) and feeds apply_next the three messages, asserting the two pinned texts and failing on the fallback text",
         "plugin/lib/cmd-apply.sh: the two-owner refusal judged on the merged record (every mode) refuses every pair of owners of one check that are not done (blocked counts as not done): B after A directly or through a chain, A and B sharing a file, or A in an earlier wave than B in waves($m) computed on the merged record with blocked plans treated as planned, keep R211's words with the WHY 'A builds in an earlier wave than B' added; a pair placed in one wave gets the beside words with the race reason; a pair not placed in any wave (a cycle) is left to record_violation; apply_next answers both two-owner messages with one arm matching ' is owned by two plans that build ' (the ordered and beside texts) and keeps the mixed-owner arm; the comment above the filter names R215",
         "Under /bin/bash: bats tests/apply-refusal-modes.bats, tests/refusal-next-step.bats, tests/standards.bats and tests/record-args-rule.bats green; the merged record still reaches jq as a file (never on a command line)"
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R215",
+            "text": "when B builds after A (A in B's after directly or through a chain, A's and B's files overlap under the wave rule, or A's wave comes before B's in waves($m) on the merged record judged as if no plan were blocked), the message keeps R211's words, 'C is owned by two plans that build one after the other (WHY): A and B; the earlier plan's mutation step would find C red on unbroken code', WHY being 'B builds after A', 'A and B share a file' or 'A builds in an earlier wave than B'"
+          },
+          "what": "wave order reversed",
+          "files": [
+            "plugin/lib/cmd-apply.sh"
+          ],
+          "checks": {
+            "C488": "red"
+          },
+          "result": "red",
+          "at": "2026-10-27T13:06:59Z",
+          "head": "00bd1f5b9fd6db7f31ffec51d10adc5ba434079f"
+        },
+        {
+          "rule": {
+            "req": "R215",
+            "text": "when neither builds after the other and they would share a wave, the message reads 'C is owned by two plans that build beside each other (a shared wave): A and B; the first Dev's mutation step would run C before the other Dev committed, a race that fails only sometimes'"
+          },
+          "what": "beside words changed",
+          "files": [
+            "plugin/lib/cmd-apply.sh"
+          ],
+          "checks": {
+            "C488": "red"
+          },
+          "result": "red",
+          "at": "2026-10-27T13:07:02Z",
+          "head": "00bd1f5b9fd6db7f31ffec51d10adc5ba434079f"
+        },
+        {
+          "rule": {
+            "req": "R215",
+            "text": "no refusal when the check's rules name one plan or none, when one of the two plans is done, or when the check belongs to a requirement of another milestone; a retired rule counts for nothing"
+          },
+          "what": "retired rules counted",
+          "files": [
+            "plugin/lib/cmd-apply.sh"
+          ],
+          "checks": {
+            "C488": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-27T13:07:05Z",
+          "head": "00bd1f5b9fd6db7f31ffec51d10adc5ba434079f"
+        },
+        {
+          "rule": {
+            "req": "R216",
+            "text": "apply_next answers the ordered and the beside two-owner messages with one arm, 'give each plan's rules a check of their own (a separate test file, or the same file with a case filter as a distinct check), or move the rules to one plan', and the mixed-owner message with 'name a plan on every rule of the requirement, or on none (vbw apply --patch rewords a rule: {\"rule\": \"Rn.k\", \"plan\": \"P1.1\"})'; fed each message directly, it never answers with the fallback text"
+          },
+          "what": "arm pattern narrowed to the ordered text",
+          "files": [
+            "plugin/lib/cmd-apply.sh"
+          ],
+          "checks": {
+            "C491": "red"
+          },
+          "result": "red",
+          "at": "2026-10-27T13:07:09Z",
+          "head": "00bd1f5b9fd6db7f31ffec51d10adc5ba434079f",
+          "pending": [
+            "tests/refusal-next-step.bats"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R216",
+            "text": "every refusal cmd-apply.sh builds itself is answered by an arm of its own: for every full, --add and --patch refusal case the Next line differs from the fallback arm's text, except the record validations (an unknown requirement, a plan for no phase), named in the test file as taking the fallback by design"
+          },
+          "what": "open-run arm dropped",
+          "files": [
+            "plugin/lib/cmd-apply.sh"
+          ],
+          "checks": {
+            "C491": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-27T13:07:13Z",
+          "head": "00bd1f5b9fd6db7f31ffec51d10adc5ba434079f"
+        },
+        {
+          "rule": {
+            "req": "R216",
+            "text": "the R211, R215 and R212 cases of tests/apply-refusal-modes.bats assert the refusal's whole last line word for word ('Next: give each plan's rules a check of their own (a separate test file, or the same file with a case filter as a distinct check), or move the rules to one plan' and 'Next: name a plan on every rule of the requirement, or on none (vbw apply --patch rewords a rule: {\"rule\": \"Rn.k\", \"plan\": \"P1.1\"})'), not only a 'Next: ' prefix"
+          },
+          "what": "two-owner next text reworded",
+          "files": [
+            "plugin/lib/cmd-apply.sh"
+          ],
+          "checks": {
+            "C492": "red"
+          },
+          "result": "red",
+          "at": "2026-10-27T13:07:17Z",
+          "head": "00bd1f5b9fd6db7f31ffec51d10adc5ba434079f",
+          "pending": [
+            "tests/apply-refusal-modes.bats"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R215",
+            "text": "in every mode (full apply, --add, --patch), judged on the record as the document would leave it, a check whose live rules name two different plans of the milestone that are not done (a blocked plan counts as not done) is refused before anything changes, naming the check and both plans, with the mode's name and a Next line; the record is byte-identical after the refusal"
+          },
+          "what": "blocked plans no longer count as open",
+          "files": [
+            "plugin/lib/cmd-apply.sh"
+          ],
+          "checks": {
+            "C488": "red"
+          },
+          "result": "red",
+          "at": "2026-10-27T13:10:17Z",
+          "head": "e113d9e08fff381193015489605b1ef00f7fe65a",
+          "pending": [
+            "tests/apply-refusal-modes.bats"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R215",
+            "text": "no refusal when the check's rules name one plan or none, when one of the two plans is done, or when the check belongs to a requirement of another milestone; a retired rule counts for nothing"
+          },
+          "what": "retired rules counted",
+          "files": [
+            "plugin/lib/cmd-apply.sh"
+          ],
+          "checks": {
+            "C488": "red"
+          },
+          "result": "red",
+          "at": "2026-10-27T13:10:21Z",
+          "head": "e113d9e08fff381193015489605b1ef00f7fe65a",
+          "strengthened": [
+            "tests/apply-refusal-modes.bats",
+            "tests/refusal-next-step.bats"
+          ],
+          "pending": [
+            "tests/apply-refusal-modes.bats"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R216",
+            "text": "every refusal cmd-apply.sh builds itself is answered by an arm of its own: for every full, --add and --patch refusal case the Next line differs from the fallback arm's text, except the record validations (an unknown requirement, a plan for no phase), named in the test file as taking the fallback by design"
+          },
+          "what": "open-run arm dropped",
+          "files": [
+            "plugin/lib/cmd-apply.sh"
+          ],
+          "checks": {
+            "C491": "red"
+          },
+          "result": "red",
+          "at": "2026-10-27T13:10:25Z",
+          "head": "e113d9e08fff381193015489605b1ef00f7fe65a",
+          "strengthened": [
+            "tests/apply-refusal-modes.bats",
+            "tests/refusal-next-step.bats"
+          ],
+          "pending": [
+            "tests/refusal-next-step.bats"
+          ]
+        }
       ]
     },
     {
@@ -54263,13 +54440,63 @@
         "tests/rules-docs.bats"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "Tests first (red): in tests/rules-prompts.bats the R211 case that greps 'one after the other' is edited (named 'R211 R215:') to the new words of rule 6: a check's rules belong to one plan; when several open plans of a requirement would share a check, whatever their order and the same wave included, each plan's rules get a check of their own (a separate test file, or the same file with a case filter that is a distinct check), because vbw apply refuses a check whose rules two open plans own",
         "Tests first (red): in tests/rules-docs.bats the two R211 cases are edited (named 'R211 R215:') to assert docs/proof.md's Rules bullet and docs/workflows.md's refusal list say the refusal covers any two plans not yet built, order or not, and name the race for a shared wave; a new case 'R216: the refusal table's two-owner row (both wordings) and mixed-owner row carry the kernel's Next text' reads the two rows from the 'Every refusal and its next step' table and compares each row's Next text to apply_next's answer for the ordered, the beside and the mixed-owner messages (plugin/lib/cmd-apply.sh loaded in a bash -c with VBW_LIB set), so the docs and the kernel cannot drift apart",
         "plugin/agents/lead.md rule 6 (Checks, test first): replace the 'one after the other' sentence with the new words (one plan per check; several open plans of a requirement, whatever their order and the same wave included, each get a check of their own: a separate test file, or the same file with a case filter that is a distinct check; vbw apply refuses a check whose rules two open plans own)",
         "docs/proof.md Rules bullet and docs/workflows.md refusal-list bullet: any two plans not yet built, order or not, the earlier plan finding the check red on unbroken code when they build in order, a race that fails only sometimes when they share a wave; docs/workflows.md 'Every refusal and its next step' table: a row for the two-owner refusal (both wordings) and a row for the mixed-owner refusal with the exact Next texts; bats tests/rules-prompts.bats tests/rules-docs.bats green under /bin/bash"
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R215",
+            "text": "the Lead's brief rule 6 says a check's rules belong to one plan and that several open plans of a requirement, whatever their order and the same wave included, each get a check of their own (a separate test file, or the same file with a case filter that is a distinct check), because vbw apply refuses a check whose rules two open plans own"
+          },
+          "what": "dropped 'whatever their order and the same wave included' from rule 6",
+          "files": [
+            "plugin/agents/lead.md"
+          ],
+          "checks": {
+            "C489": "red"
+          },
+          "result": "red",
+          "at": "2026-10-27T13:03:53Z",
+          "head": "00bd1f5b9fd6db7f31ffec51d10adc5ba434079f"
+        },
+        {
+          "rule": {
+            "req": "R215",
+            "text": "docs/proof.md's Rules bullet and docs/workflows.md's list of what vbw apply refuses say the refusal covers any two plans not yet built, order or not, and name the race for a shared wave"
+          },
+          "what": "dropped the race sentence from the proof.md bullet",
+          "files": [
+            "docs/proof.md"
+          ],
+          "checks": {
+            "C490": "red"
+          },
+          "result": "red",
+          "at": "2026-10-27T13:03:57Z",
+          "head": "00bd1f5b9fd6db7f31ffec51d10adc5ba434079f"
+        },
+        {
+          "rule": {
+            "req": "R216",
+            "text": "docs/workflows.md's 'Every refusal and its next step' table has a row for the two-owner refusal (both wordings) and a row for the mixed-owner refusal, each with the exact Next text apply_next prints, the test comparing the row to the kernel's answer"
+          },
+          "what": "dropped the end of the two-owner row's Next text",
+          "files": [
+            "docs/workflows.md"
+          ],
+          "checks": {
+            "C493": "red"
+          },
+          "result": "red",
+          "at": "2026-10-27T13:04:00Z",
+          "head": "00bd1f5b9fd6db7f31ffec51d10adc5ba434079f"
+        }
       ]
     },
     {
@@ -54285,13 +54512,95 @@
         "tests/mutate-pending-check.bats"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "Tests first (red): tests/mutate-strengthen.bats's fixture gains a third check C3 for R1 (run sh tests/pay-extra.sh, files [tests/pay-extra.sh], weak at first: sh src/pay.sh > /dev/null, named by no rule, so it is outside strengthen_files(P1.1)); new 'R217:' cases: (a) before any survivor of P1.1, tests/pay.sh strengthened and committed with git (vbw commit refuses it) waits for approval, and a R1.1 break prints the plain red line with no 'caught by' and records no pending; (b) after a task1 --check C3 survivor opened strengthen_files, tests/pay-extra.sh strengthened and committed with git waits for approval, and the same task1 --check C3 break is red with the plain 'task1 red: ...' line, no 'caught by', no 'survives', no 'strengthened:', the recorded break carrying neither pending nor strengthened (today it says 'survives the approved check; caught by the pending one: tests/pay-extra.sh' with both lists); (c) the R210 build case is also named R217 ('R188 R210 R217:') as the inside-file half (pending and strengthened [tests/shared.sh], unchanged); (d) a case asserts this file's header names each reader of strengthen_files (vbw commit, the lease's editable list, the file guard, the proof's scope check, vbw mutate's pending and strengthened lists) and that a @test line in the file covers each",
         "tests/mutate-pending-check.bats: the R196 case 'a pending file with no earlier survivor of the target' first records a survivor of another target of the same plan (survivor task1) and strengthens tests/pay.sh through vbw commit, so R1.1 still has no earlier survivor and the file waits; edited, not stacked; every other R196 case unchanged",
         "plugin/lib/cmd-mutate.sh mutate_record: pending = the files of strengthen_files($p) that CHECK_WAITING lists and that a check of this break marked red names; strengthened = the files of strengthen_files($p) that git diff finds changed between the prior survivor's head and HEAD; the CHECK_FILE... arguments (cfiles) leave mutate_record's signature, its comment and its call (the dirty-check-files refusal before the break keeps cfiles); the record reaches jq through a pipe with VBW_JQ_DEFS",
         "The header of tests/mutate-strengthen.bats rewritten to name only what its cases assert (the one definition, the file guard, vbw commit, the editable list, the scope check, the approval, --changes, and vbw mutate's pending and strengthened lists from strengthen_files); under /bin/bash: bats tests/mutate-strengthen.bats, tests/mutate-pending-check.bats, tests/record-args-rule.bats, tests/standards.bats green"
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R217",
+            "text": "the header of tests/mutate-strengthen.bats names only what the file's cases assert: each reader it names (vbw commit, the lease's editable list, the file guard, the proof's scope check, vbw mutate's pending and strengthened lists) has a case in the file"
+          },
+          "what": "the strengthened list the header names is always empty (no case would read it)",
+          "files": [
+            "plugin/lib/cmd-mutate.sh"
+          ],
+          "checks": {
+            "C494": "red"
+          },
+          "result": "red",
+          "at": "2026-10-27T13:05:19Z",
+          "head": "00bd1f5b9fd6db7f31ffec51d10adc5ba434079f"
+        },
+        {
+          "rule": {
+            "req": "R217",
+            "text": "mutate_record takes pending from strengthen_files($p) (the files it lists that checks_begin found waiting for approval and that a red check of this break names) and strengthened from strengthen_files($p) (its files that differ between the prior survivor's head and HEAD); the files of the checks the break ran are no longer a source of either list; the record reaches jq through a pipe"
+          },
+          "what": "strengthened draws from an empty list",
+          "files": [
+            "plugin/lib/cmd-mutate.sh"
+          ],
+          "checks": {
+            "C494": "red"
+          },
+          "result": "red",
+          "at": "2026-10-27T13:07:38Z",
+          "head": "00bd1f5b9fd6db7f31ffec51d10adc5ba434079f"
+        },
+        {
+          "rule": {
+            "req": "R217",
+            "text": "a check file outside strengthen_files($p) that the break ran (another requirement's check, or a check no rule of the plan names), edited and waiting for approval, is in neither pending nor strengthened, and the output is the plain red line, never 'caught by the pending one' nor 'caught by a check file waiting for approval'"
+          },
+          "what": "pending ignores strengthen_files",
+          "files": [
+            "plugin/lib/cmd-mutate.sh"
+          ],
+          "checks": {
+            "C494": "red"
+          },
+          "result": "red",
+          "at": "2026-10-27T13:07:42Z",
+          "head": "00bd1f5b9fd6db7f31ffec51d10adc5ba434079f"
+        },
+        {
+          "rule": {
+            "req": "R217",
+            "text": "a shared file inside strengthen_files($p) that waits for approval and whose check went red is pending and, after a prior survivor of the target, strengthened (the R210 build case, unchanged)"
+          },
+          "what": "pending ignores the waiting list",
+          "files": [
+            "plugin/lib/cmd-mutate.sh"
+          ],
+          "checks": {
+            "C494": "red"
+          },
+          "result": "red",
+          "at": "2026-10-27T13:07:45Z",
+          "head": "00bd1f5b9fd6db7f31ffec51d10adc5ba434079f"
+        },
+        {
+          "rule": {
+            "req": "R217",
+            "text": "before any survivor is recorded in the plan, nothing is pending or strengthened for a break of that plan, whatever check files wait for approval"
+          },
+          "what": "sfiles is every check file",
+          "files": [
+            "plugin/lib/cmd-mutate.sh"
+          ],
+          "checks": {
+            "C494": "red"
+          },
+          "result": "red",
+          "at": "2026-10-27T13:07:49Z",
+          "head": "00bd1f5b9fd6db7f31ffec51d10adc5ba434079f"
+        }
       ]
     },
     {
@@ -54332,14 +54641,15 @@
         "plugin/lib/proofcopy.sh"
       ],
       "after": [],
-      "status": "planned",
+      "status": "blocked",
       "role": "dev",
       "tasks": [
         "Tests first (red): 'R218:' self-test cases in tests/output-child-exit.bats (planted learns to write several files, in one or two directories): refused and named at the calling line, with the writer's name and its FILE:LINE after it: a planted function 'say() { printf ... }' called in a loop fed by a process substitution; a writer defined in a second file under another DIR; a two-step chain (a calls b, b writes with echo >&2); passing: a function whose body writes through vbw_out, '( printf ... )', 'printf ... | cat' or 'printf ... > \"$f\"' called in such a loop, and a writer called as '$(say x)', 'say x > file', 'say x | cat' or inside a pipe-fed loop; the vbw_die-in-a-loop acceptance stays as it is; a 'R218:' wording-and-standards case asserts the tool's header states the writer-function rule and no longer the 'reviewer's to judge' sentence, AGENTS.md's 'No builtin write while the shell has a live child' line says a call to a function that writes counts as the write, the tool has no mapfile, readarray or associative array and passes bash -n under /bin/bash; the header of tests/output-child-exit.bats names the widened rule",
         "tools/check-loop-writes.sh: a first pass over every shell file under all DIRs (one awk program fed every file, or one run per file whose output is gathered) collects the writer functions: a function whose body holds a builtin write that the existing writes() rules judge to run in the function's shell, then to a fixed point the functions that call a writer under the same rules (not in a command or process substitution, a subshell, a pipeline stage, the background, a pipe-fed loop, nor redirected into a file); the loop pass refuses a call to a writer in the loop's own shell like a printf, printing FILE:LINE:text of the calling line and then the writer's name and where it writes (FILE:LINE), exit 1; bash 3.2 and awk only, guarded array expansions, nothing written outside the repository; the header replaces the reviewer sentence with the rule",
         "The shipped-code case (plugin/bin, lib, hooks, scripts) on the widened rule: expected green (a scan during planning found no writer function called in a loop body: consent_grant writes only into a file and calls consent_file in a command substitution; proofcopy_entry writes through vbw_out or into a file); if the finished tool refuses a call in plugin/lib/cmd-approve.sh or plugin/lib/proofcopy.sh, fix it as the rule prescribes (vbw_out, or the producer piped into the loop) in that file and name the fix in the commit; a refusal in any other shipped file blocks the plan with the finding",
         "AGENTS.md's 'No builtin write while the shell has a live child' line (CLAUDE.md is a symlink: one edit); bash tools/test.sh --lint green; under /bin/bash: bats tests/output-child-exit.bats and tests/standards.bats green"
-      ]
+      ],
+      "note": "Task 1 needs the R218 self-test cases written into tests/output-child-exit.bats, but C496 lists that file as protected and the guard denies every write to it while building (Bash and Edit). The file has no R218 cases yet (C496 is red as expected). The contract needs the approved check file to hold the R218 tests before the build, or C496 must not protect a file the plan has to write. No code changed."
     }
   ],
   "fixes": [
@@ -69161,6 +69471,17 @@
         "ended": "2026-10-27T12:51:42Z",
         "cost": {
           "usd": 9.677177
+        }
+      },
+      {
+        "id": "build-20261027T125525Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M45",
+        "started": "2026-10-27T12:55:25Z",
+        "ended": "2026-10-27T13:12:02Z",
+        "cost": {
+          "usd": 1.659895
         }
       }
     ],
