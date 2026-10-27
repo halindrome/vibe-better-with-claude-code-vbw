@@ -23,6 +23,7 @@ setup() {
   printf 'paid\n' > src/pay.txt
   printf 'grep -qx paid src/pay.txt\n' > tests/pay.sh
   edit_record '.checks = [{id:"C1", req:"R1", run:["sh","tests/pay.sh"], files:["tests/pay.sh"]}]
+    | (.requirements[] | select(.id == "R1")).rules = [{text:"a customer can pay", check:"C1", plan:"P1.1"}]
     | .phases = [{id:"P1", title:"Pay", reqs:["R1"], milestone:.milestone.id}]
     | .plans = [{id:"P1.1", phase:"P1", title:"Pay", reqs:["R1"], files:["src/pay.txt"], after:[], status:"done",
         mutations:[{rule:{req:"R1", text:"a customer can pay"}, what:"pay prints unpaid", files:["src/pay.txt"], checks:{C1:"green"},

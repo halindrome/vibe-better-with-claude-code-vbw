@@ -74,8 +74,9 @@ survivor() {
 }
 # strengthen_own: C1's own file checks what is printed.
 strengthen_own() { printf '[ "$(sh src/pay.sh)" = paid ] && sh tests/shared.sh\n' > tests/pay.sh; }
-# strengthen_shared: the shared file (C1's and C2's) checks what pay.sh prints, on line 2.
-strengthen_shared() { sed -i.bak '2s/^true$/[ "$(sh src\/pay.sh)" = paid ]/' tests/shared.sh && rm -f tests/shared.sh.bak; }
+# strengthen_shared: the shared file (C1's and C2's) checks what pay.sh prints, on line 2;
+# the file has no set -e and ends with true, so the line exits the script itself.
+strengthen_shared() { sed -i.bak '2s/^true$/[ "$(sh src\/pay.sh)" = paid ] || exit 1/' tests/shared.sh && rm -f tests/shared.sh.bak; }
 # last_break: the last break recorded under P1.1.
 last_break() { jq -c '[.plans[] | select(.id == "P1.1") | .mutations // [] | .[]] | last' .vbw/record.json; }
 
@@ -84,7 +85,7 @@ last_break() { jq -c '[.plans[] | select(.id == "P1.1") | .mutations // [] | .[]
   defs=$(grep -l -E 'def (survivor_files|strengthen_files)\(' "$PLUGIN_ROOT"/lib/*.sh "$PLUGIN_ROOT"/lib/*.jq "$PLUGIN_ROOT"/hooks/*.jq 2> /dev/null || true)
   [ "$defs" = "$PLUGIN_ROOT/lib/record.sh" ] || { echo "the definition is in: ${defs:-nowhere}"; false; }
   ! grep -q 'COMMIT_SURVIVOR_DEFS' "$PLUGIN_ROOT/lib/cmd-commit.sh" || { echo "cmd-commit.sh still holds COMMIT_SURVIVOR_DEFS"; false; }
-  grep -q 'own_rules' <(sed -n '/def \(survivor_files\|strengthen_files\)(/,/;$/p' "$PLUGIN_ROOT/lib/record.sh") \
+  grep -q 'own_rules' <(sed -n -E '/def (survivor_files|strengthen_files)\(/,/;$/p' "$PLUGIN_ROOT/lib/record.sh") \
     || { echo "the definition does not read own_rules"; false; }
 }
 

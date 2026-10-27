@@ -180,7 +180,7 @@ r2_two_plans() {
   refused_as patch "--patch" '{"rules": [{"rule": "R1.2", "text": "a card is refused by name"}]}'
   [[ "$output" == *"R1: 1 of 2 rules name a plan"* ]] || { echo "$output"; false; }
   # A retired rule without a plan beside live rules with one.
-  replan_edit '(.requirements[] | select(.id == "R1")).rules = [.rules[0], {text: "an old rule", check: "C1", retired: "gone"}]'
+  replan_edit '(.requirements[] | select(.id == "R1")).rules |= [.[0], {text: "an old rule", check: "C1", retired: "gone"}]'
   replan_accepted patch '{"rules": [{"req": "R1", "text": "a card is refused", "check": "C1", "plan": "P1.1"}]}'
   [ "$(replan_part '[.requirements[] | select(.id == "R1")][0].rules | map([.plan, .retired])')" = '[["P1.1",null],[null,"gone"],["P1.1",null]]' ]
 }
