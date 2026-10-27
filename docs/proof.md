@@ -94,6 +94,11 @@ session that is proving: a project's tests give one result whoever proves them,
 and the figures a test records under a session id are its own, never the
 prover's (docs/costs.md).
 
+A case filter (`bats --filter`) must match a case in the file when `vbw apply`
+runs, so the Lead writes the failing cases at planning; otherwise `vbw apply`
+refuses, because a new check is red because its cases fail, never because none
+exist.
+
 ### Checks run in parallel
 
 ```text
@@ -406,10 +411,13 @@ R1 [auto] A customer can pay once
   address as `added rule`, `removed rule`, `reworded rule`, `retired rule`,
   `moved rule` or `changed rule`, for example
   `retired rule R1.2: Paying twice is refused (R4 lets a customer pay twice)`.
-- `vbw apply` refuses a check whose rules are owned by two plans that build
-  one after the other (one in the other's `after`, or sharing a file): the
-  earlier plan's mutation step would find the check red on unbroken code,
-  because the later plan has not built its part yet. Give each plan's rules a
+- `vbw apply` refuses a check whose rules are owned by two plans not yet
+  built, order or not. When they build one after the other (one in the other's
+  `after`, sharing a file, or in an earlier wave), the earlier plan's mutation
+  step would find the check red on unbroken code, because the later plan has
+  not built its part yet. When they share a wave, they build beside each
+  other: the first Dev's mutation step would run the check before the other
+  Dev committed, a race that fails only sometimes. Give each plan's rules a
   check of their own.
 - When a requirement's text or proof changes, `vbw spec sync` resets its rules
   to pending, so the Lead restates them.
@@ -1380,8 +1388,10 @@ When a break stays green on the approved check but a strengthened check file
 that waits for approval catches it, `vbw mutate` prints `TARGET survives the
 approved check; caught by the pending one: FILE...` and exits 0. Without an
 earlier survivor of that target, it says a check file waiting for approval
-caught the break and names it. The pending file still needs the one approval
-before the proof, as below.
+caught the break and names it. The pending file is one the plan may
+strengthen, a file of its own rules' checks, and still needs the one approval
+before the proof, as below. The strengthened files are files of its own rules'
+checks too, changed since the earlier survivor of that target.
 
 After a survivor, `vbw commit PLAN "<msg>" FILE` commits a check file that a check of the plan's own rules names, shared with other requirements or not, with the plan's trailers; a check file that no check of the plan's own rules names, and any check file before a survivor, is refused by name.
 

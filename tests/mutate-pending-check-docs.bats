@@ -57,3 +57,27 @@ has_line() {
   ! grep -q "never another requirement's" "$PLUGIN_ROOT/agents/dev.md" || { echo "dev.md still forbids another requirement's check file"; false; }
   has_line "$PLUGIN_ROOT/skills/vibe/SKILL.md" "detail.files" "--changes" "diff"
 }
+
+# R217 (M45): the pending and strengthened files of a break are among the files
+# the plan may strengthen (the files of its own rules' checks), and the documents
+# say so where they describe them.
+
+# paragraph FILE TEXT: the paragraph of FILE (lines up to a blank one) holding
+# TEXT, as one line.
+paragraph() {
+  awk -v t="$2" 'BEGIN { RS = "" } index($0, t) { gsub(/\n/, " "); print; exit }' "$DOCS/$1"
+}
+
+@test "R217: docs/proof.md's 'caught by the pending one' paragraph and docs/record.md's mutations description say the pending and strengthened files are among the files the plan may strengthen, those of its own rules' checks" {
+  local p cell
+  p=$(paragraph proof.md 'caught by the pending one')
+  [ -n "$p" ] || { echo "docs/proof.md: no paragraph holds 'caught by the pending one'"; false; }
+  printf '%s' "$p" | grep -Eiq "pending[^.]*own rules|own rules[^.]*pending" \
+    || { echo "docs/proof.md, the pending paragraph: no sentence ties the pending file to the plan's own rules' checks"; false; }
+  printf '%s' "$p" | grep -Eiq "strengthened[^.]*own rules|own rules[^.]*strengthened" \
+    || { echo "docs/proof.md, the pending paragraph: no sentence ties the strengthened files to the plan's own rules' checks"; false; }
+  cell=$(grep -F '`strengthened`' "$DOCS/record.md" | tr '|' '\n' | grep -F '`pending`')
+  [ -n "$cell" ] || { echo "docs/record.md: no table cell describes strengthened and pending"; false; }
+  printf '%s' "$cell" | grep -Eiq "(strengthened|pending)[^.]*own rules|own rules[^.]*(strengthened|pending)" \
+    || { echo "docs/record.md, the mutations description: no sentence ties strengthened and pending to the plan's own rules' checks"; false; }
+}

@@ -182,7 +182,7 @@ big=$(awk 'BEGIN { for (i = 0; i < 400; i++) printf "line %d with \"quotes\" and
 jq -nc --arg d "$work" --arg b "$big" '{tool_name: "Bash", cwd: $d, tool_input: {command: ("git add notes.md && cat > notes.md <<'\''EOF'\''\n" + $b + "EOF")}}' > "$work/big.json"
 # A build agent running Python from a heredoc on a build lease: the program is read for the files it writes.
 jq -nc --arg d "$work" '{tool_name: "Bash", cwd: $d, session_id: "bench", agent_id: "x1", agent_type: "workflow-subagent", tool_input: {command:
-  "python3 - <<'\''EOF'\''\nimport json\nwith open(\"src/pay.py\", \"w\") as f:\n    json.dump({\"paid\": True}, f)\nprint(open(\"src/pay.py\").read())\nEOF"}}' > "$work/interp.json"
+  "python3 - <<'\''EOF'\''\nimport json\nwith open(\"src/pay.py\", \"w\") as f:\n    json.dump({\"paid\": True}, f)\np = \"src/pay.py\"\nwith open(p, \"w\") as g:\n    g.write(\"x\")\nprint(open(\"src/pay.py\").read())\nEOF"}}' > "$work/interp.json"
 jq -nc --arg d "$work" '{tool_name: "Read", cwd: $d, tool_input: {file_path: ($d + "/src/app.js")}}' > "$work/read.json"
 # An answered question unrelated to approval: the PostToolUse hook runs after
 # every AskUserQuestion and must stay cheap when the answer is not an approval.

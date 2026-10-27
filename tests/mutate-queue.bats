@@ -127,3 +127,15 @@ queue() {
   run "$VBW" plan done P1.1 < /dev/null
   [ "$status" -ne 0 ] && [[ "$output" == *"R1.1"* && "$output" == *"vbw mutate P1.1 --run"* ]] || { echo "$output"; false; }
 }
+
+# R217 (M45 QA, kernel F323): the queued path records each result through the one
+# mutate_record, with its nine documented arguments and no list of the check's
+# files: pending and strengthened come from strengthen_files, never from the files
+# of the checks a break ran.
+@test "R217: the queued path passes mutate_record no check files, only the nine documented arguments" {
+  local f="$PLUGIN_ROOT/lib/mutate-queue.sh" call
+  ! awk '/^  for e in "\$\{keep\[@\]\}"; do$/, /rm -rf "\$e"/' "$f" | grep -q cfiles || { echo "mutate-queue.sh still builds a per-break list of the check's files"; false; }
+  call=$(awk '/mutate_record /, /\|\| surv=1$/' "$f" | tr -d '\\\n' | tr -s ' ')
+  [ -n "$call" ] || { echo "no mutate_record call found in mutate-queue.sh"; false; }
+  [[ "$call" == *'"$(printf '"'"'%s'"'"' "$m" | jq -c .files)" || surv=1'* ]] || { echo "the call does not end with FILES_JSON: $call"; false; }
+}

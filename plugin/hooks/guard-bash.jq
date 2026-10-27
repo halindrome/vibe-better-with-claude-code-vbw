@@ -3,6 +3,12 @@
 # Only what the shell would execute is judged. Heredoc bodies and quoted
 # strings are data (ledger D281), except where the shell runs them: $(...) and
 # `...` inside double quotes, and sh -c / eval strings.
+#
+# A program an interpreter runs inline (a -c/-e argument, a heredoc) is read for
+# the files it writes (R76), and the guard reads a literal path only: a call
+# that writes a file whose target is held in a variable, an expression or
+# another call is refused under a run, with the fix named (R219). Unlike a
+# heredoc fed to cat or tee, whose body is data (D281), an interpreter's is run.
 
 include "holder" {search: "../lib"};
 include "common" {search: "./"};
@@ -203,7 +209,71 @@ def interpreter: test("^(python[0-9.]*|pypy[0-9]*|node|nodejs|deno|bun|perl|ruby
 # as string literals (a path held in a variable cannot be read). One regex, as
 # the guard's cost is mostly compiling it.
 def program_writes:
-  [match("(?:\\bopen\\(\\s*['\"`]([^'\"`\\\\]+)['\"`]\\s*,\\s*(?:mode\\s*=\\s*)?['\\\"][^'\\\"]*[wax+])|(?:\\bPath\\(\\s*['\"`]([^'\"`\\\\]+)['\"`]\\s*\\)\\s*\\.\\s*(?:write_text|write_bytes|unlink|touch|mkdir|rmdir|rename|replace|open\\(\\s*['\\\"][^'\\\"]*[wax+]))|(?:\\bopen\\s*\\(?\\s*\\w+\\s*,\\s*['\\\"]\\s*\\+?>>?\\s*([^'\\\"]+?)\\s*['\\\"])|(?:\\bopen\\s*\\(?\\s*\\w+\\s*,\\s*['\\\"]\\+?>>?['\\\"]\\s*,\\s*['\"`]([^'\"`\\\\]+)['\"`])|(?:\\.(?:writeFile|writeFileSync|appendFile|appendFileSync|createWriteStream|unlink|unlinkSync|rmSync|rmdirSync|mkdirSync|makedirs|rmtree|truncate)\\(\\s*['\"`]([^'\"`\\\\]+)['\"`])|(?:\\b(?:os|fs|File|FileUtils|shutil|Dir)\\.(?:remove|unlink|rmdir|mkdir|write|binwrite|delete|rm|rm_f|rm_rf|mkdir_p|touch|truncate|chmod)\\(?\\s*['\"`]([^'\"`\\\\]+)['\"`])|(?:\\b(?:unlink|mkdir|rmdir|file_put_contents)\\b\\s*\\(?\\s*['\"`]([^'\"`\\\\]+)['\"`])|(?:\\b(?:os|fs|File|FileUtils|shutil)\\.(?:rename|renameSync|replace|move|mv)\\(\\s*['\"`]([^'\"`\\\\]+)['\"`]\\s*,\\s*['\"`]([^'\"`\\\\]+)['\"`])|(?:\\brename\\b\\s*\\(?\\s*['\"`]([^'\"`\\\\]+)['\"`]\\s*,\\s*['\"`]([^'\"`\\\\]+)['\"`])|(?:\\b(?:shutil|FileUtils|fs)\\.(?:copy|copyfile|copy2|copytree|cp|cp_r|copyFile|copyFileSync)\\(\\s*['\"`][^'\"`\\\\]+['\"`]\\s*,\\s*['\"`]([^'\"`\\\\]+)['\"`])"; "g") | .captures[].string | select(. != null)];
+  [match("(?:\\bopen\\(\\s*['\"`]([^'\"`\\\\]+)['\"`]\\s*,\\s*(?:mode\\s*=\\s*)?['\\\"][^'\\\"]*[wax+])|(?:\\bPath\\(\\s*['\"`]([^'\"`\\\\]+)['\"`]\\s*\\)\\s*\\.\\s*(?:write_text|write_bytes|unlink|touch|mkdir|rmdir|rename|replace|open\\(\\s*['\\\"][^'\\\"]*[wax+]))|(?:\\bopen\\s*\\(?\\s*\\w+\\s*,\\s*['\\\"]\\s*\\+?>>?\\s*([^'\\\"]+?)\\s*['\\\"])|(?:\\bopen\\s*\\(?\\s*\\w+\\s*,\\s*['\\\"]\\+?>>?['\\\"]\\s*,\\s*['\"`]([^'\"`\\\\]+)['\"`])|(?:\\.(?:writeFile|writeFileSync|appendFile|appendFileSync|createWriteStream|unlink|unlinkSync|rmSync|rmdirSync|mkdirSync|makedirs|rmtree|truncate)\\(\\s*['\"`]([^'\"`\\\\]+)['\"`])|(?:\\b(?:os|fs|File|FileUtils|shutil|Dir)\\.(?:remove|unlink|rmdir|mkdir|write|binwrite|delete|rm|rm_f|rm_rf|mkdir_p|touch|truncate|chmod)\\(?\\s*['\"`]([^'\"`\\\\]+)['\"`])|(?:\\b(?:unlink|mkdir|rmdir|file_put_contents)\\b\\s*\\(?\\s*['\"`]([^'\"`\\\\]+)['\"`])|(?:\\b(?:os|fs|File|FileUtils|shutil)\\.(?:rename|renameSync|replace|move|mv)\\(\\s*['\"`]([^'\"`\\\\]+)['\"`]\\s*,\\s*['\"`]([^'\"`\\\\]+)['\"`])|(?:\\brename\\b\\s*\\(?\\s*['\"`]([^'\"`\\\\]+)['\"`]\\s*,\\s*['\"`]([^'\"`\\\\]+)['\"`])|(?:\\b(?:shutil|FileUtils|fs)\\.(?:copy|copyfile|copy2|copytree|cp|cp_r|copyFile|copyFileSync)\\(\\s*['\"`][^'\"`\\\\]+['\"`]\\s*,\\s*['\"`]([^'\"`\\\\]+)['\"`])"; "g")
+   # A backtick template holding ${ is not a literal path: unreadable_calls refuses it (R219).
+   | select(.string | test("`[^`]*\\$\\{") | not) | .captures[].string | select(. != null)];
+
+# The calls of a program text that write a file whose target the guard cannot
+# read (R219): a call head program_writes reads as a write whose target
+# argument is not a string literal (it starts with a name, a $, a parenthesis,
+# an f-string prefix, a backtick template holding ${, a dot or any token but a
+# plain quote), and an open whose mode is not a literal. Each is the call as
+# written, from its head through the closing parenthesis of its arguments. One
+# match pass over the text; the arguments of a call found are read only then.
+def unreadable_calls:
+  ("(?<i>\"(?:\\\\.|[^\"\\\\])*\"|'(?:\\\\.|[^'\\\\])*'|`(?:\\\\.|[^`\\\\])*`|\\((?:\\g<i>|,)*\\)|\\[(?:\\g<i>|,)*\\]|\\{(?:\\g<i>|,)*\\}|[^,()\\[\\]{}'\"`]){0}"
+   + "(?<![.\\w])(?<n1>open|unlink|mkdir|rmdir|rename|file_put_contents)\\s*\\((?<a1>(?:\\g<i>|,)*)\\)"
+   + "|\\b(?<p2>os|fs|File|FileUtils|shutil|Dir)(?:\\s*\\.\\s*promises)?\\s*\\.\\s*(?<m2>remove|unlink|unlinkSync|rmdir|rmdirSync|mkdir|mkdirSync|makedirs|write|writeFile|writeFileSync|binwrite|appendFile|appendFileSync|createWriteStream|delete|rm|rmSync|rm_f|rm_rf|rmtree|mkdir_p|touch|truncate|chmod|rename|renameSync|replace|move|mv|copy|copyfile|copy2|copytree|cp|cp_r|copyFile|copyFileSync)\\s*\\((?<a2>(?:\\g<i>|,)*)\\)"
+   + "|(?:(?<![.\\w])|(?<=\\bpathlib\\.))Path\\s*\\((?<a3>(?:\\g<i>|,)*)\\)\\s*\\.\\s*(?<m3>write_text|write_bytes|unlink|touch|mkdir|rmdir|rename|replace|open)\\s*\\((?<b3>(?:\\g<i>|,)*)\\)"
+   + "|(?<![\\w.)\\]])(?<r4>\\((?:\\g<i>|,)*\\))\\s*\\.\\s*(?:write_text|write_bytes)\\s*\\((?:\\g<i>|,)*\\)"
+   + "|\\.\\s*(?<m6>writeFile|writeFileSync|appendFile|appendFileSync|createWriteStream|rmSync|rmdirSync|mkdirSync|unlinkSync|makedirs|rmtree)\\s*\\((?<a6>(?:\\g<i>|,)*)\\)"
+   + "|(?<![.\\w])(?<m9>writeFile|writeFileSync|appendFile|appendFileSync|createWriteStream|rmSync|rmdirSync|mkdirSync|unlinkSync)\\s*\\((?<a9>(?:\\g<i>|,)*)\\)"
+   + "|\\b(?<p7>os|fs|File|FileUtils|shutil|Dir)\\s*\\.\\s*(?<m7>remove|unlink|rmdir|mkdir|write|binwrite|delete|rm|rm_f|rm_rf|mkdir_p|touch|truncate|chmod|rename|replace|move|mv|copy|cp|cp_r)[ \\t]+(?<a7>[^(\\s;\\n][^;\\n]*)"
+   + "|(?<![.\\w])(?<n8>open)[ \\t]+(?<a8>[^(\\s;\\n][^;\\n]*)"
+   + "|(?<![.\\w])(?<n5>unlink|mkdir|rmdir|rename)[ \\t]+(?<a5>\\$[^;\\n]*)") as $re
+  | def args: [match("(?<j>\"(?:\\\\.|[^\"\\\\])*\"|'(?:\\\\.|[^'\\\\])*'|`(?:\\\\.|[^`\\\\])*`|\\((?:\\g<j>|,)*\\)|\\[(?:\\g<j>|,)*\\]|\\{(?:\\g<j>|,)*\\}|[^,()\\[\\]{}'\"`]){0}\\s*((?:\\g<j>)*)(?:,|$)"; "g").captures[] | select(.name == null) | .string | sub("\\s+$"; "") | sub("^\\s+"; "")] | map(select(length > 0));
+    def literal: test("^['\"]") or (test("^`") and (contains("${") | not));
+    # The mode of an open: the second argument or mode=...; null when none is given.
+    def mode_arg: ((.[1:] | map(select(test("^mode\\s*=[^=]"))) | .[0]) | select(. != null) | sub("^mode\\s*=\\s*"; ""))
+      // (.[1] // null | select(. != null and (test("^[A-Za-z_]\\w*\\s*=[^=]") | not)))
+      // null;
+    # Perl opens take ">", ">>", "+<" and a path; Python modes hold w, a, x or +.
+    def open_unreadable:
+      . as $a | ($a | mode_arg) as $m
+      | if $m == null then false
+        elif ($m | literal | not) then true
+        else ($m[1:-1]) as $s
+          | if $s | test("^\\s*\\+?[<>]") then
+              ($s | test(">|^\\s*\\+<")) and (if $s | test("^\\s*\\+?>>?\\s*\\S") then $s | test("\\$") else ($a[2] // "'") | literal | not end)
+            else ($s | test("[wax+]")) and (($a[0] // "'") | literal | not) end
+        end;
+    def rename_unreadable: any(.[0:2][]; literal | not);
+  [match($re; "g")
+   | (.captures | map(select(.name != null and .string != null) | {(.name): .string}) | add // {}) as $c
+   | select(
+       if $c.n1 != null then
+         ($c.a1 | args) as $a
+         | if $c.n1 == "open" then $a | open_unreadable
+           elif $c.n1 == "rename" then $a | rename_unreadable
+           else ($a[0] // "'") | literal | not end
+       elif $c.m6 != null or $c.m9 != null then
+         (($c.a6 // $c.a9) | args) as $a | ($a[0] // "'") | literal | not
+       elif $c.n8 != null then
+         ($c.a8 | args) | open_unreadable
+       elif $c.p2 != null or $c.p7 != null then
+         (($c.a2 // $c.a7) | args) as $a | ($c.m2 // $c.m7) as $m
+         | if $m | test("^(rename|renameSync|replace|move|mv)$") then $a | rename_unreadable
+           elif $m | test("^(copy|copyfile|copy2|copytree|cp|cp_r|copyFile|copyFileSync)$") then ($a[1] // "'") | literal | not
+           else ($a[0] // "'") | literal | not end
+       elif $c.m3 != null then
+         ($c.a3 | args) as $p | ($c.b3 | args) as $b
+         | if $c.m3 == "open" then
+             ($b | length > 0) and ([($p | map(select(literal | not)) | .[0]) // "'"] + $b | open_unreadable)
+           else $p | any(literal | not) end
+       elif $c.n5 != null then
+         ($c.a5 | args) as $a | if $c.n5 == "rename" then $a | rename_unreadable else true end
+       else $c.r4 != null end)
+   | .string | gsub("\\s*\\n\\s*"; " ") | sub("\\s+$"; "")];
 
 # perl -i and ruby -i edit the files they are given in place.
 def inplace_files:
@@ -222,6 +292,9 @@ def heredoc_programs:
 def program_denial($g):
   (.[] | shell_write_denial($g));
 
+def unreadable_denial:
+  (.[] | "\(.) writes a file the guard cannot name: the program gives its target through a variable, an expression or another call, so the guard cannot read where it writes\nNext: name the file as a literal path in the program, or write it with the Edit tool (Write for a new file)");
+
 # A subagent during a run (docs/workflows.md): commits go through vbw commit;
 # builders share one working tree, so nothing may move HEAD or other builders'
 # changes; files are restored and redirects written only within the run's files.
@@ -237,7 +310,8 @@ def in_run($g):
         | (if $s == "checkout" then $a[(($a | index("--")) + 1):] else [$a[] | select(startswith("-") | not)] end)[]
         | shell_write_denial($g) ) ),
   ( .out[] | shell_write_denial($g) ),
-  ( select(.cmd | interpreter) | [((.args | join("\n")) | program_writes), inplace_files] | add | program_denial($g) );
+  ( select(.cmd | interpreter) | [((.args | join("\n")) | program_writes), inplace_files] | add | program_denial($g) ),
+  ( select(.cmd | interpreter) | (.args | join("\n")) | unreadable_calls | unreadable_denial );
 
 # Another session's open run (D11): shell writes of the files it writes.
 def foreign_run($g):
@@ -261,6 +335,7 @@ guard_context(true) as $g
         | [$cmds[] | in_project($g)][0]
           // (select($g.lease != null)
               | [$cmds[] | in_run($g)][0]
-                // (select($c | test("<<")) | [$c | heredoc_programs | program_writes | program_denial($g)][0]))) )
+                // (select($c | test("<<")) | ([$c | heredoc_programs | program_writes | program_denial($g)][0])
+                    // ([$c | heredoc_programs | unreadable_calls | unreadable_denial][0])))) )
 | select(. != null)
 | deny

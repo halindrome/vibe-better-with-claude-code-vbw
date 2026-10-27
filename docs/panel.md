@@ -901,8 +901,8 @@ VBW picks one clip at random from the sounds shipped with it, in
 
 ### Choosing the voice
 
-Each folder under `plugin/assets/audio/` is a voice (`arnold`, `charlize`,
-`darth`). The `sound` setting picks one, or none:
+Each folder under `plugin/assets/audio/` is a voice (`arnold`, `charlize`, `darth`, `eric`,
+`homer`, `peter`, `stephen`). The `sound` setting picks one, or none:
 
 ```bash
 vbw config set sound darth     # only clips of that folder

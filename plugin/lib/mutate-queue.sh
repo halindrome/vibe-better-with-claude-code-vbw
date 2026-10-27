@@ -128,10 +128,8 @@ mutate_queue_run() {
   for e in "${keep[@]}"; do
     m=$(jq -c . "$e/meta.json")
     ruledoc=$(printf '%s' "$record" | jq -c --argjson m "$m" '.requirements[] | select(.id == $m.req) | (.rules // [])[$m.rk - 1] | {req: $m.req, text, check}')
-    cfiles=()
-    while IFS= read -r -d '' f; do cfiles+=("$f"); done < <(printf '%s' "$record" | jq -j --arg c "$(printf '%s' "$m" | jq -r .check)" '[.checks[] | select(.id == $c) | .files // [] | .[]] | unique[] | . + "\u0000"')
     mutate_record "$plan" "$(printf '%s' "$m" | jq -r .target)" "$(printf '%s' "$m" | jq -r .what)" "$head" "$(cat "$e/result.json")" \
-      "$(record_read)" "$ruledoc" "" "$(printf '%s' "$m" | jq -c .files)" ${cfiles[@]+"${cfiles[@]}"} || surv=1
+      "$(record_read)" "$ruledoc" "" "$(printf '%s' "$m" | jq -c .files)" || surv=1
     rm -rf "$e"
   done
   rmdir "$(mutate_queue_dir "$plan")" 2> /dev/null || true

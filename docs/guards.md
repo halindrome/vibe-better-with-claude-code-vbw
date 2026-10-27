@@ -169,9 +169,11 @@ path. The guard reads the paths the program text names as string literals
 `File.write`, `os.remove`, `shutil.copy` and similar), in `-c`/`-e` code and in
 a script given by heredoc (`python3 - <<'EOF'`), and the files given to
 `perl -i`/`ruby -i`. Still allowed: reading, running tests (`python3 -m pytest`,
-`node --test`), and writing inside the plan's files. A path held in a variable
-cannot be read, so this stays a guard rail (see the first paragraph). Outside a
-run, programs are not judged.
+`node --test`), and writing inside the plan's files. A write whose target
+the guard cannot read (a variable, an expression, another call) is refused; the
+refusal names the call and the fix (a literal path, or the Edit tool). A program
+that writes nothing passes, and a script file run by name (`python3 tools/x.py`)
+is not read. Outside a run, programs are not judged.
 
 **Another session's run** (D11): while a run with an owning session is open
 (under 24 hours), a call from a different session (`session_id` differs from

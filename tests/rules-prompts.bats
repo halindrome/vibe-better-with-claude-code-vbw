@@ -1,5 +1,8 @@
 #!/usr/bin/env bats
 # R31: the Lead and the express router write rules with the "rules" key of vbw apply.
+# R211, R212, R215: the Lead's brief states the rules vbw apply enforces on the plan's
+# checks and rules. R220: its Lean checks line says the failing cases a case filter
+# names are written at planning, before vbw apply.
 
 load helper
 
@@ -16,13 +19,26 @@ teardown() { vbw_teardown; }
 
 # R211 and R212 (T187, T191): the Lead's brief states the two rules vbw apply enforces.
 
-@test "R211: the Lead's brief says a check's rules belong to one plan: plans of a requirement that build one after the other give each plan's rules a check of their own" {
-  grep -q 'one after the other' "$PLUGIN_ROOT/agents/lead.md" || { echo "no sentence about plans that build one after the other"; false; }
-  grep 'one after the other' "$PLUGIN_ROOT/agents/lead.md" | grep -q 'check of their own' || { echo "the sentence does not give each plan's rules a check of their own"; false; }
+@test "R211 R215: the Lead's brief says a check's rules belong to one plan: several open plans of a requirement, whatever their order and the same wave included, each get a check of their own" {
+  grep -q "check's rules belong to one plan" "$PLUGIN_ROOT/agents/lead.md" || { echo "no sentence saying a check's rules belong to one plan"; false; }
+  grep "check's rules belong to one plan" "$PLUGIN_ROOT/agents/lead.md" | grep -q 'whatever their order' || { echo "the sentence does not cover plans whatever their order"; false; }
+  grep "check's rules belong to one plan" "$PLUGIN_ROOT/agents/lead.md" | grep -q 'same wave included' || { echo "the sentence does not name the same wave"; false; }
   grep 'check of their own' "$PLUGIN_ROOT/agents/lead.md" | grep -qi 'case filter' || { echo "the sentence does not offer the same file with a case filter as a distinct check"; false; }
+  grep "check's rules belong to one plan" "$PLUGIN_ROOT/agents/lead.md" | grep -q 'vbw apply. refuses' || { echo "the sentence does not say vbw apply refuses it"; false; }
 }
 
 @test "R212: the Lead's brief rule 7 (Rules) says the plan is named on every rule of the requirement or on none" {
   grep -E '^7\. \*\*Rules' "$PLUGIN_ROOT/agents/lead.md" | grep -q 'every rule' || { echo "rule 7 does not say every rule"; false; }
   grep -E '^7\. \*\*Rules' "$PLUGIN_ROOT/agents/lead.md" | grep -q 'or on none' || { echo "rule 7 does not say or on none"; false; }
+}
+
+@test "R220: the Lead's brief Lean checks line says the filter names cases the file already holds, written at planning before vbw apply, because vbw apply refuses an empty match and a Dev cannot add them later" {
+  local line
+  line=$(grep -E '^[[:space:]]*- \*\*Lean checks' "$PLUGIN_ROOT/agents/lead.md")
+  [ -n "$line" ] || { echo "no Lean checks line in rule 6"; false; }
+  printf '%s\n' "$line" | grep -q 'already holds' || { echo "the line does not say the filter names cases the file already holds"; false; }
+  printf '%s\n' "$line" | grep -q 'at planning' || { echo "the line does not say the cases are written at planning"; false; }
+  printf '%s\n' "$line" | grep -Eq 'before .?.?vbw apply' || { echo "the line does not say before vbw apply"; false; }
+  printf '%s\n' "$line" | grep -Eq 'refuses[^.]*case filter[^.]*no case' || { echo "the line does not say vbw apply refuses a case filter matching no case name"; false; }
+  printf '%s\n' "$line" | grep -q 'protected' || { echo "the line does not say a Dev cannot add the cases later (check files are protected during the build)"; false; }
 }
