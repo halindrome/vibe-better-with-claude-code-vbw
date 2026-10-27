@@ -111,11 +111,13 @@ post_message_with_retry() {
     : > "$stderr_file"
 
     set +e
+    # --form-string: curl reads a plain -F value up to its first ';' (the start of a
+    # form-field option), which cut a payload holding one (v2.1.16); a form string is taken whole.
     if [ -n "$attachment_path" ]; then
       http_code=$("$CURL_BIN" -sS \
         -D "$headers_file" \
         -o "$body_file" \
-        -F "payload_json=$payload" \
+        --form-string "payload_json=$payload" \
         -F "files[0]=@$attachment_path;filename=$ATTACHMENT_FILENAME;type=text/markdown" \
         -w '%{http_code}' \
         "$execute_url" 2>"$stderr_file")
