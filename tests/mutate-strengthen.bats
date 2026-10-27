@@ -33,12 +33,15 @@ built_project() {
   # C1 cannot fail on what is printed.
   printf 'sh src/pay.sh > /dev/null && sh tests/shared.sh\n' > tests/pay.sh
   printf '[ "$(sh src/receipt.sh)" = receipt ] && sh tests/shared.sh\n' > tests/receipt.sh
+  # C3 checks R1 too, is named by no rule (so strengthen_files never lists it) and cannot fail on what is printed.
+  printf 'sh src/pay.sh > /dev/null\n' > tests/pay-extra.sh
   jq -nc '{phases: [{id: "P1", title: "Pay", reqs: ["R1"], goal: "g", criteria: ["c"], tier: "standard"},
                     {id: "P2", title: "Receipt", reqs: ["R2"], goal: "g", criteria: ["c"]}],
     plans: [{id: "P1.1", phase: "P1", title: "Pay", reqs: ["R1"], files: ["src/pay.sh"], after: [], role: "dev", tasks: ["pay"]},
             {id: "P2.1", phase: "P2", title: "Receipt", reqs: ["R2"], files: ["src/receipt.sh"], after: [], role: "dev", tasks: ["receipt"]}],
     checks: [{id: "C1", req: "R1", run: ["sh", "tests/pay.sh"], files: ["tests/pay.sh", "tests/shared.sh"]},
-             {id: "C2", req: "R2", run: ["sh", "tests/receipt.sh"], files: ["tests/receipt.sh", "tests/shared.sh"]}],
+             {id: "C2", req: "R2", run: ["sh", "tests/receipt.sh"], files: ["tests/receipt.sh", "tests/shared.sh"]},
+             {id: "C3", req: "R1", run: ["sh", "tests/pay-extra.sh"], files: ["tests/pay-extra.sh"]}],
     rules: [{req: "R1", text: "paying prints paid", check: "C1"},
             {req: "R2", text: "a receipt is printed", check: "C2"}]}' | "$VBW" apply > /dev/null
   # P2 asks for no mutation check (express), so only P1's break is in play.
@@ -131,7 +134,7 @@ last_break() { jq -c '[.plans[] | select(.id == "P1.1") | .mutations // [] | .[]
   [[ "$(printf '%s\n' "$output" | sed '/^[[:space:]]*$/d' | tail -n 1)" == "Next: "?* ]] || { echo "no next step: $output"; false; }
 }
 
-@test "R188 R210: a strengthened shared check file lets the build finish; the same break is caught by the pending file; one approval is asked before the proof, which refuses until then; the scope check counts the commit as the plan's" {
+@test "R188 R210 R217: a strengthened shared check file lets the build finish; the same break is caught by the pending file; one approval is asked before the proof, which refuses until then; the scope check counts the commit as the plan's" {
   survivor
   strengthen_shared
   "$VBW" commit P1.1 "test(pay): check what is printed" tests/shared.sh > /dev/null
@@ -165,6 +168,44 @@ last_break() { jq -c '[.plans[] | select(.id == "P1.1") | .mutations // [] | .[]
   [ "$status" -ne 0 ] || { echo "$output"; false; }
   [[ "$output" == *tests/pay.sh* && "$output" == *"commit them first"* ]] || { echo "$output"; false; }
   [ "$(cksum < .vbw/record.json)" = "$sum" ]
+}
+
+@test "R217: before any survivor of the plan nothing is pending: a strengthened check file committed with git waits for approval, the break prints the plain red line and records no pending" {
+  strengthen_own
+  run "$VBW" commit P1.1 "test(pay): check what is printed" tests/pay.sh < /dev/null
+  [ "$status" -ne 0 ] || { echo "vbw commit took it with no survivor: $output"; false; }
+  git add tests/pay.sh && git commit -q -m "test(pay): check what is printed"
+  printf 'echo unpaid\n' > src/pay.sh
+  run "$VBW" mutate P1.1 R1.1 "prints unpaid instead of paid" src/pay.sh < /dev/null
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  printf '%s\n' "$output" | grep -q '^R1\.1 red: prints unpaid instead of paid$' || { echo "$output"; false; }
+  [[ "$output" != *"caught by"* && "$output" != *survives* && "$output" != *strengthened:* ]] || { echo "$output"; false; }
+  last_break | jq -e '.result == "red" and (has("pending") | not) and (has("strengthened") | not)' || { last_break; false; }
+}
+
+@test "R217: a check file outside strengthen_files that the break ran, edited and waiting for approval, is neither pending nor strengthened: the plain red line" {
+  printf 'echo unpaid\n' > src/pay.sh
+  run "$VBW" mutate P1.1 task1 --check C3 "prints unpaid instead of paid" src/pay.sh < /dev/null
+  [ "$status" -ne 0 ] && [[ "$output" == *survivor* ]] || { echo "no survivor: $output"; false; }
+  printf '[ "$(sh src/pay.sh)" = paid ]\n' > tests/pay-extra.sh
+  git add tests/pay-extra.sh && git commit -q -m "test(pay): extra check"
+  printf 'echo unpaid\n' > src/pay.sh
+  run "$VBW" mutate P1.1 task1 --check C3 "prints unpaid instead of paid" src/pay.sh < /dev/null
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  printf '%s\n' "$output" | grep -q '^task1 red: prints unpaid instead of paid$' || { echo "$output"; false; }
+  [[ "$output" != *"caught by"* && "$output" != *survives* && "$output" != *strengthened:* ]] || { echo "$output"; false; }
+  last_break | jq -e '.result == "red" and (has("pending") | not) and (has("strengthened") | not)' || { last_break; false; }
+}
+
+@test "R217: this file's header names each reader of strengthen_files, and a case in the file covers each" {
+  local head
+  head=$(sed -n '1,/^load /p' "$BATS_TEST_FILENAME")
+  local reader pat
+  for reader in "vbw commit:vbw commit PLAN" "the lease's editable list:lease.editable" "the file guard:answer Write" "the proof's scope check:evidence.scope" "vbw mutate's pending and strengthened lists:pending == "; do
+    [[ "$head" == *"${reader%%:*}"* ]] || { echo "the header does not name: ${reader%%:*}"; false; }
+    pat=${reader#*:}
+    grep '^@test\|^  ' "$BATS_TEST_FILENAME" | grep -v '^[[:space:]]*local \|reader=' | grep -qF -- "$pat" || { echo "no case covers: ${reader%%:*}"; false; }
+  done
 }
 
 # after_line TEXT LINE: the part of TEXT after its first line holding LINE.
