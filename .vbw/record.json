@@ -1,6 +1,15 @@
 {
   "schema": 4,
-  "lease": null,
+  "lease": {
+    "run": "qa-20261027T163530Z",
+    "kind": "qa",
+    "started_at": "2026-10-27T16:35:30Z",
+    "files": [],
+    "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+    "cost": {
+      "usd": 2694.6508
+    }
+  },
   "protected": [
     "tests/adaptive-results.bats",
     "tests/agent-scratch.bats",
@@ -25106,12 +25115,19 @@
         }
       ],
       "qa": {
-        "result": "fail",
+        "result": "pass",
         "tier": "deep",
         "tree": "3105598cbc464d8bad7e8aa693ed0e7a75d446eb500bd0d52f5399bfcde7a56c",
-        "at": "2026-10-27T15:53:11Z",
-        "note": "17/18 checks",
-        "rounds": 1
+        "at": "2026-10-27T16:36:55Z",
+        "note": "5/5 checks"
+      },
+      "outcome": {
+        "tier": "deep",
+        "predicted": "standard",
+        "held": false,
+        "fix_rounds": 1,
+        "qa_findings": 1,
+        "escalations": 1
       }
     },
     {
@@ -58068,7 +58084,7 @@
       "req": "R217",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "plugin/lib/mutate-queue.sh lines 131-134 (the queued-break path, the second caller of mutate_record) still builds a per-break cfiles array (one extra jq call per queued break) and passes it as extra arguments to mutate_record, which since 24a024b0 takes only 9 arguments and ignores them. P175.1 task 3 says the CHECK_FILE arguments 'leave mutate_record's signature, its comment and its call'; only cmd-mutate.sh's call was changed and mutate-queue.sh is in no plan's files, so dead code and a wasted jq call per queued break remain, named by no plan or decision. Regression test: a case in tests/mutate-strengthen.bats (or the queue's test file) that greps plugin/lib/mutate-queue.sh and fails while its mutate_record call passes more than 9 arguments or builds cfiles for it. Fix: remove lines 131-132 and the trailing argument of the call at line 134, in a plan that lists plugin/lib/mutate-queue.sh.",
       "phase": "P175"
     },
