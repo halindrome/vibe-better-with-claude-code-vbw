@@ -58068,7 +58068,7 @@
       "req": "R217",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "plugin/lib/mutate-queue.sh lines 131-134 (the queued-break path, the second caller of mutate_record) still builds a per-break cfiles array (one extra jq call per queued break) and passes it as extra arguments to mutate_record, which since 24a024b0 takes only 9 arguments and ignores them. P175.1 task 3 says the CHECK_FILE arguments 'leave mutate_record's signature, its comment and its call'; only cmd-mutate.sh's call was changed and mutate-queue.sh is in no plan's files, so dead code and a wasted jq call per queued break remain, named by no plan or decision. Regression test: a case in tests/mutate-strengthen.bats (or the queue's test file) that greps plugin/lib/mutate-queue.sh and fails while its mutate_record call passes more than 9 arguments or builds cfiles for it. Fix: remove lines 131-132 and the trailing argument of the call at line 134, in a plan that lists plugin/lib/mutate-queue.sh.",
       "phase": "P175"
     },
@@ -58077,7 +58077,7 @@
       "req": "R219",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "pathlib.Path(p).write_text('x') with p a variable is NOT refused, while pathlib.Path('src/pay.py').write_text('x') is. Cause: unreadable_calls in plugin/hooks/guard-bash.jq anchors Path with (?<![.\\w]), so the 'pathlib.' form is skipped, but program_writes uses \\bPath( and reads it as a write call head. The criterion says every call head program_writes reads is judged. Probe: run the Bash guard hook on 'python3 -c \"import pathlib; pathlib.Path(p).write_text(1)\"' under a lease: no answer (allowed). Regression test: a case in tests/guard-interpreters.bats where 'pathlib.Path(p).write_text' / 'pathlib.Path(d, \"x\").unlink()' on a build lease gets the 'cannot name' refusal.",
       "phase": "P177"
     },
@@ -58086,7 +58086,7 @@
       "req": "R219",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "A JS write called on any receiver other than fs/os/etc is NOT refused when the target is a variable: node -e \"require('fs').writeFileSync(p, 'x')\" passes, while require('fs').writeFileSync('src/other.js','x') is refused. Same for destructured calls (writeFileSync(p,'x') after const {writeFileSync} = require('fs')) and any 'x.writeFile(p, ...)'. Cause: program_writes reads the generic '.(writeFile|writeFileSync|appendFile|appendFileSync|createWriteStream|unlink|unlinkSync|rmSync|rmdirSync|mkdirSync|makedirs|rmtree|truncate)(' head on any receiver, but unreadable_calls only knows the receivers os|fs|File|FileUtils|shutil|Dir. require('fs').writeFileSync(...) is the usual node -e form, so the F323 hole stays open for Node. Regression test: node -e \"require('fs').writeFileSync(p, 'x')\" and a heredoc form must get the 'cannot name' refusal.",
       "phase": "P177"
     },
@@ -58095,7 +58095,7 @@
       "req": "R219",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "Ruby and Perl calls written without parentheses are NOT refused when the target is a variable: ruby -e 'File.write p, \"x\"', ruby -e 'File.delete p', ruby -e 'FileUtils.rm_rf d', perl -e 'open FH, \">\", $p' all pass, while the same calls with a literal path ('File.write \"src/pay.py\", \"x\"') get the R76 refusal. Cause: program_writes allows an optional parenthesis after the os|fs|File|FileUtils|shutil|Dir method and after open/unlink/mkdir (\\(?), but unreadable_calls requires a literal '(' for those heads (only unlink/mkdir/rmdir/rename with a $ target are handled without one). Paren-less calls are normal Ruby and Perl, and the goal names both. The docs/guards.md sentence 'a write whose target the guard cannot read ... is refused' is false for these. Regression test: ruby -e 'File.write p, \"x\"' and perl -e 'open FH, \">\", $p' get the 'cannot name' refusal.",
       "phase": "P177"
     }
@@ -70597,6 +70597,17 @@
         "ended": "2026-10-27T15:56:14Z",
         "cost": {
           "usd": 0.37676
+        }
+      },
+      {
+        "id": "fix-20261027T161453Z",
+        "kind": "fix",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M45",
+        "started": "2026-10-27T16:14:53Z",
+        "ended": "2026-10-27T16:21:09Z",
+        "cost": {
+          "usd": 0.72935
         }
       }
     ],
