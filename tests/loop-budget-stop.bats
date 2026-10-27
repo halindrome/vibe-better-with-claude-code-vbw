@@ -31,13 +31,19 @@ ago() { jq -nr --argjson s "$1" 'now - $s | floor | todate'; }
 opened_ago() { edit_record "(.loop.items[] | select(.id == \"$1\")).opened_at = \"$(ago "$2")\""; }
 
 # shipped_item ID SIZE MINUTES: a done backlog item of that size whose milestone (titled with its text)
-# started MINUTES before it shipped, as the record keeps them: the start in its cost baseline.
+# started MINUTES before it shipped, as the record keeps them: the start in its cost baseline. Both
+# times come from one reading of the clock: two readings that straddle a second make the item a
+# second longer or shorter, and a budget twice the median of three such items misses by two
+# (CI, macOS, 2026-10-27: 4798 for 4800).
 shipped_item() {
-  local t="Shipped item $1"
+  local t="Shipped item $1" n at st
   "$VBW" todo add --sort next --size "$2" "$t" > /dev/null
   "$VBW" todo done "$(jq -r '.todos[-1].id' .vbw/record.json)" > /dev/null
-  edit_record ".shipped += [{id: \"$1\", title: \"$t\", at: \"$(ago 600)\"}]
-    | .costs.milestones[\"$1\"] = {baseline: {s1: {usd: 0, in: 0, out: 0, at: \"$(ago $(( $3 * 60 + 600 )))\"}}}"
+  n=$(jq -nr 'now | floor')
+  at=$(jq -nr --argjson n "$n" '$n - 600 | todate')
+  st=$(jq -nr --argjson n "$n" --argjson m "$3" '$n - 600 - $m * 60 | todate')
+  edit_record ".shipped += [{id: \"$1\", title: \"$t\", at: \"$at\"}]
+    | .costs.milestones[\"$1\"] = {baseline: {s1: {usd: 0, in: 0, out: 0, at: \"$st\"}}}"
 }
 
 @test "T156: with no history an item's budget is the default for its size (no size: medium)" {
