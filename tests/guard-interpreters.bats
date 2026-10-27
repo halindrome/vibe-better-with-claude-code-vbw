@@ -2,8 +2,12 @@
 # R76 (docs/guards.md): a Dev's command that writes a file outside its plan
 # through a program (Python, Node, Perl, Ruby or similar) is refused exactly
 # like a shell write outside its plan; the same program writing a file inside
-# its plan is allowed, and programs that only read stay allowed. L1: the real
-# guard hook on a build lease.
+# its plan is allowed, and programs that only read stay allowed. R219 (F323):
+# a program whose file-writing call names its target through a variable, an
+# expression or another call is refused under a run lease, since the guard
+# cannot read where it writes; a program that writes nothing still passes, and
+# the words of the user docs and the Dev brief state the rule. L1: the real
+# guard hook on a run lease.
 
 load helper
 
@@ -101,4 +105,146 @@ shell_reason() {
   jq '.lease = null' .vbw/record.json > "$TEST_ROOT/e.json" && cp "$TEST_ROOT/e.json" .vbw/record.json
   run dev_shell "python3 -c \"open('src/other.py', 'w').write('x')\""
   [ -z "$output" ]
+}
+
+# R219 (F323): a write whose target the guard cannot read (a variable, an
+# expression, another call) is refused under a run lease, naming the call as
+# written and the fix; the R76 judgment of literal paths stays as it is.
+
+# reason: the guard's whole reason for the last call.
+reason() { printf '%s' "$output" | jq -r '.hookSpecificOutput.permissionDecisionReason'; }
+# unreadable CMD: the last call (CMD) got the unreadable-target refusal.
+unreadable() {
+  denied || { echo "not refused: $1 -> $output"; return 1; }
+  [[ "$(reason)" == *"writes a file the guard cannot name"* ]] || { echo "not the unreadable-target refusal: $1 -> $output"; return 1; }
+}
+# allowed CMD: a build agent's CMD passes the guard.
+allowed() {
+  run dev_shell "$1"
+  [ -z "$output" ] || { echo "refused: $1 -> $output"; return 1; }
+}
+# lease KIND FILES_JSON: the record's lease is a KIND run of sessA writing FILES_JSON (null: any project file).
+lease() {
+  jq --arg k "$1" --argjson f "$2" '.lease = {run: ($k + "-1"), kind: $k, session: "sessA", started_at: (now | todate), files: $f}' \
+    .vbw/record.json > "$TEST_ROOT/e.json" && cp "$TEST_ROOT/e.json" .vbw/record.json
+}
+
+@test "R219: a program naming its write target through a variable, an expression or another call is refused on a build lease whose files do not hold the file" {
+  local c
+  # The F323 shape: a Python heredoc computes the path and opens it for writing.
+  c=$'python3 - <<\'EOF\'\nimport os\np = os.path.join("tests", "x.bats")\nwith open(p, "w") as f:\n    f.write("x")\nEOF'
+  run dev_shell "$c"
+  unreadable "$c"
+  for c in "python3 -c \"open(path, 'w').write('x')\"" \
+           "python3 -c \"p = 'src/other.py'; open(p, 'w').write('x')\"" \
+           "python3 -c \"open(f\\\"{d}/x\\\", 'w').write('x')\"" \
+           "python3 -c \"open('src/pay.py', m).write('x')\"" \
+           "python3 -c \"from pathlib import Path; Path(d, 'x').write_text('x')\"" \
+           "python3 -c \"(root / 'x').write_text('x')\"" \
+           "python3 -c \"import shutil; shutil.copy('a', dst)\"" \
+           "python3 -c \"import os; os.makedirs(d)\"" \
+           "node -e \"fs.writeFileSync(path.join(d, 'x'), 'y')\"" \
+           "node -e \"fs.writeFileSync(\\\`\\\${d}/x\\\`, 'y')\"" \
+           "ruby -e 'File.write(p, \"x\")'" \
+           "perl -e 'open(F, \">\", \$p); print F \"x\"'" \
+           "php -r 'file_put_contents(\$p, \"x\");'"; do
+    run dev_shell "$c"
+    unreadable "$c"
+  done
+}
+
+@test "R219: the reason names the call as written and ends with its own Next line; the user sees the call text first" {
+  local c first next
+  c=$'python3 - <<\'EOF\'\np = "tests/x.bats"\nwith open(p, "w") as f:\n    f.write("x")\nEOF'
+  run dev_shell "$c"
+  denied
+  first='open(p, "w") writes a file the guard cannot name: the program gives its target through a variable, an expression or another call, so the guard cannot read where it writes'
+  next='Next: name the file as a literal path in the program, or write it with the Edit tool (Write for a new file)'
+  [ "$(reason)" = "VBW guard: $first"$'\n'"$next" ] || { echo "the reason is not the pinned words:"; reason; false; }
+  [ "$(printf '%s' "$output" | jq -r '.systemMessage')" = "VBW guard blocked this call: $first" ] || { echo "$output"; false; }
+}
+
+@test "R219: both inline forms of every interpreter the guard reads are judged, under build, fix, qa, map and plan leases; outside a run programs are not judged" {
+  local c kind
+  for c in "python3 -c \"open(p, 'w')\"" "python -c \"open(p, 'w')\"" "node -e \"fs.writeFileSync(p, 'x')\"" \
+           "perl -e 'unlink(\$p)'" "ruby -e 'File.write(p, \"x\")'" "php -r 'file_put_contents(\$p, \"x\");'" \
+           "lua -e 'os.remove(p)'" "deno eval \"import fs from 'node:fs'; fs.writeFileSync(p, 'x')\"" "bun -e \"fs.writeFileSync(p, 'x')\"" \
+           $'python3 - <<\'EOF\'\nopen(p, "w").write("x")\nEOF' \
+           $'node <<\'EOF\'\nconst fs = require("fs");\nfs.writeFileSync(p, "x");\nEOF'; do
+    run dev_shell "$c"
+    unreadable "$c"
+  done
+  c=$'python3 - <<\'EOF\'\nopen(p, "w").write("x")\nEOF'
+  for kind in fix qa map plan; do
+    case $kind in fix) lease fix '["src/pay.py"]' ;; plan) lease plan null ;; *) lease "$kind" '[]' ;; esac
+    run dev_shell "$c"
+    unreadable "$kind lease: $c"
+  done
+  jq '.lease = null' .vbw/record.json > "$TEST_ROOT/e.json" && cp "$TEST_ROOT/e.json" .vbw/record.json
+  allowed "$c"
+}
+
+@test "R219: the R76 order is kept: a literal path outside the plan gets the R76 refusal naming the path, and an unreadable target is refused even when the lease allows any project file" {
+  local c
+  c="python3 -c \"open('src/other.py', 'w').write('x'); open(p, 'w').write('x')\""
+  run dev_shell "$c"
+  denied
+  [[ "$(reason)" == *"src/other.py"*"outside this run's files"* ]] || { echo "not the R76 refusal of the literal path: $(reason)"; false; }
+  [[ "$(reason)" != *"cannot name"* ]] || { echo "the unreadable target was judged before the literal path: $(reason)"; false; }
+  lease build null
+  allowed "python3 -c \"open('docs/notes.md', 'w').write('x')\""
+  c="python3 -c \"open(p, 'w').write('x')\""
+  run dev_shell "$c"
+  unreadable "lease.files null: $c"
+}
+
+@test "R219: a program that writes nothing, a heredoc fed to a non-interpreter, a script file run by name and a string method on a bare variable pass" {
+  local c
+  for c in "python3 -c \"print(p)\"" \
+           "python3 -c \"import json; d = json.load(open(p))\"" \
+           "python3 -c \"open(p)\"" "python3 -c \"open(p, 'r')\"" "python3 -c \"open(p, 'rb')\"" \
+           "node -e \"console.log(fs.readFileSync(p, 'utf8'))\"" \
+           "python3 -c \"from pathlib import Path; print(Path(p).read_text())\"" \
+           $'cat <<\'EOF\'\nopen(p, "w").write("x")\nfs.writeFileSync(p, "x")\nEOF' \
+           $'tee <<\'EOF\'\nopen(p, "w").write("x")\nEOF' \
+           "python3 tools/x.py tests/x.bats" \
+           "python3 -c \"s = 'a'; t = s.replace('a', 'b'); u = s.rename(x, y)\""; do
+    allowed "$c"
+  done
+}
+
+@test "R219: the guard's header states the unreadable-target rule beside the heredoc-as-data rule, and the hook benchmark's program command holds a literal path and a path held in a variable" {
+  local head prog
+  head=$(sed -n '1,/^include/p' "$PLUGIN_ROOT/hooks/guard-bash.jq" | grep '^#')
+  printf '%s\n' "$head" | grep -q 'D281' || { echo "the header no longer names the heredoc-as-data rule (D281)"; false; }
+  printf '%s\n' "$head" | grep -qi 'variable' || { echo "the header does not state the rule on a write target held in a variable"; false; }
+  printf '%s\n' "$head" | grep -qi 'literal' || { echo "the header does not say a literal path is what the guard reads"; false; }
+  prog=$(awk '/A build agent running Python/ { p = 1 } p { print } /interp\.json/ { exit }' "$REPO_ROOT/tools/bench-hooks.sh")
+  printf '%s\n' "$prog" | grep -Fq 'open(\"src/pay.py\", \"w\")' || { echo "the benchmark's program no longer writes a literal path"; false; }
+  printf '%s\n' "$prog" | grep -Eq 'open\([A-Za-z_][A-Za-z0-9_]*, ' || { echo "the benchmark's program has no write through a variable"; false; }
+}
+
+# paragraph FILE TEXT: the paragraph of docs/FILE (lines up to a blank one) holding TEXT, as one line.
+paragraph() {
+  awk -v t="$2" 'BEGIN { RS = "" } index($0, t) { gsub(/\n/, " "); print; exit }' "$REPO_ROOT/docs/$1"
+}
+
+@test "R219 words: docs/guards.md states the rule, docs/workflows.md's refusal table carries the Guards row with the guard's Next text, and the Dev brief says a program names its file as a literal path" {
+  local p row line
+  p=$(paragraph guards.md 'Programs that write files')
+  [ -n "$p" ] || { echo "docs/guards.md: no paragraph 'Programs that write files'"; false; }
+  [[ "$p" != *"stays a guard rail"* ]] || { echo "docs/guards.md still leaves a path held in a variable to the guard rail"; false; }
+  printf '%s\n' "$p" | grep -q 'cannot read' || { echo "docs/guards.md does not say the guard cannot read such a target"; false; }
+  printf '%s\n' "$p" | grep -Eq 'refuse[sd]' || { echo "docs/guards.md does not say the write is refused"; false; }
+  printf '%s\n' "$p" | grep -q 'writes nothing' || { echo "docs/guards.md does not say a program that writes nothing passes"; false; }
+  printf '%s\n' "$p" | grep -q 'by name' || { echo "docs/guards.md does not say a script file run by name is not read"; false; }
+  row=$(awk '/^### Every refusal and its next step/ { p = 1; next } p && /^### / { exit } p && /^\| Guards/ { print }' "$REPO_ROOT/docs/workflows.md" \
+    | grep -F 'cannot name' | sed -e 's/^| .* | //' -e 's/ |$//')
+  [ -n "$row" ] || { echo "docs/workflows.md: no Guards row for a program writing a file the guard cannot name"; false; }
+  [ "$row" = 'name the file as a literal path in the program, or write it with the Edit tool (Write for a new file)' ] || { echo "the row's Next text is not the guard's: $row"; false; }
+  line=$(grep -F 'Write only inside the project' "$PLUGIN_ROOT/agents/dev.md")
+  [ -n "$line" ] || { echo "plugin/agents/dev.md: no 'Write only inside the project' line"; false; }
+  printf '%s\n' "$line" | grep -q 'Edit' || { echo "the Dev brief's writing rule does not name the Edit tool"; false; }
+  printf '%s\n' "$line" | grep -q 'literal path' || { echo "the Dev brief's writing rule does not say a program names its file as a literal path"; false; }
+  printf '%s\n' "$line" | grep -Eq 'cannot (read|name)' || { echo "the Dev brief's writing rule does not give the reason (the guard cannot read the target)"; false; }
 }

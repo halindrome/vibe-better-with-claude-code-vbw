@@ -4,8 +4,10 @@
 # of what vbw apply refuses name a check whose rules two plans own that build one
 # after the other (the earlier plan's mutation step would find the check red on
 # unbroken code); that list and docs/record.md's requirements row say a
-# requirement's rules name a plan on every rule or on none. L1: the text of the
-# documents (one line or sentence holds each fact; no exact wording).
+# requirement's rules name a plan on every rule or on none. R216: the refusal
+# table's Next cells carry the kernel's words. R220: the documents name the
+# empty-filter refusal of a bats check and its next step. L1: the text of the
+# documents (one line or sentence holds each fact; the Next cells word for word).
 
 load helper
 
@@ -79,4 +81,20 @@ kernel_next() {
   row=$(refusal_row 'only some')
   [ -n "$row" ] || { echo "no mixed-owner row in the refusal table"; false; }
   [ "$row" = "$(kernel_next "$mixed")" ] || { echo "mixed-owner row: '$row' differs from the kernel's '$(kernel_next "$mixed")'"; false; }
+}
+
+@test "R220: docs/workflows.md's list of what vbw apply refuses names the empty-filter refusal (the check, the file, the reason), and docs/proof.md says a case filter must match a case in the file at apply time" {
+  refusal_list | grep -qi 'case filter' || { echo "the refusal list has no bullet for a case filter:"; refusal_list; false; }
+  refusal_list | grep -Eqi 'no case name|matches no case' || { echo "the refusal list does not say the filter matches no case name:"; refusal_list; false; }
+  refusal_list | grep -qi 'never because none exist' || { echo "the refusal list does not give the reason (red because its cases fail, never because none exist):"; refusal_list; false; }
+  section proof.md '^## Checks' | grep -i 'case filter' | grep -qi 'apply' || { echo "docs/proof.md, Checks: no sentence says a case filter must match a case in the file at apply time"; false; }
+  section proof.md '^## Checks' | grep -i 'case filter' | grep -Eqi 'match(es)? (a|at least one) case' || { echo "docs/proof.md, Checks: the case filter is not said to match a case in the file"; false; }
+}
+
+@test "R220: the refusal table's empty-filter row carries the kernel's Next text" {
+  local msg row
+  msg="C9 runs tests/x.bats with a case filter (--filter 'R220') that matches no case name in the file: the Lead writes the failing cases at planning, so a new check is red because its cases fail, never because none exist"
+  row=$(refusal_row 'no case name')
+  [ -n "$row" ] || { echo "no empty-filter row in the refusal table"; false; }
+  [ "$row" = "$(kernel_next "$msg")" ] || { echo "empty-filter row: '$row' differs from the kernel's '$(kernel_next "$msg")'"; false; }
 }

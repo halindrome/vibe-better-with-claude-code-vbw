@@ -6577,6 +6577,104 @@
       "files": [
         "tests/output-child-exit.bats"
       ]
+    },
+    {
+      "id": "C497",
+      "req": "R219",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "--filter",
+        "R219:",
+        "tests/guard-interpreters.bats"
+      ],
+      "files": [
+        "tests/guard-interpreters.bats"
+      ]
+    },
+    {
+      "id": "C498",
+      "req": "R219",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "--filter",
+        "R219 words",
+        "tests/guard-interpreters.bats"
+      ],
+      "files": [
+        "tests/guard-interpreters.bats"
+      ]
+    },
+    {
+      "id": "C499",
+      "req": "R219",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "--filter",
+        "R219",
+        "tests/refusal-next-step.bats"
+      ],
+      "files": [
+        "tests/refusal-next-step.bats"
+      ]
+    },
+    {
+      "id": "C500",
+      "req": "R220",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "--filter",
+        "R220",
+        "tests/apply-refusal-modes.bats"
+      ],
+      "files": [
+        "tests/apply-refusal-modes.bats"
+      ]
+    },
+    {
+      "id": "C501",
+      "req": "R220",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "--filter",
+        "R220",
+        "tests/refusal-next-step.bats"
+      ],
+      "files": [
+        "tests/refusal-next-step.bats"
+      ]
+    },
+    {
+      "id": "C502",
+      "req": "R220",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "--filter",
+        "R220",
+        "tests/rules-prompts.bats"
+      ],
+      "files": [
+        "tests/rules-prompts.bats"
+      ]
+    },
+    {
+      "id": "C503",
+      "req": "R220",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "--filter",
+        "R220",
+        "tests/rules-docs.bats"
+      ],
+      "files": [
+        "tests/rules-docs.bats"
+      ]
     }
   ],
   "project": {
@@ -16473,7 +16571,48 @@
       "proof": "auto",
       "status": "open",
       "milestone": "M45",
-      "rules": []
+      "rules": [
+        {
+          "text": "in every program text the guard reads (the -c/-e code arguments of an interpreter command and the body of a heredoc fed to one), a call head program_writes reads as a write whose target argument is not a string literal (it starts with a name, a $, a parenthesis, an f-string prefix, a backtick template holding ${, a dot or any token other than a plain quote) is refused under a run lease; for open, a non-literal mode argument is refused the same way",
+          "check": "C497",
+          "plan": "P177.1"
+        },
+        {
+          "text": "the reason's first line is the call as written in the program (from its head through the closing parenthesis of its arguments) followed by ' writes a file the guard cannot name: the program gives its target through a variable, an expression or another call, so the guard cannot read where it writes', and its last line is 'Next: name the file as a literal path in the program, or write it with the Edit tool (Write for a new file)'; the systemMessage shows the user the first line",
+          "check": "C497",
+          "plan": "P177.1"
+        },
+        {
+          "text": "the rule holds for an agent of the owning session on both inline forms of every interpreter the guard reads (python3 -c, python -c, node -e, perl -e, ruby -e, php -r, lua -e, deno eval, bun -e; python3 - <<EOF and node <<EOF heredocs), under build, fix, qa, map and plan leases; outside a run programs are not judged",
+          "check": "C497",
+          "plan": "P177.1"
+        },
+        {
+          "text": "the R76 order is kept: a literal path outside the plan gets the R76 refusal naming the path, judged before any unreadable target of the same program; a literal path inside the plan passes; an unreadable target is refused even when lease.files is null (any project file allowed)",
+          "check": "C497",
+          "plan": "P177.1"
+        },
+        {
+          "text": "a program that writes nothing (print, json.load(open(p)), open(p), open(p, 'r'), open(p, 'rb'), fs.readFileSync(p), Path(p).read_text()), a heredoc with the same text fed to cat or tee, a script file run by name and a string method on a bare variable receiver (s.replace, s.rename) pass",
+          "check": "C497",
+          "plan": "P177.1"
+        },
+        {
+          "text": "the Bash guard's block of a program writing a file it cannot name ends with its next step, as a line of the 'every block of the file guard and the Bash guard ends with its next step' case of tests/refusal-next-step.bats",
+          "check": "C499",
+          "plan": "P177.1"
+        },
+        {
+          "text": "the guard-bash.jq header states the rule beside the heredoc-as-data rule (D281), and tools/bench-hooks.sh's interp.json program writes a literal path and a path held in a variable, so the measured 'guard (interp)' cases hold both shapes",
+          "check": "C497",
+          "plan": "P177.1"
+        },
+        {
+          "text": "docs/guards.md's 'Programs that write files' paragraph states the rule in place of the guard-rail sentence (a write whose target the guard cannot read is refused with the fix named; a program that writes nothing passes; a script file run by name is not read); docs/workflows.md's refusal table has a Guards row for it whose Next cell is the guard's words; plugin/agents/dev.md's 'Write only inside the project' line says files are written with the Edit and Write tools and a program that writes names its file as a literal path, because the guard cannot read another target",
+          "check": "C498",
+          "plan": "P177.2"
+        }
+      ]
     },
     {
       "id": "R220",
@@ -16481,7 +16620,43 @@
       "proof": "auto",
       "status": "open",
       "milestone": "M45",
-      "rules": []
+      "rules": [
+        {
+          "text": "in every mode (full apply, --add, --patch), judged on the document's checks after the merge and after the two-owner and mixed-owner judgments, a check whose argv command (env and timeout wrappers skipped) is bats with a case filter (--filter PATTERN, --filter=PATTERN or -f PATTERN) whose pattern, an unanchored extended regular expression (grep -E -e), matches no @test name of the .bats files the argv names, as they stand in the project folder at apply time, is refused before anything changes, with the mode's name; the record is byte-identical and the runner never runs",
+          "check": "C500",
+          "plan": "P178.1"
+        },
+        {
+          "text": "the words are 'C9 runs tests/x.bats with a case filter (--filter 'R220') that matches no case name in the file: the Lead writes the failing cases at planning, so a new check is red because its cases fail, never because none exist', and the refusal ends 'Next: write the cases the filter names into tests/x.bats (each @test name matching the pattern), see them fail with the runner, then send the document again; or correct the pattern'",
+          "check": "C500",
+          "plan": "P178.1"
+        },
+        {
+          "text": "a test file missing from the project folder counts as one with no case names and is named 'FILE (missing)'; a pattern grep -E cannot parse matches nothing and is named; several files, or the .bats files directly under a directory word, are named comma-separated and a match in any one passes; a pattern matching at least one case passes",
+          "check": "C500",
+          "plan": "P178.1"
+        },
+        {
+          "text": "a check without a filter, a runner that is not bats (pytest -k, go test -run), --filter-tags and --filter-status are not judged; -f and --filter= are judged like --filter, behind env and timeout wrappers too; a check the document resends unchanged is judged on the file as it stands; the two-owner and mixed-owner refusals keep their precedence",
+          "check": "C500",
+          "plan": "P178.1"
+        },
+        {
+          "text": "every mode's refusal of an empty filter ends with a Next line of its own, never the fallback arm's, and apply_next fed the message directly answers with the empty-filter arm naming the file",
+          "check": "C501",
+          "plan": "P178.1"
+        },
+        {
+          "text": "the Lead's brief rule 6 Lean checks line says the filter names cases the file already holds, written at planning before vbw apply, because vbw apply refuses a bats case filter that matches no case name and a Dev cannot add them later (check files are protected during the build)",
+          "check": "C502",
+          "plan": "P178.2"
+        },
+        {
+          "text": "docs/workflows.md's list of what vbw apply refuses names the empty-filter refusal (the check, the file, the reason: red because its cases fail, never because none exist) and its 'Every refusal and its next step' table has a row whose Next cell is the kernel's words; docs/proof.md's Checks section says a case filter must match a case in the file at apply time",
+          "check": "C503",
+          "plan": "P178.3"
+        }
+      ]
     }
   ],
   "phases": [
@@ -24943,6 +25118,66 @@
           "reason": "Dev blocked P176.1: Task 1 needs the R218 self-test cases written into tests/output-child-exit.bats, but C496 lists that file as protected and the guard denies every write to it while building (Bash and Edit). The file has no R218 cases yet (C496 is red as expected). The contract needs the approved check file to hold the R218 tests before the build, or C496 must not protect a file the plan has to write. No code changed."
         }
       ]
+    },
+    {
+      "id": "P177",
+      "title": "The Bash guard stops a small inline program that writes a file it cannot name",
+      "reqs": [
+        "R219"
+      ],
+      "milestone": "M45",
+      "goal": "While a builder or fixer works under a run, a short program typed straight into the command (Python, Node, Perl, Ruby and the other interpreters the guard already reads, given as a heredoc or a -c/-e argument) that writes a file but names that file through a variable, an expression or another call is stopped by the Bash guard, which says it cannot read where the program writes and names the fix (a literal path, or the Edit tool); a literal path is judged exactly as today, and a program that writes nothing still passes.",
+      "criteria": [
+        "The rule, in plugin/hooks/guard-bash.jq: in every program text the guard reads today (the -c/-e and similar code arguments of a command whose cmd matches `interpreter`, and the body of a heredoc fed to one, `heredoc_programs`), every call head that program_writes reads as a write (open with a mode holding w, a, x or +; Path(...).write_text/write_bytes/unlink/touch/mkdir/rmdir/rename/replace and Path(...).open with such a mode; fs.writeFile/writeFileSync/appendFile/appendFileSync/createWriteStream/unlink/unlinkSync/rmSync/rmdirSync/mkdirSync/makedirs/rmtree/truncate; the os, fs, File, FileUtils, shutil and Dir methods it lists; unlink, mkdir, rmdir, file_put_contents; rename and the copy forms' destination) whose target argument is not a string literal (it starts with a name, a $, a parenthesis, an f-string prefix f\"/f', a backtick template holding ${, a dot or any token other than a plain quote) is a denial under a run lease; for open, a non-literal mode argument is judged the same way, since the guard cannot read whether it writes.",
+        "The reason names the call as written in the program and ends with its own Next line, both pinned word for word in the test: `<call as written> writes a file the guard cannot name: the program gives its target through a variable, an expression or another call, so the guard cannot read where it writes` and `Next: name the file as a literal path in the program, or write it with the Edit tool (Write for a new file)`; the denial's first line is what the user sees (docs/guards.md), so it starts with the call text.",
+        "Where it applies: under a build or fix lease, for an agent of the owning session, on both inline forms (python3 -c, python -c, node -e, perl -e, ruby -e, php -r, lua -e, deno eval, bun -e; and heredocs such as python3 - <<'EOF' and node <<EOF); the same rule holds under the read-only qa and map leases (every write is refused there already) and the plan lease, as in_run judges every lease through one branch; outside a run programs stay unjudged (the R76 case stays). The R76 order is kept: a literal path outside the plan gets today's R76 refusal naming the path, a literal path inside the plan passes, and an unreadable target is refused even when lease.files is null (any project file allowed), because the guard cannot know where it lands.",
+        "What passes, each a case: a program that writes nothing (print, json.load(open(p)), open(p), open(p, 'r'), open(p, 'rb'), fs.readFileSync(p), Path(p).read_text()); python3 -m pytest and node --test; a heredoc fed to cat, tee or any non-interpreter holding the same program text is data (the 'a large heredoc is data' case in tests/hooks-guard.bats stays green); a program file run by name (python3 tools/x.py) is not read, as today; a Python string method named like a path method on a bare variable receiver (s.replace('a', 'b'), s.rename(...)) is not judged, because only the call heads program_writes reads are judged.",
+        "Tests, each shown red before the guard change, in tests/guard-interpreters.bats (R76's file, the area's one file; no new test file): the F323 shape first (a build lease whose files do not include tests/x.bats; a python heredoc that computes the path in a variable and opens it with 'w'); python open(path, 'w') from -c; open(f\"{d}/x\", 'w'); Path(d, 'x').write_text and (root / 'x').write_text; shutil.copy('a', dst); os.makedirs(d); node fs.writeFileSync(path.join(d, 'x'), ...) and a template literal with ${}; ruby File.write(p, ...); perl open(F, '>', $p); php file_put_contents($p, ...); and the passing cases above, plus a case asserting the whole reason and Next line. tests/refusal-next-step.bats's 'every block of the file guard and the Bash guard ends with its next step' case gets this block's line, as its header requires of every new refusal path.",
+        "Hot path: the new reading is one match over the program text (one regex, or folded into program_writes's regex); tools/bench-hooks.sh's interp.json program gains a line that writes through a variable, so the measured 'guard (interp)' and 'guard (interp, large record)' cases hold both shapes and stay within the 20 ms budget in the release run; tests/guard-cost.bats stays green (its label greps unchanged); no new subprocess, no file read by the guard.",
+        "Words: docs/guards.md's 'Programs that write files' paragraph replaces 'A path held in a variable cannot be read, so this stays a guard rail (see the first paragraph)' with the rule (a write whose target the guard cannot read is refused with the fix named; a program that writes nothing passes; a script file run by name is not read); docs/workflows.md's 'Every refusal and its next step' table gains a Guards row for it with the Next text above; plugin/agents/dev.md's writing rule (the 'Write only inside the project' line) says files are written with the Edit and Write tools, and a program that writes names its file as a literal path, because the guard refuses a program whose write target it cannot read. Each of the three is pinned by one case in tests/guard-interpreters.bats (docs/guards.md's paragraph, the table row's Next text, the Dev brief's sentence).",
+        "Standards: the guard-bash.jq header comment states the rule beside the heredoc-as-data rule (ledger D281) it refines; no hook answer allows (tools/check-hook-answers.sh, tests/standards.bats); JSON only through jq; the guard reads no file and runs no program."
+      ],
+      "proposed": "deep",
+      "tier": "deep",
+      "reasons": [
+        "requirements: 1",
+        "files: 7 (158619 bytes)",
+        "files: more than 2 in a repository tracking 1184 files",
+        "risk: none",
+        "breaks: R76, R156, R162, R188, R196, R210, R211, R212, R213",
+        "guarded: R13 (C12), R14 (C13), R15 (C14), R24 (C23), R25 (C24), R28 (C25), R31 (C27), R39 (C36), R44 (C44, C45), R50 (C51), R60 (C72, C94), R61 (C73, C74, C75, C76, C77), R69 (C110, C120, C122), R70 (C114), R73 (C98), R74 (C99, C100), R75 (C101), R77 (C104), R78 (C105, C106), R79 (C107), R80 (C108), R81 (C109, C111, C112, C113), R83 (C119), R95 (C149, C150), R96 (C151, C152), R99 (C155), R101 (C179), R106 (C164, C165), R107 (C166, C167), R116 (C182, C183), R118 (C184), R120 (C185), R123 (C190, C191), R128 (C200), R129 (C196), R130 (C197), R134 (C201), R135 (C202), R147 (C212, C215, C237), R148 (C213, C214, C216, C238), R149 (C217, C218, C219, C220, C221, C222), R150 (C223, C224, C225, C226, C227, C228, C229, C230), R151 (C231, C232), R157 (C244), R158 (C245), R159 (C246), R160 (C247, C263, C264), R163 (C250), R165 (C252), R166 (C253, C254, C255, C256, C267), R167 (C257, C258, C259, C260), R177 (C287, C288), R178 (C290, C291, C292, C293, C294, C295, C296, C311), R179 (C297, C298, C299, C300, C301, C302, C303, C304, C305, C306, C312), R180 (C307, C308, C309, C310), R181 (C313, C314, C315, C316, C317, C318, C319, C320, C321), R182 (C322, C323, C324, C325, C326), R184 (C328, C329, C330, C331, C332, C333), R185 (C334, C335, C336, C337, C338, C339, C340, C341, C342, C343), R186 (C344, C345, C346, C347, C348), R190 (C374, C375, C376, C377, C378, C379, C380, C381, C382, C383, C384, C385, C386, C387, C388), R192 (C401, C402, C403, C404, C405, C406, C407, C408, C409, C410), R193 (C411, C412), R194 (C417, C418, C419), R197 (C413, C414), R198 (C423), R203 (C448, C449, C450), R207 (C461, C462, C463), R209 (C469, C470, C471, C472, C473)",
+        "tests: project test command"
+      ],
+      "predicted": "deep"
+    },
+    {
+      "id": "P178",
+      "title": "vbw apply refuses a bats case filter that names no case in the test file",
+      "reqs": [
+        "R220"
+      ],
+      "milestone": "M45",
+      "goal": "When the Lead's plan carries a check that runs a bats test file with a case filter (bats --filter PATTERN, which runs only the test cases whose names match the pattern) and no case name in that file matches, vbw apply refuses before writing anything, naming the check and the file, so a new check is red because its cases fail, never because none exist; the Lead's brief says the failing cases are written at planning, before vbw apply.",
+      "criteria": [
+        "The rule, in plugin/lib/cmd-apply.sh, in every mode (full apply, --add, --patch), judged on the document's checks after the merge and before record_update, after the two-owner and mixed-owner judgments (R211, R212, R215) in the same problem chain: for every check in the document whose run argv's command (the basename of its first word, env and timeout wrappers skipped) is bats and carries a case filter (--filter PATTERN, --filter=PATTERN or -f PATTERN), the kernel reads the case names (the quoted name of each @test \"...\" or @test '...' line) of the test files the argv names (the words ending in .bats that are not an option's value, and the .bats files directly under a directory word) as they stand in the project folder at apply time (the bytes the approval will freeze), and judges PATTERN as bats does (an extended regular expression, unanchored; grep -E, the pattern given with -e so one starting with - is not read as an option, stderr dropped); when no name of any of those files matches, vbw apply refuses before anything changes (the record byte-unchanged in the test), prefixed with the mode's name (R156).",
+        "The words, pinned word for word in the test: `C9 runs tests/x.bats with a case filter (--filter 'R220') that matches no case name in the file: the Lead writes the failing cases at planning, so a new check is red because its cases fail, never because none exist` and its own apply_next arm `Next: write the cases the filter names into tests/x.bats (each @test name matching the pattern), see them fail with the runner, then send the document again; or correct the pattern`; several files are named comma-separated in the file's place; the kernel never runs the runner at apply, it reads the file.",
+        "Edges, each a case: a test file missing from the project folder counts as a file with no case names and is refused by the same message with '(missing)' after its name; a pattern grep -E cannot parse matches nothing and is refused naming it; with several files a match in any one passes; a pattern matching at least one case passes; a check without a filter, a run whose command is not bats (pytest -k, node --testNamePattern, go test -run), --filter-tags and --filter-status are not judged and pass as today; the -f and --filter= forms are judged like --filter; a check the document resends unchanged is judged like any other (a full apply resends every check of the milestone); the R211/R212/R215 refusals keep their precedence when both apply.",
+        "Tests, each shown red before the code change, in the existing files of the area (no new test file): tests/apply-refusal-modes.bats holds the refusal and acceptance cases on a fixture bats file with named cases (full, --add and --patch each refused with the mode name; the record byte-unchanged); tests/refusal-next-step.bats's apply_refusal helper gets a case per mode for this refusal (its Next line differing from the fallback arm's text, R216) and the direct apply_next case gains this message, so a dropped arm turns the file red.",
+        "Kernel constraints: bash 3.2; the loop over the document's checks takes its jq output through a pipe or writes only through vbw_out, under tools/check-loop-writes.sh as P176 widens it (a call to a function that writes counts as the write); the record and the merged document reach jq by path or --slurpfile, never on a command line (tests/record-args-rule.bats green); JSON only through jq; the case names are read with awk or sed on the bats file (not JSON), the file read inside the project only.",
+        "Words for the Lead: plugin/agents/lead.md rule 6's Lean checks line says the filter names cases the file already holds, so the failing cases are written at planning, before vbw apply, because vbw apply refuses a bats case filter that matches no case name and a Dev cannot add them later (check files are protected during the build, the reason M45's Devs were blocked); pinned by an R220 case in tests/rules-prompts.bats.",
+        "User docs: docs/workflows.md's description of what vbw apply refuses gains the empty-match refusal (the check named, the file named, the reason: red because its cases fail, never because none exist) and its 'Every refusal and its next step' table a row with the exact Next text above; docs/proof.md's checks table (the run row) or its lean-checks words say a case filter must match a case in the file at apply time; cases in tests/rules-docs.bats pin the two facts and the row's Next text to the kernel's words, in that file, not a new one."
+      ],
+      "tier": "deep",
+      "reasons": [
+        "requirements: 1",
+        "files: 7 (216849 bytes)",
+        "files: more than 2 in a repository tracking 1184 files",
+        "risk: none",
+        "breaks: R76, R156, R162, R188, R196, R210, R211, R212, R213",
+        "guarded: R12 (C11), R13 (C12), R14 (C13), R22 (C19), R23 (C20), R24 (C23), R25 (C24), R27 (C21), R28 (C25), R31 (C27), R32 (C28), R39 (C36), R43 (C42, C43), R44 (C44, C45), R45 (C39, C40, C41), R46 (C46), R47 (C47), R48 (C49, C50), R49 (C48), R50 (C51), R60 (C72, C94), R61 (C73, C74, C75, C76, C77), R66 (C95), R69 (C110, C120, C122), R70 (C114), R71 (C115, C121), R73 (C98), R74 (C99, C100), R75 (C101), R77 (C104), R78 (C105, C106), R79 (C107), R80 (C108), R81 (C109, C111, C112, C113), R92 (C131, C132, C133, C134, C135, C136, C137, C138, C139), R93 (C140, C141, C142, C143, C144), R94 (C145, C146, C147, C148), R95 (C149, C150), R96 (C151, C152), R97 (C153), R98 (C154), R99 (C155), R100 (C156), R101 (C179), R102 (C158, C159), R103 (C160), R104 (C161, C162), R105 (C163), R106 (C164, C165), R107 (C166, C167), R110 (C169, C170), R111 (C171, C172, C173, C174, C175), R115 (C181), R116 (C182, C183), R118 (C184), R123 (C190, C191), R129 (C196), R130 (C197), R131 (C198), R132 (C199), R134 (C201), R135 (C202), R144 (C208, C209), R147 (C212, C215, C237), R148 (C213, C214, C216, C238), R149 (C217, C218, C219, C220, C221, C222), R152 (C233, C234), R153 (C235, C236, C239), R157 (C244), R158 (C245), R159 (C246), R160 (C247, C263, C264), R161 (C248, C265, C266), R163 (C250), R166 (C253, C254, C255, C256, C267), R167 (C257, C258, C259, C260), R168 (C261, C262), R169 (C268), R170 (C269), R174 (C279, C280), R175 (C274, C275), R176 (C276, C277, C278), R177 (C287, C288), R179 (C297, C298, C299, C300, C301, C302, C303, C304, C305, C306, C312), R180 (C307, C308, C309, C310), R181 (C313, C314, C315, C316, C317, C318, C319, C320, C321), R182 (C322, C323, C324, C325, C326), R183 (C327), R186 (C344, C345, C346, C347, C348), R192 (C401, C402, C403, C404, C405, C406, C407, C408, C409, C410), R193 (C411, C412), R194 (C417, C418, C419), R195 (C420, C421, C422), R197 (C413, C414), R202 (C432, C433, C434, C435, C436, C437, C438, C439, C440, C441, C442, C443, C444, C445, C446, C447), R203 (C448, C449, C450), R204 (C451, C452, C453, C454), R205 (C455, C456, C457, C458, C467), R206 (C459, C460), R207 (C461, C462, C463), R209 (C469, C470, C471, C472, C473), R214 (C485, C486, C487)",
+        "tests: project test command"
+      ],
+      "predicted": "deep"
     }
   ],
   "plans": [
@@ -54628,30 +54863,6 @@
       ]
     },
     {
-      "id": "P175.2",
-      "phase": "P175",
-      "title": "The docs say pending and strengthened files are among the files the plan may strengthen",
-      "reqs": [
-        "R217"
-      ],
-      "files": [
-        "docs/proof.md",
-        "docs/record.md",
-        "tests/mutate-pending-check-docs.bats"
-      ],
-      "after": [
-        "P174.2"
-      ],
-      "status": "blocked",
-      "role": "dev",
-      "tasks": [
-        "Tests first (red): a 'R217:' case in tests/mutate-pending-check-docs.bats asserts docs/proof.md's 'caught by the pending one' paragraph (The mutation check section) and docs/record.md's plans row (the mutations description) say the pending and strengthened files are among the files the plan may strengthen (the files of its own rules' checks)",
-        "docs/proof.md: the paragraph says the pending file is one the plan may strengthen (a file of its own rules' checks), and strengthened names such files changed since the earlier survivor",
-        "docs/record.md plans row: strengthened and pending are files the plan may strengthen (the files of its own rules' checks); bats tests/mutate-pending-check-docs.bats green"
-      ],
-      "note": "Task 1 needs an R217 case added to tests/mutate-pending-check-docs.bats, but that file is protected by C495 and the guard refuses any edit ('the contract is fixed while building'). The file has no R217 case, so C495 is red only because nothing matches. The case must be added through the contract (approved check file), then the docs tasks can proceed."
-    },
-    {
       "id": "P176.1",
       "phase": "P176",
       "title": "check-loop-writes.sh finds the functions that write and refuses a call to one inside a process-substitution loop",
@@ -54666,15 +54877,144 @@
         "plugin/lib/proofcopy.sh"
       ],
       "after": [],
-      "status": "blocked",
+      "status": "planned",
       "role": "dev",
       "tasks": [
         "Tests first (red): 'R218:' self-test cases in tests/output-child-exit.bats (planted learns to write several files, in one or two directories): refused and named at the calling line, with the writer's name and its FILE:LINE after it: a planted function 'say() { printf ... }' called in a loop fed by a process substitution; a writer defined in a second file under another DIR; a two-step chain (a calls b, b writes with echo >&2); passing: a function whose body writes through vbw_out, '( printf ... )', 'printf ... | cat' or 'printf ... > \"$f\"' called in such a loop, and a writer called as '$(say x)', 'say x > file', 'say x | cat' or inside a pipe-fed loop; the vbw_die-in-a-loop acceptance stays as it is; a 'R218:' wording-and-standards case asserts the tool's header states the writer-function rule and no longer the 'reviewer's to judge' sentence, AGENTS.md's 'No builtin write while the shell has a live child' line says a call to a function that writes counts as the write, the tool has no mapfile, readarray or associative array and passes bash -n under /bin/bash; the header of tests/output-child-exit.bats names the widened rule",
         "tools/check-loop-writes.sh: a first pass over every shell file under all DIRs (one awk program fed every file, or one run per file whose output is gathered) collects the writer functions: a function whose body holds a builtin write that the existing writes() rules judge to run in the function's shell, then to a fixed point the functions that call a writer under the same rules (not in a command or process substitution, a subshell, a pipeline stage, the background, a pipe-fed loop, nor redirected into a file); the loop pass refuses a call to a writer in the loop's own shell like a printf, printing FILE:LINE:text of the calling line and then the writer's name and where it writes (FILE:LINE), exit 1; bash 3.2 and awk only, guarded array expansions, nothing written outside the repository; the header replaces the reviewer sentence with the rule",
         "The shipped-code case (plugin/bin, lib, hooks, scripts) on the widened rule: expected green (a scan during planning found no writer function called in a loop body: consent_grant writes only into a file and calls consent_file in a command substitution; proofcopy_entry writes through vbw_out or into a file); if the finished tool refuses a call in plugin/lib/cmd-approve.sh or plugin/lib/proofcopy.sh, fix it as the rule prescribes (vbw_out, or the producer piped into the loop) in that file and name the fix in the commit; a refusal in any other shipped file blocks the plan with the finding",
         "AGENTS.md's 'No builtin write while the shell has a live child' line (CLAUDE.md is a symlink: one edit); bash tools/test.sh --lint green; under /bin/bash: bats tests/output-child-exit.bats and tests/standards.bats green"
+      ]
+    },
+    {
+      "id": "P175.2",
+      "phase": "P175",
+      "title": "The docs say pending and strengthened files are among the files the plan may strengthen",
+      "reqs": [
+        "R217"
       ],
-      "note": "Task 1 needs the R218 self-test cases written into tests/output-child-exit.bats, but C496 lists that file as protected and the guard denies every write to it while building (Bash and Edit). The file has no R218 cases yet (C496 is red as expected). The contract needs the approved check file to hold the R218 tests before the build, or C496 must not protect a file the plan has to write. No code changed."
+      "files": [
+        "docs/proof.md",
+        "docs/record.md"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "docs",
+      "tasks": [
+        "Red first: run C495 (bats --print-output-on-failure --filter R217 tests/mutate-pending-check-docs.bats); its R217 case is written and red today; read its greps (the pending paragraph of docs/proof.md ties 'pending' and 'strengthened' to the plan's 'own rules' checks; docs/record.md's cell describing strengthened and pending does the same)",
+        "docs/proof.md, the 'caught by the pending one' paragraph (The mutation check section): the pending file is one the plan may strengthen (a file of its own rules' checks), and strengthened names such files changed since the earlier survivor; the sentences keep 'pending' or 'strengthened' and 'own rules' in one sentence each",
+        "docs/record.md, the plans row: the mutations description says strengthened and pending are files the plan may strengthen (the files of its own rules' checks); bats tests/mutate-pending-check-docs.bats green under /bin/bash"
+      ]
+    },
+    {
+      "id": "P177.1",
+      "phase": "P177",
+      "title": "The Bash guard refuses an inline program whose write target it cannot read, with the call named and the fix",
+      "reqs": [
+        "R219"
+      ],
+      "files": [
+        "plugin/hooks/guard-bash.jq",
+        "tools/bench-hooks.sh",
+        "tests/guard-interpreters.bats",
+        "tests/refusal-next-step.bats"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "Red first: run C497 (bats --print-output-on-failure --filter 'R219:' tests/guard-interpreters.bats) and C499 (bats --print-output-on-failure --filter R219 tests/refusal-next-step.bats): the cases are written and red today, because the guard lets a program through when its write target is a variable; read them for the exact words and shapes they pin (the F323 heredoc, every -c/-e form, the leases, the R76 order, what passes)",
+        "plugin/hooks/guard-bash.jq: one new regex over the program text (program_unreadable, or folded into program_writes's regex, one match pass): every call head program_writes reads as a write (open with a mode holding w, a, x or +; Path(...).write_text/write_bytes/unlink/touch/mkdir/rmdir/rename/replace and a parenthesised receiver's .write_text/.write_bytes; the fs./os./File./FileUtils./shutil./Dir. methods; the bare unlink, mkdir, rmdir, rename, file_put_contents, never after a dot, so s.rename(x) is a string method; the copy forms' destination) whose target argument is not a string literal (it starts with a name, $, a parenthesis, f\"/f', a backtick template holding ${, a dot, any token but a plain quote), and open with a non-literal mode; the match is the call as written, from its head through the closing parenthesis of its arguments. program_denial keeps the R76 literal judgments first, then each unreadable call becomes the deny reason '<call> writes a file the guard cannot name: the program gives its target through a variable, an expression or another call, so the guard cannot read where it writes' + newline + 'Next: name the file as a literal path in the program, or write it with the Edit tool (Write for a new file)'; applied in in_run's interpreter branch and in the heredoc tail (heredoc_programs), under every lease kind through the one in_run branch; outside a run nothing changes. The header comment states the rule (a literal path is what the guard reads; a target held in a variable is refused) beside the heredoc-as-data rule (D281). No file read, no subprocess",
+        "tools/bench-hooks.sh: interp.json's program gains a line that writes through a variable (p = \"src/pay.py\" then open(p, \"w\")) beside the literal open(\"src/pay.py\", \"w\"), so 'guard (interp)' and 'guard (interp, large record)' measure both shapes; run VBW_BENCH_ONLY='guard (interp)|guard (interp, large record)' bash tools/bench-hooks.sh and keep the own CPU per call within the 20 ms budget; bats tests/guard-cost.bats green (its label greps unchanged)",
+        "Standards and the area under /bin/bash: bash tools/check-hook-answers.sh plugin/hooks tests/hook-answers.bats (no hook answer allows; pin the new deny reason there if the tool asks for it); PATH=\"/bin:$PATH\" bats tests/guard-interpreters.bats tests/refusal-next-step.bats tests/hooks-guard.bats tests/guard-cost.bats tests/standards.bats: every case green except the 'R219 words' case (P177.2's) and the R220 lines (P178.1's)"
+      ]
+    },
+    {
+      "id": "P177.2",
+      "phase": "P177",
+      "title": "The user docs and the Dev brief say a program names its file as a literal path, because the guard cannot read another target",
+      "reqs": [
+        "R219"
+      ],
+      "files": [
+        "docs/guards.md",
+        "docs/workflows.md",
+        "plugin/agents/dev.md"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "Red first: run C498 (bats --print-output-on-failure --filter 'R219 words' tests/guard-interpreters.bats): the case is written and red today; read its greps (docs/guards.md's paragraph: no 'stays a guard rail', has 'cannot read', 'refused' or 'refuses', 'writes nothing', 'by name'; docs/workflows.md's Guards row holds 'cannot name' and its Next cell is the guard's exact words; dev.md's 'Write only inside the project' line names Edit, 'literal path' and 'cannot read' or 'cannot name')",
+        "docs/guards.md, the 'Programs that write files' paragraph: replace 'A path held in a variable cannot be read, so this stays a guard rail (see the first paragraph)' with the rule: a write whose target the guard cannot read (a variable, an expression, another call) is refused, the refusal naming the call and the fix (a literal path, or the Edit tool); a program that writes nothing passes; a script file run by name (python3 tools/x.py) is not read",
+        "docs/workflows.md, the 'Every refusal and its next step' table: a row '| Guards: a program (python, node, perl, ruby, ...) writing a file the guard cannot name, its target a variable, an expression or another call | name the file as a literal path in the program, or write it with the Edit tool (Write for a new file) |', the Next cell exactly the guard's words",
+        "plugin/agents/dev.md, the 'Write only inside the project' line: files are written with the Edit and Write tools, and a program that writes names its file as a literal path, because the guard refuses a program whose write target it cannot read; bats tests/guard-interpreters.bats under /bin/bash: the 'R219 words' case green"
+      ]
+    },
+    {
+      "id": "P178.1",
+      "phase": "P178",
+      "title": "vbw apply refuses a bats check whose case filter matches no case name in its file, in every mode, with its own Next line",
+      "reqs": [
+        "R220"
+      ],
+      "files": [
+        "plugin/lib/cmd-apply.sh",
+        "tests/apply-refusal-modes.bats"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "Red first: run C500 (bats --print-output-on-failure --filter R220 tests/apply-refusal-modes.bats) and C501 (bats --print-output-on-failure --filter R220 tests/refusal-next-step.bats): the cases are written and red today, because vbw apply accepts the check; read them for the exact words, the (missing) and comma-separated file forms, the -f/--filter=/env/timeout forms, what passes, and the precedence after the two-owner and mixed-owner refusals",
+        "plugin/lib/cmd-apply.sh: after the merged-record jq judgment ($mixed // $order) and before record_update, when problem is still empty, judge the document's checks (read from the document file $df by path, never on a command line): for each check whose argv command, env and timeout wrappers skipped, is bats with a case filter (--filter P, --filter=P, -f P), jq emits its id, pattern and file words (the .bats words that are not an option's value, and directory words) and bash reads them through a pipe into the loop (or a process substitution whose loop body only assigns variables, under tools/check-loop-writes.sh as P176 widens it: no builtin write and no call to a function that writes inside it); for each check: a directory word gives the .bats files directly under it, a file missing from the project folder is named 'FILE (missing)' with no case names, the case names are the quoted names of the @test \"...\" and @test '...' lines read with awk or sed, judged with grep -E -e \"$pattern\" (stderr dropped, a pattern starting with - or one grep cannot parse matches nothing); no match in any file sets problem to \"C9 runs tests/x.bats with a case filter (--filter 'R220') that matches no case name in the file: the Lead writes the failing cases at planning, so a new check is red because its cases fail, never because none exist\" (several files comma-separated; -f and --filter= shown as --filter). The kernel never runs the runner. apply_next gains the arm *\" with a case filter (\"*\" that matches no case name\"*) answering \"write the cases the filter names into FILE (each @test name matching the pattern), see them fail with the runner, then send the document again; or correct the pattern\", FILE taken from the message between ' runs ' and ' with a case filter'",
+        "Standards under /bin/bash: bash tools/check-loop-writes.sh plugin/bin plugin/lib plugin/hooks plugin/scripts; PATH=\"/bin:$PATH\" bats tests/record-args-rule.bats tests/standards.bats tests/refusal-next-step.bats (the R162 greps: a refusal written in the code carries Next; the R219 guard line stays red until P177.1)",
+        "The apply area under /bin/bash: PATH=\"/bin:$PATH\" bats tests/apply-refusal-modes.bats tests/apply-*.bats tests/replan-*.bats green"
+      ]
+    },
+    {
+      "id": "P178.2",
+      "phase": "P178",
+      "title": "The Lead's brief says the failing cases a case filter names are written at planning, before vbw apply",
+      "reqs": [
+        "R220"
+      ],
+      "files": [
+        "plugin/agents/lead.md",
+        "tests/rules-prompts.bats"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "Red first: run C502 (bats --print-output-on-failure --filter R220 tests/rules-prompts.bats): the case is written and red today; read its greps on the Lean checks line ('already holds', 'at planning', 'before `vbw apply`', 'refuses ... case filter ... no case', 'protected')",
+        "plugin/agents/lead.md rule 6, the Lean checks line: the filter names cases the file already holds, so the failing cases are written at planning, before `vbw apply`, because `vbw apply` refuses a bats case filter that matches no case name and a Dev cannot add them later (check files are protected during the build)",
+        "PATH=\"/bin:$PATH\" bats tests/rules-prompts.bats green, and the other prompt tests that read lead.md (grep -l 'agents/lead.md' tests/*.bats) still green"
+      ]
+    },
+    {
+      "id": "P178.3",
+      "phase": "P178",
+      "title": "The user docs name the empty-filter refusal and its next step",
+      "reqs": [
+        "R220"
+      ],
+      "files": [
+        "docs/workflows.md",
+        "docs/proof.md",
+        "tests/rules-docs.bats"
+      ],
+      "after": [
+        "P177.2",
+        "P175.2"
+      ],
+      "status": "planned",
+      "role": "docs",
+      "tasks": [
+        "Red first: run C503 (bats --print-output-on-failure --filter R220 tests/rules-docs.bats): the two cases are written and red today; read their greps (the refusal list bullet holds 'case filter', 'no case name' or 'matches no case', 'never because none exist'; the table row's Refusal cell holds 'no case name' and its Next cell equals apply_next's answer; docs/proof.md's Checks section has a 'case filter' sentence with 'apply' and 'match a case' or 'matches at least one case')",
+        "docs/workflows.md: the list of what vbw apply refuses gains a bullet: a check running a bats file with a case filter that matches no case name in the file, named with the check and the file: a new check is red because its cases fail, never because none exist; the 'Every refusal and its next step' table gains the row '| `vbw apply`: a bats check (`tests/x.bats`) whose case filter matches no case name in the file | write the cases the filter names into tests/x.bats (each @test name matching the pattern), see them fail with the runner, then send the document again; or correct the pattern |'",
+        "docs/proof.md, the Checks section (the run row of the checks table, or the words beside it): a case filter (bats --filter) must match a case in the file at apply time, the Lead writing the failing cases at planning; PATH=\"/bin:$PATH\" bats tests/rules-docs.bats green"
+      ]
     }
   ],
   "fixes": [
@@ -69518,6 +69858,17 @@
         "ended": "2026-10-27T13:17:21Z",
         "cost": {
           "usd": 0.839203
+        }
+      },
+      {
+        "id": "plan-20261027T132808Z",
+        "kind": "plan",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M45",
+        "started": "2026-10-27T13:28:08Z",
+        "ended": "2026-10-27T14:08:39Z",
+        "cost": {
+          "usd": 15.72907
         }
       }
     ],

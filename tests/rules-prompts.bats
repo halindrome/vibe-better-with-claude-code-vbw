@@ -1,5 +1,8 @@
 #!/usr/bin/env bats
 # R31: the Lead and the express router write rules with the "rules" key of vbw apply.
+# R211, R212, R215: the Lead's brief states the rules vbw apply enforces on the plan's
+# checks and rules. R220: its Lean checks line says the failing cases a case filter
+# names are written at planning, before vbw apply.
 
 load helper
 
@@ -27,4 +30,15 @@ teardown() { vbw_teardown; }
 @test "R212: the Lead's brief rule 7 (Rules) says the plan is named on every rule of the requirement or on none" {
   grep -E '^7\. \*\*Rules' "$PLUGIN_ROOT/agents/lead.md" | grep -q 'every rule' || { echo "rule 7 does not say every rule"; false; }
   grep -E '^7\. \*\*Rules' "$PLUGIN_ROOT/agents/lead.md" | grep -q 'or on none' || { echo "rule 7 does not say or on none"; false; }
+}
+
+@test "R220: the Lead's brief Lean checks line says the filter names cases the file already holds, written at planning before vbw apply, because vbw apply refuses an empty match and a Dev cannot add them later" {
+  local line
+  line=$(grep -E '^[[:space:]]*- \*\*Lean checks' "$PLUGIN_ROOT/agents/lead.md")
+  [ -n "$line" ] || { echo "no Lean checks line in rule 6"; false; }
+  printf '%s\n' "$line" | grep -q 'already holds' || { echo "the line does not say the filter names cases the file already holds"; false; }
+  printf '%s\n' "$line" | grep -q 'at planning' || { echo "the line does not say the cases are written at planning"; false; }
+  printf '%s\n' "$line" | grep -Eq 'before .?.?vbw apply' || { echo "the line does not say before vbw apply"; false; }
+  printf '%s\n' "$line" | grep -Eq 'refuses[^.]*case filter[^.]*no case' || { echo "the line does not say vbw apply refuses a case filter matching no case name"; false; }
+  printf '%s\n' "$line" | grep -q 'protected' || { echo "the line does not say a Dev cannot add the cases later (check files are protected during the build)"; false; }
 }

@@ -7,9 +7,11 @@
 # set -e the command fails (CI, tests/machine-turns.bats, vbw check). A loop fed
 # by a process substitution has its producer as a live child the whole time it
 # runs. The rule, tools/check-loop-writes.sh: no builtin write in such a loop's
-# own shell; vbw_out (core.sh) writes from a child of its own, or the producer
-# is piped into the loop. Each run below fills the pipe first, so the write
-# waits, and lets a child of the writer exit while it does. L1.
+# own shell, and no call there to a function that writes so (the tool finds the
+# writer functions in the repository's shell files, R218); vbw_out (core.sh)
+# writes from a child of its own, or the producer is piped into the loop. Each
+# run below fills the pipe first, so the write waits, and lets a child of the
+# writer exit while it does. L1.
 
 load helper
 load fixture-helper
@@ -134,16 +136,20 @@ checks_done() {
 
 rule() { bash "$REPO_ROOT/tools/check-loop-writes.sh" "$@"; }
 
-# planted TEXT: a directory holding one shell file with TEXT from its line 4
-# (after a header comment); prints the directory.
+# planted TEXT [NAME TEXT]...: a directory holding one shell file, cmd-plant.sh,
+# with TEXT from its line 4 (after a header comment), and one more file NAME
+# per further pair, laid out the same; prints the directory.
 planted() {
   local d
   d=$(mktemp -d "$TEST_ROOT/plant.XXXXXX")
-  printf '#!/usr/bin/env bash\n# A planted file.\n\n%s\n' "$1" > "$d/cmd-plant.sh"
+  plant "$d/cmd-plant.sh" "$1"; shift
+  while [ $# -ge 2 ]; do plant "$d/$1" "$2"; shift 2; done
   printf '%s\n' "$d"
 }
+# plant FILE TEXT: FILE holds TEXT from its line 4, after a header comment.
+plant() { printf '#!/usr/bin/env bash\n# A planted file.\n\n%s\n' "$2" > "$1"; }
 
-@test "no shipped shell code writes with a builtin in the shell of a loop fed by a process substitution" {
+@test "R218: no shipped shell code writes with a builtin, or calls a function that writes with one, in the shell of a loop fed by a process substitution" {
   run rule "$PLUGIN_ROOT/bin" "$PLUGIN_ROOT/lib" "$PLUGIN_ROOT/hooks" "$PLUGIN_ROOT/scripts"
   [ "$status" -eq 0 ] || { echo "$output"; false; }
 }
@@ -218,4 +224,111 @@ done < <(jq -r '.[]' \"\$f\")"; do
     run rule "$(planted "$code")"
     [ "$status" -eq 0 ] || { echo "refused: $code"; echo "$output"; false; }
   done
+}
+
+# R218 (T189): a call to a function that writes with a builtin in the same shell
+# is that write, wherever among the files given the function is defined; the
+# tool finds the writers itself (a body writing in its own shell, or calling a
+# writer so), to a fixed point.
+
+@test "R218: the rule refuses a call to a writer function at the calling line, then names the writer and where it writes" {
+  local case call name wfile wline rest code
+  # Each case: the calling line, the writer's name, the file and line of its
+  # write, then the planted code (from line 4).
+  for case in \
+    "6:say:cmd-plant.sh:4:say() { printf '%s\n' \"\$1\"; }
+while IFS= read -r l; do
+  say \"\$l\"
+done < <(jq -r '.[]' \"\$f\")" \
+    "8:tell:cmd-plant.sh:5:tell() {
+  printf 'vbw: %s\n' \"\$1\" >&2
+}
+while IFS= read -r l; do
+  tell \"\$l\"
+done < <(git log --format=%H)" \
+    "9:outer:cmd-plant.sh:6:outer() { inner \"\$1\"; }
+inner() {
+  echo \"\$1\" >&2
+}
+while IFS= read -r l; do
+  [ -z \"\$l\" ] || outer \"\$l\"
+done < <(find . -print0)"; do
+    call=${case%%:*}; rest=${case#*:}
+    name=${rest%%:*}; rest=${rest#*:}
+    wfile=${rest%%:*}; rest=${rest#*:}
+    wline=${rest%%:*}; code=${rest#*:}
+    run rule "$(planted "$code")"
+    [ "$status" -ne 0 ] || { echo "not refused: $code"; false; }
+    [[ "$output" == *"cmd-plant.sh:$call:"*"$wfile:$wline"* ]] \
+      || { echo "the call at line $call is not named before the write at $wfile:$wline: $code"; echo "$output"; false; }
+    printf '%s\n' "$output" | grep -E "(^|[^A-Za-z0-9_])$name([^A-Za-z0-9_]|$)" | grep -q "$wfile:$wline" \
+      || { echo "no line names the writer $name with its write at $wfile:$wline: $code"; echo "$output"; false; }
+  done
+}
+
+@test "R218: a writer defined in another file, in the same directory or under another DIR given in either order, is known" {
+  local caller writer d1 d2 order
+  caller="while IFS= read -r l; do
+  tell \"\$l\"
+done < <(jq -r '.[]' \"\$f\")"
+  writer="tell() {
+  printf '%s\n' \"\$1\"
+}"
+  run rule "$(planted "$caller" lib-tell.sh "$writer")"
+  [ "$status" -ne 0 ] || { echo "not refused: the writer is in a second file of the same directory"; false; }
+  [[ "$output" == *"cmd-plant.sh:5:"*"tell"*"lib-tell.sh:5"* ]] || { echo "the call at cmd-plant.sh:5 is not named with the writer tell at lib-tell.sh:5"; echo "$output"; false; }
+  d1=$(planted "$caller")
+  d2=$(planted 'true' lib-tell.sh "$writer")
+  for order in "$d1 $d2" "$d2 $d1"; do
+    # shellcheck disable=SC2086 # two directories, no spaces in TEST_ROOT
+    run rule $order
+    [ "$status" -ne 0 ] || { echo "not refused: the writer is under another DIR ($order)"; false; }
+    [[ "$output" == *"cmd-plant.sh:5:"*"tell"*"lib-tell.sh:5"* ]] || { echo "the call at cmd-plant.sh:5 is not named with the writer tell at lib-tell.sh:5 ($order)"; echo "$output"; false; }
+  done
+}
+
+@test "R218: a function writing through vbw_out, a subshell, a pipeline or into a file is no writer, and a writer called in a child of its own, into a file or in a pipe-fed loop passes" {
+  local code
+  for code in \
+    "quiet() { vbw_out '%s\n' \"\$1\"; }
+sub() { ( printf '%s\n' \"\$1\" ); }
+piped() { printf '%s\n' \"\$1\" | cat; }
+filed() { printf '%s\n' \"\$1\" > \"\$f\"; }
+while IFS= read -r l; do
+  quiet \"\$l\"; sub \"\$l\"
+  piped \"\$l\"
+  filed \"\$l\"
+done < <(jq -r '.[]' \"\$f\")" \
+    "say() { printf '%s\n' \"\$1\"; }
+while IFS= read -r l; do
+  x=\$(say \"\$l\")
+  say \"\$l\" > \"\$dir/one\"
+  say \"\$l\" >> \"\$dir/all\"
+  say \"\$l\" | cat
+  ( say \"\$l\" )
+  say \"\$l\" &
+done < <(jq -r '.[]' \"\$f\")" \
+    "say() { echo \"\$1\"; }
+jq -r '.[]' \"\$f\" | while IFS= read -r l; do say \"\$l\"; done
+while IFS= read -r -d '' plan; do
+  awk '{ print }' \"\$plan\" | while IFS= read -r p; do
+    say \"\$p\"
+  done
+done < <(find . -print0)"; do
+    run rule "$(planted "$code")"
+    [ "$status" -eq 0 ] || { echo "refused: $code"; echo "$output"; false; }
+  done
+}
+
+@test "R218: the tool's header states the writer-function rule, AGENTS.md's live-child line counts a call to a function that writes as the write, this file's header names the widened rule, and the tool stays bash 3.2 and awk" {
+  local tool head
+  tool="$REPO_ROOT/tools/check-loop-writes.sh"
+  head=$(sed -n '2,/^set -e/p' "$tool" | grep '^#')
+  printf '%s\n' "$head" | grep -i 'function' | grep -qi 'call' || { echo "the tool's header does not state the rule on a call to a function that writes"; false; }
+  ! printf '%s\n' "$head" | grep -q "reviewer's to judge" || { echo "the tool's header still leaves a function call to the reviewer"; false; }
+  grep -F -- '- **No builtin write while the shell has a live child:**' "$REPO_ROOT/AGENTS.md" | grep -i 'function' | grep -qi 'call' \
+    || { echo "AGENTS.md's live-child line does not count a call to a function that writes as the write"; false; }
+  sed -n '1,/^load helper/p' "$BATS_TEST_FILENAME" | grep '^#' | grep -i 'function' | grep -qi 'call' || { echo "this file's header does not name the widened rule"; false; }
+  ! grep -Eq 'mapfile|readarray|declare -A|local -A' "$tool" || { echo "the tool uses a bash 4 feature"; false; }
+  /bin/bash -n "$tool"
 }

@@ -4,7 +4,10 @@
 # "--add" or "--patch". At least one refusal per mode is covered, among them
 # input that is not valid JSON, an unknown field, an invalid tier, an open run,
 # a changed started plan, a missing rule and a tier below its floor. An unknown
-# option prints the usage line listing the three modes and exits 2. L1.
+# option prints the usage line listing the three modes and exits 2. R211, R212,
+# R215 and R216: the two-owner and mixed-owner refusals and their pinned Next
+# lines. R220: a bats check whose case filter matches no case name in its file
+# is refused before anything is written. L1.
 
 load helper
 load replan-helper
@@ -17,6 +20,10 @@ built_project() {
   printf 'true\n' > tests/c1.sh
   printf 'true\n' > tests/c2.sh
   printf 'true\n' > tests/c3.sh
+  # Bats files with named cases for a check that filters by case name (R220); a case that
+  # runs leaves tests/ran behind, so a kernel that ran the runner at apply shows itself.
+  printf '@test "R1: paying works" { echo ran > "$BATS_TEST_DIRNAME/ran"; }\n@test "R1: a card is refused" { true; }\n' > tests/x.bats
+  printf '@test "R2: a receipt is shown" { true; }\n' > tests/y.bats
   replan_accepted full "$(replan_doc '.checks = [{id: "C1", req: "R1", run: ["sh", "tests/c1.sh"], files: ["tests/c1.sh"]},
       {id: "C2", req: "R2", run: ["sh", "tests/c2.sh"], files: ["tests/c2.sh"]}]
     | .rules = [{req: "R1", text: "paying works", check: "C1"}, {req: "R2", text: "a receipt is shown", check: "C2"}]')"
@@ -227,4 +234,71 @@ r2_two_plans() {
     | .rules = [.rules[] | if .req == "R2" then . + {plan: "P2.1"} else . end] + [{req: "R2", text: "a receipt is mailed", check: "C2", plan: "P2.2"}]')"
   [[ "$output" == *"P2.1 builds in an earlier wave than P2.2"* ]] || { echo "$output"; false; }
   last_line_is "$TWO_OWNER_NEXT"
+}
+
+# R220 (M45): a check running bats with a case filter that matches no case name in the file,
+# as the file stands in the project folder at apply time, is refused in every mode before
+# anything is written; the kernel reads the file, it never runs the runner.
+
+# with_check RUN_JSON: FULL with a check C9 of R2 running RUN_JSON (its .bats words as files) and a rule naming it.
+with_check() {
+  full_with ".checks += [{id: \"C9\", req: \"R2\", run: $1, files: ($1 | map(select(endswith(\".bats\"))))}]
+    | .rules += [{req: \"R2\", text: \"a receipt is filed\", check: \"C9\"}]"
+}
+EMPTY_FILTER_NEXT="Next: write the cases the filter names into tests/x.bats (each @test name matching the pattern), see them fail with the runner, then send the document again; or correct the pattern"
+
+@test "R220: every mode refuses a check whose bats case filter matches no case name in the file, naming the check and the file with the mode's name and the pinned words, and ends with its own Next line; the record is unchanged and the runner never ran" {
+  local words
+  words="runs tests/x.bats with a case filter (--filter 'R220') that matches no case name in the file: the Lead writes the failing cases at planning, so a new check is red because its cases fail, never because none exist"
+  refused_as full "full apply" "$(with_check '["bats", "--filter", "R220", "tests/x.bats"]')"
+  [[ "$output" == *"C9 $words"* ]] || { echo "not the pinned words: $output"; false; }
+  last_line_is "$EMPTY_FILTER_NEXT"
+  refused_as add "--add" "$(add_with '.checks[0].run = ["bats", "--filter", "R220", "tests/x.bats"] | .checks[0].files = ["tests/x.bats"]')"
+  [[ "$output" == *"C3 $words"* ]] || { echo "not the pinned words: $output"; false; }
+  last_line_is "$EMPTY_FILTER_NEXT"
+  refused_as patch "--patch" '{"checks": [{"id": "C9", "req": "R2", "run": ["bats", "--filter", "R220", "tests/x.bats"], "files": ["tests/x.bats"]}],
+    "rules": [{"req": "R2", "text": "a receipt is filed", "check": "C9"}]}'
+  [[ "$output" == *"C9 $words"* ]] || { echo "not the pinned words: $output"; false; }
+  last_line_is "$EMPTY_FILTER_NEXT"
+  [ ! -e tests/ran ] || { echo "the kernel ran the test file at apply"; false; }
+}
+
+@test "R220: a missing test file counts as one with no case names and is named (missing); a pattern grep -E cannot parse matches nothing and is named; with several files or a directory word a match in any one passes; a pattern matching a case passes" {
+  refused_as full "full apply" "$(with_check '["bats", "--filter", "R1", "tests/none.bats"]')"
+  [[ "$output" == *"runs tests/none.bats (missing) with a case filter (--filter 'R1') that matches no case name"* ]] || { echo "$output"; false; }
+  refused_as full "full apply" "$(with_check '["bats", "--filter", "(", "tests/x.bats"]')"
+  [[ "$output" == *"with a case filter (--filter '(') that matches no case name"* ]] || { echo "$output"; false; }
+  refused_as full "full apply" "$(with_check '["bats", "--filter", "R2", "tests/x.bats"]')"
+  refused_as full "full apply" "$(with_check '["bats", "--filter", "R9", "tests"]')"
+  [[ "$output" == *"runs tests/x.bats, tests/y.bats with a case filter (--filter 'R9')"* ]] || { echo "the files under the directory word are not named: $output"; false; }
+  replan_accepted full "$(with_check '["bats", "--filter", "R2", "tests/x.bats", "tests/y.bats"]')"
+  replan_accepted full "$(with_check '["bats", "--filter", "R2", "tests"]')"
+  replan_accepted full "$(with_check '["bats", "--filter", "paying", "tests/x.bats"]')"
+  replan_accepted full "$(with_check '["bats", "--print-output-on-failure", "--filter", "card is", "tests/x.bats"]')"
+  [ ! -e tests/ran ] || { echo "the kernel ran the test file at apply"; false; }
+}
+
+@test "R220: a check without a filter, a runner that is not bats, --filter-tags and --filter-status are not judged; -f and --filter= are judged like --filter, behind env and timeout wrappers too; a check resent unchanged is judged on the file as it stands; the two-owner and mixed-owner refusals come first" {
+  local run
+  for run in '["bats", "tests/x.bats"]' '["pytest", "-k", "R220", "tests/x.bats"]' '["go", "test", "-run", "R220", "./..."]' \
+             '["bats", "--filter-tags", "R220", "tests/x.bats"]' '["bats", "--filter-status", "failed", "tests/x.bats"]'; do
+    replan_accepted full "$(with_check "$run")"
+  done
+  for run in '["bats", "-f", "R220", "tests/x.bats"]' '["bats", "--filter=R220", "tests/x.bats"]' \
+             '["env", "X=1", "bats", "--filter", "R220", "tests/x.bats"]' '["timeout", "60", "bats", "--filter", "R220", "tests/x.bats"]'; do
+    refused_as full "full apply" "$(with_check "$run")"
+    [[ "$output" == *"R220') that matches no case name in the file"* ]] || { echo "$output"; false; }
+  done
+  # The record holds C9 with a filter its file matched; the file changes under it and the same document is refused.
+  replan_accepted full "$(with_check '["bats", "--filter", "paying", "tests/x.bats"]')"
+  printf '@test "R1: a card is refused" { true; }\n' > tests/x.bats
+  refused_as full "full apply" "$(with_check '["bats", "--filter", "paying", "tests/x.bats"]')"
+  [[ "$output" == *"--filter 'paying') that matches no case name"* ]] || { echo "$output"; false; }
+  # C9's rules name two open plans beside each other: the two-owner refusal, not the empty filter's.
+  refused_as full "full apply" "$(with_check '["bats", "--filter", "R220", "tests/x.bats"]' | jq -c '.plans += [{id: "P2.2", phase: "P2", title: "Receipt mail", reqs: ["R2"], files: ["src/d.txt"], after: [], tasks: ["mail"]}]
+    | .rules = [.rules[] | if .req == "R2" then . + {plan: "P2.1"} else . end] + [{req: "R2", text: "a receipt is archived", check: "C9", plan: "P2.2"}]')"
+  beside_named C9 P2.1 P2.2
+  # R2's rules name a plan on only one: the mixed-owner refusal first.
+  refused_as full "full apply" "$(with_check '["bats", "--filter", "R220", "tests/x.bats"]' | jq -c '(.rules[] | select(.check == "C9")).plan = "P2.1"')"
+  last_line_is "$MIXED_NEXT"
 }
