@@ -23,19 +23,22 @@ setup() {
   mkdir -p src tests
   printf 'echo paid\n' > src/pay.sh
   printf 'echo more\n' > src/more.sh
-  printf '[ "$(sh src/pay.sh)" = paid ] && [ "$(sh src/more.sh)" = more ]\n' > tests/pay.sh
+  printf '[ "$(sh src/pay.sh)" = paid ]\n' > tests/pay.sh
+  printf '[ "$(sh src/more.sh)" = more ]\n' > tests/more.sh
 }
 
 teardown() { vbw_teardown; }
 
-# plan_doc RULE1_PLAN RULE2_PLAN: two plans of R1, each rule owned by the named plan ("" for none).
+# plan_doc RULE1_PLAN RULE2_PLAN: two plans of R1, each rule owned by the named plan ("" for none)
+# and served by a check of its own (R215: one check may not serve two open plans).
 plan_doc() {
   jq -nc --arg a "$1" --arg b "$2" '{phases: [{id: "P1", title: "Shop", reqs: ["R1"], goal: "g", criteria: ["c"], tier: "standard"}],
     plans: [{id: "P1.1", phase: "P1", title: "Pay", reqs: ["R1"], files: ["src/pay.sh"], after: [], role: "dev", tasks: ["pay"]},
             {id: "P1.2", phase: "P1", title: "More", reqs: ["R1"], files: ["src/more.sh"], after: [], role: "dev", tasks: ["more"]}],
-    checks: [{id: "C1", req: "R1", run: ["sh", "tests/pay.sh"], files: ["tests/pay.sh"]}],
+    checks: [{id: "C1", req: "R1", run: ["sh", "tests/pay.sh"], files: ["tests/pay.sh"]},
+             {id: "C2", req: "R1", run: ["sh", "tests/more.sh"], files: ["tests/more.sh"]}],
     rules: [({req: "R1", text: "paying prints paid", check: "C1"} + (if $a == "" then {} else {plan: $a} end)),
-            ({req: "R1", text: "more prints more", check: "C1"} + (if $b == "" then {} else {plan: $b} end))]}'
+            ({req: "R1", text: "more prints more", check: "C2"} + (if $b == "" then {} else {plan: $b} end))]}'
 }
 start() {
   plan_doc "$1" "$2" | "$VBW" apply > /dev/null
@@ -77,7 +80,7 @@ status_of() { jq -r --arg p "$1" '.plans[] | select(.id == $p) | .status' .vbw/r
   "$VBW" approve > /dev/null
   VBW_SESSION_ID=s1 "$VBW" run start build P1.1 P1.2 > /dev/null
   run "$VBW" show plan P1.2
-  [[ "$output" == *"R1.2 more prints more -> C1"* ]] && [[ "$output" != *"R1.1"* ]] || { echo "$output"; false; }
+  [[ "$output" == *"R1.2 more prints more -> C2"* ]] && [[ "$output" != *"R1.1"* ]] || { echo "$output"; false; }
   [ "$("$VBW" show plan P1.2 --json | jq -c '[.rules[].n]')" = '["R1.2"]' ]
   run "$VBW" mutate P1.2 R1.1 --none "nothing" < /dev/null
   [ "$status" -ne 0 ] && [[ "$output" == *"R1.1 is retired (paying is another requirement now)"* ]] || { echo "$output"; false; }

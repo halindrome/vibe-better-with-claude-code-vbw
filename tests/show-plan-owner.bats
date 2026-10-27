@@ -13,7 +13,7 @@
 #
 # The fixture: R1 has P1.1 (greet.sh, rule R1.1 -> C1) and P1.2 (shout.sh, after
 # P1.1, rule R1.2 -> C2). R2 has P1.3 (a.sh, R2.1 -> C3), P1.4 (b.sh, R2.2 -> C4),
-# P1.5 (c.sh, R2.3 -> C4, beside P1.4: R211 refuses a check two plans own in order)
+# P1.5 (c.sh, R2.3 -> C6, beside P1.4: R215 refuses a check two open plans own)
 # and a second rule of P1.3 (R2.4 -> C5; R212: a requirement names a plan on every
 # rule or on none). R3 is [human], served by P1.6. Build waves: [P1.1 P1.3 P1.4 P1.5
 # P1.6], [P1.2].
@@ -35,7 +35,8 @@ built_project() {
   printf '[ "$(sh greet.sh Ana)" = "Hello, Ana!" ]\n' > test_greet.sh
   printf '[ "$(sh shout.sh Ana)" = "HELLO, ANA!" ]\n' > test_shout.sh
   printf '[ "$(sh a.sh)" = a ]\n' > test_a.sh
-  printf '[ "$(sh b.sh)" = b ] && [ "$(sh c.sh)" = c ]\n' > test_bc.sh
+  printf '[ "$(sh b.sh)" = b ]\n' > test_b.sh
+  printf '[ "$(sh c.sh)" = c ]\n' > test_c.sh
   printf 'true\n' > test_any.sh
   jq -nc '{phases: [{id: "P1", title: "Greet", reqs: ["R1", "R2", "R3"], goal: "g", criteria: ["c"], tier: "standard"}],
     plans: [{id: "P1.1", phase: "P1", title: "greet", reqs: ["R1"], files: ["greet.sh"], after: [], role: "dev", tasks: ["greet prints Hello, NAME!"]},
@@ -47,13 +48,14 @@ built_project() {
     checks: [{id: "C1", req: "R1", run: ["sh", "test_greet.sh"], files: ["test_greet.sh"]},
              {id: "C2", req: "R1", run: ["sh", "test_shout.sh"], files: ["test_shout.sh"]},
              {id: "C3", req: "R2", run: ["sh", "test_a.sh"], files: ["test_a.sh"]},
-             {id: "C4", req: "R2", run: ["sh", "test_bc.sh"], files: ["test_bc.sh"]},
-             {id: "C5", req: "R2", run: ["sh", "test_any.sh"], files: ["test_any.sh"]}],
+             {id: "C4", req: "R2", run: ["sh", "test_b.sh"], files: ["test_b.sh"]},
+             {id: "C5", req: "R2", run: ["sh", "test_any.sh"], files: ["test_any.sh"]},
+             {id: "C6", req: "R2", run: ["sh", "test_c.sh"], files: ["test_c.sh"]}],
     rules: [{req: "R1", text: "a name is greeted", check: "C1", plan: "P1.1"},
             {req: "R1", text: "shout.sh prints the greeting in capitals", check: "C2", plan: "P1.2"},
             {req: "R2", text: "a prints a", check: "C3", plan: "P1.3"},
             {req: "R2", text: "b prints b", check: "C4", plan: "P1.4"},
-            {req: "R2", text: "c prints c", check: "C4", plan: "P1.5"},
+            {req: "R2", text: "c prints c", check: "C6", plan: "P1.5"},
             {req: "R2", text: "anything goes", check: "C5", plan: "P1.3"}]}' | "$VBW" apply > /dev/null
   git add -A && git commit -q -m "feat(greet): start"
   "$VBW" approve > /dev/null
@@ -113,11 +115,12 @@ R12='  R1.2 shout.sh prints the greeting in capitals -> C2'
 C1='  C1 (R1) sh test_greet.sh [protects test_greet.sh]'
 C2='  C2 (R1) sh test_shout.sh [protects test_shout.sh]'
 R22='  R2.2 b prints b -> C4'
-R23='  R2.3 c prints c -> C4'
+R23='  R2.3 c prints c -> C6'
 R24='  R2.4 anything goes -> C5'
 C3='  C3 (R2) sh test_a.sh [protects test_a.sh]'
-C4='  C4 (R2) sh test_bc.sh [protects test_bc.sh]'
+C4='  C4 (R2) sh test_b.sh [protects test_b.sh]'
 C5='  C5 (R2) sh test_any.sh [protects test_any.sh]'
+C6='  C6 (R2) sh test_c.sh [protects test_c.sh]'
 NOT_MINE="red until it is built, not this plan's to pass"
 
 # --- R209 kernel: own_rules and owed_rules (plan P170.1)
@@ -135,7 +138,7 @@ NOT_MINE="red until it is built, not this plan's to pass"
   same "$(own P1.2 | jq -c 'map([.n, .plan])')" '[[1, "P1.1"], [2, "P1.2"]]'
   status_of P1.4 done
   status_of P1.5 done
-  same "$(own P1.3 | jq -c 'map([.n, .check, .plan])')" '[[1, "C3", "P1.3"], [2, "C4", "P1.4"], [3, "C4", "P1.5"], [4, "C5", "P1.3"]]'
+  same "$(own P1.3 | jq -c 'map([.n, .check, .plan])')" '[[1, "C3", "P1.3"], [2, "C4", "P1.4"], [3, "C6", "P1.5"], [4, "C5", "P1.3"]]'
 }
 
 @test "R209 kernel: own_rules does not depend on the tier; owed_rules is own_rules at standard and deep and nothing at express or without a tier" {
@@ -226,6 +229,10 @@ NOT_MINE="red until it is built, not this plan's to pass"
   has P1.1 "$C1"
   has P1.2 "$C1 [P1.1's: $NOT_MINE]"
   has P1.2 "$C2"
+  has P1.3 "$C4 [P1.4's: $NOT_MINE]"
+  has P1.3 "$C6 [P1.5's: $NOT_MINE]"
+  # One check two other plans' rules point at: vbw apply allows it only once one of them is done (R215), so the record is edited to it.
+  edit_record '(.requirements[] | select(.id == "R2")).rules[2].check = "C4"'
   has P1.3 "$C4 [P1.4's and P1.5's: $NOT_MINE]"
   has P1.3 "$C3"
   has P1.3 "$C5"
@@ -254,7 +261,7 @@ NOT_MINE="red until it is built, not this plan's to pass"
   j=$("$VBW" show plan P1.3 --json < /dev/null)
   printf '%s' "$j" | jq -e '[.rules[] | [.n, .plan, .own, .order]] == [["R2.1", "P1.3", true, null], ["R2.2", "P1.4", false, "beside"], ["R2.3", "P1.5", false, "beside"], ["R2.4", "P1.3", true, null]]' > /dev/null \
     || { printf '%s' "$j" | jq -c .rules; false; }
-  printf '%s' "$j" | jq -e '[.checks[] | [.id, .own, .plans]] == [["C3", true, null], ["C4", false, ["P1.4", "P1.5"]], ["C5", true, null]]' > /dev/null || { printf '%s' "$j" | jq -c .checks; false; }
+  printf '%s' "$j" | jq -e '[.checks[] | [.id, .own, .plans]] == [["C3", true, null], ["C4", false, ["P1.4"]], ["C5", true, null], ["C6", false, ["P1.5"]]]' > /dev/null || { printf '%s' "$j" | jq -c .checks; false; }
   status_of P1.4 done
   status_of P1.5 blocked
   "$VBW" show plan P1.3 --json < /dev/null | jq -e '[.rules[] | .order] == [null, "done", "blocked", null]' > /dev/null
