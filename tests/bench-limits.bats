@@ -108,14 +108,16 @@ line() {
   # A machine busy for one measure is not a slow hook; a slow hook is slow twice
   # (D517: a 2-run measure on a shared CI runner judged the file guard at 27 ms
   # once and 11 to 15 ms on the three records after it, 2026-10-27). The hook
-  # burns 100 ms on its first two calls, the first measure's, and nothing after.
+  # burns 200 ms on its first two calls, the first measure's, and nothing after.
+  # The counter itself costs a cat and a write, so the budget is 100 ms here:
+  # the test holds the second measure, not the guard's margin (its own test is next).
   local calls="$TEST_ROOT/calls"
-  hooks_with '^Bash$' "c=\$(cat '$calls' 2>/dev/null || echo 0); c=\$((c+1)); echo \$c > '$calls'; [ \$c -gt 2 ] || $(burn 100)"
-  bench VBW_BENCH_ONLY="guard (git)"
+  hooks_with '^Bash$' "c=\$(cat '$calls' 2>/dev/null || echo 0); c=\$((c+1)); echo \$c > '$calls'; [ \$c -gt 2 ] || $(burn 200)"
+  bench VBW_HOOK_BUDGET_MS=100 VBW_BENCH_ONLY="guard (git)"
   quiet_or_skip
   [ "$status" -eq 0 ] || { printf '%s\n' "$output"; false; }
-  line '^guard \(git\): measured again: the first measure gave [0-9.]+ ms own CPU per call \(sh and jq startup [0-9.]+ ms\), above the budget of 20 ms$' > /dev/null
-  line '^guard \(git\): [0-9.]+ ms own CPU per call \(sh and jq startup [0-9.]+ ms\); budget 20 ms$' > /dev/null
+  line '^guard \(git\): measured again: the first measure gave [0-9.]+ ms own CPU per call \(sh and jq startup [0-9.]+ ms\), above the budget of 100 ms$' > /dev/null
+  line '^guard \(git\): [0-9.]+ ms own CPU per call \(sh and jq startup [0-9.]+ ms\); budget 100 ms$' > /dev/null
   [ "$(cat "$calls")" -eq 4 ] || { echo "the hook ran $(cat "$calls") times, not 2 runs twice"; false; }
 }
 
