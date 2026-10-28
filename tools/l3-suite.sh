@@ -12,14 +12,14 @@
 # each one's lines print together when it ends.
 #
 # Scenarios: greenfield, reject, resume, change, convert, balanced, docs, qafix,
-# decision, debug, research, edgecase, leftover, recheck, approval, newcomer, senior, panel, steptime, road, pluginoff, tools, legacy, nolegacy, smallchange, costs, loop, plugindir, sessions, taskbreak, fixchecks, failoutput, leaveout, hiddenrecord. A user
+# decision, debug, research, edgecase, leftover, recheck, approval, newcomer, senior, panel, steptime, road, pluginoff, tools, legacy, nolegacy, smallchange, costs, loop, plugindir, sessions, taskbreak, fixchecks, failoutput, leaveout, hiddenrecord, latedecision. A user
 # answers every question with VBW's recommendation unless the scenario says otherwise.
 set -uo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 l3() { bash "$ROOT/tools/l3.sh" "$@"; }
 VBW="$ROOT/plugin/bin/vbw"
-ALL="greenfield reject resume change convert balanced docs qafix decision debug research edgecase leftover recheck approval newcomer senior panel steptime road pluginoff tools legacy nolegacy smallchange costs loop plugindir sessions taskbreak fixchecks failoutput leaveout hiddenrecord"
+ALL="greenfield reject resume change convert balanced docs qafix decision debug research edgecase leftover recheck approval newcomer senior panel steptime road pluginoff tools legacy nolegacy smallchange costs loop plugindir sessions taskbreak fixchecks failoutput leaveout hiddenrecord latedecision"
 RESULTS="$ROOT/tools/l3-results"
 STEPS=60
 
@@ -2770,6 +2770,108 @@ scenario_fixchecks() {
       "$(jq -n --arg fv "$fv" --arg src "$src" --argjson n "$n_fix" --argjson only "$only" --argjson tr "$trailers" --argjson a "$n" --argjson q "$q" --argjson rd "$rounds" --argjson reg "$regression" --argjson pc "$plan_code" \
         '{first_qa_verdict: $fv, fix_source: $src, fix_check_commits: $n, fix_commits_carry_req_trailer: $tr, check_commit_only_check_files: $only, code_through_plan: $pc, approvals: $a, questions: $q, fix_rounds: $rd, regression_case_in_check: $reg}')" \
       '["a fix of a failing check (proof source) that edits a check file","a project-command fix","the answer Not yet or the user'"'"'s own words at the approval","more than one fix round","a project larger than the greet.sh fixture","the wording of what VBW tells the user (read by a person)"]'
+  }
+}
+
+# The decision (#705) and its one detail no plan, requirement or check names: --quiet.
+LATE_DECISION='farewell.sh says "See you, NAME!" and "See you, world!" instead of Goodbye (I already changed R2 and the C2 test to match), and takes a --quiet flag that prints nothing'
+
+# latedecision_seed: greet.sh and farewell.sh planned and approved; greet.sh built through its plan,
+# farewell.sh not. Then the user records a decision that changes what P2.1 delivers, and changes R2,
+# its rules and C2's test file to match, which needs the contract approved again; P2.1 is unchanged.
+latedecision_seed() {
+  plan_seed && "$VBW" approve > /dev/null || return 1
+  printf '#!/bin/sh\necho "Hello, ${1:-world}!"\n' > greet.sh && chmod +x greet.sh
+  "$VBW" commit P1.1 "feat(P1.1): greet.sh" > /dev/null || return 1
+  # shellcheck disable=SC1010 # "plan done" is a vbw subcommand
+  "$VBW" plan done P1.1 > /dev/null || return 1
+  "$VBW" decide "$LATE_DECISION" "Goodbye sounds final" > /dev/null || return 1
+  sed 's/Goodbye/See you/g' .vbw/spec.md > .vbw/spec.md.new && mv .vbw/spec.md.new .vbw/spec.md
+  sed 's/Goodbye/See you/g' test_farewell.sh > test_farewell.sh.new && mv test_farewell.sh.new test_farewell.sh
+  "$VBW" spec sync > /dev/null || return 1
+  # The same phases, plans and checks; R2's rules in the new words.
+  jq '{phases: [.phases[] | {id, title, reqs}], plans: [.plans[] | del(.status)], checks,
+    rules: ([.requirements[] | select(.id == "R1") | .rules[]? | . + {req: "R1"}]
+      + [{req: "R2", text: "a name gets See you", check: "C2"}, {req: "R2", text: "no name says See you to the world", check: "C2"}])}' \
+    .vbw/record.json | "$VBW" apply > /dev/null || return 1
+  git add -A && git commit -qm "chore: farewell says See you" || return 1
+  [ "$("$VBW" next --json | jq -r .action)" = approve ]
+}
+
+# A decision recorded after the approval changes what an unbuilt plan delivers and itself needs
+# the contract approved again (#705). The user approves by the choice VBW asks; the build of that
+# plan must follow the decision. Judged in the project's files, git, the record and the Dev's tool
+# results in the subagent transcripts, never on screen.
+scenario_latedecision() {
+  new_project
+  (cd "$dir" && "$VBW" init > /dev/null && "$VBW" config rigor express > /dev/null && latedecision_seed) \
+    || { say "setup failed: could not seed the approved plan, the built greet.sh and the late decision"; return 1; }
+  fixture="greet.sh and farewell.sh, one express phase each; contract approved and greet.sh built before the session; then the user recorded a decision for unbuilt farewell.sh (See you instead of Goodbye, and a --quiet flag no plan, requirement or check names) and changed R2 and C2's test to match, so the contract waits for approval again; the user types /vbw:vibe and approves by the choice"
+  seed_decisions=$(jq '.decisions | length' "$dir/.vbw/record.json")
+  start="/vbw:vibe"
+  asked_all=""
+  # The user presses Enter on the first option, Approve, and never types /vbw:approve.
+  on_question() {
+    local fp
+    fp=$(screen | grep -oE 'Approve contract [0-9a-f]{12}' | head -1 | grep -oE '[0-9a-f]{12}$')
+    [ -n "$fp" ] || return 1
+    case " $asked_all " in *" $fp "*) ;; *) asked_all="${asked_all:+$asked_all }$fp" ;; esac
+    l3 keys "$scenario" Enter
+    return 0
+  }
+  on_idle() {
+    [ "$(next_action)" = approve ] || return 1
+    l3 type "$scenario" "/vbw:vibe"
+  }
+  done_yet() { jq -e '.lease == null and all(.plans[]; .status == "done")' "$dir/.vbw/record.json" > /dev/null 2>&1; }
+  checks() {
+    local passed=true r="$dir/.vbw/record.json" f devs="" called=false listed=false seen="" quiet=false quiet_in_code=false
+    local see_you=false plan_commit=false reapproval kernel_now kernel_noid added fixes deviations q now_lists
+    # The Dev transcripts of P2.1's build: did it ask with the plan's id, and was the decision listed?
+    while IFS= read -r f; do
+      [ "$(jq -r '.agentType // empty' "${f%.jsonl}.meta.json" 2> /dev/null)" = vbw:dev ] && devs="$devs$f"$'\n'
+    done < <(transcripts | grep '/subagents/')
+    printf '%s' "$devs" | grep . | transcript_tool_called 'show decisions --since-approval[^|;&]*P2[.]1' && called=true
+    printf '%s' "$devs" | grep . | transcript_tool_output 'show decisions --since-approval[^|;&]*P2[.]1' 'quiet' && listed=true
+    # The output itself, the first such call's, as the Dev saw it.
+    seen=$(printf '%s' "$devs" | grep . | xargs cat 2> /dev/null | jq -sr '
+      [.[] | select(.type == "assistant") | .message.content[]?
+        | select(.type == "tool_use" and ((.input.command // "") | test("show decisions --since-approval"))) | .id] as $ids
+      | [.[] | select(.type == "user") | .message.content[]?
+        | select(.type == "tool_result" and ([.tool_use_id] | inside($ids)))
+        | if (.content | type) == "string" then .content else ([.content[]? | .text? // ""] | join("\n")) end] | first // ""' 2> /dev/null)
+    grep -q -- '--quiet' "$dir/farewell.sh" 2> /dev/null && quiet_in_code=true
+    [ -f "$dir/farewell.sh" ] && [ -z "$(cd "$dir" && sh farewell.sh --quiet Ana 2> /dev/null)" ] && [ "$quiet_in_code" = true ] && quiet=true
+    (cd "$dir" && sh test_farewell.sh) > /dev/null 2>&1 && see_you=true
+    git -C "$dir" log --format=%B -- farewell.sh | grep '^VBW-Plan: P2.1$' > /dev/null && plan_commit=true
+    reapproval=$(jq -c --argjson s "$seed_decisions" '[.decisions[$s:][] | select(.text | startswith("Contract approved")) | (.plans // "none")]' "$r" 2> /dev/null || echo '[]')
+    added=$(jq -c --argjson s "$seed_decisions" '[.decisions[$s:][] | select(.text | startswith("Contract approved") | not) | .text]' "$r" 2> /dev/null || echo '[]')
+    fixes=$(jq '.fixes | length' "$r" 2> /dev/null || echo -1)
+    deviations=$(jq '(.evidence.deviations // []) | length' "$r" 2> /dev/null || echo -1)
+    kernel_now=$(cd "$dir" && "$VBW" show decisions --since-approval P2.1 2>&1)
+    kernel_noid=$(cd "$dir" && "$VBW" show decisions --since-approval 2>&1)
+    q=$(printf '%s\n' "$asked_all" | wc -w | tr -d ' ')
+    say "re-approvals' plans $reapproval; decisions added $added; fixes $fixes; P2.1's Dev asked with its id: $called, saw the decision: $listed"
+    say "the Dev's since-approval output: ${seen:-none}"
+    expect "the contract was approved again by the choice, once ($q question(s): $asked_all)" [ "$q" -eq 1 ]
+    expect "the re-approval changed no plan, so P2.1 is as approved before the decision ($reapproval)" [ "$reapproval" = '[[]]' ]
+    expect "P2.1 is done and farewell.sh came through its plan" [ "$plan_commit" = true ]
+    expect "P2.1's Dev ran vbw show decisions --since-approval with P2.1" [ "$called" = true ]
+    expect "the decision was in what that call printed" [ "$listed" = true ]
+    expect "farewell.sh takes --quiet and prints nothing with it (only the decision names it)" [ "$quiet" = true ]
+    expect "C2's test passes: farewell.sh says See you" [ "$see_you" = true ]
+    expect "no decision beyond the approvals was needed after the user's ($added)" [ "$added" = '[]' ]
+    expect "no fix was opened ($fixes) and no deviation stands ($deviations)" [ "$fixes" -eq 0 -a "$deviations" -le 0 ]
+    case "$kernel_now" in *--quiet*) now_lists=true ;; *) now_lists=false ;; esac
+    expect "the record says the same now: the decision reaches P2.1" [ "$now_lists" = true ]
+    [ "$failed" -eq 0 ] || passed=false
+    result_write latedecision "$fixture" "${cost_usd:-0}" "$passed" \
+      "$(jq -n --argjson rp "$reapproval" --argjson c "$called" --argjson l "$listed" --arg seen "$seen" --argjson qc "$quiet_in_code" --argjson qo "$quiet" \
+        --argjson sy "$see_you" --argjson pc "$plan_commit" --argjson a "$added" --argjson fx "$fixes" --argjson q "$q" --arg kn "$kernel_now" --arg ki "$kernel_noid" \
+        '{reapproval_plans: $rp, approval_questions: $q, dev_asked_with_plan_id: $c, dev_saw_decision: $l, dev_since_approval_output: $seen,
+          quiet_flag_in_code: $qc, quiet_prints_nothing: $qo, check_passes: $sy, built_through_plan: $pc, decisions_added: $a, fixes: $fx,
+          since_approval_plan_now: $kn, since_approval_no_id_now: $ki}')" \
+      '["a plan built before the decision and reset to be built again (vbw plan reset)","the user recording the decision by typing in the session (it was recorded with vbw decide before the session)","a re-approval that rewrote the plan to hold the decision","a decision that needs files outside the plan (DEVN-04)","a fix round reading decisions (fixing.js)","QA judging a decision-driven change (express phases have no QA)","the milestone shipped (the run stops once every plan is built)"]'
   }
 }
 
