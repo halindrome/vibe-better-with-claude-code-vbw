@@ -120,6 +120,34 @@ in_runtime() {
   [ "${lines[0]}" = "gave up" ] && [ "${lines[1]}" = "$live" ] || { echo "$output"; false; }
 }
 
+@test "R190: a live owner's id missing for a moment never lets a long waiter in: only 5 s without an id counts" {
+  sleep 120 & local live=$!
+  mkdir -p "$TEST_ROOT/runtime/step.lock"
+  printf '%s\n' "$live" > "$TEST_ROOT/runtime/step.lock/pid"
+  # The waiter has waited 7 s when the owner's file is gone for one look (another waiter
+  # renamed it to check it, as vbw_lock_takeover does, and links it back at once).
+  # shellcheck disable=SC2016 # expanded by in_runtime
+  run in_runtime 'tries=0
+    sleep() {
+      tries=$((tries + 1))
+      SECONDS=$((SECONDS + 1))
+      if [ "$tries" -eq 7 ]; then mv "$l/pid" "$l/pid.away"; fi
+      if [ "$tries" -eq 8 ]; then mv "$l/pid.away" "$l/pid"; fi
+    }
+    if proofsteps_lock; then echo "taken at try $tries"; else echo "gave up"; fi; cat "$l/pid"'
+  kill "$live"; wait "$live" 2> /dev/null || true
+  [ "${lines[0]}" = "gave up" ] && [ "${lines[1]}" = "$live" ] || { echo "$output"; false; }
+}
+
+@test "R190: a note lock folder left 5 s without an owner's id is taken over" {
+  mkdir -p "$TEST_ROOT/runtime/step.lock"
+  # shellcheck disable=SC2016 # expanded by in_runtime
+  run in_runtime 'tries=0
+    sleep() { tries=$((tries + 1)); SECONDS=$((SECONDS + 1)); }
+    if proofsteps_lock; then echo "taken after $tries tries"; else echo "gave up"; fi; [ "$(cat "$l/pid")" = "$$" ] && echo "mine"'
+  [ "${lines[0]}" = "taken after 5 tries" ] && [ "${lines[1]}" = "mine" ] || { echo "$output"; false; }
+}
+
 @test "R190: a note lock whose dead owner two waiters find is never taken from the waiter that took it over first" {
   sleep 0 & local dead=$!
   wait "$dead"

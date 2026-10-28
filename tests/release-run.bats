@@ -260,9 +260,10 @@ tests/timed-speed.bats'
 # has_clock FILE: whether a line of FILE that is not a comment reads a clock: bash's
 # SECONDS, the wall clock in seconds or finer (date +%s, %N, gdate), or a high-resolution
 # timer (Time::HiRes, EPOCHREALTIME, Python's time.time and perf_counter,
-# Node's hrtime, Date.now and performance.now).
+# Node's hrtime, Date.now and performance.now). Moving the shell's clock forward
+# (SECONDS=$((SECONDS + N)), a test's injected clock in place of a sleep) reads none.
 has_clock() {
-  [ "$(grep -vE '^[[:space:]]*#' "$1" | grep -cE '(^|[^A-Za-z_])(SECONDS|EPOCHREALTIME)|date .*%[sN]|gdate|Time::HiRes|time\.time|perf_counter|hrtime|Date\.now|performance\.now')" -gt 0 ]
+  [ "$(grep -vE '^[[:space:]]*#' "$1" | sed -E 's/SECONDS=\$\(\(SECONDS \+ [0-9]+\)\)//g' | grep -cE '(^|[^A-Za-z_])(SECONDS|EPOCHREALTIME)|date .*%[sN]|gdate|Time::HiRes|time\.time|perf_counter|hrtime|Date\.now|performance\.now')" -gt 0 ]
 }
 
 @test "R152: the clock rule sees every kind of timer a test file could read, and passes comments and plain words" {
@@ -272,15 +273,16 @@ has_clock() {
   printf 'n=$(gdate +%%N)\n' > "$TEST_ROOT/d"
   printf "now() { perl -MTime::HiRes=time -e 'print time'; }\n" > "$TEST_ROOT/e"
   printf 't=$EPOCHREALTIME\n' > "$TEST_ROOT/f"
+  printf 'SECONDS=$((SECONDS + 1)); t=$SECONDS\n' > "$TEST_ROOT/g"
   printf "t=\$(python3 -c 'import time; print(time.perf_counter())')\n" > "$TEST_ROOT/h"
   local f
-  for f in a b c d e f h; do
+  for f in a b c d e f g h; do
     has_clock "$TEST_ROOT/$f" || {
       echo "not seen: $(cat "$TEST_ROOT/$f")"
       false
     }
   done
-  printf '# a comment about SECONDS and Time::HiRes\nsecs=2\nsleep "$secs"\nnow=$(date +%%Y)\nstamp=$(jq -n "now | todate")\n' > "$TEST_ROOT/ok"
+  printf '# a comment about SECONDS and Time::HiRes\nsecs=2\nsleep "$secs"\nnow=$(date +%%Y)\nstamp=$(jq -n "now | todate")\nsleep() { SECONDS=$((SECONDS + 1)); }\n' > "$TEST_ROOT/ok"
   ! has_clock "$TEST_ROOT/ok" || {
     echo "a comment or a plain word was taken for a clock"
     false
