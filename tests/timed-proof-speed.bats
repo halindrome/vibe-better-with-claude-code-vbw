@@ -16,6 +16,13 @@ RUNS=20
 setup() { vbw_setup; }
 teardown() { vbw_teardown; }
 
+# as_copy DIR: make the repository committed at DIR a proof copy, as vbw prove makes one: a
+# detached worktree at DIR (its .git is a file, the sign of git use the collection reads) of the
+# repository, which moves to DIR.repo.
+as_copy() {
+  mv "$1" "$1.repo" && git -C "$1.repo" worktree add -q --detach "$1"
+}
+
 # startup_ms: the mean CPU ms of RUNS runs of sh -c 'jq -n empty' (bash's times).
 startup_ms() {
   local i log="$TEST_ROOT/times.log"
@@ -66,6 +73,7 @@ startup_ms() {
   printf 'b\n' > "$copy/top.txt"
   git -C "$copy" add -A
   git -C "$copy" commit -q -m "feat: files"
+  as_copy "$copy"
   # shellcheck disable=SC1091
   source "$PLUGIN_ROOT/lib/reads.sh"
   reads_reset "$copy" "$st"
@@ -89,6 +97,7 @@ startup_ms() {
   printf 'b\n' > "$copy/top.txt"
   git -C "$copy" add -A
   git -C "$copy" commit -q -m "feat: files"
+  as_copy "$copy"
   # shellcheck disable=SC1091
   source "$PLUGIN_ROOT/lib/reads.sh"
   : > "$marker" && touch -t 200001010030 "$marker"
@@ -118,6 +127,7 @@ startup_ms() {
   printf 'b\n' > "$copy/top.txt"
   git -C "$copy" add -A
   git -C "$copy" commit -q -m "feat: files"
+  as_copy "$copy"
   real=$(command -v find)
   printf '#!/bin/sh\necho run >> "%s"\nexec "%s" "$@"\n' "$log" "$real" > "$TEST_ROOT/shim/find"
   chmod +x "$TEST_ROOT/shim/find"
@@ -153,6 +163,7 @@ startup_ms() {
   printf 'a\n' > "$copy/a.txt"
   git -C "$copy" add -A
   git -C "$copy" commit -q -m "feat: file"
+  as_copy "$copy"
   printf '#!/bin/sh\necho slept >> "%s/slept"\nexec /bin/sleep "$@"\n' "$TEST_ROOT" > "$TEST_ROOT/shim/sleep"
   chmod +x "$TEST_ROOT/shim/sleep"
   # Several fresh states: a wait that ends at once by luck (the second just changed) cannot hide it.
