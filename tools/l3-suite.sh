@@ -12,14 +12,14 @@
 # each one's lines print together when it ends.
 #
 # Scenarios: greenfield, reject, resume, change, convert, balanced, docs, qafix,
-# decision, debug, research, edgecase, leftover, recheck, approval, newcomer, senior, panel, steptime, road, pluginoff, tools, legacy, nolegacy, smallchange, costs, loop, plugindir, sessions, taskbreak, fixchecks, failoutput, leaveout, hiddenrecord. A user
+# decision, debug, research, edgecase, leftover, recheck, approval, newcomer, senior, panel, steptime, road, pluginoff, tools, legacy, nolegacy, smallchange, costs, loop, plugindir, sessions, taskbreak, fixchecks, failoutput, leaveout, hiddenrecord, stalefix. A user
 # answers every question with VBW's recommendation unless the scenario says otherwise.
 set -uo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 l3() { bash "$ROOT/tools/l3.sh" "$@"; }
 VBW="$ROOT/plugin/bin/vbw"
-ALL="greenfield reject resume change convert balanced docs qafix decision debug research edgecase leftover recheck approval newcomer senior panel steptime road pluginoff tools legacy nolegacy smallchange costs loop plugindir sessions taskbreak fixchecks failoutput leaveout hiddenrecord"
+ALL="greenfield reject resume change convert balanced docs qafix decision debug research edgecase leftover recheck approval newcomer senior panel steptime road pluginoff tools legacy nolegacy smallchange costs loop plugindir sessions taskbreak fixchecks failoutput leaveout hiddenrecord stalefix"
 RESULTS="$ROOT/tools/l3-results"
 STEPS=60
 
@@ -2770,6 +2770,116 @@ scenario_fixchecks() {
       "$(jq -n --arg fv "$fv" --arg src "$src" --argjson n "$n_fix" --argjson only "$only" --argjson tr "$trailers" --argjson a "$n" --argjson q "$q" --argjson rd "$rounds" --argjson reg "$regression" --argjson pc "$plan_code" \
         '{first_qa_verdict: $fv, fix_source: $src, fix_check_commits: $n, fix_commits_carry_req_trailer: $tr, check_commit_only_check_files: $only, code_through_plan: $pc, approvals: $a, questions: $q, fix_rounds: $rd, regression_case_in_check: $reg}')" \
       '["a fix of a failing check (proof source) that edits a check file","a project-command fix","the answer Not yet or the user'"'"'s own words at the approval","more than one fix round","a project larger than the greet.sh fixture","the wording of what VBW tells the user (read by a person)"]'
+  }
+}
+
+# stalefix_seed: greet.sh (R1, P1.1) and its release manifest CHECKSUMS.sha256 (R2, P2.1, checked
+# with shasum -c), both built and proven; then a commit by the user makes the no-name case fail and
+# regenerates the manifest, so the proof fails only C1 and opens a fix of R1. The right repair of
+# greet.sh, the only file a fix of R1 owns, makes the manifest's check fail.
+stalefix_seed() {
+  printf '# Greetings\n\n## Requirements\n\n- R1 [auto] ./greet.sh Ana prints "Hello, Ana!"; without a name it prints "Hello, world!"\n- R2 [auto] CHECKSUMS.sha256 lists the SHA-256 of greet.sh, so a release is verified with shasum -a 256 -c CHECKSUMS.sha256\n' > .vbw/spec.md
+  "$VBW" spec sync > /dev/null || return 1
+  printf '[ "$(sh greet.sh Ana)" = "Hello, Ana!" ] && [ "$(sh greet.sh)" = "Hello, world!" ]\n' > test_greet.sh
+  printf 'shasum -a 256 -c CHECKSUMS.sha256\n' > test_checksums.sh
+  printf '%s' '{"phases": [{"id": "P1", "title": "Greet", "reqs": ["R1"]}, {"id": "P2", "title": "Checksums", "reqs": ["R2"]}],
+    "plans": [{"id": "P1.1", "phase": "P1", "title": "greet.sh", "reqs": ["R1"], "files": ["greet.sh"], "after": [], "tasks": ["greet.sh prints Hello, NAME! or Hello, world! without a name"]},
+      {"id": "P2.1", "phase": "P2", "title": "checksums", "reqs": ["R2"], "files": ["CHECKSUMS.sha256"], "after": ["P1.1"], "tasks": ["CHECKSUMS.sha256 holds the SHA-256 of greet.sh (shasum -a 256 greet.sh)"]}],
+    "checks": [{"id": "C1", "req": "R1", "run": ["sh", "test_greet.sh"], "files": ["test_greet.sh"]},
+      {"id": "C2", "req": "R2", "run": ["sh", "test_checksums.sh"], "files": ["test_checksums.sh"]}],
+    "rules": [{"req": "R1", "text": "a name is greeted", "check": "C1"}, {"req": "R1", "text": "no name greets the world", "check": "C1"},
+      {"req": "R2", "text": "the manifest matches greet.sh", "check": "C2"}]}' \
+    | "$VBW" apply > /dev/null || return 1
+  git add -A && git commit -qm "chore: plan" || return 1
+  "$VBW" approve > /dev/null || return 1
+  printf '#!/bin/sh\necho "Hello, ${1:-world}!"\n' > greet.sh && chmod +x greet.sh
+  "$VBW" commit P1.1 "feat(P1.1): greet.sh" > /dev/null || return 1
+  # shellcheck disable=SC1010 # "plan done" is a vbw subcommand
+  "$VBW" plan done P1.1 > /dev/null || return 1
+  shasum -a 256 greet.sh > CHECKSUMS.sha256
+  "$VBW" commit P2.1 "feat(P2.1): checksums" > /dev/null || return 1
+  # shellcheck disable=SC1010 # "plan done" is a vbw subcommand
+  "$VBW" plan done P2.1 > /dev/null || return 1
+  "$VBW" prove --full > /dev/null || return 1
+  printf '#!/bin/sh\necho "Hello, $1!"\n' > greet.sh
+  shasum -a 256 greet.sh > CHECKSUMS.sha256
+  git commit -qm "chore: greet.sh greets the name it is given" -- greet.sh CHECKSUMS.sha256 || return 1
+  # The proof fails C1 and opens the fix: its exit status is the failure.
+  "$VBW" prove > /dev/null 2>&1 || true
+}
+
+# stalefix_steps: the session's fix rounds, proofs, fix dones and vbw next answers, oldest first,
+# one JSON array of {at, step}: "fix F1" (vbw run start fix), "prove", "fix done", "next ACTION".
+# Read from the tool calls and results in the transcripts (main and subagents), never from screen text.
+stalefix_steps() {
+  transcripts | xargs cat 2> /dev/null | jq -sc '
+    ([.[] | select(.type == "user") | .message.content[]? | select(.type == "tool_result")
+      | {key: .tool_use_id, value: (if (.content | type) == "string" then .content else ([.content[]? | .text? // ""] | join("\n")) end)}]
+      | from_entries) as $res
+    | [.[] | select(.type == "assistant") | . as $m | .message.content[]? | select(.type == "tool_use")
+      | (.input.command // "") as $c | .id as $id
+      | if ($c | test("run start fix")) then {at: $m.timestamp, step: ("fix " + ($c | capture("run start fix (?<f>[F0-9 ]+)").f | sub(" +$"; "")))}
+        elif ($c | test("vbw[^|;&]* fix done")) then {at: $m.timestamp, step: "fix done"}
+        elif ($c | test("vbw[^|;&]* prove")) then {at: $m.timestamp, step: "prove"}
+        elif ($c | test("vbw[^|;&]* next")) then {at: $m.timestamp, step: ("next " + (($res[$id] // "") | try (fromjson | .action) catch "?"))}
+        else empty end]
+    | sort_by(.at)' 2> /dev/null || echo '[]'
+}
+
+# stalefix (#706): a fix round whose repair breaks another finished requirement is proved before
+# the next round. The proof failed C1 and opened F1 (R1) before the session; the Dev of F1 repairs
+# greet.sh, which makes the manifest's check C2 fail, so the round's vbw fix done is refused and F1
+# stays open on code changed since the proof. VBW must prove again before another round (which
+# closes F1 and opens F2 for R2), never send F1's stale failures to a second round. Judged in the
+# transcripts' tool calls and results, in git and in the committed record's history, never on screen.
+scenario_stalefix() {
+  new_project
+  (cd "$dir" && "$VBW" init > /dev/null && "$VBW" config rigor auto > /dev/null && stalefix_seed) \
+    || { say "setup failed: could not seed the broken requirement and its manifest"; return 1; }
+  fixture="greet.sh (R1) and its release manifest CHECKSUMS.sha256 (R2, checked with shasum -c), two express phases built and proven; a later commit by the user makes the no-name case fail and regenerates the manifest, so the proof before the session failed only C1 and opened F1; repairing greet.sh, the only file F1 owns, makes C2 fail; rigor auto; the user types /vbw:vibe"
+  seed_head=$(git -C "$dir" rev-parse HEAD)
+  seed_at=$(jq -r '.evidence.at // empty' "$dir/.vbw/record.json" 2> /dev/null)
+  seed_fixes=$(jq -c '[.fixes[] | {id, req, status}]' "$dir/.vbw/record.json" 2> /dev/null || echo '[]')
+  start="/vbw:vibe"
+  checks() {
+    local passed=true r="$dir/.vbw/record.json" steps hist refused=false round1=false f1_rounds proved_between=false
+    local f2_at f1_closed_at advanced=false f2 f2_closed=false
+    steps=$(stalefix_steps)
+    hist=$(record_history)
+    transcripts | transcript_tool_output 'vbw[^|;&]* fix done' '^vbw: F1 broke finished work: .*C2 fail' && refused=true
+    # The round's repair of greet.sh reached git through its plan.
+    git -C "$dir" log --format=%B "$seed_head..HEAD" -- greet.sh | grep '^VBW-Plan: P1\.1$' > /dev/null && round1=true
+    f1_rounds=$(printf '%s' "$steps" | jq '[.[] | select(.step | test("^fix .*\\bF1\\b"))] | length')
+    # Between F1's round and the next fix round (whatever it names), a proof ran.
+    printf '%s' "$steps" | jq -e '
+      (to_entries | map(select(.value.step | test("^fix .*\\bF1\\b"))) | first.key) as $a
+      | (to_entries | map(select(.key > $a and (.value.step | test("^fix F")))) | first.key) as $b
+      | $a != null and $b != null and any(.[$a + 1:$b][]; .step == "prove")' > /dev/null 2>&1 && proved_between=true
+    # The committed record: the proof that closed F1 is newer than the one before the session.
+    f1_closed_at=$(printf '%s\n' "$hist" | jq -sr '[.[] | select(any(.fixes[]?; .id == "F1" and .status == "closed")) | .evidence.at] | first // empty')
+    f2_at=$(printf '%s\n' "$hist" | jq -sr '[.[] | select(any(.fixes[]?; .id == "F2")) | .evidence.at] | first // empty')
+    [ -n "$seed_at" ] && [ -n "$f1_closed_at" ] && [[ "$f1_closed_at" > "$seed_at" ]] && advanced=true
+    f2=$(jq -c '[.fixes[] | select(.id == "F2") | {req, status, source: (.source // "proof")}] | first // null' "$r" 2> /dev/null || echo null)
+    printf '%s' "$f2" | jq -e '.req == "R2" and .status == "closed"' > /dev/null 2>&1 && f2_closed=true
+    say "fixes before: $seed_fixes; steps: $(printf '%s' "$steps" | jq -c '[.[].step]')"
+    say "evidence.at before $seed_at, at F1 closed ${f1_closed_at:-none}, at F2 first ${f2_at:-none}; F2 $f2"
+    common_checks
+    expect "a fix of R1 (F1) was open before the session ($seed_fixes)" jq -en --argjson s "$seed_fixes" '$s == [{"id": "F1", "req": "R1", "status": "open"}]'
+    expect "the round's repair of greet.sh was committed through P1.1 ($round1)" [ "$round1" = true ]
+    expect "the round's vbw fix done was refused: F1 broke finished work, C2 ($refused)" [ "$refused" = true ]
+    expect "F1 went to exactly one fix round ($f1_rounds)" [ "$f1_rounds" -eq 1 ]
+    expect "a proof ran between F1's round and the next fix round ($proved_between)" [ "$proved_between" = true ]
+    expect "the proof that closed F1 is newer than the proof before the session ($seed_at -> ${f1_closed_at:-none})" [ "$advanced" = true ]
+    expect "F1 is closed" jq -e 'any(.fixes[]; .id == "F1" and .status == "closed")' .vbw/record.json
+    expect "the proof opened F2 for R2 (the manifest) and it is closed ($f2)" [ "$f2_closed" = true ]
+    [ "$failed" -eq 0 ] || passed=false
+    result_write stalefix "$fixture" "${cost_usd:-0}" "$passed" \
+      "$(jq -n --argjson sf "$seed_fixes" --argjson r1 "$round1" --argjson rf "$refused" --argjson n "$f1_rounds" --argjson pb "$proved_between" \
+        --arg sa "$seed_at" --arg ca "${f1_closed_at:-}" --arg fa "${f2_at:-}" --argjson adv "$advanced" --argjson f2 "$f2" --argjson st "$steps" \
+        '{fixes_before: $sf, round_committed_repair: $r1, fix_done_refused: $rf, f1_fix_rounds: $n, proof_between_rounds: $pb,
+          evidence_at_before: $sa, evidence_at_f1_closed: $ca, evidence_at_f2_opened: $fa, evidence_advanced: $adv, f2: $f2,
+          steps: [$st[].step]}')" \
+      '["the failure of a test file of the single-file form or of a project command (tests/kernel-next.bats holds the project-command row)","a fix QA, a restore or a rejection opened (worked at once on stale evidence: tests/kernel-next.bats)","a round interrupted before vbw fix done, or a user commit while a fix is open","the same scenario on the code before the fix (L1 only: tests/kernel-next.bats)","a project larger than the greet.sh fixture","the wording of what VBW tells the user (read by a person)"]'
   }
 }
 
