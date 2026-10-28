@@ -15,7 +15,7 @@
 load helper
 load fixture-helper
 
-KEEP_PROTECTED='if has("protected") then .protected = ([.checks[]?.files // [] | .[]] | unique) | .schema = 4 else . end'
+KEEP_PROTECTED='if has("protected") then .protected = ([.checks[]?.files // [] | .[]] | unique) | .schema = ([.schema, 4] | max) else . end'
 
 built_project() {
   vbw_setup

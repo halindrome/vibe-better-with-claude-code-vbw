@@ -92,7 +92,7 @@ SH
       | .plans = [{id: "P1.1", phase: "P1", title: "Pay", reqs: ["R1"], files: ["src/pay.txt"], after: [], status: "done"}]
       | .fixes = [{id: "F1", req: "R1", attempts: 0, status: "open", note: "a"}]
       | del(.requirements[]?.rules)
-      | if has("protected") then .protected = ([.checks[]?.files // [] | .[]] | unique) | .schema = 4 else . end' \
+      | if has("protected") then .protected = ([.checks[]?.files // [] | .[]] | unique) | .schema = ([.schema, 4] | max) else . end' \
       .vbw/record.json > "$TEST_ROOT/edit.json"
     cp "$TEST_ROOT/edit.json" .vbw/record.json
     git add -A

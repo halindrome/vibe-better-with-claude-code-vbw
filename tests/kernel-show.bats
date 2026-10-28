@@ -8,7 +8,7 @@ load helper
 load fixture-helper
 
 # Hand edits of the record keep the protected list in step with the checks (R150), as the approved check files do.
-KEEP_PROTECTED='if has("protected") then .protected = ([.checks[]?.files // [] | .[]] | unique) | .schema = 4 else . end'
+KEEP_PROTECTED='if has("protected") then .protected = ([.checks[]?.files // [] | .[]] | unique) | .schema = ([.schema, 4] | max) else . end'
 
 # The planned payments project with P1.1 committed, built once per file.
 setup_file() { fixture_build show show_project; }

@@ -23,7 +23,7 @@ no_figures() { rm -f .vbw/runtime/cost.*.json; }
 # edit_record JQ_EXPR: a hand edit of the record (the glance is dropped so
 # readers take the record).
 edit_record() {
-  jq "$1 | if has(\"protected\") then .protected = ([.checks[]?.files // [] | .[]] | unique) | .schema = 4 else . end" .vbw/record.json > "$TEST_ROOT/edit.json" && cp "$TEST_ROOT/edit.json" .vbw/record.json
+  jq "$1 | if has(\"protected\") then .protected = ([.checks[]?.files // [] | .[]] | unique) | .schema = ([.schema, 4] | max) else . end" .vbw/record.json > "$TEST_ROOT/edit.json" && cp "$TEST_ROOT/edit.json" .vbw/record.json
   rm -f .vbw/runtime/glance.json
 }
 
