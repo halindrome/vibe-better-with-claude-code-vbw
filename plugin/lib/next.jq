@@ -131,7 +131,9 @@ def fix_files($r): if .command then ["*"]
     result("escalate"; true; "The fix cap was reached for \($escalated | join(", ")): decide how to proceed"; {fixes: $escalated})
   elif ($stale | not) and (.evidence.scope | length) > 0 then
     result("scope"; true; "Commits changed files outside their plans: review them (vbw show evidence)"; {violations: .evidence.scope})
-  elif ($open_fixes | length) > 0 then
+  # #706: a fix round works from the last proof's failures, so stale evidence (a round's
+  # refused fix done, an interrupted Dev, a user commit) is proved again first.
+  elif ($open_fixes | length) > 0 and ($stale | not) then
     result("fix"; false; "Run the fix workflow for \($open_fixes | join(", "))"; {fixes: $open_fixes, groups: $fix_groups})
   elif ($waiting | length) > 0 and ($unproven | length) > 0 then
     ([$waiting | split("\n")[] | select(length > 0)] | sort) as $wf

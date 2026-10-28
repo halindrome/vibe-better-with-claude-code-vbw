@@ -96,6 +96,16 @@ next_after() {
   echo "$output" | jq -e '.action == "fix" and .gate == false and .detail.fixes == ["F1"]'
 }
 
+@test "#706: an open fix whose code changed since the proof is proved before another fix round" {
+  # A round committed work but its vbw fix done was refused: the fix stays open, the evidence is stale.
+  next_after '.requirements[0].status = "failing" | .fixes = [{id:"F1", req:"R1", attempts:0, status:"open", note:"C1"}]' > /dev/null
+  printf 'fixed\n' > a.js
+  git add a.js
+  git commit -q -m 'fix(pay): round 1'
+  run "$VBW" next --json < /dev/null
+  echo "$output" | jq -e '.action == "prove"'
+}
+
 @test "row 10: unproven auto requirements are proved (including after a fix)" {
   run next_after '.requirements[0].status = "open"'
   echo "$output" | jq -e '.action == "prove" and .gate == false'

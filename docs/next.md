@@ -127,7 +127,7 @@ adding the one phase with `vbw apply --add` (docs/rigor.md).
 | 6 | no plan is ready and a plan is `blocked` | `unblock` (a Dev reported a blocker; `detail.plans` and `detail.blocked` name every blocked plan and its reason) | yes |
 | 7 | a fix is `escalated` | `escalate` (the fix cap was reached) | yes |
 | 8 | current evidence has scope violations | `scope` (commits changed files outside their plans; the user accepts one with a decision naming its commit and file, docs/proof.md) | yes |
-| 9 | a fix is `open` | `fix` (`detail.fixes`, and `detail.groups`: fixes whose files overlap, one Dev each; a project command's fix may touch any file) | no |
+| 9 | a fix is `open` and the evidence is current (stale evidence is proved first, row 10, so a fix round never works from the failures of older code) | `fix` (`detail.fixes`, and `detail.groups`: fixes whose files overlap, one Dev each; a project command's fix may touch any file) | no |
 | 10 | an `auto` requirement is not `proven`, or the evidence is stale (another contract, or the project files changed since; docs/proof.md) | `prove` | no |
 | 10c | a file a plan of the current milestone delivered changed outside any plan, with no decision of the user covering it and no restore under way for it (docs/proof.md, Delivered files) | `deviations` (`detail.deviations`: `{phase, file, plan, change, commit, by}` for each; the user keeps each change, `vbw decide` naming the file, or restores it, `vbw fix restore FILE...`) | yes |
 | 10b | the latest proof is partial (it reused results or used the quick command) and a phase is about to go to QA, or the milestone to ship | `prove` with `detail.full` true: `Run vbw prove --full: ...` (docs/proof.md) | no |

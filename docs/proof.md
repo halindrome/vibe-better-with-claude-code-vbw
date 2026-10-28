@@ -1179,7 +1179,7 @@ failing project command. Lifecycle:
 | Before prove | Target passes | Target fails |
 |---|---|---|
 | no fix item | nothing | new fix, `open`, `attempts` 0, once the work is built (below) |
-| `open` (no work yet) | `closed` | stays `open` |
+| `open` (not verified by `vbw fix done`) | `closed` | stays `open`, with this proof's failures |
 | `fixed` (work committed and verified by `vbw fix done`) | `closed` | `attempts` + 1, back to `open`; `escalated` at the cap (3) |
 
 A failure opens a fix only once the work is built: every plan serving the
@@ -1257,7 +1257,10 @@ A fix that cannot close is named, and the others still close. The cases:
 
 The exit code is 0 when every fix closed and non-zero when any could not. A fix
 that could not close keeps its status and `attempts`; fix the cause and run
-`vbw fix done` again for it.
+`vbw fix done` again for it. A fix round reads the failures of the last proof,
+so when the code changed since that proof (a round committed work and its
+`vbw fix done` was refused), `vbw next` asks for `vbw prove` before another fix
+round, and the round works from the failures of the current code.
 
 ### Reusing an unchanged pass
 
