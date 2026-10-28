@@ -141,7 +141,9 @@ def fix_files($r): if .command then ["*"]
   # refused fix done, an interrupted Dev, a user commit) is proved again first.
   elif ($open_fixes | length) > 0 and ($reprove | not) then
     result("fix"; false; "Run the fix workflow for \($open_fixes | join(", "))"; {fixes: $open_fixes, groups: $fix_groups})
-  elif ($waiting | length) > 0 and (($unproven | length) > 0 or $reprove) then
+  # Waiting files belong to checks, and checks only to [auto] requirements, which stale
+  # evidence puts in $unproven: a $reprove with waiting files is always caught here.
+  elif ($waiting | length) > 0 and ($unproven | length) > 0 then
     ([$waiting | split("\n")[] | select(length > 0)] | sort) as $wf
     | result("approve"; true; "Approve the test files new or edited since the approval (a fix may add or change them), once, before they are proved: \($wf | join(", "))"; {files: $wf})
   elif ($unproven | length) > 0 or $reprove then
