@@ -309,8 +309,9 @@ if type != "object" then ["record must be a JSON object"] else
         status_rule(["open","in_progress","done","dropped"]) ),
 
     ( arr("decisions")[]
-      | field_rule(["id","text","why","at"]),
+      | field_rule(["id","text","why","at","plans"]),
         ( select((.text | nonempty) | not) | "\(.id) needs non-empty text" ),
+        ( select(has("plans") and ((.plans | type) != "array" or any(.plans[]; nonempty | not))) | "\(.id) plans must be an array of plan ids" ),
         ( select(has("why") and (.why | nonempty | not)) | "\(.id) why must be a non-empty string" ),
         ( select((.at | iso) | not) | "\(.id) needs an ISO-8601 UTC timestamp" ) ),
 

@@ -28,8 +28,15 @@ result saved to a file, the returned object sits under `result`: the session
 reads the field it needs with jq (`.result.map`, `.result.recommendation`).
 
 Each Dev and Docs prompt of `vbw:building` and `vbw:fixing` starts the agent
-on its plan or fix, then on `vbw show decisions --since-approval`: the
-decisions recorded after the latest approval of the contract. A decision there
+on its plan or fix, then on `vbw show decisions --since-approval` with the
+plan's or the fixes' ids: the decisions recorded after the latest approval of
+the contract that changed that plan (for a fix, a plan of its requirement, or
+any plan for a project command). An approval that left the plan as it was,
+such as one a decision itself needed to change a check, hides nothing from its
+Dev; one that rewrote the plan to hold the decision does. Each approval records
+the plans it changed (`plans` on its decision); without a list, such as the
+first approval in a clone, every plan counts as changed. Without ids the
+command lists the decisions after the latest approval. A decision there
 overrides the plan where they differ; one that needs files outside the plan
 blocks it (`vbw plan block`) for a new plan.
 

@@ -46,13 +46,19 @@ approve_text() {
 # command or test-file form not consented to yet is approved on its own, with its decision ("Project
 # commands approved WHO: ...", WHO the approver's words, empty for the user) and commit first (F200).
 approve_record() {
-  local record=$1 hash=$2 who="${4:-}" pending
+  local record=$1 hash=$2 who="${4:-}" pending changed=null
   if contract_approved "$hash"; then
     printf 'contract %s is already approved\n' "${hash:0:12}"
     pending=$(approve_pending "$record")
     [ -z "$pending" ] || approve_decide "Project commands approved${who:+ $who}: $pending" "chore(vbw): approve commands" "the commands are"
   else
-    approve_decide "$3" "chore(vbw): approve contract ${hash:0:12}" "the contract is"
+    # #705: the plans this approval changes since the last one (their contract part, not their status),
+    # so a decision recorded before it still reaches the Dev of a plan it left as it was
+    # (vbw show decisions --since-approval PLAN). With no earlier snapshot every plan counts as changed.
+    [ ! -f "$VBW_RUNTIME/approved-contract.json" ] \
+      || changed=$(contract_doc "$record" | jq -c --slurpfile old "$VBW_RUNTIME/approved-contract.json" \
+        '[.plans | to_entries[] | select($old[0].plans[.key]? != .value) | .key]') || changed=null
+    approve_decide "$3" "chore(vbw): approve contract ${hash:0:12}" "the contract is" "$changed"
     consent_grant contract "$hash" "$(printf '%s' "$record" | jq -c \
       '{requirements: (.requirements | length), checks: (.checks | length), plans: (.plans | length)}')"
     printf 'approved contract %s\n' "${hash:0:12}"
@@ -66,14 +72,15 @@ approve_record() {
   approve_commands "$record"
 }
 
-# approve_decide TEXT SUBJECT WHAT: the approval's decision with TEXT and its strict commit with SUBJECT;
+# approve_decide TEXT SUBJECT WHAT [PLANS]: the approval's decision with TEXT and its strict commit with SUBJECT;
 # the decision is taken back when the commit fails (no approval without its commit), naming WHAT is not approved.
+# PLANS, a JSON array of plan ids, is kept on the decision as the plans the approval changed.
 approve_decide() {
   local before
   before=$(cat "$VBW_RECORD")
   record_update "$VBW_JQ_DEFS"'
-    .decisions += [{id: (.decisions | next_id("D")), at: $at, text: $text}]' \
-    --arg text "$1" --arg at "$(vbw_now)"
+    .decisions += [{id: (.decisions | next_id("D")), at: $at, text: $text} + (if $plans == null then {} else {plans: $plans} end)]' \
+    --arg text "$1" --arg at "$(vbw_now)" --argjson plans "${4:-null}"
   if ! record_commit --strict "$2"; then
     record_update '.decisions |= map(select(.id != $d))' --arg d "$(printf '%s' "$before" | jq -r '.decisions | (map(.id | ltrimstr("D") | tonumber) | max // 0) + 1 | "D\(.)"')"
     vbw_die "the approval commit failed (reason above); $3 not approved"
