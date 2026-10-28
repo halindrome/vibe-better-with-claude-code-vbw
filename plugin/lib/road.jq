@@ -4,10 +4,10 @@
 # `def expect($kind; $size)` (lib/steps-expect.jq, the one ladder of expected
 # seconds for every piece), then this file.
 #
-# Interface: jq -n --slurpfile rec RECORD --slurpfile h HISTORY --slurpfile runs RUNS
+# Interface: jq -n --slurpfile rec RECORD --slurpfile h HISTORY --slurpfile runs RUN_TIMES
 #   --slurpfile next NEXT --slurpfile note NOTE
-#   $rec[0]  the record; $h[0] / $runs[0] the step history and the per-unit runs
-#            store (null when missing or damaged); $next[0] vbw next's answer
+#   $rec[0]  the record; $h[0] / $runs[0] the step history and the run times
+#            (run-times.json; null when missing or damaged); $next[0] vbw next's answer
 #            (action, qa.standing); $note[0] the live step's note, or null
 # Output: null, or {seconds, end, rounds, basis, say}; seconds and end are null
 # when a piece has no basis, and basis then names the first kind missing.

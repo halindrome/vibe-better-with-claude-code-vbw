@@ -95,14 +95,16 @@ step_kind_has_parts() {
 # when the history gives no basis. SIZE is JSON: build [{id, tier, tasks, breaks}]
 # (the wave's plans), fix {tier}, plan {reqs}, qa [{id, tier}], proof {units: [names]}
 # (a bare number for a proof counts that many unknown units). The ladders are
-# lib/steps-expect.jq's (R191); a missing, damaged or unreadable history or runs
-# store only means no time.
+# lib/steps-expect.jq's (R191). Each unit's last seconds come from run-times.json,
+# which the save writes beside the run store (lib/proofreuse.sh), never from the
+# store: it holds every read list and can reach hundreds of MB. A missing, damaged
+# or unreadable history or run times only means less to go on.
 step_expect() {
   local file runs size out
   file=$(step_history_file)
   [ -n "$file" ] && [ -f "$file" ] || return 0
   [ -f "$VBW_LIB/steps-expect.jq" ] || return 0
-  runs="$(dirname "$file")/runs.json"
+  runs="$(dirname "$file")/run-times.json"
   size=$2
   case "$size" in
     '') return 0 ;;

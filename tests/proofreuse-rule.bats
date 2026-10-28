@@ -233,6 +233,16 @@ reason() {
   [ "$output" = "reads the project through git" ]
 }
 
+@test "every save writes the runs' seconds beside the store, and a unit that leaves the store leaves them" {
+  rec='{"checks":[{"id":"C1","run":["true"]},{"id":"C2","run":["true"]}],"commands":{"test":["make"]}}'
+  pr 'proofreuse_save '"'$rec'"' "{\"C1\":{\"status\":\"pass\",\"seconds\":2,\"reads\":[],\"dirs\":[]},\"C2\":{\"status\":\"fail\",\"seconds\":5,\"reads\":[],\"dirs\":[]}}" "{\"test\":{\"status\":\"pass\",\"seconds\":7,\"reads\":[],\"dirs\":[]}}" T N'
+  run jq -c . "$(git rev-parse --git-common-dir)/vbw/run-times.json"
+  [ "$output" = '{"runs":{"check:C1":{"seconds":2},"check:C2":{"seconds":5},"command:test":{"seconds":7}}}' ]
+  pr 'proofreuse_save '"'$rec'"' "{\"C2\":{\"status\":\"pass\",\"seconds\":3,\"reads\":[],\"dirs\":[]}}" "{}" T N "[\"check:C1\"]"'
+  run jq -c . "$(git rev-parse --git-common-dir)/vbw/run-times.json"
+  [ "$output" = '{"runs":{"check:C2":{"seconds":3},"command:test":{"seconds":7}}}' ]
+}
+
 @test "the store is never written into the record" {
   rec='{"checks":[{"id":"C1","run":["true"]}],"commands":{}}'
   before=$(cat .vbw/record.json)

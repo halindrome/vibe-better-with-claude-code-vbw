@@ -995,7 +995,9 @@ units only it has, once.
 A run that read the project through git keeps no read list: it runs again
 whatever changed, so its list could never vouch for it, and git's walk of the
 project would put every file on it. A store an older VBW wrote loses such lists
-at its next save.
+at its next save. Beside the store, `vbw/run-times.json` keeps each run's
+seconds alone, written with it. Time estimates read only that file, never the
+store, whose read lists can run to hundreds of MB (docs/panel.md).
 
 **Files a unit writes.** A file a unit writes carries that unit's read list. A
 later unit that reads the file inherits the list, so it runs again when

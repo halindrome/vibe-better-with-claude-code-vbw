@@ -76,11 +76,13 @@ hist_proof() {
 }
 
 # runs_seed JSON: the per-unit store, runs.json beside steps.json, from an object
-# name -> seconds. Its fingerprints match nothing, so every unit still runs.
+# name -> seconds, and its run times beside it (run-times.json), as a save writes
+# them. Its fingerprints match nothing, so every unit still runs.
 runs_seed() {
   mkdir -p "$(dirname "$STEPS")"
   jq -nc --argjson u "$1" '{runs: ($u | with_entries(.value = {fp: "seed", tree: "seed", status: "pass",
     at: "2026-01-01T00:00:00Z", seconds: .value, tail: "", reads: null, dirs: [], git: false}))}' > "$(dirname "$STEPS")/runs.json"
+  jq -nc --argjson u "$1" '{runs: ($u | map_values({seconds: .}))}' > "$(dirname "$STEPS")/run-times.json"
 }
 
 # tiered_project: step_project with P1 at standard and tasks on its plans: P1.1
