@@ -992,6 +992,11 @@ a check or command its record names, a test file in its folder. A branch
 checked out in no worktree is not consulted: switching back to it re-runs the
 units only it has, once.
 
+A run that read the project through git keeps no read list: it runs again
+whatever changed, so its list could never vouch for it, and git's walk of the
+project would put every file on it. A store an older VBW wrote loses such lists
+at its next save.
+
 **Files a unit writes.** A file a unit writes carries that unit's read list. A
 later unit that reads the file inherits the list, so it runs again when
 anything the writer read changed. A file two units wrote carries both lists,
@@ -1159,8 +1164,9 @@ They read `checks: N ran, M reused` and `test files: N ran, M reused`. After
 - Reads through git always run again. Any git command whose working directory
   is inside the project counts, even one that reads nothing of the project
   (`git config --global` run from the project folder): git opens the
-  repository before it does anything else. A test suite that runs such
-  commands from another folder keeps its results reusable.
+  repository before it does anything else. Such a run keeps no read list
+  (above). A test suite that runs such commands from another folder keeps its
+  results reusable.
 
 To run everything fresh, use `vbw prove --full`, or prove again with
 nothing committed since a passing proof (a second `vbw prove` is a deliberate re-run).

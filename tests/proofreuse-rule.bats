@@ -221,6 +221,18 @@ reason() {
   [ "$output" = "fail T2 T1 T1" ]
 }
 
+@test "a run that read through git is saved without read lists, an older store's lists go at the next save, and it still runs again" {
+  # An older VBW kept C1's whole read list though it read through git.
+  store '{"git":true,"reads":["src/a.txt","src/b.txt","src/lib/l.txt"],"dirs":[{"path":"src","fp":"x"}]}'
+  rec='{"checks":[{"id":"C1","run":["true"]},{"id":"C2","run":["true"]},{"id":"C3","run":["true"]}],"commands":{}}'
+  pr 'proofreuse_save '"'$rec'"' "{\"C2\":{\"status\":\"pass\",\"seconds\":1,\"reads\":[\"src/a.txt\"],\"dirs\":[{\"path\":\"src\",\"fp\":\"y\"}],\"git\":true},\"C3\":{\"status\":\"pass\",\"seconds\":1,\"reads\":[\"src/a.txt\"],\"dirs\":[{\"path\":\"src\",\"fp\":\"y\"}],\"git\":false}}" "{}" T N'
+  run jq -c '.runs | map_values({reads, dirs, git})' "$(git rev-parse --git-common-dir)/vbw/runs.json"
+  [ "$output" = '{"check:C1":{"reads":[],"dirs":[],"git":true},"check:C2":{"reads":[],"dirs":[],"git":true},"check:C3":{"reads":["src/a.txt"],"dirs":[{"path":"src","fp":"y"}],"git":false}}' ]
+  run reason
+  [ "$status" -eq 1 ]
+  [ "$output" = "reads the project through git" ]
+}
+
 @test "the store is never written into the record" {
   rec='{"checks":[{"id":"C1","run":["true"]}],"commands":{}}'
   before=$(cat .vbw/record.json)
