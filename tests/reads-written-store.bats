@@ -45,8 +45,9 @@ lib() {
 }
 
 @test "R202: a file two runs wrote carries both lists" {
+  # Read through a pipe: a copy into a file can be a clone that reads nothing (the probe's case).
   run lib 'proofcopy_create_slots 1; c=$PROOF_COPY; s=$(dirname "$c")/reads
-    reads_reset "$c" "$s"; (cd "$c" && cat src/a.txt > out.txt); reads_collect "$c" "$s" > /dev/null
+    reads_reset "$c" "$s"; (cd "$c" && cat src/a.txt | cat > out.txt); reads_collect "$c" "$s" > /dev/null
     reads_reset "$c" "$s"; (cd "$c" && cat src/b.txt >> out.txt); reads_collect "$c" "$s" > /dev/null
     jq -c "[(.lists | length), (.files[\"out.txt\"] | length)]" "$s/written.json"
     reads_reset "$c" "$s"; (cd "$c" && cat out.txt > /dev/null); reads_collect "$c" "$s" | jq -cS ".files"'
@@ -57,8 +58,8 @@ lib() {
 
 @test "R202: inherited lists still pass on through a chain of runs" {
   run lib 'proofcopy_create_slots 1; c=$PROOF_COPY; s=$(dirname "$c")/reads
-    reads_reset "$c" "$s"; (cd "$c" && cat src/c.txt > one.out); reads_collect "$c" "$s" > /dev/null
-    reads_reset "$c" "$s"; (cd "$c" && cat one.out > two.out); reads_collect "$c" "$s" > /dev/null
+    reads_reset "$c" "$s"; (cd "$c" && cat src/c.txt | cat > one.out); reads_collect "$c" "$s" > /dev/null
+    reads_reset "$c" "$s"; (cd "$c" && cat one.out | cat > two.out); reads_collect "$c" "$s" > /dev/null
     reads_reset "$c" "$s"; (cd "$c" && cat two.out > /dev/null); reads_collect "$c" "$s" | jq -cS ".files"'
   [ "$status" -eq 0 ] || { echo "$output"; false; }
   [ "$output" = '["src/c.txt"]' ] || { echo "$output"; false; }

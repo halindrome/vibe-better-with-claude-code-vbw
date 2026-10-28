@@ -30,8 +30,9 @@ DOC="$REPO_ROOT/docs/proof.md"
   grep -qF 'unless a plan of the check'"'"'s requirement lists it' "$DOC"
 }
 
-@test "R168: docs/proof.md lists a file system that cannot record reads and no earlier run in the clone, with their messages, and a proof cut short as no cause" {
+@test "R168: docs/proof.md lists a file system that cannot record reads or copies and no earlier run in the clone, with their messages, and a proof cut short as no cause" {
   grep -qF 'does not record which files are read' "$DOC"
+  grep -qF 'this file system does not record a copied file as read' "$DOC"
   grep -qF 'this clone has no earlier recorded run' "$DOC"
   ! grep -qF 'the last proof was cut short' "$DOC" || { grep -n 'cut short' "$DOC"; false; }
   grep -qF 'A proof cut short' "$DOC"

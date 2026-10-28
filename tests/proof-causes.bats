@@ -184,6 +184,24 @@ nothing_global() { ! printf '%s\n' "$output" | grep -q 'ran everything' || { ech
   jq -e '.evidence.full == true' .vbw/record.json
 }
 
+@test "R168: where a copy is not seen as a read, a unit that copies a file runs again when it changes, and the summary says why" {
+  # tests/t_c.sh only copies src/copied.txt out of the project, as a test copies a fixture.
+  # With cp copying like a copy-on-write clone, that copy moves no access time.
+  vbw_clone_cp "$TEST_ROOT/clones"
+  printf 'copied\n' > src/copied.txt
+  printf 'echo t_c >> "$RANLOG"\ncp src/copied.txt "$TEST_ROOT/copy.out"\n' > tests/t_c.sh
+  git add src/copied.txt tests/t_c.sh && git commit -q -m "feat: test t_c"
+  PATH="$TEST_ROOT/clones:$PATH" vbw_run prove
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  change src/copied.txt
+  : > "$RANLOG"
+  PATH="$TEST_ROOT/clones:$PATH" vbw_run prove
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  [[ " $(ran)" == *" t_c "* ]] || { echo "ran: $(ran)"; echo "$output"; false; }
+  printf '%s\n' "$output" | grep -qF 'this file system does not record a copied file as read' || { echo "$output"; false; }
+  jq -e 'all(.runs[]; .reads == null)' "$(git rev-parse --path-format=absolute --git-common-dir)/vbw/runs.json"
+}
+
 @test "R168: a clone with no earlier recorded run runs everything and says so" {
   git clone -q "$PROJECT" "$TEST_ROOT/clone"
   cd "$TEST_ROOT/clone"
