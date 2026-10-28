@@ -204,7 +204,7 @@ plugin_copy() {
 
 @test "effort.ROLE: a VBW that reads only up to schema 4 says the project needs a newer VBW, never that the record is corrupt" {
   plugin_copy
-  sed -i.bak 's/^VBW_SCHEMA_MAX=5$/VBW_SCHEMA_MAX=4/' "$TEST_ROOT/plugin/lib/record.sh"
+  sed -i.bak 's/^VBW_SCHEMA_MAX=.*$/VBW_SCHEMA_MAX=4/' "$TEST_ROOT/plugin/lib/record.sh"
   grep -qx 'VBW_SCHEMA_MAX=4' "$TEST_ROOT/plugin/lib/record.sh"
   "$VBW" config set effort.dev high > /dev/null
   run "$TEST_ROOT/plugin/bin/vbw" status < /dev/null

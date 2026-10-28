@@ -222,6 +222,24 @@ violations_after() {
   [[ "$output" == *"converted must be"* ]]
 }
 
+@test "#705: an approval's decision may name the plans it changed, as an array of plan ids, only on a schema-6 record" {
+  local six='.schema = 6 | .protected = ["tests/pay.test.ts"]'
+  run violations_after "$six | .decisions[0].plans = [\"P1.1\"]"
+  [ "$output" = "[]" ] || { echo "$output"; false; }
+  run violations_after "$six | .decisions[0].plans = []"
+  [ "$output" = "[]" ] || { echo "$output"; false; }
+  run violations_after "$six | .decisions[0].plans = \"P1.1\""
+  [[ "$output" == *"D1 plans must be an array of plan ids"* ]] || { echo "$output"; false; }
+  run violations_after "$six | .decisions[0].plans = [\"\"]"
+  [[ "$output" == *"D1 plans must be an array of plan ids"* ]] || { echo "$output"; false; }
+  run violations_after '.schema = 4 | .protected = ["tests/pay.test.ts"] | .decisions[0].plans = ["P1.1"]'
+  [[ "$output" == *"a decision that names its plans needs schema 6"* ]] || { echo "$output"; false; }
+  run violations_after "$six"
+  [[ "$output" == *"schema 6 is only for a record with a decision that names its plans"* ]] || { echo "$output"; false; }
+  run violations_after "$six | .decisions[0].plans = [\"P1.1\"] | .settings.efforts = {dev: \"high\"}"
+  [ "$output" = "[]" ] || { echo "$output"; false; }
+}
+
 @test "settings.autonomy is optional and one of three levels" {
   run violations_after '.settings.autonomy = "guided"'
   [ "$output" = "[]" ]

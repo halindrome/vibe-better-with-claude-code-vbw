@@ -78,6 +78,51 @@ teardown_file() { fixture_teardown; }
   [[ "$output" == *P9* ]] || false
 }
 
+@test "#705: several ids start at the earliest of their plans' approvals; a project command's fix reads every plan's" {
+  "$VBW" config rigor standard > /dev/null # an express phase holds one plan
+  "$VBW" approve > /dev/null
+  "$VBW" decide "decision A" > /dev/null
+  printf '{"plans": [{"id": "P1.2", "phase": "P1", "title": "Receipt", "reqs": ["R1"], "files": ["src/receipt.txt"]}]}' \
+    | "$VBW" apply --patch > /dev/null
+  "$VBW" approve > /dev/null
+  "$VBW" decide "decision B" > /dev/null
+  printf '{"plans": [{"id": "P1.1", "phase": "P1", "title": "Pay by card", "reqs": ["R1"], "files": ["src/pay.txt"]}]}' \
+    | "$VBW" apply --patch > /dev/null
+  "$VBW" approve > /dev/null
+  "$VBW" decide "decision C" > /dev/null
+  jq '.commands.test = ["true"] | .fixes = [{id: "F1", command: "test", attempts: 0, status: "open", note: "test"}]' \
+    .vbw/record.json > "$TEST_ROOT/r.json"
+  cp "$TEST_ROOT/r.json" .vbw/record.json
+  local ids want
+  # P1.1 changed last: C only. P1.2 was added by the second approval: B and C.
+  # Two plans, or a command fix (every plan): the earlier window, B and C.
+  for want in "P1.1:C" "P1.2:BC" "P1.1 P1.2:BC" "P1.2 P1.1:BC" "F1:BC"; do
+    ids=${want%%:*}
+    # shellcheck disable=SC2086 # the ids are words
+    vbw_run show decisions --since-approval $ids
+    [ "$status" -eq 0 ] || { echo "$ids: $output"; false; }
+    [[ "$output" != *"decision A"* ]] || { echo "$ids lists A: $output"; false; }
+    [[ "$output" == *"decision C"* ]] || { echo "$ids misses C: $output"; false; }
+    case ${want#*:} in
+      C) [[ "$output" != *"decision B"* ]] || { echo "$ids lists B: $output"; false; } ;;
+      BC) [[ "$output" == *"decision B"* ]] || { echo "$ids misses B: $output"; false; } ;;
+    esac
+  done
+}
+
+@test "#705: a record whose approval names its plans is schema 6, and a VBW that reads up to schema 5 asks for an update, never calling it corrupt" {
+  "$VBW" approve > /dev/null
+  jq -e '.schema == 4 and all(.decisions[]; has("plans") | not)' .vbw/record.json > /dev/null
+  printf 'grep -qx paid src/pay.txt # changed\n' > tests/pay.sh
+  "$VBW" approve > /dev/null
+  jq -e '.schema == 6 and (.decisions[-1].plans == [])' .vbw/record.json > /dev/null || { jq -c '{schema, decisions}' .vbw/record.json; false; }
+  cp -R "$PLUGIN_ROOT" "$TEST_ROOT/plugin"
+  sed -i.bak 's/^VBW_SCHEMA_MAX=.*$/VBW_SCHEMA_MAX=5/' "$TEST_ROOT/plugin/lib/record.sh"
+  grep -qx 'VBW_SCHEMA_MAX=5' "$TEST_ROOT/plugin/lib/record.sh"
+  run "$TEST_ROOT/plugin/bin/vbw" status < /dev/null
+  [ "$status" -eq 4 ] && [[ "$output" == *"needs a newer VBW"* ]] || { echo "$output"; false; }
+}
+
 @test "T123: with no decision since the approval it says so and succeeds" {
   "$VBW" decide "use SQLite" > /dev/null
   "$VBW" approve > /dev/null
