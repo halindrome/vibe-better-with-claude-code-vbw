@@ -30,7 +30,9 @@ DOC="$REPO_ROOT/docs/proof.md"
   grep -qF 'vbw prove --full' "$DOC"
 }
 
-@test "R166: docs/proof.md says how git use is seen" {
+@test "R166: docs/proof.md says each unit starts without the build output earlier units wrote, and how git use is seen" {
+  grep -qF 'every unit starts as the' "$DOC"
+  grep -qF "Build output a unit writes is removed before the next" "$DOC"
   grep -qF "the copy's \`.git\` file, which every git command run inside the copy reads" "$DOC"
   grep -qF '`git status --ignored` and `git clean -X`' "$DOC"
 }

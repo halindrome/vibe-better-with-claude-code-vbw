@@ -857,6 +857,12 @@ Build output is not environment: the copy never brings in a folder named `target
 `.ruff_cache`, `.tox`, `.next`, `.nuxt`, `.gradle` or `coverage`, at any depth.
 The copy builds its own, so a proof never reads stale output from the working
 folder, and nothing it builds lands in the working folder or in another copy.
+Each unit builds its own too: before a unit runs in a copy, the files an earlier
+unit wrote inside a folder with one of those names are removed (Python's
+`__pycache__` and `.pytest_cache` files, for example), so every unit starts as the
+first unit of a fresh copy does. A file there that the copy was made with stays:
+a tracked file, or one inside an ignored folder copied in whole, such as a virtual
+environment.
 Untracked files that are not ignored never enter the copy (D54): to make one
 count, commit it or ignore it.
 
@@ -992,7 +998,9 @@ a check or command its record names, a test file in its folder. A branch
 checked out in no worktree is not consulted: switching back to it re-runs the
 units only it has, once.
 
-**Files a unit writes.** A file a unit writes carries that unit's read list. A
+**Files a unit writes.** Build output a unit writes is removed before the next
+unit runs in its copy (see the clean copy, above), so no unit reads
+another's. Any other file a unit writes carries that unit's read list. A
 later unit that reads the file inherits the list, so it runs again when
 anything the writer read changed. A file two units wrote carries both lists,
 and inherited lists pass on through a chain of units. The lists live in the

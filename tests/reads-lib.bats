@@ -189,6 +189,42 @@ lib() {
   [ "$output" = $'[["src/a.txt"],["docs"],true]\n[["src/b.txt"],[],false]' ]
 }
 
+@test "R166: build output an earlier run wrote is gone before the next run, so no read list passes through it" {
+  # A Python run writes __pycache__ and .pytest_cache files that the next run in the same
+  # copy would read: each next run starts without them, as in a fresh copy.
+  run lib 'proofcopy_create_slots 1; c=$PROOF_COPY; s=$(dirname "$c")/reads
+    reads_reset "$c" "$s"
+    (cd "$c" && cat src/a.txt > /dev/null && mkdir -p src/__pycache__ .pytest_cache/v/cache && printf "pyc\n" > src/__pycache__/a.pyc \
+      && printf "ids\n" > .pytest_cache/v/cache/nodeids && ls docs > /dev/null && git show HEAD:src/b.txt > /dev/null)
+    reads_collect "$c" "$s" | jq -c "[.files, (.dirs | map(.path)), .git]"
+    reads_reset "$c" "$s"
+    [ ! -e "$c/src/__pycache__" ] && [ ! -e "$c/.pytest_cache" ] && [ -f "$c/src/a.txt" ] || { echo "build output left in the copy"; exit 1; }
+    jq -c "[(.lists | length), (.files | length)]" "$s/written.json"
+    (cd "$c" && { cat src/__pycache__/a.pyc .pytest_cache/v/cache/nodeids; cat src/b.txt; } > /dev/null 2>&1)
+    reads_collect "$c" "$s" | jq -c "[.files, (.dirs | map(.path)), .git]"'
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  [ "$output" = $'[["src/a.txt"],["docs"],true]\n[0,0]\n[["src/b.txt"],[],false]' ]
+}
+
+@test "R166: a file in a build folder that the copy was made with stays, and still passes on the list of a run that changed it" {
+  # bin/tool.sh is tracked, node_modules/pkg/dist/x.js came in with an ignored folder: neither
+  # is build output a run made. A file a run adds beside x.js is, and goes; its folder stays.
+  mkdir -p bin node_modules/pkg/dist
+  printf 'tool\n' > bin/tool.sh
+  printf 'x\n' > node_modules/pkg/dist/x.js
+  git add bin && git commit -q -m "chore(test): tool"
+  run lib 'proofcopy_create_slots 1; c=$PROOF_COPY; s=$(dirname "$c")/reads
+    reads_reset "$c" "$s"
+    (cd "$c" && cat src/a.txt > /dev/null && printf "a\n" >> bin/tool.sh && printf "a\n" >> node_modules/pkg/dist/x.js && printf "a\n" > node_modules/pkg/dist/new.js)
+    reads_collect "$c" "$s" > /dev/null
+    reads_reset "$c" "$s"
+    [ -f "$c/bin/tool.sh" ] && [ -f "$c/node_modules/pkg/dist/x.js" ] && [ ! -e "$c/node_modules/pkg/dist/new.js" ] || { ls -R "$c/bin" "$c/node_modules"; exit 1; }
+    (cd "$c" && cat node_modules/pkg/dist/x.js > /dev/null); reads_collect "$c" "$s" | jq -c .files
+    reads_reset "$c" "$s"; (cd "$c" && cat bin/tool.sh > /dev/null); reads_collect "$c" "$s" | jq -c .files'
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  [ "$output" = $'["src/a.txt"]\n["bin/tool.sh","src/a.txt"]' ] || { echo "$output"; false; }
+}
+
 @test "R166: inherited lists pass on through a chain of runs" {
   run lib 'proofcopy_create_slots 1; c=$PROOF_COPY; s=$(dirname "$c")/reads
     reads_reset "$c" "$s"; (cd "$c" && cat src/a.txt > one.out); reads_collect "$c" "$s" > /dev/null
