@@ -116,6 +116,17 @@ next_after() {
   git commit -q -am 'fix(pay): round 3'
   run "$VBW" next --json < /dev/null
   echo "$output" | jq -e '.action == "fix"'
+  # So are QA's and a restore's, even on an [auto] requirement whose fix a proof would otherwise wait for.
+  next_after '.requirements[0].status = "failing" | .fixes = [{id:"F1", req:"R1", source:"qa", phase:"P1", attempts:0, status:"open", note:"QA: wrong total"}]' > /dev/null
+  printf 'fixed a fourth time\n' > a.js
+  git commit -q -am 'fix(pay): round 4'
+  run "$VBW" next --json < /dev/null
+  echo "$output" | jq -e '.action == "fix"' || { echo "$output"; false; }
+  next_after '.requirements[0].status = "failing" | .fixes = [{id:"F1", req:"R1", restore:"a.js", attempts:0, status:"open", note:"restore a.js"}]' > /dev/null
+  printf 'fixed a fifth time\n' > a.js
+  git commit -q -am 'fix(pay): round 5'
+  run "$VBW" next --json < /dev/null
+  echo "$output" | jq -e '.action == "fix"' || { echo "$output"; false; }
 }
 
 @test "row 10: unproven auto requirements are proved (including after a fix)" {
