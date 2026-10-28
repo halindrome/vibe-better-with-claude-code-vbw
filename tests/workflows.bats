@@ -176,3 +176,13 @@ agents() { find "$PLUGIN_ROOT/agents" -name '*.md' | LC_ALL=C sort; }
     [ ! -d "$PLUGIN_ROOT/skills/$n" ] || { echo "workflow $n has the name of the skill /vbw:$n"; false; }
   done < <(workflows)
 }
+
+@test "#707: the map states a test or lint run as a snapshot with its commit and date, and the merge keeps it so and bases no advice on it" {
+  local js="$PLUGIN_ROOT/workflows/mapping.js" stack merge
+  stack=$(grep "key: 'stack'" "$js")
+  printf '%s\n' "$stack" | grep -q 'snapshot' || { echo "the stack angle does not call a run result a snapshot"; false; }
+  printf '%s\n' "$stack" | grep -q 'as of' || { echo "the stack angle does not ask for the commit and date"; false; }
+  merge=$(grep 'Merge these verified findings' "$js")
+  printf '%s\n' "$merge" | grep -q 'as of' || { echo "the merge does not keep the commit and date"; false; }
+  printf '%s\n' "$merge" | grep -q 'no recommendation' || { echo "the merge lets advice rest on a run result"; false; }
+}
