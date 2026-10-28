@@ -61,6 +61,12 @@ def fix_files($r): if .command then ["*"]
     | {phase: $p, file, plan, change, commit, by}]) as $unsettled
 | (.evidence == null or .evidence.contract != $contract or $code_changed) as $stale
 | ([.requirements[] | select(.proof == "auto" and (.status != "proven" or $stale)) | .id]) as $unproven
+# #706: open fixes whose failures a proof writes (an [auto] requirement's or a project command's;
+# not QA's, a restore's or a rejection's). On stale evidence they wait for a proof of the current code.
+| ([.requirements[] | select(.proof == "auto") | .id]) as $auto
+| ([.fixes[] | select(.status == "open" and (.source // "") != "qa" and (has("restore") | not)
+    and (has("command") or (.req as $q | $auto | index($q) != null))) | .id]) as $proof_fixes
+| ($stale and ($proof_fixes | length) > 0) as $reprove
 | ([$current[] | select(.proof == "human" and .status == "open" and .skipped != true) | .id]) as $to_accept
 # [human] requirements the user skipped (vbw req skip): the ship offers to move them on.
 | ([$current[] | select(.proof == "human" and .status == "open" and .skipped == true) | .id]) as $later
@@ -133,13 +139,13 @@ def fix_files($r): if .command then ["*"]
     result("scope"; true; "Commits changed files outside their plans: review them (vbw show evidence)"; {violations: .evidence.scope})
   # #706: a fix round works from the last proof's failures, so stale evidence (a round's
   # refused fix done, an interrupted Dev, a user commit) is proved again first.
-  elif ($open_fixes | length) > 0 and ($stale | not) then
+  elif ($open_fixes | length) > 0 and ($reprove | not) then
     result("fix"; false; "Run the fix workflow for \($open_fixes | join(", "))"; {fixes: $open_fixes, groups: $fix_groups})
-  elif ($waiting | length) > 0 and ($unproven | length) > 0 then
+  elif ($waiting | length) > 0 and (($unproven | length) > 0 or $reprove) then
     ([$waiting | split("\n")[] | select(length > 0)] | sort) as $wf
     | result("approve"; true; "Approve the test files new or edited since the approval (a fix may add or change them), once, before they are proved: \($wf | join(", "))"; {files: $wf})
-  elif ($unproven | length) > 0 then
-    result("prove"; false; "Run vbw prove for \($unproven | join(", "))"; {requirements: $unproven})
+  elif ($unproven | length) > 0 or $reprove then
+    result("prove"; false; "Run vbw prove for \(if ($unproven | length) > 0 then $unproven else $proof_fixes end | join(", "))"; {requirements: $unproven})
   elif ($unsettled | length) > 0 then
     result("deviations"; true; "Files the plans delivered changed outside any plan: ask the user whether to keep each change (vbw decide naming the file) or restore it (vbw fix restore FILE): \([$unsettled[] | "\(.file) (\(.plan)) \(.change)"] | join(", "))"; {deviations: $unsettled})
   elif (proof_complete | not) and (($to_verify | length) > 0 or ($to_accept | length) == 0) then

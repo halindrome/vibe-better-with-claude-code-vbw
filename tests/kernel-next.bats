@@ -104,6 +104,18 @@ next_after() {
   git commit -q -m 'fix(pay): round 1'
   run "$VBW" next --json < /dev/null
   echo "$output" | jq -e '.action == "prove"'
+  # A project command's fix is written by the proof too, with no [auto] requirement to prove.
+  next_after '.requirements |= map(select(.proof == "human")) | .checks = [] | .phases[].reqs = ["R2"] | .plans[].reqs = ["R2"] | .commands = {test: ["true"]} | .fixes = [{id:"F1", command:"test", attempts:0, status:"open", note:"t.sh"}]' > /dev/null
+  printf 'fixed again\n' > a.js
+  git commit -q -am 'fix(pay): round 2'
+  run "$VBW" next --json < /dev/null
+  echo "$output" | jq -e '.action == "prove"'
+  # A rejection's fix carries the user's note, which no proof rewrites: it is worked on stale evidence.
+  next_after '.requirements |= map(select(.proof == "human") | .status = "rejected") | .checks = [] | .phases[].reqs = ["R2"] | .plans[].reqs = ["R2"] | .fixes = [{id:"F1", req:"R2", attempts:0, status:"open", note:"ugly"}]' > /dev/null
+  printf 'fixed a third time\n' > a.js
+  git commit -q -am 'fix(pay): round 3'
+  run "$VBW" next --json < /dev/null
+  echo "$output" | jq -e '.action == "fix"'
 }
 
 @test "row 10: unproven auto requirements are proved (including after a fix)" {
