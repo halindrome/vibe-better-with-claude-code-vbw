@@ -67,7 +67,7 @@ const closeRun = async (phaseIds = []) => {
 }
 
 const ANGLES = [
-  { key: 'stack', ask: 'The stack and how to work with it: languages, frameworks, package manager, and the exact commands to install, build, run, test and lint (try the test and lint commands and report what happens). What a run gave (passes, failures, which test failed) is a snapshot, true only of the code it ran on: write it with that commit and date, "as of <short commit>, <date>: ...", from git rev-parse --short HEAD and date +%F.' },
+  { key: 'stack', ask: 'The stack and how to work with it: languages, frameworks, package manager, and the exact commands to install, build, run, test and lint (try the test and lint commands and report what happens).' },
   { key: 'structure', ask: 'The structure: the top-level layout, the entry points, the main modules and what each owns, and how a request or command flows through them.' },
   { key: 'conventions', ask: 'The conventions a new change must follow: code style, naming, error handling, logging, file organization, and anything in CLAUDE.md, CONTRIBUTING or a linter config.' },
   { key: 'tests', ask: 'The tests: framework, where they live, how they are organized, fixtures and helpers, what is well covered and what is not.' },
@@ -99,7 +99,7 @@ const MAP = {
 
 phase('Scout')
 const found = await parallel(ANGLES.map(a => () =>
-  ask(`Map this codebase from one angle. ${a.ask}${voice}`, Object.assign({ agentType: 'vbw:scout', label: `scout ${a.key}`, phase: 'Scout', schema: FINDINGS }, model, effortOf('scout', 'survey')))))
+  ask(`Map this codebase from one angle. ${a.ask} What a test or lint run gave (passes, failures, which test failed) is a snapshot, true only of the code it ran on: write it with that commit and date, "as of <short commit>, <date>: ...", from git rev-parse --short HEAD and date +%F.${voice}`, Object.assign({ agentType: 'vbw:scout', label: `scout ${a.key}`, phase: 'Scout', schema: FINDINGS }, model, effortOf('scout', 'survey')))))
 
 const sections = ANGLES.map((a, i) => ({ angle: a.key, findings: found[i] ? found[i].findings : [] }))
 const missing = sections.filter(s => s.findings.length === 0).map(s => s.angle)
