@@ -189,7 +189,8 @@ export const timelineModel = safe(({ run, now, steps, step, width }) => {
     const a1 = num(a.endedAt) ? a.endedAt : end
     return { a, a0, a1, seconds: Math.max(0, Math.round((a1 - a0) / 1000)) }
   })
-  const timeW = Math.max(0, ...spans.map((s) => duration(s.seconds * 1000).length))
+  // At least '59 min 59 s' wide, so the bar keeps its width while a running lane's time grows.
+  const timeW = Math.max(11, ...spans.map((s) => duration(s.seconds * 1000).length))
   const room = (num(width) ? Math.floor(width) : 64) - (timeW + 1)
   const nameW = Math.max(4, Math.min(16, room - 11, Math.max(0, ...spans.map((s) => titleOf(s.a).length))))
   const w = Math.max(4, room - (nameW + 1))
