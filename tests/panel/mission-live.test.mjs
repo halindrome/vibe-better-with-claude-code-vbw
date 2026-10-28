@@ -97,6 +97,9 @@ test('renderTimeline: a lane is one line; the bar leaves room for the name and t
     assert.equal(rows.length, 4)
     for (const line of rows) assert.ok([...line].length <= width, width + ': ' + line.length + ' ' + JSON.stringify(line))
     assert.ok(rows[0].endsWith('█ 2 min 12 s'), 'the longest lane still fills its bar: ' + rows[0])
+    // A narrow pane cuts the names before the bar drops under 10 columns.
+    assert.ok(m.width >= 10, width + ': bar ' + m.width)
+    if (width === 30) assert.ok(m.nameW < 'architecture-0'.length, 'name cut: ' + m.nameW)
   }
   // The bar keeps its width while a running lane's time grows from '59 s' to '59 min 59 s'.
   const widths = [59, 60, 61, 600, 3599].map((s) => timelineModel({ run: run([agent({ startedAt: S })]), now: S + s * 1000, steps: [], width: 60 }).width)
