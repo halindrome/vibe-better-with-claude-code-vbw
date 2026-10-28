@@ -12,14 +12,14 @@
 # each one's lines print together when it ends.
 #
 # Scenarios: greenfield, reject, resume, change, convert, balanced, docs, qafix,
-# decision, debug, research, edgecase, leftover, recheck, approval, newcomer, senior, panel, steptime, road, pluginoff, tools, legacy, nolegacy, smallchange, costs, loop, plugindir, sessions, taskbreak, fixchecks, failoutput, leaveout, hiddenrecord. A user
+# decision, debug, research, edgecase, leftover, recheck, approval, newcomer, senior, panel, steptime, road, pluginoff, tools, legacy, nolegacy, smallchange, costs, loop, plugindir, sessions, taskbreak, fixchecks, failoutput, leaveout, hiddenrecord, mapsnapshot. A user
 # answers every question with VBW's recommendation unless the scenario says otherwise.
 set -uo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 l3() { bash "$ROOT/tools/l3.sh" "$@"; }
 VBW="$ROOT/plugin/bin/vbw"
-ALL="greenfield reject resume change convert balanced docs qafix decision debug research edgecase leftover recheck approval newcomer senior panel steptime road pluginoff tools legacy nolegacy smallchange costs loop plugindir sessions taskbreak fixchecks failoutput leaveout hiddenrecord"
+ALL="greenfield reject resume change convert balanced docs qafix decision debug research edgecase leftover recheck approval newcomer senior panel steptime road pluginoff tools legacy nolegacy smallchange costs loop plugindir sessions taskbreak fixchecks failoutput leaveout hiddenrecord mapsnapshot"
 RESULTS="$ROOT/tools/l3-results"
 STEPS=60
 
@@ -2770,6 +2770,72 @@ scenario_fixchecks() {
       "$(jq -n --arg fv "$fv" --arg src "$src" --argjson n "$n_fix" --argjson only "$only" --argjson tr "$trailers" --argjson a "$n" --argjson q "$q" --argjson rd "$rounds" --argjson reg "$regression" --argjson pc "$plan_code" \
         '{first_qa_verdict: $fv, fix_source: $src, fix_check_commits: $n, fix_commits_carry_req_trailer: $tr, check_commit_only_check_files: $only, code_through_plan: $pc, approvals: $a, questions: $q, fix_rounds: $rd, regression_case_in_check: $reg}')" \
       '["a fix of a failing check (proof source) that edits a check file","a project-command fix","the answer Not yet or the user'"'"'s own words at the approval","more than one fix round","a project larger than the greet.sh fixture","the wording of what VBW tells the user (read by a person)"]'
+  }
+}
+
+# mapsnapshot_seed: a VBW project with existing code (greet.sh) and a test script the README
+# names; one of its two cases fails on the committed code.
+mapsnapshot_seed() {
+  printf '#!/bin/sh\necho "Hello, $1!"\n' > greet.sh && chmod +x greet.sh
+  cat > test.sh <<'SH'
+#!/bin/sh
+fail=0
+if [ "$(sh greet.sh Ana)" = "Hello, Ana!" ]; then echo "ok 1 a name is greeted"; else echo "not ok 1 a name is greeted"; fail=1; fi
+if [ "$(sh greet.sh)" = "Hello, world!" ]; then echo "ok 2 no name greets the world"; else echo "not ok 2 no name greets the world"; fail=1; fi
+exit "$fail"
+SH
+  chmod +x test.sh
+  printf '# Greeter\n\n`./greet.sh NAME` prints a greeting.\n\nRun the tests: `sh test.sh` (TAP output, exit 1 on a failure).\n' > README.md
+  git add greet.sh test.sh README.md && git commit -qm "feat: greet.sh and its tests" -- greet.sh test.sh README.md
+}
+
+# mapsnapshot (#707): the user maps a codebase whose test suite has a failing case. A test
+# result in .vbw/map.md is a snapshot: written "as of <short commit>, <date>", never stated as
+# current, and no advice in the map rests on it. Judged in .vbw/map.md, git and the tool calls
+# in the transcripts (a scout ran the tests), never on screen.
+scenario_mapsnapshot() {
+  new_project
+  (cd "$dir" && "$VBW" init > /dev/null && mapsnapshot_seed) \
+    || { say "setup failed: could not seed the project with a failing test"; return 1; }
+  fixture="greet.sh with a test.sh (named in the README) whose no-name case fails on the committed code; vbw init before the session; the user types /vbw:map"
+  seed_sha=$(git -C "$dir" rev-parse --short HEAD)
+  start="/vbw:map"
+  map="$dir/.vbw/map.md"
+  done_yet() { [ -s "$map" ]; }
+  # The user waits for the map and types nothing else (the default would type /vbw:vibe).
+  on_idle() { sleep 30; return 0; }
+  checks() {
+    local passed=true written=false ran=false head tag="" results=0 untagged="" advice=""
+    [ -s "$map" ] && written=true
+    transcripts | transcript_tool_called '(^|[;&| ])(sh |bash |\./)test\.sh' && ran=true
+    head=$(git -C "$dir" rev-parse --short HEAD)
+    # A result line names the failing case, a numbered TAP "not ok 2" (not the format's own
+    # "not ok N description") or a pass/fail count. Each must sit in a block (lines since the
+    # last blank line or heading) with a line "as of <the mapped commit>, <date>"; tag is the
+    # first such line over a result, untagged the result lines without one.
+    results=$(grep -ciE 'not ok [0-9]|no name greets the world|[0-9]+ (tests? |cases? )?(passed|passing|pass|failed|failing|fail)' "$map" 2> /dev/null || true)
+    judged=$(awk -v sha="$seed_sha" '/^[[:space:]]*$/ || /^#/ { asof = ""; next }
+      { l = tolower($0) }
+      l ~ ("as of " sha "[0-9a-f]*[^0-9]?[^0-9]?[^0-9]?[^0-9]?[^0-9]?[^0-9]?[^0-9]?[^0-9]?20[0-9][0-9]-[0-9][0-9]-[0-9][0-9]") { asof = $0 }
+      l ~ /not ok [0-9]|no name greets the world|[0-9]+ (tests? |cases? )?(passed|passing|pass|failed|failing|fail)/ { print (asof == "" ? "U\t" $0 : "T\t" asof) }' "$map" 2> /dev/null)
+    tag=$(printf '%s\n' "$judged" | sed -n 's/^T	//p' | head -n 1)
+    untagged=$(printf '%s\n' "$judged" | sed -n 's/^U	//p')
+    advice=$(grep -iE 'fix (them|these|it|this|the (failing|broken))|should be fixed|needs? (to be )?fix|before (the |a |any )?(pr|pull request|merg|commit|release)' "$map" 2> /dev/null || true)
+    say "seed commit $seed_sha, HEAD at end $head, a scout ran the tests: $ran, result lines: $results"
+    say "tag line: ${tag:-none}"
+    [ -z "$untagged" ] || say "result lines without as of: $untagged"
+    [ -z "$advice" ] || say "advice lines: $advice"
+    expect "the map was written to .vbw/map.md ($written)" [ "$written" = true ]
+    expect "a scout ran the project's tests ($ran)" [ "$ran" = true ]
+    expect "the map states at least one test result ($results)" [ "${results:-0}" -ge 1 ]
+    expect "a result is tagged as of the mapped commit $seed_sha and a date" [ -n "$tag" ]
+    expect "every result line sits under an as of $seed_sha with a date" [ -z "$untagged" ]
+    expect "no line advises fixing the failing tests" [ -z "$advice" ]
+    [ "$failed" -eq 0 ] || passed=false
+    result_write mapsnapshot "$fixture" "${cost_usd:-0}" "$passed" \
+      "$(jq -n --argjson w "$written" --argjson r "$ran" --arg s "$seed_sha" --arg h "$head" --arg t "$tag" --argjson n "${results:-0}" --arg u "$untagged" --arg a "$advice" \
+        '{map_written: $w, scout_ran_tests: $r, seed_commit: $s, head_at_end: $h, tag_line: $t, result_lines: $n, untagged_result_lines: $u, advice_lines: $a}')" \
+      '["a second /vbw:map after the failing test is fixed (the tag is what tells a reader the old map is stale; no re-map ran)","a lint result","a project larger than the greet.sh fixture","a scout that reads the tests without running them","the map as read by a person, beyond the patterns checked","/vbw:vibe reaching mapping before a spec (same workflow, not driven here)"]'
   }
 }
 
