@@ -1160,7 +1160,15 @@ They read `checks: N ran, M reused` and `test files: N ran, M reused`. After
   is inside the project counts, even one that reads nothing of the project
   (`git config --global` run from the project folder): git opens the
   repository before it does anything else. A test suite that runs such
-  commands from another folder keeps its results reusable.
+  commands from another folder keeps its results reusable. VBW sees it by
+  the copy's `.git` file, which every git command run inside the copy reads
+  first. Git run elsewhere in your repository while a unit runs does not count
+  (`git worktree list`, `git branch`, `git gc`, `git fetch`, another proof making
+  its copy), though it reads the copy's `HEAD` in the shared git folder. Two
+  commands do count: `git status --ignored` and `git clean -X` (also with `-n`),
+  run in the project, open each proof copy's `.git` file to see whether it is a
+  repository of its own, exactly as git inside the copy does. A unit running
+  meanwhile counts as reading through git and runs again in the next proof.
 
 To run everything fresh, use `vbw prove --full`, or prove again with
 nothing committed since a passing proof (a second `vbw prove` is a deliberate re-run).

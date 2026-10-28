@@ -30,6 +30,11 @@ DOC="$REPO_ROOT/docs/proof.md"
   grep -qF 'vbw prove --full' "$DOC"
 }
 
+@test "R166: docs/proof.md says how git use is seen" {
+  grep -qF "the copy's \`.git\` file, which every git command run inside the copy reads" "$DOC"
+  grep -qF '`git status --ignored` and `git clean -X`' "$DOC"
+}
+
 @test "R166: docs/proof.md no longer describes the served-files rule, the passes cache or the documentation-only rule" {
   ! grep -qi 'served files are' "$DOC" || { echo "the served-files rule is still described"; false; }
   ! grep -qF 'vbw/passes.json' "$DOC" || { echo "the passes cache is still described"; false; }

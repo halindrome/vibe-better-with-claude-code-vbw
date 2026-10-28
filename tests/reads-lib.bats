@@ -101,12 +101,12 @@ lib() {
   [ "$output" = gone ]
 }
 
-@test "R166: the reset sets back the access time of every tracked file and folder, and of the copy's HEAD and index" {
+@test "R166: the reset sets back the access time of every tracked file and folder, and of the copy's .git file" {
   run lib 'proofcopy_create_slots 1; c=$PROOF_COPY; s=$(dirname "$c")/reads
-    gd=$(git -C "$c" rev-parse --absolute-git-dir)
+    [ -f "$c/.git" ] || { echo "the copy has no .git file"; exit 3; }
     cat "$c/src/a.txt" > /dev/null; ls "$c/src" > /dev/null; git -C "$c" ls-files > /dev/null; git -C "$c" show HEAD:src/a.txt > /dev/null
     reads_reset "$c" "$s" || exit 1
-    for p in "$c/src/a.txt" "$c/src/b.txt" "$c/docs/guide.txt" "$c/.gitignore" "$c/src" "$c/docs" "$c" "$gd/HEAD" "$gd/index"; do
+    for p in "$c/src/a.txt" "$c/src/b.txt" "$c/docs/guide.txt" "$c/.gitignore" "$c/src" "$c/docs" "$c" "$c/.git"; do
       [ "$(at "$p")" -lt 1000000000 ] || { echo "not set back: $p"; exit 2; }
     done
     [ "$(at "$c/ignored")" -gt 1000000000 ] && echo ok'
@@ -146,6 +146,24 @@ lib() {
     reads_reset "$c" "$s"; (cd "$c" && git status --short > /dev/null); reads_collect "$c" "$s" | jq -c .git'
   [ "$status" -eq 0 ]
   [ "$output" = $'true\ntrue\ntrue' ]
+}
+
+@test "R166: git run in the user's checkout, or from another copy, while a run runs does not set the git flag" {
+  # The copy is a worktree of the user's repository: git worktree list, git branch, a new
+  # worktree (another proof making its copy), gc and fetch there read its HEAD and index,
+  # but none of them opens the copy's own .git file, which every git command run inside
+  # the copy reads first.
+  run lib 'proofcopy_create_slots 2; c=${PROOF_COPIES[0]}; o=${PROOF_COPIES[1]}; s=$(dirname "$c")/reads
+    reads_reset "$c" "$s"
+    (cd "$c" && cat src/a.txt > /dev/null)
+    (cd "$VBW_ROOT" && git worktree list --porcelain && git branch --list && git branch -av \
+      && git worktree add -q --detach "$VBW_RUNTIME/other" HEAD && git worktree remove --force "$VBW_RUNTIME/other" \
+      && git gc --quiet && git fetch -q . HEAD:refs/heads/side) > /dev/null 2>&1 || { echo "a git command failed"; exit 1; }
+    (cd "$o" && git worktree list && git branch && git status --short) > /dev/null 2>&1 || exit 1
+    reads_collect "$c" "$s" | jq -c "[.files, .git]"
+    reads_reset "$c" "$s"; (cd "$c/src" && git log -1 > /dev/null); reads_collect "$c" "$s" | jq -c .git'
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  [ "$output" = $'[["src/a.txt"],false]\ntrue' ] || { echo "$output"; false; }
 }
 
 @test "R166: a folder's fingerprint follows the names of its tracked files, not their content" {

@@ -1,20 +1,25 @@
 #!/usr/bin/env bash
 # What a run reads in its own clean copy (docs/proof.md, R166). Before a run
 # the access time (atime, the time the system notes when a file is read) of
-# every tracked file and folder of the copy, and of the copy's own git HEAD
-# and index files, is set back with touch -a to an old date. After it, what
-# moved forward was read: a file was opened, a folder was listed, git was used.
-# A file a run writes remembers that run's read list; a later run in the same
+# every tracked file and folder of the copy, and of the copy's .git file, is
+# set back with touch -a to an old date. After it, what moved forward was read:
+# a file was opened, a folder was listed, git was used. The copy is a worktree,
+# and its .git file (the line naming its git folder) is what every git command
+# run inside the copy reads first; its HEAD and index sit in the repository's
+# shared git folder, which git run elsewhere in the repository also reads (git
+# worktree list, git branch, another worktree being made), so they would tell
+# nothing about the run. A file a run writes remembers that run's read list; a later run in the same
 # copy that reads it adds that list to its own.
 #
-# Per slot a state folder (outside the copy) holds: gitdir, files and dirs (the
+# Per slot a state folder (outside the copy) holds: files and dirs (the
 # tracked paths, "./"-prefixed, NUL-separated), kids.json ({kids: folder -> names
-# directly in it, files: the tracked file paths}), ref (modification and access
-# time set to the old date plus a day: the yardstick "read since" compares
-# with), mark (just before the run started: "written since"), moved (every path
-# whose access time moved in the last collected run, NUL-separated), wlist
-# (written files, for a full set-back), written.json ({lists: run id -> read
-# list, files: path -> [run id]}) and runid (the last run id given).
+# directly in it, files: the tracked file paths}), ready (empty, written last:
+# the first reset completed), ref (modification and access time set to the old
+# date plus a day: the yardstick "read since" compares with), mark (just before
+# the run started: "written since"), moved (every path whose access time moved
+# in the last collected run, NUL-separated), wlist (written files, for a full
+# set-back), written.json ({lists: run id -> read list, files: path -> [run
+# id]}) and runid (the last run id given).
 
 # The old date, for touch -t (local time): a set-back time is a day before the
 # yardstick file (READS_OLD_DAY) that "read since" is compared with.
@@ -85,14 +90,14 @@ reads_subsecond() {
 
 # reads_reset COPY STATE: before a run (STATE absolute). The first call also
 # records the copy's tracked files and folders (they never change: the copy is
-# a detached checkout) and where its git HEAD and index files are. "Written by
+# a detached checkout). "Written by
 # the run" means newer than the mark: 2 seconds back (whole-second file
 # systems), but never before the copy's first reset. A file the previous run
 # wrote just before may be taken for this run's, and then carries both lists.
 reads_reset() {
-  local copy=$1 st=$2 gd slack=2 sec exact=true
+  local copy=$1 st=$2 slack=2 sec exact=true
   mkdir -p "$st" || return 1
-  if [ ! -f "$st/gitdir" ]; then
+  if [ ! -f "$st/ready" ]; then
     # The copy was just made. On a file system with whole-second times, wait for the next whole
     # second, so that no file of it can look written by the first run; with finer times the
     # marks below are exact and nothing waits.
@@ -104,7 +109,8 @@ reads_reset() {
     slack=0
     : > "$st/mark0" || return 1
     [ "$exact" = true ] || reads_mark "$st/mark0" 0 || return 1
-    gd=$(git -C "$copy" rev-parse --absolute-git-dir) || return 1
+    # A worktree's .git is a file (gitrepository-layout): the collection's sign of git use.
+    [ -f "$copy/.git" ] || return 1
     git -C "$copy" ls-files -z | jq -Rs -j '
       (split("\u0000") | map(select(length > 0))) as $f
       | ($f[] | "./" + . + "\u0000")' > "$st/files" || return 1
@@ -113,9 +119,8 @@ reads_reset() {
       | ([$f[] | split("/") | . as $p | range(1; length) | $p[:.] | join("/")] | unique | map("./" + .)) as $d
       | ("." , $d[]) + "\u0000"' > "$st/dirs" || return 1
     reads_kids "$st/files" > "$st/kids.json" || return 1
-    printf '%s\n' "$gd" > "$st/gitdir"
+    : > "$st/ready" || return 1
   fi
-  gd=$(cat "$st/gitdir")
   [ -f "$st/written.json" ] || printf '{"lists":{},"files":{}}\n' > "$st/written.json"
   : > "$st/ref" && touch -t "$READS_OLD_DAY" "$st/ref" || return 1
   : > "$st/mark" || return 1
@@ -136,8 +141,7 @@ reads_reset() {
     reads_touch "$st/wlist" "$copy"
   fi
   reads_touch "$st/dirs" "$copy"
-  [ ! -e "$gd/HEAD" ] || touch -a -t "$READS_OLD" "$gd/HEAD" 2> /dev/null || true
-  [ ! -e "$gd/index" ] || touch -a -t "$READS_OLD" "$gd/index" 2> /dev/null || true
+  touch -a -t "$READS_OLD" "$copy/.git" 2> /dev/null || return 1
 }
 
 # reads_kids FILES: what a collection needs to know of the tracked paths in FILES (NUL-
@@ -165,10 +169,9 @@ reads_kids() {
 # the files it wrote with a single copy of this list (written.json: lists by run id,
 # files by path).
 reads_collect() {
-  local copy=$1 st=$2 gd git=false line n=0 id
+  local copy=$1 st=$2 git=false line n=0 id
   local -a names
-  gd=$(cat "$st/gitdir")
-  [ -z "$(find "$gd/HEAD" "$gd/index" -maxdepth 0 -anewer "$st/ref" -print 2> /dev/null)" ] || git=true
+  [ -z "$(find "$copy/.git" -maxdepth 0 -anewer "$st/ref" -print 2> /dev/null)" ] || git=true
   (cd "$copy" && find . -path ./.git -prune -o -anewer "$st/ref" -print0) > "$st/moved" 2> /dev/null || true
   # The tracked paths never change (the copy is a detached checkout): sorted out once at the
   # first reset, here only when a state lacks it.
