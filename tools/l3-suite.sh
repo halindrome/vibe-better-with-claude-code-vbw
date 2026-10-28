@@ -2809,17 +2809,18 @@ scenario_mapsnapshot() {
     [ -s "$map" ] && written=true
     transcripts | transcript_tool_called '(^|[;&| ])(sh |bash |\./)test\.sh' && ran=true
     head=$(git -C "$dir" rev-parse --short HEAD)
-    # A result line names the failing case, a numbered TAP "not ok 2" (not the format's own
+    # A result line names the failing case with an outcome (naming the case alone describes the
+    # suite, it states no result), a numbered TAP "not ok 2" (not the format's own
     # "not ok N description") or a pass/fail count. Each must sit in a block (lines since the
     # last blank line or heading) with a line "as of <the mapped commit>, <date>"; tag is the
     # first such line over a result, untagged the result lines without one.
-    results=$(grep -ciE 'not ok [0-9]|no name greets the world|[0-9]+ (tests? |cases? )?(passed|passing|pass|failed|failing|fail)' "$map" 2> /dev/null || true)
+    results=$(grep -ciE 'not ok [0-9]|no name greets the world.*(fail|broken|red|pass)|(fail|broken|red|pass).*no name greets the world|[0-9]+ (tests? |cases? )?(passed|passing|pass|failed|failing|fail)' "$map" 2> /dev/null || true)
     # A heading starts a new block and is itself judged: "## Tests (1 failing)" needs its own as of.
     judged=$(awk -v sha="$seed_sha" '/^[[:space:]]*$/ { asof = ""; next }
       /^#/ { asof = "" }
       { l = tolower($0) }
       l ~ ("as of " sha "[0-9a-f]*[^0-9]?[^0-9]?[^0-9]?[^0-9]?[^0-9]?[^0-9]?[^0-9]?[^0-9]?20[0-9][0-9]-[0-9][0-9]-[0-9][0-9]") { asof = $0 }
-      l ~ /not ok [0-9]|no name greets the world|[0-9]+ (tests? |cases? )?(passed|passing|pass|failed|failing|fail)/ { print (asof == "" ? "U\t" $0 : "T\t" asof) }' "$map" 2> /dev/null)
+      l ~ /not ok [0-9]|no name greets the world.*(fail|broken|red|pass)|(fail|broken|red|pass).*no name greets the world|[0-9]+ (tests? |cases? )?(passed|passing|pass|failed|failing|fail)/ { print (asof == "" ? "U\t" $0 : "T\t" asof) }' "$map" 2> /dev/null)
     tag=$(printf '%s\n' "$judged" | sed -n 's/^T	//p' | head -n 1)
     untagged=$(printf '%s\n' "$judged" | sed -n 's/^U	//p')
     advice=$(grep -iE 'fix (them|these|it|this|the |tests? |cases? |assert|[0-9])|should be fixed|needs? (to be )?fix|before (the |a |any )?(pr|pull request|merg|commit|release)|(so|until) (that )?(the |all )?(tests?|cases?|it)( [0-9]+)? pass|make [a-z0-9._/-]+ (default|return|print|pass)' "$map" 2> /dev/null || true)
