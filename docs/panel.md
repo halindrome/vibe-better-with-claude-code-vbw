@@ -429,7 +429,8 @@ scroll it) to read the rest.
   when), its command, the first line of its output that says what failed, and
   a button for the last 20 lines.
 - **Timeline:** one lane per agent of the live run against the run's clock, the
-  three slowest marked, and past steps of the same kind against their usual
+  three slowest marked; a lane is always one line, its bar sized to leave room for
+  the name and the longest time, and past steps of the same kind against their usual
   time. A proof runs no agents: while one runs, the Timeline says so, with the
   checks done of the total (`A proof is running: 12 of 40 checks done. The Proof
   tab shows each check.`). Under it, **Runs this session**: each VBW run of this session on one

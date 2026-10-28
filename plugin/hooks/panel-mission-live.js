@@ -176,21 +176,29 @@ function provingLine(step) {
   return { idle: 'A proof is running' + (counted ? ': ' + p.done + ' of ' + p.total + ' checks done' : '') + '. The Proof tab shows each check.' }
 }
 
+// width is the whole row: the bar gets what the name column and the longest time leave, and in a
+// narrow pane the names are cut before the bar drops under 10 columns (#696).
 export const timelineModel = safe(({ run, now, steps, step, width }) => {
   if (!validRun(run)) return provingLine(step)
   const t = num(now) ? now : Date.now()
-  const w = num(width) ? Math.max(10, Math.floor(width)) : 40
   const start = num(run.startedAt) ? run.startedAt : t
   const end = num(run.endedAt) ? run.endedAt : t
   const span = Math.max(1, end - start)
-  const col = (ms) => Math.min(w, Math.max(0, ((ms - start) / span) * w))
-  const lanes = agentsOf(run).map((a) => {
+  const spans = agentsOf(run).map((a) => {
     const a0 = num(a.startedAt) ? a.startedAt : start
     const a1 = num(a.endedAt) ? a.endedAt : end
+    return { a, a0, a1, seconds: Math.max(0, Math.round((a1 - a0) / 1000)) }
+  })
+  const timeW = Math.max(0, ...spans.map((s) => duration(s.seconds * 1000).length))
+  const room = (num(width) ? Math.floor(width) : 64) - (timeW + 1)
+  const nameW = Math.max(4, Math.min(16, room - 11, Math.max(0, ...spans.map((s) => titleOf(s.a).length))))
+  const w = Math.max(4, room - (nameW + 1))
+  const col = (ms) => Math.min(w, Math.max(0, ((ms - start) / span) * w))
+  const lanes = spans.map(({ a, a0, a1, seconds }) => {
     const from = Math.min(w - 1, Math.floor(col(a0)))
     return {
       id: a.id, name: titleOf(a), role: roleOf(a), color: roleColor(roleOf(a)), state: stateOf(a, run),
-      from, to: Math.max(from + 1, Math.ceil(col(a1))), seconds: Math.max(0, Math.round((a1 - a0) / 1000)), slow: false,
+      from, to: Math.max(from + 1, Math.ceil(col(a1))), seconds, slow: false,
     }
   })
   if (lanes.length > 3) {
@@ -199,7 +207,7 @@ export const timelineModel = safe(({ run, now, steps, step, width }) => {
   }
   const history = Array.isArray(steps) ? steps : []
   const kind = STEP_KIND[run.kind] || str(run.kind)
-  return { width: w, lanes, spark: sparkOf(history, kind, t), left: leftOf(run, step, t) }
+  return { width: w, nameW, lanes, spark: sparkOf(history, kind, t), left: leftOf(run, step, t) }
 })
 
 // ---- Renders: ui = $.ui.resolve(e); `act` receives a card's action when it is pressed.
@@ -274,7 +282,7 @@ export function renderRefusal(ui, row, open, act) {
 export function renderTimeline(ui, model) {
   if (isObj(model) && typeof model.idle === 'string') return empty(ui, model.idle)
   if (!isObj(model) || !Array.isArray(model.lanes)) return empty(ui, NO_RUN)
-  const nameW = Math.min(16, Math.max(4, ...model.lanes.map((l) => l.name.length)))
+  const nameW = model.nameW
   const lane = (l) =>
     h(ui.Box, { key: 'lane:' + l.id, flexDirection: 'row' },
       h(ui.Text, { color: l.color }, l.name.slice(0, nameW).padEnd(nameW + 1)),
