@@ -104,7 +104,8 @@ Over two files, a risk path or a tier: apply refuses; use the planning workflow.
 decides first. Ask each with AskUserQuestion, one at a time (why it matters in the question, each option's
 trade-off as description, recommended first, "(Recommended)"). Record
 each: `vbw decide "<what was decided>" "<their reason, or the trade-off they accepted>"`. Plan again: `VBW_SESSION_ID=${CLAUDE_SESSION_ID} vbw run start plan`, workflow with
-`{"requirements": <requirements>, "next_phase": <next_phase>, "decided": true, "models": ...}`. Planned: give Lead's summary, its
+`{"requirements": <requirements>, "next_phase": <next_phase>, "decided": true, "research": <research>, "models": ...}`, `<research>` the
+`research` of the `needs_decisions` reply, so planning starts from what it already found. Planned: give Lead's summary, its
 `choices` (any can change) and Architect's `notes` (offer `vbw todo add`); then the approval menu, never a typed command.
 
 **contract**: not ready for approval: do what `instruction` says (write the named check files, `vbw spec sync`), then `vbw next --json`.

@@ -33,8 +33,9 @@ const ask = async (prompt, o) => {
 }
 const reply = o => Object.assign(o, { refused })
 
-// args: {requirements, models?: {architect?, lead?}, decided?: true, effort?, next_phase?} (docs/workflows.md).
+// args: {requirements, models?: {architect?, lead?}, decided?: true, research?, effort?, next_phase?} (docs/workflows.md).
 // decided: the user has just answered this round's questions; plan now.
+// research: with decided, the decide step's findings from the needs_decisions reply.
 // effort: {<role>: {<step>: level}} from vbw next --json; used only when it is an object, else agents run as before.
 // next_phase: the next free phase number; the Architect numbers new phases from it.
 const models = (args && args.models) || {}
@@ -61,6 +62,15 @@ const opts = (role, step, extra) => Object.assign({ agentType: `vbw:${role}`, la
 const nextPhase = args && args.next_phase
 const numbering = nextPhase ? ` Number the new phases from P${nextPhase}, in order, and keep phases already started exactly as they are.` : ''
 
+// #720: what an agent verified in the code, handed to the next stage so it is not researched again.
+const RESEARCH = {
+  type: 'array',
+  description: 'What you verified in the code that the next planning stage needs, one short fact each as "path:line — fact" (where the behaviour lives, call paths, existing tests, how to run them); [] when you read no code',
+  items: { type: 'string' },
+}
+const strings = v => Array.isArray(v) ? v.filter(s => typeof s === 'string' && s.trim()) : []
+const findings = list => list.length === 0 ? '' : `\n\nFindings already verified in the code. Start from them; read code only for what they lack or where you need exact lines:\n${list.map(s => `- ${s}`).join('\n')}`
+
 const CLOSE_RESULT = {
   type: 'object',
   required: ['ended', 'recorded', 'report', 'refused'],
@@ -73,9 +83,10 @@ const CLOSE_RESULT = {
 }
 const DECISIONS = {
   type: 'object',
-  required: ['decisions', 'refused'],
+  required: ['decisions', 'research', 'refused'],
   properties: {
     refused: REFUSED,
+    research: RESEARCH,
     decisions: {
       type: 'array',
       maxItems: 4,
@@ -103,9 +114,10 @@ const DECISIONS = {
 }
 const SCOPE = {
   type: 'object',
-  required: ['phases', 'notes', 'refused'],
+  required: ['phases', 'notes', 'research', 'refused'],
   properties: {
     refused: REFUSED,
+    research: RESEARCH,
     phases: {
       type: 'array',
       minItems: 1,
@@ -162,20 +174,24 @@ if (!reqs || reqs.length === 0) {
   return reply({ status: 'blocked', summary: 'planning needs the requirements of this milestone (args.requirements, from vbw next --json) and got none', blockers: [], notes: [] })
 }
 
+// The decide step's findings: from this run, or handed back by the router after the
+// user's decision round (args.research), so the scope step does not research again.
+let research = decided ? strings(args.research) : []
 if (!decided) {
   phase('Decide')
   const found = await ask(`Job 1: find the decisions this VBW project needs from its user before planning. Change nothing.${reqList}${voice}`,
     opts('architect', 'decide', { schema: DECISIONS, label: 'architect (decide)', phase: 'Decide' }))
   const open = (found && found.decisions) || []
+  research = strings(found && found.research)
   if (open.length > 0) {
     log(`${open.length} decision(s) for the user before planning`)
     await closeRun()
-    return reply({ status: 'needs_decisions', decisions: open })
+    return reply({ status: 'needs_decisions', decisions: open, research })
   }
 }
 
 phase('Scope')
-const scope = await ask(`Job 2: scope the current milestone into phases, each with a goal and goal-backward success criteria. Change nothing.${numbering}${reqList}${voice}`,
+const scope = await ask(`Job 2: scope the current milestone into phases, each with a goal and goal-backward success criteria. Change nothing.${numbering}${reqList}${findings(research)}${voice}`,
   opts('architect', 'scope', { schema: SCOPE, label: 'architect (scope)', phase: 'Scope' }))
 if (!scope || !scope.phases || scope.phases.length === 0) {
   await closeRun()
@@ -183,7 +199,7 @@ if (!scope || !scope.phases || scope.phases.length === 0) {
 }
 
 phase('Plan')
-const plan = await ask(`Plan these phases: research, decompose them into plans with tasks, write the checks, self-review, and apply with vbw apply. The kernel computes a rigor floor per phase from its signals and refuses a lower tier. Use these phases exactly as given, tier included:\n\n${JSON.stringify(scope.phases)}${voice}`,
+const plan = await ask(`Plan these phases: research, decompose them into plans with tasks, write the checks, self-review, and apply with vbw apply. The kernel computes a rigor floor per phase from its signals and refuses a lower tier. Use these phases exactly as given, tier included:\n\n${JSON.stringify(scope.phases)}${strings(scope.notes).length ? `\n\nThe Architect's notes (what is out of scope waits in the backlog; do not plan it):\n${strings(scope.notes).map(s => `- ${s}`).join('\n')}` : ''}${findings(strings(scope.research))}${voice}`,
   opts('lead', 'plan', { schema: PLAN_RESULT, phase: 'Plan' }))
 if (!plan || !plan.applied) {
   await closeRun()
