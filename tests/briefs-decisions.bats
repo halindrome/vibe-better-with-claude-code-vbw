@@ -78,6 +78,24 @@ teardown_file() { fixture_teardown; }
   [[ "$output" == *P9* ]] || false
 }
 
+@test "#705: an approval an older VBW recorded, with no plans, counts as changing every plan, even when it is not the first" {
+  "$VBW" approve > /dev/null
+  "$VBW" decide "before the old approval" > /dev/null
+  printf 'grep -qx paid src/pay.txt # edited\n' > tests/pay.sh
+  "$VBW" approve > /dev/null
+  # That approval as an older VBW wrote it: no plans, and the schema it had then.
+  jq '(.decisions[] | select(.text | startswith("Contract approved"))) |= del(.plans)
+      | .schema = (if .settings.efforts then 5 else 4 end)' .vbw/record.json > "$TEST_ROOT/r.json"
+  cp "$TEST_ROOT/r.json" .vbw/record.json
+  "$VBW" decide "after the old approval" > /dev/null
+  printf 'grep -qx paid src/pay.txt # edited again\n' > tests/pay.sh
+  "$VBW" approve > /dev/null
+  vbw_run show decisions --since-approval P1.1
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"after the old approval"* ]] || { echo "$output"; false; }
+  [[ "$output" != *"before the old approval"* ]] || { echo "$output"; false; }
+}
+
 @test "#705: several ids start at the earliest of their plans' approvals; a project command's fix reads every plan's" {
   "$VBW" config rigor standard > /dev/null # an express phase holds one plan
   "$VBW" approve > /dev/null
