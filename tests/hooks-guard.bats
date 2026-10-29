@@ -265,6 +265,9 @@ allowed_sh() {
   judged_as 'sed -i s/a/b/ src/other.js' src/other.js
   judged_as "sed -i '' s/a/b/ src/other.js" src/other.js
   judged_as 'sed -i.bak -e s/a/b/ src/pay.js src/other.js' src/other.js
+  # After a bare -i, a dot word is BSD's suffix or GNU's file: it is judged as a file too.
+  judged_as 'sed -e s/x/y/ -i .eslintrc' .eslintrc
+  judged_as 'sed -i .eslintrc -e s/x/y/ src/pay.js' .eslintrc
   judged_as 'echo x | tee src/other.js' src/other.js
   judged_as 'tee -a src/other.js < x' src/other.js
   # Reading from a file outside the run's files, or from a protected one, writes nothing there.

@@ -71,6 +71,10 @@ shell() {
   done
   run shell sessB 'cp src/pay.js backup.js'
   [ -z "$output" ]
+  # After a bare -i, a dot word is BSD's suffix or GNU's file: judged as a file too.
+  jq '.lease.files += [".eslintrc"]' .vbw/record.json > "$TEST_ROOT/e.json" && cp "$TEST_ROOT/e.json" .vbw/record.json
+  run shell sessB 'sed -e s/x/y/ -i .eslintrc'
+  denied || { echo "not denied: $output"; return 1; }
 }
 
 @test "files the run does not write stay editable from another session" {

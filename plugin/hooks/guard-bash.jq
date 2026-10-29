@@ -196,9 +196,11 @@ def shell_writes:
       elif .cmd == "tee" or .cmd == "rm" then $o[]
       elif .cmd == "sed" and any(.args[]; test("^-[A-Za-z]*i|^--in-place")) then
         # The script is the value of -e/-f, else the first operand; a bare -i may take BSD's suffix ('' or .bak).
-        .args | reduce .[] as $a ({skip: false, suffix: false, script: false, ops: []};
+        # A dot word there is BSD's suffix or GNU's file, so it is judged as a file too.
+        .args | reduce .[] as $a ({skip: false, suffix: false, script: false, ops: [], maybe: []};
             if .skip then .skip = false
-            elif .suffix and ($a == "" or ($a | test("^\\.[^/]*$"))) then .suffix = false
+            elif .suffix and $a == "" then .suffix = false
+            elif .suffix and ($a | test("^\\.[^/]*$")) then .suffix = false | .maybe += [$a]
             else .suffix = false
               | if $a | test("^-[A-Za-z]*[ef]$|^--(expression|file)$") then .skip = true | .script = true
                 elif $a | test("^-[A-Za-z]*[ef].|^--(expression|file)=") then .script = true
@@ -206,7 +208,7 @@ def shell_writes:
                 elif $a | startswith("-") then .
                 else .ops += [$a] end
             end)
-        | (if .script then .ops else .ops[1:] end)[]
+        | ((if .script then .ops else .ops[1:] end) + .maybe)[]
       else empty end );
 
 def approve_call:
