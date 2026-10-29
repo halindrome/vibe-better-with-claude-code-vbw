@@ -43,6 +43,10 @@ LEAD="$PLUGIN_ROOT/agents/lead.md"
   has_line "$LEAD" "check files of finished work" "add a new requirement" supersede
 }
 
+@test "lean checks (#722): the Lead proves each check fails today with that check's own argv, once, never with a whole-suite run" {
+  has_line "$LEAD" "fails today" "own argv" once "whole suite"
+}
+
 @test "lean checks: a Dev's and the Debugger's regression case goes into the existing file; a new file only when none exists" {
   has_line "$PLUGIN_ROOT/agents/dev.md" "regression case" "existing check file" "new test file only when"
   has_line "$PLUGIN_ROOT/workflows/fixing.js" "existing check file of the finding" "only when it has none"

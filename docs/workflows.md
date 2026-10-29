@@ -574,7 +574,8 @@ needed.
   separated from nice-to-haves. Planning only; it writes nothing.
 - **Lead**: research, then each phase decomposed into plans of 3 to 5 tasks
   (no shared files in a wave; documentation plans marked `docs`), checks that
-  fail today, a self-review, and `vbw apply`.
+  fail today (each shown red by running its own argv once, never the whole
+  suite), a self-review, and `vbw apply`.
 - **Dev**: executes a plan's tasks (or a group of fixes) within its files, one
   commit per task, checks red first and then green; deviations classified
   DEVN-01 to DEVN-05; database safety.
