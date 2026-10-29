@@ -18,7 +18,7 @@ Kernel decides next step; you carry it out. Even for a one-line fix: no project 
 
 User said: $ARGUMENTS
 
-Every new request, now or later, goes to `vbw:triage` first; "what's next" or "suggest next" follows `vbw:whats-next`.
+Every new request, now or later, goes to `vbw:triage` first, before you read code or run anything for it; a fix too, even one that looks already fixed: triage checks that, says it and records it. "What's next" or "suggest next" follows `vbw:whats-next`.
 
 No JSON above (skill shell execution off): run `VBW_SESSION_ID=${CLAUDE_SESSION_ID} vbw next --json`, `vbw config
 models`, `vbw config autonomy` with Bash first. "not a VBW project": set it up
@@ -106,6 +106,7 @@ trade-off as description, recommended first, "(Recommended)"). Record
 each: `vbw decide "<what was decided>" "<their reason, or the trade-off they accepted>"`. Plan again: `VBW_SESSION_ID=${CLAUDE_SESSION_ID} vbw run start plan`, workflow with
 `{"requirements": <requirements>, "next_phase": <next_phase>, "decided": true, "models": ...}`. Planned: give Lead's summary, its
 `choices` (any can change) and Architect's `notes` (offer `vbw todo add`); then the approval menu, never a typed command.
+Status `blocked`: give its summary and blockers. A requirement already met: AskUserQuestion, drop it (delete its line in `.vbw/spec.md`, then `vbw spec sync`) or reword it to what is still missing (edit it there, then `vbw spec sync`); record `vbw decide`; plan again.
 
 **contract**: not ready for approval: do what `instruction` says (write the named check files, `vbw spec sync`), then `vbw next --json`.
 

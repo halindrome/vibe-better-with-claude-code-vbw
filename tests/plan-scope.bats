@@ -118,6 +118,29 @@ plan_run() {
   printf '%s' "$out" | jq -r '.calls[0].prompt' | grep -q 'options with a recommendation'
 }
 
+flat() { tr '\n' ' ' < "$1" | tr -s ' ' | tr '[:upper:]' '[:lower:]'; }
+has() { flat "$1" | grep -qE -- "$2" || { echo "$(basename "$1") lacks: $2"; return 1; }; }
+
+@test "R50 (#717): a requirement the code already meets is raised by the Architect as a decision, and the Lead does not apply it" {
+  has "$PLUGIN_ROOT/agents/architect.md" 'already meets'
+  has "$PLUGIN_ROOT/agents/architect.md" 'drop it.{0,60}reword'
+  has "$PLUGIN_ROOT/agents/lead.md" 'already meets'
+  has "$PLUGIN_ROOT/agents/lead.md" 'applied.{0,10}false'
+  has "$PLUGIN_ROOT/agents/lead.md" 'is already met'
+}
+
+@test "R50 (#717): the router answers a blocked planning: an already-met requirement is dropped or reworded, recorded, and planned again" {
+  has "$PLUGIN_ROOT/skills/vibe/SKILL.md" 'status `blocked`'
+  has "$PLUGIN_ROOT/skills/vibe/SKILL.md" 'already met.{0,200}vbw spec sync'
+}
+
+@test "R50 (#717): the Lead's already-met blocker reaches the router as blocked, with no run of the plan" {
+  command -v node > /dev/null 2>&1 || skip "node not installed"
+  local out
+  out=$(plan_run '{"architect (scope)": {"phases": [{"id": "P1", "title": "T", "reqs": ["R47"], "goal": "g", "criteria": ["c"]}], "notes": []}, "lead": {"applied": false, "summary": "R47 needs no work", "blockers": ["R47 is already met: tests/qa.bats passes 4/4 today"]}}' '{"decided": true}')
+  printf '%s' "$out" | jq -e '.result.status == "blocked" and .result.blockers == ["R47 is already met: tests/qa.bats passes 4/4 today"]'
+}
+
 @test "R50: the Architect reads only the requirements its task lists, and the router hands them to the planning workflow" {
   if grep -q 'vbw show requirements' "$PLUGIN_ROOT/agents/architect.md"; then false; fi
   [ "$(grep -c '"requirements"' "$PLUGIN_ROOT/skills/vibe/SKILL.md")" -ge 2 ]
