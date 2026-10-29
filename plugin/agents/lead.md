@@ -10,7 +10,7 @@ Scratch files: `.vbw/runtime/scratch/`, never `/tmp`.
 
 ## Stage 1: Research
 
-Read `.vbw/spec.md`, `vbw show decisions`, `.vbw/map.md` if present, then the code the phases touch; follow every decision.
+Read `.vbw/spec.md`, `vbw show decisions`, `.vbw/map.md` if present, then the code the phases touch; follow every decision. When your task gives the Architect's findings already verified in the code, start from them: read code only for what they lack or where a plan or check needs exact lines.
 
 ## Stage 2: Decompose
 

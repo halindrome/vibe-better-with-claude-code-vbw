@@ -118,6 +118,41 @@ plan_run() {
   printf '%s' "$out" | jq -r '.calls[0].prompt' | grep -q 'options with a recommendation'
 }
 
+SCOPED='{"phases": [{"id": "P1", "title": "T", "reqs": ["R47"], "goal": "g", "criteria": ["c"]}], "notes": ["keep the old reader"], "research": ["qa.sh:12 — the QA step reads changed phases"]}'
+
+@test "R50 (#720): the Architect's decide and scope steps must return their code findings" {
+  command -v node > /dev/null 2>&1 || skip "node not installed"
+  local out
+  out=$(plan_run "{\"architect (decide)\": {\"decisions\": [], \"research\": []}, \"architect (scope)\": $SCOPED, \"lead\": {\"applied\": true, \"summary\": \"planned\", \"blockers\": []}}")
+  printf '%s' "$out" | jq -e '[.calls[] | select(.opts.label | startswith("architect")) | .opts.schema | (.required | index("research")) != null and .properties.research.type == "array" and .properties.research.items.type == "string"] == [true, true]'
+}
+
+@test "R50 (#720): the decide step's findings reach the scope step, directly or through the user's decision round" {
+  command -v node > /dev/null 2>&1 || skip "node not installed"
+  local out q='{"question": "Where?", "why_it_matters": "w", "options": [{"label": "A", "tradeoff": "a"}, {"label": "B", "tradeoff": "b"}], "recommended": "A"}'
+  out=$(plan_run "{\"architect (decide)\": {\"decisions\": [$q], \"research\": [\"qa.sh:12 — the QA step reads changed phases\"]}}")
+  printf '%s' "$out" | jq -e '.result.status == "needs_decisions" and .result.research == ["qa.sh:12 — the QA step reads changed phases"]'
+  out=$(plan_run "{\"architect (scope)\": $SCOPED}" '{"decided": true, "research": ["qa.sh:12 — the QA step reads changed phases"]}')
+  printf '%s' "$out" | jq -r '.calls[0].prompt' | grep -q 'qa.sh:12 — the QA step reads changed phases'
+  out=$(plan_run "{\"architect (decide)\": {\"decisions\": [], \"research\": [\"qa.sh:12 — the QA step reads changed phases\"]}, \"architect (scope)\": $SCOPED}")
+  printf '%s' "$out" | jq -r '.calls[1].prompt' | grep -q 'qa.sh:12 — the QA step reads changed phases'
+}
+
+@test "R50 (#720): the Lead is given the Architect's findings and notes, not only the phases" {
+  command -v node > /dev/null 2>&1 || skip "node not installed"
+  local out
+  out=$(plan_run "{\"architect (scope)\": $SCOPED, \"lead\": {\"applied\": true, \"summary\": \"planned\", \"blockers\": []}}" '{"decided": true}')
+  printf '%s' "$out" | jq -e '.calls[1].opts.label == "lead"'
+  printf '%s' "$out" | jq -r '.calls[1].prompt' | grep -q 'qa.sh:12 — the QA step reads changed phases'
+  printf '%s' "$out" | jq -r '.calls[1].prompt' | grep -q 'keep the old reader'
+}
+
+@test "R50 (#720): the router hands the findings back on the decided run, and the agents start from them" {
+  grep -q '"decided": true, "research": <research>' "$PLUGIN_ROOT/skills/vibe/SKILL.md"
+  grep -q 'findings' "$PLUGIN_ROOT/agents/architect.md"
+  grep -q 'findings' "$PLUGIN_ROOT/agents/lead.md"
+}
+
 @test "R50: the Architect reads only the requirements its task lists, and the router hands them to the planning workflow" {
   if grep -q 'vbw show requirements' "$PLUGIN_ROOT/agents/architect.md"; then false; fi
   [ "$(grep -c '"requirements"' "$PLUGIN_ROOT/skills/vibe/SKILL.md")" -ge 2 ]
