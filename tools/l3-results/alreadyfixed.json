@@ -1,9 +1,9 @@
 {
   "scenario": "alreadyfixed",
   "fixture": "greet.sh in a shipped milestone whose plan committed the GREET-7 fix (spaces around the name are trimmed); the user asks VBW to fix GREET-7",
-  "cost_usd": 0.2253,
+  "cost_usd": 0.1154,
   "evidence_level": "L3",
-  "at": "2026-10-29T16:12:51Z",
+  "at": "2026-10-29T19:56:25Z",
   "passed": true,
   "facts": {
     "already_fixed_decided": true,

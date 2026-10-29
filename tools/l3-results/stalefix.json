@@ -1,9 +1,9 @@
 {
   "scenario": "stalefix",
   "fixture": "greet.sh (R1) and its release manifest CHECKSUMS.sha256 (R2, checked with shasum -c), two express phases built and proven; a later commit by the user makes the no-name case fail and regenerates the manifest, so the proof before the session failed only C1 and opened F1; repairing greet.sh, the only file F1 owns, makes C2 fail; rigor auto; the user types /vbw:vibe",
-  "cost_usd": 0.80,
+  "cost_usd": 0.54,
   "evidence_level": "L3",
-  "at": "2026-10-28T20:26:04Z",
+  "at": "2026-10-29T19:59:10Z",
   "passed": true,
   "facts": {
     "fixes_before": [
@@ -17,9 +17,9 @@
     "fix_done_refused": true,
     "f1_fix_rounds": 1,
     "proof_between_rounds": true,
-    "evidence_at_before": "2026-10-28T20:17:57Z",
-    "evidence_at_f1_closed": "2026-10-28T20:20:14Z",
-    "evidence_at_f2_opened": "2026-10-28T20:20:14Z",
+    "evidence_at_before": "2026-10-29T19:54:13Z",
+    "evidence_at_f1_closed": "2026-10-29T19:55:42Z",
+    "evidence_at_f2_opened": "2026-10-29T19:55:42Z",
     "evidence_advanced": true,
     "f2": {
       "req": "R2",
@@ -37,7 +37,7 @@
       "next prove",
       "prove",
       "next qa",
-      "next ?",
+      "next ",
       "next ship"
     ]
   },

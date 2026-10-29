@@ -325,6 +325,10 @@ scenario_ignoredplanning() {
   printf '.vbw-planning/\n' > "$dir/.gitignore"
   printf 'scratch\n' > "$dir/.vbw-planning/notes.md"
   git -C "$dir" add .gitignore && git -C "$dir" commit -qm "chore: ignore the planning folder"
+  # A file no check will read, edited after the session: an edit keeps the root listing, which a
+  # check that runs ./greet.sh has on its read list (macOS, 2026-10-29), where a new root file would not.
+  printf '# Notes\n' > "$dir/NOTES.md"
+  git -C "$dir" add NOTES.md && git -C "$dir" commit -qm "docs: notes"
   start=$GREET
   fixture="greet.sh from scratch in a project whose committed .gitignore holds '.vbw-planning/', with .vbw-planning/STATE.md tracked from before the rule and .vbw-planning/notes.md untracked; the user types /vbw:vibe and the build runs to the end; then the scenario commits an unrelated NOTES.md and runs vbw prove"
   checks() {
@@ -336,9 +340,10 @@ scenario_ignoredplanning() {
     git -C "$dir" check-ignore -q .vbw-planning/notes.md && git -C "$dir" ls-files --error-unmatch .vbw-planning/STATE.md > /dev/null 2>&1 && ignored=true
     read -r now nowhead <<< "$(kernel_trees)"
     [ -n "$tree" ] && [ "$now" = "$tree" ] && { [ -z "$head" ] || [ "$nowhead" = "$head" ]; } && unchanged=true
-    # A user commit no check reads, then a proof: the fingerprint moves and results are reused.
-    printf '# Notes\n' > "$dir/NOTES.md"
-    git -C "$dir" add NOTES.md && git -C "$dir" commit -qm "docs: notes"
+    # A user commit no check reads (an edit of a seeded file), then a proof: the fingerprint moves
+    # and results are reused.
+    printf '# Notes\n\nMore notes.\n' > "$dir/NOTES.md"
+    git -C "$dir" add NOTES.md && git -C "$dir" commit -qm "docs: more notes"
     (cd "$dir" && "$VBW" prove > /dev/null 2>&1) || true
     tree2=$(jq -r '.evidence.tree // empty' "$dir/.vbw/record.json" 2> /dev/null)
     [ -n "$tree2" ] && [ "$tree2" != "$tree" ] && jq -e '.evidence.passed == true' "$dir/.vbw/record.json" > /dev/null 2>&1 && proved2=true

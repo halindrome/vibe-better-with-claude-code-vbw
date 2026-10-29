@@ -1,18 +1,18 @@
 {
   "scenario": "ignoredplanning",
   "fixture": "greet.sh from scratch in a project whose committed .gitignore holds '.vbw-planning/', with .vbw-planning/STATE.md tracked from before the rule and .vbw-planning/notes.md untracked; the user types /vbw:vibe and the build runs to the end; then the scenario commits an unrelated NOTES.md and runs vbw prove",
-  "cost_usd": 0.69,
+  "cost_usd": 0.62,
   "evidence_level": "L3",
-  "at": "2026-10-28T20:17:44Z",
+  "at": "2026-10-29T20:27:59Z",
   "passed": true,
   "facts": {
     "planning_ignored_tracked_and_untracked": true,
     "proof_passed": true,
-    "evidence_tree": "2f76f7aec4c6f7a2e89dd6ab5c252c079b202c02",
+    "evidence_tree": "280c9759a6a000fc177f2e4db3ed585c9623f0da",
     "fingerprints_match_evidence": true,
     "second_proof_passed": true,
-    "second_tree": "bc89a6c04b44622a80719f6f4d02b49bce29b038",
-    "reused_units": 3
+    "second_tree": "8a73e13e623fd5ac352c53bb0772fb2df24cf1ae",
+    "reused_units": 1
   },
   "not_tested": [
     "a rule ignoring the .vbw folder itself",

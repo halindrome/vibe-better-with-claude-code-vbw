@@ -1,17 +1,17 @@
 {
   "scenario": "mapsnapshot",
   "fixture": "greet.sh with a test.sh (named in the README) whose no-name case fails on the committed code; vbw init before the session; the user types /vbw:map",
-  "cost_usd": 0.4797,
+  "cost_usd": 0.3253,
   "evidence_level": "L3",
-  "at": "2026-10-28T23:33:06Z",
+  "at": "2026-10-29T19:58:14Z",
   "passed": true,
   "facts": {
     "map_written": true,
     "scout_ran_tests": true,
-    "seed_commit": "7875e85",
-    "head_at_end": "2818fd7",
-    "tag_line": "- Result, as of 7875e85, 2026-10-28 (`sh test.sh`, exit 1):",
-    "result_lines": 1,
+    "seed_commit": "673dc4a",
+    "head_at_end": "ae48a91",
+    "tag_line": "- Result as of 673dc4a, 2026-10-29: 1 passed, 1 failed, exit code 1.",
+    "result_lines": 2,
     "untagged_result_lines": "",
     "advice_lines": ""
   },
