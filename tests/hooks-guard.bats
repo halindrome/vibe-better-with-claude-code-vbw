@@ -202,6 +202,8 @@ lease() {
      | {schema: 4, lease: {run: "r1", kind: $k, started_at: $at, files: $f},
         protected: ([.checks[].files // [] | .[]] | unique)} + del(.schema, .lease, .protected)' .vbw/record.json > "$TEST_ROOT/l.json"
   cp "$TEST_ROOT/l.json" .vbw/record.json
+  # An open run, as vbw run start leaves it: a guard that fails then blocks, so allowed_sh cannot pass on a crash.
+  mkdir -p .vbw/runtime && : > .vbw/runtime/run-open
 }
 
 @test "during a build, a subagent writes only the run's files" {
@@ -276,6 +278,15 @@ allowed_sh() { local got; got=$(why "$1"); [ "$got" = allow ] || { printf 'refus
   allowed_sh 'rsync -a --exclude node_modules x/pay.js src/'
   allowed_sh 'rsync -t src/other.js lib/other.js'
   allowed_sh 'rsync -a src/other.js lib/'
+  allowed_sh 'cp -S .orig x/pay.js src/'
+  allowed_sh 'rsync -e ssh x/pay.js src/'
+  # A folder the run owns, named with a trailing / (#727 QA round 2).
+  allowed_sh 'rsync -a assets/ lib/'
+  allowed_sh 'cp -r assets/ lib/'
+  allowed_sh 'rm -rf lib/'
+  # . and .. are folders.
+  judged_as 'cp lib/a.js .' a.js
+  judged_as 'mv lib/a.js ..' ../a.js
   allowed_sh 'ln -s ../src/other.js lib/link.js'
   allowed_sh 'rm .vbw/runtime/scratch/x.log'
   allowed_sh 'rm -f lib/a.js'
@@ -306,8 +317,15 @@ allowed_sh() { local got; got=$(why "$1"); [ "$got" = allow ] || { printf 'refus
   [[ "$(why 'sed -i s/expect/skip/ tests/*.test.js')" == *"tests/*.test.js matches a protected check file (tests/pay.test.js)"* ]] || { why 'sed -i s/expect/skip/ tests/*.test.js'; false; }
   [[ "$(why 'rm -rf t*')" == *"matches a protected check file"* ]] || false
   [[ "$(why 'rm tests/pay.test.?s')" == *"matches a protected check file"* ]] || false
+  [[ "$(why 'rm tests/pay.test.[!x]s')" == *"matches a protected check file"* ]] || false
+  # A pattern the guard cannot read counts as matching.
+  [[ "$(why 'rm tests/[z-a]*')" == *"matches a protected check file"* ]] || false
   allowed_sh 'rm -f build/*.js'
   allowed_sh 'rm -f tests/*.snap'
+  allowed_sh 'rm tests/pay.test.[!j]s'
+  # A file tool's path is taken as written, never as a pattern (D311).
+  run as_agent Write "{\"file_path\": \"$PROJECT/t*\"}"
+  [ "$status" -eq 0 ] && [ -z "$output" ]
 }
 
 @test "#727: during planning, a shell copy onto product code is refused like a redirect" {

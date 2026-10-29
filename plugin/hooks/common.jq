@@ -94,22 +94,13 @@ def session_dir($g): $g.hook.cwd // $ARGS.named.dir // $root;
 
 # A plan file entry covers PATH: the same path, or a directory entry (ending
 # in /) with PATH under it.
-def covers($p): . as $e | $e == $p or (($e | endswith("/")) and ($p | startswith($e)));
+def covers($p): . as $e | $e == $p or $e == $p + "/" or (($e | endswith("/")) and ($p | startswith($e)));
 
 # PATH (project-relative) is a test file, by place or by name: the one
 # definition of what a planning run may write besides .vbw/ (R75).
 def test_path: test("(^|/)(tests?|spec|__tests__)/") or (basename | test("\\.test\\.|_test\\.|^test_.*\\.py$"));
 
 # Why a subagent may not write PATH (project-relative) under LEASE, or empty.
-# The protected check files under the path, or, for a shell glob, those it or a
-# folder it matches would reach (* and ? stop at /, as in the shell).
-def protected_under($record):
-  . as $p
-  | if test("[*?\\[]") then
-      ("^" + (gsub("(?<c>[.+(){}^$|\\\\])"; "\\\(.c)") | gsub("\\*"; "[^/]*") | gsub("\\?"; "[^/]") | gsub("\\[!"; "[^")) + "(/.*)?$") as $re
-      | try [$record.protected[]? | select(test($re))] catch [$record.protected[]?]
-    else [$record.protected[]? | select(startswith($p + "/"))] end;
-
 def lease_write_denial($lease; $record):
   if . == null then empty
   elif glance_path then glance_reason
@@ -131,10 +122,9 @@ def lease_write_denial($lease; $record):
     "\(.) cannot be written: this project's record was not saved by this VBW yet, so its protected check files are unknown; end the run and start it again, which saves the record\nNext: tell the session that started the run to end it (vbw run end) and start it again"
   elif ($lease.kind | test("^(build|fix)$")) and (. as $p | any($record.protected[]?; . == $p)) then
     "\(.) is a protected check file: the contract is fixed while building\nNext: leave \(.) as it is; if the check is wrong, report it so the user can change the contract"
-  # A folder a shell command names whole (rm -r, a copy into it) holding one, or a
-  # glob the shell expands that may match one or a folder above one (#727).
-  elif ($lease.kind | test("^(build|fix)$")) and (protected_under($record) | length > 0) then
-    "\(.) \(if test("[*?\\[]") then "matches" else "holds" end) a protected check file (\(protected_under($record) | join(", "))): the contract is fixed while building\nNext: leave the protected check files as they are; name only the files you write"
+  # A folder a shell command names whole (rm -r, a copy into it) holding one (#727).
+  elif ($lease.kind | test("^(build|fix)$")) and (. as $p | any($record.protected[]?; startswith($p + "/"))) then
+    "\(.) holds a protected check file (\(. as $p | [$record.protected[] | select(startswith($p + "/"))] | join(", "))): the contract is fixed while building\nNext: leave the protected check files as they are; name only the files you write"
   else empty end;
 
 # Why a subagent may not write ORIGINAL (the path as given), which lies outside
@@ -167,10 +157,19 @@ def run_write_denial($g):
 # program's file): the shell would expand ~, $VAR, $(...) and backticks and the
 # guard cannot, so such a path counts as outside (D304). A file tool's path is
 # never expanded, so run_write_denial takes it as written (D311: app/routes/$id.tsx
-# is a plan file like any other).
+# is a plan file like any other). A glob the shell expands is refused under build
+# and fix when it may match a protected check file or a folder above one (#727;
+# * and ? stop at /; a pattern the guard cannot read counts as matching).
+def protected_glob($record):
+  ("^" + (gsub("(?<c>[.+(){}^$|\\\\])"; "\\\(.c)") | gsub("\\*"; "[^/]*") | gsub("\\?"; "[^/]") | gsub("\\[!"; "[^")) + "(/.*)?$") as $re
+  | try [$record.protected[]? | select(test($re))] catch [$record.protected[]?];
 def shell_write_denial($g):
   . as $o
   | if $o | unresolved_path then $o | outside_denial($g.lease; "cannot be resolved by the guard (~ or a shell expansion), so it counts as outside the project")
+    elif ($o | test("[*?\\[]")) and (($g.lease.kind // "") | test("^(build|fix)$"))
+      and ((project_path(session_dir($g); $root) // "") | protected_glob($g.record) | length > 0) then
+      project_path(session_dir($g); $root) as $p
+      | "\($p) matches a protected check file (\($p | protected_glob($g.record) | join(", "))): the contract is fixed while building\nNext: leave the protected check files as they are; name only the files you write"
     else run_write_denial($g) end;
 
 # The name vbw run start stored for FOREIGN's run: the glance's holder when it is

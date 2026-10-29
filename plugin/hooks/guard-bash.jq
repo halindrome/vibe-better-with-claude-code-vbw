@@ -189,7 +189,7 @@ def shell_writes:
         | ( if $t != null then {srcs: ($o - [$t]), dir: $t}
             elif ($o | length) == 1 and .cmd == "ln" then {srcs: $o, dir: "."}
             elif ($o | length) < 2 then {srcs: []}
-            elif $o[-1] | endswith("/") then {srcs: $o[:-1], dir: $o[-1]}
+            elif $o[-1] | endswith("/") or . == "." or . == ".." then {srcs: $o[:-1], dir: $o[-1]}
             else {srcs: $o[:-1], file: $o[-1]} end ) as $w
         | (if $w.dir != null then $w.srcs[] | at($w.dir) else $w.file // empty end),
           (select(.cmd == "mv" or any(.args[]; . == "--remove-source-files")) | $w.srcs[])
