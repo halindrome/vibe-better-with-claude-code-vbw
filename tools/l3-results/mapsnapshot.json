@@ -1,0 +1,26 @@
+{
+  "scenario": "mapsnapshot",
+  "fixture": "greet.sh with a test.sh (named in the README) whose no-name case fails on the committed code; vbw init before the session; the user types /vbw:map",
+  "cost_usd": 0.4797,
+  "evidence_level": "L3",
+  "at": "2026-10-28T23:33:06Z",
+  "passed": true,
+  "facts": {
+    "map_written": true,
+    "scout_ran_tests": true,
+    "seed_commit": "7875e85",
+    "head_at_end": "2818fd7",
+    "tag_line": "- Result, as of 7875e85, 2026-10-28 (`sh test.sh`, exit 1):",
+    "result_lines": 1,
+    "untagged_result_lines": "",
+    "advice_lines": ""
+  },
+  "not_tested": [
+    "a second /vbw:map after the failing test is fixed (the tag is what tells a reader the old map is stale; no re-map ran)",
+    "a lint result",
+    "a project larger than the greet.sh fixture",
+    "a scout that reads the tests without running them",
+    "the map as read by a person, beyond the patterns checked",
+    "/vbw:vibe reaching mapping before a spec (same workflow, not driven here)"
+  ]
+}
