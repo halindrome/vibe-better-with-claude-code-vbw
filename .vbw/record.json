@@ -59388,6 +59388,13 @@
       "sort": "later",
       "size": "small",
       "status": "open"
+    },
+    {
+      "id": "T200",
+      "text": "Refusal text for receiver calls (QA note, M45): the guard's unreadable-write refusal quotes the call from the dot (.write_text(p)) instead of from its receiver (path.write_text(p)); start the quote at the receiver",
+      "sort": "later",
+      "size": "small",
+      "status": "open"
     }
   ],
   "decisions": [
