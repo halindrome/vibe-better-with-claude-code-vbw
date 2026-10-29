@@ -101,6 +101,15 @@ def covers($p): . as $e | $e == $p or (($e | endswith("/")) and ($p | startswith
 def test_path: test("(^|/)(tests?|spec|__tests__)/") or (basename | test("\\.test\\.|_test\\.|^test_.*\\.py$"));
 
 # Why a subagent may not write PATH (project-relative) under LEASE, or empty.
+# The protected check files under the path, or, for a shell glob, those it or a
+# folder it matches would reach (* and ? stop at /, as in the shell).
+def protected_under($record):
+  . as $p
+  | if test("[*?\\[]") then
+      ("^" + (gsub("(?<c>[.+(){}^$|\\\\])"; "\\\(.c)") | gsub("\\*"; "[^/]*") | gsub("\\?"; "[^/]") | gsub("\\[!"; "[^")) + "(/.*)?$") as $re
+      | try [$record.protected[]? | select(test($re))] catch [$record.protected[]?]
+    else [$record.protected[]? | select(startswith($p + "/"))] end;
+
 def lease_write_denial($lease; $record):
   if . == null then empty
   elif glance_path then glance_reason
@@ -122,9 +131,10 @@ def lease_write_denial($lease; $record):
     "\(.) cannot be written: this project's record was not saved by this VBW yet, so its protected check files are unknown; end the run and start it again, which saves the record\nNext: tell the session that started the run to end it (vbw run end) and start it again"
   elif ($lease.kind | test("^(build|fix)$")) and (. as $p | any($record.protected[]?; . == $p)) then
     "\(.) is a protected check file: the contract is fixed while building\nNext: leave \(.) as it is; if the check is wrong, report it so the user can change the contract"
-  # A folder a shell command names whole (rm -r, a copy into it) holding one (#727).
-  elif ($lease.kind | test("^(build|fix)$")) and (. as $p | any($record.protected[]?; startswith($p + "/"))) then
-    "\(.) holds a protected check file (\(. as $p | [$record.protected[] | select(startswith($p + "/"))] | join(", "))): the contract is fixed while building\nNext: leave the protected check files as they are; name only the files you write"
+  # A folder a shell command names whole (rm -r, a copy into it) holding one, or a
+  # glob the shell expands that may match one or a folder above one (#727).
+  elif ($lease.kind | test("^(build|fix)$")) and (protected_under($record) | length > 0) then
+    "\(.) \(if test("[*?\\[]") then "matches" else "holds" end) a protected check file (\(protected_under($record) | join(", "))): the contract is fixed while building\nNext: leave the protected check files as they are; name only the files you write"
   else empty end;
 
 # Why a subagent may not write ORIGINAL (the path as given), which lies outside

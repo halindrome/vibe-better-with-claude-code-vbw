@@ -159,13 +159,33 @@ def paths: (.args[] | sub("^--?[A-Za-z0-9-]+="; "")), .out[], .in[];
 # trailing / is judged as itself: the guard reads text and cannot tell it from
 # a file, so a write there is refused unless the folder is the run's to write
 # and holds no protected check file (lease_write_denial).
+# The flags whose value is the next word, per tool, so the value is not read as a
+# file; any other valued flag only makes the guard judge one path too many.
+def valued_flag($cmd):
+  ({install: "^-[A-Za-z]*[mogS]$|^--(mode|owner|group|suffix)$",
+    rsync: "^-[A-Za-z]*[ef]$|^--(exclude|include|filter|rsh|exclude-from|include-from|files-from)$",
+    cp: "^-S$|^--suffix$", mv: "^-S$|^--suffix$", ln: "^-S$|^--suffix$"}[$cmd] // null) as $re
+  | $re != null and test($re);
 def shell_writes:
   def at($dir): $dir + (if $dir | endswith("/") then "" else "/" end) + basename;
   .out[],
-  ( . as $c | [.args[] | select(startswith("-") | not)] as $o
+  ( . as $c
+    | (.args | reduce .[] as $a ({skip: false, ops: []};
+        if .skip then .skip = false
+        elif $a | startswith("-") then .skip = ($a | valued_flag($c.cmd))
+        else .ops += [$a] end) | .ops) as $o
     | if (.cmd | copier) or .cmd == "mv" then
-        ([.args[] | select(startswith("--target-directory=")) | .[19:]][0]
-         // (.args | (index("-t") // index("--target-directory")) | if . == null then null else $c.args[. + 1] end)) as $t
+        # GNU's target folder of cp, mv, install and ln: -t DIR, -rtDIR, --target-directory[=]DIR
+        # and its abbreviations (rsync's -t is --times).
+        (if .cmd | test("^(cp|mv|install|ln)$") then
+           first(range(.args | length) as $i | .args[$i]
+             | sub("=.*"; "") as $n
+             | if ($n | startswith("--ta")) and ("--target-directory" | startswith($n)) then
+                 (if test("=") then sub("^[^=]*="; "") else $c.args[$i + 1] end)
+               elif test("^-[A-Za-z]*t") then
+                 (sub("^-[A-Za-z]*?t"; "") | if . == "" then $c.args[$i + 1] else . end)
+               else empty end) // null
+         else null end) as $t
         | ( if $t != null then {srcs: ($o - [$t]), dir: $t}
             elif ($o | length) == 1 and .cmd == "ln" then {srcs: $o, dir: "."}
             elif ($o | length) < 2 then {srcs: []}

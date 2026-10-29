@@ -244,6 +244,14 @@ allowed_sh() { local got; got=$(why "$1"); [ "$got" = allow ] || { printf 'refus
   judged_as 'cp lib/a.js lib/b.js src/' src/a.js
   judged_as 'cp -R lib/x src/' src/x
   judged_as 'cp -t src lib/a.js' src/a.js
+  judged_as 'cp -rt src lib/a.js' src/a.js
+  judged_as 'cp -tsrc lib/a.js' src/a.js
+  judged_as 'cp --target-directory=src lib/a.js' src/a.js
+  judged_as 'cp --target src lib/a.js' src/a.js
+  judged_as 'install -Dt src lib/a.js' src/a.js
+  # rsync's -t is --times, not a target folder.
+  judged_as 'rsync -a -t x.js src/other.js' src/other.js
+  judged_as 'rsync -a --remove-source-files src/other.js lib/' src/other.js
   judged_as 'mv src/pay.js src/other.js' src/other.js
   judged_as 'mv -f src/other.js src/pay.js' src/other.js
   judged_as 'rm src/other.js' src/other.js
@@ -263,6 +271,11 @@ allowed_sh() { local got; got=$(why "$1"); [ "$got" = allow ] || { printf 'refus
   allowed_sh 'mv -f lib/a.js lib/b.js'
   allowed_sh 'rsync -a src/other.js lib/other.js'
   allowed_sh 'install -m 644 src/other.js src/pay.js'
+  # A flag's value is not a file the command writes.
+  allowed_sh 'install -m 644 x/pay.js src/'
+  allowed_sh 'rsync -a --exclude node_modules x/pay.js src/'
+  allowed_sh 'rsync -t src/other.js lib/other.js'
+  allowed_sh 'rsync -a src/other.js lib/'
   allowed_sh 'ln -s ../src/other.js lib/link.js'
   allowed_sh 'rm .vbw/runtime/scratch/x.log'
   allowed_sh 'rm -f lib/a.js'
@@ -289,6 +302,12 @@ allowed_sh() { local got; got=$(why "$1"); [ "$got" = allow ] || { printf 'refus
   [[ "$(why 'cp x/pay.test.js tests')" == *"tests holds a protected check file"* ]] || false
   allowed_sh 'rm -rf build'
   allowed_sh 'cp x.js src'
+  # A glob the shell expands is judged by the protected files it may match.
+  [[ "$(why 'sed -i s/expect/skip/ tests/*.test.js')" == *"tests/*.test.js matches a protected check file (tests/pay.test.js)"* ]] || { why 'sed -i s/expect/skip/ tests/*.test.js'; false; }
+  [[ "$(why 'rm -rf t*')" == *"matches a protected check file"* ]] || false
+  [[ "$(why 'rm tests/pay.test.?s')" == *"matches a protected check file"* ]] || false
+  allowed_sh 'rm -f build/*.js'
+  allowed_sh 'rm -f tests/*.snap'
 }
 
 @test "#727: during planning, a shell copy onto product code is refused like a redirect" {
