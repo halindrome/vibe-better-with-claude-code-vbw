@@ -59353,6 +59353,13 @@
       "sort": "next",
       "size": "small",
       "status": "open"
+    },
+    {
+      "id": "T195",
+      "text": "tests/mutate-time.bats R207 'the figures are measured' asserts a real second (b >= 1.0) in a file the proof runs untimed; it failed on an Ubuntu 26.04 runner in the 2.1.19 CI. Inject the clock as #719 did for the own-work case, or move the case to a timed file",
+      "sort": "later",
+      "size": "small",
+      "status": "open"
     }
   ],
   "decisions": [
