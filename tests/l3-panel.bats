@@ -41,6 +41,10 @@ body() { sed -n '/^scenario_panel()/,/^}/p' "$SUITE"; }
     and (.facts.estimate_shown | type == "string" and length > 0)
     and (.facts.sound_toggle_persisted == true)
     and (.facts.closed_stays_closed == true)
+    and (.facts.timeline_one_line_wide == true) and (.facts.timeline_one_line_narrow == true)
+    and (.facts.timeline_time_in_minutes == true)
+    and (.facts.timeline_lanes_wide | type == "array" and length > 0)
+    and (.facts.timeline_lanes_narrow | type == "array" and length > 0)
     and (.not_tested | type == "array" and length > 0)' "$RESULT"
 }
 

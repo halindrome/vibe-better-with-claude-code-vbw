@@ -79,12 +79,31 @@ test('timelineModel: one lane per agent, start and end as column spans on the ru
     agent({ id: 'a', startedAt: S, endedAt: S + 5 * MIN, state: 'done' }),
     agent({ id: 'b', startedAt: S + 5 * MIN, endedAt: null }),
   ])
-  const m = timelineModel({ run: r, now: S + 10 * MIN, steps: [], width: 20 })
+  // A 42-column row: 'dev P55.1' and a space, the bar, then the 12-column time slot.
+  const m = timelineModel({ run: r, now: S + 10 * MIN, steps: [], width: 42 })
   assert.deepEqual(m.lanes.map((l) => [l.id, l.from, l.to, l.seconds, l.slow]), [['a', 0, 10, 300, false], ['b', 10, 20, 300, false]])
-  assert.equal(m.width, 20)
+  assert.deepEqual([m.width, m.nameW], [20, 9])
   const tiny = timelineModel({ run: run([agent({ startedAt: S, endedAt: S + 1000 })], { endedAt: S + 10 * MIN, status: 'completed' }), now: S + 99 * MIN, steps: [], width: 20 })
   assert.deepEqual([tiny.lanes[0].from, tiny.lanes[0].to], [0, 1])
   assert.equal(timelineModel({ run: null, now: S }), null)
+})
+
+test('renderTimeline: a lane is one line; the bar leaves room for the name and the longest time (#696)', () => {
+  const scouts = [132, 130, 42, 26].map((s, i) => agent({ id: 's' + i, role: 'scout', label: 'architecture-' + i, startedAt: S, endedAt: S + s * 1000, state: 'done' }))
+  for (const width of [30, 40, 60, 100]) {
+    const m = timelineModel({ run: run(scouts, { endedAt: S + 132_000, status: 'completed' }), now: S + 132_000, steps: [], width })
+    const rows = []
+    walk(renderTimeline(UI, m), (n) => { if (n.type === 'Box' && n.props.flexDirection === 'row') rows.push(collect(n).join('')) })
+    assert.equal(rows.length, 4)
+    for (const line of rows) assert.ok([...line].length <= width, width + ': ' + line.length + ' ' + JSON.stringify(line))
+    assert.ok(rows[0].endsWith('█ 2 min 12 s'), 'the longest lane still fills its bar: ' + rows[0])
+    // A narrow pane cuts the names before the bar drops under 10 columns.
+    assert.ok(m.width >= 10, width + ': bar ' + m.width)
+    if (width === 30) assert.ok(m.nameW < 'architecture-0'.length, 'name cut: ' + m.nameW)
+  }
+  // The bar keeps its width while a running lane's time grows from '59 s' to '59 min 59 s'.
+  const widths = [59, 60, 61, 600, 3599].map((s) => timelineModel({ run: run([agent({ startedAt: S })]), now: S + s * 1000, steps: [], width: 60 }).width)
+  assert.deepEqual(new Set(widths).size, 1, JSON.stringify(widths))
 })
 
 test('timelineModel: the three slowest agents are highlighted when there are more than three', () => {
@@ -171,7 +190,7 @@ test('renderNow: the row degrades to the width: the doing text is cut, the name,
 
 test('renderTimeline and renderRuns draw lanes, sparkline and bars', () => {
   const r = run([agent({ id: 'a', startedAt: S, endedAt: S + 5 * MIN, state: 'done' }), agent({ id: 'b', role: 'qa', label: 'P55', startedAt: S + 5 * MIN })])
-  const tl = renderTimeline(UI, timelineModel({ run: r, now: S + 10 * MIN, steps: [step('build', 600), step('build', 1200), step('build', 300)], width: 10, step: { kind: 'build', run: 'build-1', parts: { done: 1, total: 2 }, end: new Date(S + 7 * MIN).toISOString(), late: true } }))
+  const tl = renderTimeline(UI, timelineModel({ run: r, now: S + 10 * MIN, steps: [step('build', 600), step('build', 1200), step('build', 300)], width: 32, step: { kind: 'build', run: 'build-1', parts: { done: 1, total: 2 }, end: new Date(S + 7 * MIN).toISOString(), late: true } }))
   const texts = collect(tl)
   assert.ok(texts.includes('█'.repeat(5)) && texts.includes('     ' + '█'.repeat(5)), JSON.stringify(texts))
   assert.ok(texts.some((t) => t.includes('▃█▁')) && texts.some((t) => t.includes('median 10 min')) && texts.some((t) => t.includes('later than usual')))

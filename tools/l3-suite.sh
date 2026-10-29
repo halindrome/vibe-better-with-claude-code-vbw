@@ -999,7 +999,9 @@ panel_seed() {
   "$VBW" spec sync > /dev/null || return 1
   printf '#!/bin/sh\necho "Hello, ${1:-world}!"\n' > greet.sh
   printf '[ "$(sh greet.sh Ana)" = "Hello, Ana!" ] && [ "$(sh greet.sh)" = "Hello, world!" ]\n' > test_greet.sh
-  printf '[ "$(sh farewell.sh Ana)" = "Goodbye, Ana!" ] && [ "$(sh farewell.sh)" = "Goodbye, world!" ]\n' > test_farewell.sh
+  # Once farewell.sh exists its check takes 20 s, so the Dev who builds it works for minutes
+  # and its Timeline lane reads a time in minutes (#696); red stays quick.
+  printf '[ -f farewell.sh ] || exit 1\nsleep 20\n[ "$(sh farewell.sh Ana)" = "Goodbye, Ana!" ] && [ "$(sh farewell.sh)" = "Goodbye, world!" ]\n' > test_farewell.sh
   git add -A && git commit -qm "feat: greet.sh and its test" || return 1
   panel_apply "farewell.sh prints Goodbye, NAME! or Goodbye, world! without a name" || return 1
   git add -A && git commit -qm "chore: plan" || return 1
@@ -1031,7 +1033,7 @@ scenario_panel() {
   new_project
   (cd "$dir" && "$VBW" init > /dev/null && "$VBW" config rigor standard > /dev/null && panel_seed) \
     || { say "setup failed: could not seed the two-phase project"; return 1; }
-  fixture="greet.sh and farewell.sh, two phases: the first passed QA and its requirement R1 is proven, the second plan was reworded after approval and waits for it again; no finished steps in the clone (so no estimate basis); window 200 columns wide, resized to 200x24 and to 60x40 with the needs-you line up and again while the build's helpers work; the user then approves and the build runs"
+  fixture="greet.sh and farewell.sh, two phases: the first passed QA and its requirement R1 is proven, the second plan was reworded after approval and waits for it again; no finished steps in the clone (so no estimate basis); window 200 columns wide, resized to 200x24 and to 60x40 with the needs-you line up and again while the build's helpers work; the user then approves and the build runs; after it the user clicks the Timeline tab and its lanes are read at 200x60 and at 60x40 (#696); the farewell check waits 20 s once farewell.sh exists, so the Dev's lane runs to minutes"
   start="/vbw:panel"
   facts="{}"
   panel_text() { screen | sed 's/[[:space:]][[:space:]]*/ /g'; }
@@ -1075,6 +1077,53 @@ scenario_panel() {
     snd=$(panel_wait "Sound is off.")
     facts=$(jq -c --arg s "$(has "$snd" "Sound is off.")" '. + {sound_shown_off: ($s == "true")}' <<< "$facts")
     comms
+    timeline
+  }
+  # #696: the Timeline tab after the build, in the wide window and in the narrow one.
+  # Each lane is one screen line: a name led by its role (cut in a narrow pane), its bar
+  # and its time. A lane wrapped onto two lines leaves a line under it with a bar or a
+  # time and no name. Echoes true or false, then the lane lines, as the screen at $1
+  # columns by $2 rows shows them (the user clicks the Timeline tab until they show).
+  LANE='^ *(arch|lead|dev|qa|scou|debu|docs|agen)[^█]* (█)+ [0-9]+ (min [0-9]+ s|min|s) *$'
+  timeline_lanes() {
+    local sess="vbw-l3-$scenario" s rows row pre i
+    tmux resize-window -t "$sess" -x "$1" -y "$2" 2> /dev/null
+    sleep 8
+    for ((i = 0; i < 30; i++)); do
+      s=$(screen)
+      # The panel's own text: what is between its borders.
+      rows=$(printf '%s\n' "$s" | sed -n 's/^[^│]*│//p' | sed 's/│.*$//')
+      printf '%s\n' "$rows" | grep -E "$LANE" > /dev/null && break
+      row=$(printf '%s\n' "$s" | grep -n '\[ Timeline \]\|\[ Time \]' | head -1 | cut -d: -f1)
+      pre=$(printf '%s\n' "$s" | grep '\[ Timeline \]\|\[ Time \]' | head -1 | sed 's/\[ Time.*//')
+      [ -n "$row" ] && l3 click "$scenario" "$(($(printf '%s' "$pre" | LC_ALL=en_US.UTF-8 wc -m) + 4))" "$row"
+      sleep 2
+    done
+    printf '%s\n' "$s" > "$dir.panel.timeline.$1x$2.screen.txt"
+    # From the first lane to the first blank line (the runs list and the sparkline come
+    # after one): every line is a lane, or the step's own line that ends the lanes.
+    printf '%s\n' "$rows" | LC_ALL=en_US.UTF-8 awk -v lane="$LANE" '
+      !on && $0 ~ lane { on = 1 }
+      on && !done {
+        if ($0 ~ lane) { n++; out = out "\n" $0; next }
+        if ($0 ~ /^ *$/) { done = 1; next }
+        if ($0 ~ /█/ || $0 ~ /^ *[0-9]* *(min|s)?( [0-9]+ s)? *$/) bad = 1
+        done = 1
+      }
+      END { print ((n > 0 && !bad) ? "true" : "false") out }'
+  }
+  timeline() {
+    local wide narrow
+    wide=$(timeline_lanes 200 60)
+    narrow=$(timeline_lanes "$NARROW_COLUMNS" 40)
+    tmux resize-window -t "vbw-l3-$scenario" -x 200 -y 60 2> /dev/null
+    [ "$(printf '%s\n' "$wide" | head -1)" = true ] || say "Timeline, wide window: a lane is not one line" >&2
+    [ "$(printf '%s\n' "$narrow" | head -1)" = true ] || say "Timeline, narrow window: a lane is not one line" >&2
+    facts=$(jq -c --arg w "$wide" --arg n "$narrow" '
+      def lanes: split("\n") | .[1:] | map(sub(" +$"; ""));
+      . + {timeline_one_line_wide: (($w | split("\n") | .[0]) == "true"), timeline_one_line_narrow: (($n | split("\n") | .[0]) == "true"),
+           timeline_lanes_wide: ($w | lanes), timeline_lanes_narrow: ($n | lanes),
+           timeline_time_in_minutes: ([$w, $n | lanes[] | test(" [0-9]+ min")] | any)}' <<< "$facts")
   }
   # R189: Comms in the real window. Resize the window, wait for the redraw, and
   # read what is drawn: the prompt box must still be whole (two borders of the full
@@ -1211,14 +1260,14 @@ scenario_panel() {
     sleep 2
     l3 stop "$scenario"
     local k passed
-    for k in opened_by_itself milestone_shown progress_shown doing_shown need_shown tabs_shown next_row_shown cost_shown sound_shown_off closed_by_click closed_stays_closed sound_toggle_persisted need_line_shown need_line_cleared helper_seen_working helper_done_cleared no_spill_short no_spill_narrow helper_line_short tabs_whole_short tabs_whole_narrow; do
+    for k in opened_by_itself milestone_shown progress_shown doing_shown need_shown tabs_shown next_row_shown cost_shown sound_shown_off closed_by_click closed_stays_closed sound_toggle_persisted need_line_shown need_line_cleared helper_seen_working helper_done_cleared no_spill_short no_spill_narrow helper_line_short tabs_whole_short tabs_whole_narrow timeline_one_line_wide timeline_one_line_narrow timeline_time_in_minutes; do
       expect "the panel: $k" jq -e --arg k "$k" '.[$k] == true' <<< "$facts"
     done
     expect "the panel shows an estimate or the plain 'no basis yet'" jq -e '.estimate_shown | length > 0' <<< "$facts"
-    passed=$(jq -r '[.opened_by_itself, .milestone_shown, .progress_shown, .doing_shown, .need_shown, .tabs_shown, .next_row_shown, .cost_shown, .sound_shown_off, .closed_by_click, .closed_stays_closed, .sound_toggle_persisted, .need_line_shown, .need_line_cleared, .helper_seen_working, .helper_done_cleared, .no_spill_short, .no_spill_narrow, .helper_line_short, .tabs_whole_short, .tabs_whole_narrow, (.estimate_shown | length > 0)] | all' <<< "$facts")
+    passed=$(jq -r '[.opened_by_itself, .milestone_shown, .progress_shown, .doing_shown, .need_shown, .tabs_shown, .next_row_shown, .cost_shown, .sound_shown_off, .closed_by_click, .closed_stays_closed, .sound_toggle_persisted, .need_line_shown, .need_line_cleared, .helper_seen_working, .helper_done_cleared, .no_spill_short, .no_spill_narrow, .helper_line_short, .tabs_whole_short, .tabs_whole_narrow, .timeline_one_line_wide, .timeline_one_line_narrow, .timeline_time_in_minutes, (.estimate_shown | length > 0)] | all' <<< "$facts")
     [ "$passed" = true ] || failed=1
     result_write panel "$fixture" "${cost_usd:-0}" "$passed" "$facts" \
-      '["the sound itself (nothing was heard: the run only checks the switch)","what a person reads at a glance: wording and layout are judged on the screen text, not by a reader","no spill is read from the visible tmux screen after a resize (prompt box whole, Comms drawn once), not from a real terminal'"'"'s scrollback","one short window (200 columns, 24 rows) and one narrow window (60 columns, 40 rows), with the needs-you line and with helpers at work; no other size","Comms in the 60-column window: Mission Control fills that window and Comms'"'"' own line is not on screen there (seen in the run, not judged), so the narrow check holds the prompt box and the pane'"'"'s bottom edge only","the tab names read as whole [ Name ] buttons in the visible screen text, not their look or other sizes","Mission Control'"'"'s own rows and tabs at those sizes (held by tests/panel/r189/containment.test.mjs, L1)","figure counts and the motion levels (full, calm, off)","a failed helper, a celebration and a ship in the real window","a milestone shipped before the recommendation (the seed stores the recommendation on an active milestone)","a time estimate with a number"]'
+      '["the sound itself (nothing was heard: the run only checks the switch)","what a person reads at a glance: wording and layout are judged on the screen text, not by a reader","no spill is read from the visible tmux screen after a resize (prompt box whole, Comms drawn once), not from a real terminal'"'"'s scrollback","one short window (200 columns, 24 rows) and one narrow window (60 columns, 40 rows), with the needs-you line and with helpers at work; no other size","Comms in the 60-column window: Mission Control fills that window and Comms'"'"' own line is not on screen there (seen in the run, not judged), so the narrow check holds the prompt box and the pane'"'"'s bottom edge only","the tab names read as whole [ Name ] buttons in the visible screen text, not their look or other sizes","Mission Control'"'"'s own rows and tabs at those sizes (held by tests/panel/r189/containment.test.mjs, L1)","figure counts and the motion levels (full, calm, off)","a failed helper, a celebration and a ship in the real window","a milestone shipped before the recommendation (the seed stores the recommendation on an active milestone)","a time estimate with a number","Timeline lanes only from this run'"'"'s real helpers and their real times: no seeded run, no other size than 200x60 and 60x40, and lane times of an hour or more"]'
   }
 }
 
