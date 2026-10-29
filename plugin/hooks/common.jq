@@ -115,6 +115,10 @@ def lease_write_denial($lease; $record):
     "\(.) is a protected check file of another requirement: the fix may edit only the check files of its own requirement (\(($lease.editable // []) | if length > 0 then join(", ") else "none is exclusive to it" end))\n"
     + (if $lease.new_tests == true then "Next: leave \(.) as it is; put the regression test in a new test file and register it with vbw fix check"
        else "Next: leave \(.) as it is; fix the code through the plan, and edit only the files named above" end)
+  # A folder a shell command names whole (rm -r, a copy into it) holding one (#727), ahead of
+  # the test files a fix may add, which may sit under such a folder.
+  elif ($lease.kind | test("^(build|fix)$")) and (. as $p | any($record.protected[]?; startswith($p + "/"))) then
+    "\(.) holds a protected check file (\(. as $p | [$record.protected[] | select(startswith($p + "/"))] | join(", "))): the contract is fixed while building\nNext: leave the protected check files as they are; name only the files you write"
   elif $lease.new_tests == true and test_path then empty
   elif $lease.files != null and (. as $p | any($lease.files[]; covers($p)) | not) then
     "\(.) is outside this run's files (\($lease.files | join(", "))): agents write only their plan's files\nNext: leave \(.) as it is; report that the plan needs it, so the plan can be replanned with vbw apply"
@@ -122,9 +126,6 @@ def lease_write_denial($lease; $record):
     "\(.) cannot be written: this project's record was not saved by this VBW yet, so its protected check files are unknown; end the run and start it again, which saves the record\nNext: tell the session that started the run to end it (vbw run end) and start it again"
   elif ($lease.kind | test("^(build|fix)$")) and (. as $p | any($record.protected[]?; . == $p)) then
     "\(.) is a protected check file: the contract is fixed while building\nNext: leave \(.) as it is; if the check is wrong, report it so the user can change the contract"
-  # A folder a shell command names whole (rm -r, a copy into it) holding one (#727).
-  elif ($lease.kind | test("^(build|fix)$")) and (. as $p | any($record.protected[]?; startswith($p + "/"))) then
-    "\(.) holds a protected check file (\(. as $p | [$record.protected[] | select(startswith($p + "/"))] | join(", "))): the contract is fixed while building\nNext: leave the protected check files as they are; name only the files you write"
   else empty end;
 
 # Why a subagent may not write ORIGINAL (the path as given), which lies outside
@@ -159,9 +160,12 @@ def run_write_denial($g):
 # never expanded, so run_write_denial takes it as written (D311: app/routes/$id.tsx
 # is a plan file like any other). A glob the shell expands is refused under build
 # and fix when it may match a protected check file or a folder above one (#727;
-# * and ? stop at /; a pattern the guard cannot read counts as matching).
+# * may cross /, as zsh's ** does; a pattern the guard cannot read counts as
+# matching). Brace expansion is not read: a check file changed that way stops
+# the proof until the user approves it (docs/proof.md).
 def protected_glob($record):
-  ("^" + (gsub("(?<c>[.+(){}^$|\\\\])"; "\\\(.c)") | gsub("\\*"; "[^/]*") | gsub("\\?"; "[^/]") | gsub("\\[!"; "[^")) + "(/.*)?$") as $re
+  ("^" + (gsub("(?<c>[.+(){}^$|\\\\])"; "\\\(.c)") | gsub("\\*\\*/"; "\u0001") | gsub("\\*"; ".*")
+          | gsub("\\?"; "[^/]") | gsub("\\[!"; "[^") | gsub("\u0001"; "(.*/)?")) + "(/.*)?$") as $re
   | try [$record.protected[]? | select(test($re))] catch [$record.protected[]?];
 def shell_write_denial($g):
   . as $o

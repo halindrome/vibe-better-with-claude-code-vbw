@@ -233,7 +233,11 @@ judged_as() {
   [ "$want" != allow ] || { echo "the redirect to $2 is allowed"; return 1; }
   [ "$got" = "$want" ] || { printf 'not judged as a write of %s: %s\n  got:  %s\n  want: %s\n' "$2" "$1" "$got" "$want"; return 1; }
 }
-allowed_sh() { local got; got=$(why "$1"); [ "$got" = allow ] || { printf 'refused: %s\n  %s\n' "$1" "$got"; return 1; }; }
+# allowed_sh COMMAND: the guard answers nothing and exits 0 (a crash under the open run exits 2 with a message).
+allowed_sh() {
+  run as_agent Bash "$(jq -nc --arg c "$1" '{command: $c}')"
+  [ "$status" -eq 0 ] && [ -z "$output" ] || { printf 'refused: %s\n  status %s: %s\n' "$1" "$status" "$output"; return 1; }
+}
 
 @test "#727: during a run, the files cp, rsync, install, ln, mv, tee, sed -i and rm write are judged like a redirect's" {
   lease build '["src/pay.js", "lib/"]'
@@ -323,6 +327,14 @@ allowed_sh() { local got; got=$(why "$1"); [ "$got" = allow ] || { printf 'refus
   allowed_sh 'rm -f build/*.js'
   allowed_sh 'rm -f tests/*.snap'
   allowed_sh 'rm tests/pay.test.[!j]s'
+  # * may cross /, as zsh's ** does.
+  [[ "$(why 'sed -i s/a/b/ tests/**/pay.test.js')" == *"matches a protected check file"* ]] || false
+  [[ "$(why 'rm t*/pay.test.js')" == *"matches a protected check file"* ]] || false
+  # Under a fix run that may add tests, a test folder holding a protected check file is still refused.
+  jq '.lease.kind = "fix" | .lease.new_tests = true | .protected = ["tests/unit/pay.test.js"]' .vbw/record.json > "$TEST_ROOT/l.json" && cp "$TEST_ROOT/l.json" .vbw/record.json
+  [[ "$(why 'rm -rf tests/unit')" == *"tests/unit holds a protected check file (tests/unit/pay.test.js)"* ]] || { why 'rm -rf tests/unit'; false; }
+  allowed_sh 'cp x.js tests/unit/new.test.js'
+  lease build 'null'
   # A file tool's path is taken as written, never as a pattern (D311).
   run as_agent Write "{\"file_path\": \"$PROJECT/t*\"}"
   [ "$status" -eq 0 ] && [ -z "$output" ]
