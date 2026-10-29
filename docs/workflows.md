@@ -173,8 +173,8 @@ reason (which uses the glance's stored name alone, else 8 characters of the id).
 run's agents may write: the plans' files for `build`; for `fix`, the files of
 every plan that serves a fixed requirement; `[".vbw/"]` for `plan` (planning
 agents write VBW's own files, and also test files, which no plan owns yet: a
-path in a `tests/`, `test/`, `spec/` or `__tests__/` folder, or named
-`*.test.*`, `*_test.*` or `test_*.py`); `[]` for `qa` and `map` (their agents
+path in a `tests/`, `test/`, `spec/` or `__tests__/` folder, a `.t` file under
+`t/`, or named `*.test.*`, `*_test.*`, `*.spec.*`, `*_spec.*` or `test_*.py`); `[]` for `qa` and `map` (their agents
 only read; the lease also tells the autonomy gate a workflow is still running). While a lease is active, any **subagent**
 (the hook input carries `agent_type`) is held to it:
 
@@ -533,6 +533,7 @@ Each refusal below ends with `Next: ` and the step in the right column
 | `/vbw:loop`: the ship of an item refused (the loop ends) | Run `/vbw:vibe` to take the item to its ship, then `/vbw:loop` for the items left |
 | Guards (docs/guards.md): a secret file, the record, the consent file, `vbw approve` | Use the `vbw` command or `/vbw:approve` instead of writing directly |
 | Guards: a file outside the run's plan, a protected check file, a read-only run, another session's files | Leave the file; report the need, or work on other files until the run ends |
+| Guards: a project file that is neither a test file nor under `.vbw/`, written while planning | Leave the file; put the check in a test file, or name the file in a plan's files so the build writes it |
 | Guards: a program (python, node, perl, ruby, ...) writing a file the guard cannot name, its target a variable, an expression or another call | name the file as a literal path in the program, or write it with the Edit tool (Write for a new file) |
 | Guards: `vbw loop start` by a tool call (arming the loop) | Ask the user to run `/vbw:loop` with the items and the ceiling they choose |
 | Guards: `vbw loop next` or `vbw loop park` by a tool call (the loop steps) | End your turn; the loop's Stop hook gives the next step |
