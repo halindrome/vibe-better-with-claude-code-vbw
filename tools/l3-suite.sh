@@ -2273,9 +2273,10 @@ scenario_alreadyfixed() {
   checks() {
     local passed=true decided=false evidence=false planning=false unchanged=false nreq ntodo r="$dir/.vbw/record.json"
     jq -e --argjson d "$seed_decisions" '.decisions[$d:] | any(.text | test("already fixed"; "i"))' "$r" > /dev/null 2>&1 && decided=true
-    # The evidence: the fix commit, or the line that handles it.
+    # The evidence: the fix commit, or the line that handles it (greet.sh:<line>);
+    # never words the user's idea already holds.
     jq -e --argjson d "$seed_decisions" --arg c "$fix_short" '[.decisions[$d:][] | select(.text | test("already fixed"; "i")) | .text + " " + (.why // "")]
-      | any(contains($c) or test("greet\\.sh|trim"; "i"))' "$r" > /dev/null 2>&1 && evidence=true
+      | any(contains($c) or test("greet\\.sh:[0-9]"))' "$r" > /dev/null 2>&1 && evidence=true
     nreq=$(jq --argjson q "$seed_reqs" '(.requirements | length) - $q' "$r" 2> /dev/null || echo -1)
     ntodo=$(jq --argjson t "$seed_todos" '(.todos | length) - $t' "$r" 2> /dev/null || echo -1)
     workflow_started planning && planning=true

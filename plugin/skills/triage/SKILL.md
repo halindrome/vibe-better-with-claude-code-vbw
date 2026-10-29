@@ -1,7 +1,7 @@
 ---
 name: triage
 description: Sort every new idea the user brings as now, next or later, with a reason and a size, before any requirement, planning or file change. Used by the vibe router for each new request.
-allowed-tools: Bash("${CLAUDE_PLUGIN_ROOT}/bin/vbw" *) Bash(vbw *) Read Bash(git log *) Bash(git grep *)
+allowed-tools: Bash("${CLAUDE_PLUGIN_ROOT}/bin/vbw" *) Bash(vbw *) Read
 effort: low
 ---
 

@@ -134,6 +134,11 @@ has() { flat "$1" | grep -qE -- "$2" || { echo "$(basename "$1") lacks: $2"; ret
   has "$PLUGIN_ROOT/skills/vibe/SKILL.md" 'already met.{0,200}vbw spec sync'
 }
 
+@test "R50 (#717): an Architect decision to drop or reword an already-met requirement changes the spec before planning again, with fresh requirements" {
+  has "$PLUGIN_ROOT/skills/vibe/SKILL.md" 'record each:.{0,200}already met.{0,200}vbw spec sync.{0,120}vbw next --json'
+  has "$PLUGIN_ROOT/skills/vibe/SKILL.md" 'status `blocked`.*plan again with .requirements. from a new .vbw next --json'
+}
+
 @test "R50 (#717): the Lead's already-met blocker reaches the router as blocked, with no run of the plan" {
   command -v node > /dev/null 2>&1 || skip "node not installed"
   local out

@@ -28,6 +28,9 @@ body() { sed -n "/^scenario_$1()/,/^}/p" "$SUITE"; }
   body alreadyfixed | grep -q 'workflow_started'
   body alreadyfixed | grep -qE 'git (-C "\$dir" )?(log|status|diff|show|rev-parse)'
   body alreadyfixed | grep -q 'decisions'
+  # Evidence is the fix commit or a file:line, never words the user's idea already holds.
+  body alreadyfixed | grep -qF 'greet\\.sh:[0-9]'
+  if body alreadyfixed | grep -q '|trim'; then false; fi
   if body alreadyfixed | grep -q 'screen |.*grep.*fixed'; then false; fi
 }
 
