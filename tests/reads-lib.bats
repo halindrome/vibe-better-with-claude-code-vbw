@@ -101,12 +101,12 @@ lib() {
   [ "$output" = gone ]
 }
 
-@test "R166: the reset sets back the access time of every tracked file and folder, and of the copy's HEAD and index" {
+@test "R166: the reset sets back the access time of every tracked file and folder, and of the copy's .git file" {
   run lib 'proofcopy_create_slots 1; c=$PROOF_COPY; s=$(dirname "$c")/reads
-    gd=$(git -C "$c" rev-parse --absolute-git-dir)
+    [ -f "$c/.git" ] || { echo "the copy has no .git file"; exit 3; }
     cat "$c/src/a.txt" > /dev/null; ls "$c/src" > /dev/null; git -C "$c" ls-files > /dev/null; git -C "$c" show HEAD:src/a.txt > /dev/null
     reads_reset "$c" "$s" || exit 1
-    for p in "$c/src/a.txt" "$c/src/b.txt" "$c/docs/guide.txt" "$c/.gitignore" "$c/src" "$c/docs" "$c" "$gd/HEAD" "$gd/index"; do
+    for p in "$c/src/a.txt" "$c/src/b.txt" "$c/docs/guide.txt" "$c/.gitignore" "$c/src" "$c/docs" "$c" "$c/.git"; do
       [ "$(at "$p")" -lt 1000000000 ] || { echo "not set back: $p"; exit 2; }
     done
     [ "$(at "$c/ignored")" -gt 1000000000 ] && echo ok'
@@ -148,6 +148,24 @@ lib() {
   [ "$output" = $'true\ntrue\ntrue' ]
 }
 
+@test "R166: git run in the user's checkout, or from another copy, while a run runs does not set the git flag" {
+  # The copy is a worktree of the user's repository: git worktree list, git branch, a new
+  # worktree (another proof making its copy), gc and fetch there read its HEAD and index,
+  # but none of them opens the copy's own .git file, which every git command run inside
+  # the copy reads first.
+  run lib 'proofcopy_create_slots 2; c=${PROOF_COPIES[0]}; o=${PROOF_COPIES[1]}; s=$(dirname "$c")/reads
+    reads_reset "$c" "$s"
+    (cd "$c" && cat src/a.txt > /dev/null)
+    (cd "$VBW_ROOT" && git worktree list --porcelain && git branch --list && git branch -av \
+      && git worktree add -q --detach "$VBW_RUNTIME/other" HEAD && git worktree remove --force "$VBW_RUNTIME/other" \
+      && git gc --quiet && git fetch -q . HEAD:refs/heads/side) > /dev/null 2>&1 || { echo "a git command failed"; exit 1; }
+    (cd "$o" && git worktree list && git branch && git status --short) > /dev/null 2>&1 || exit 1
+    reads_collect "$c" "$s" | jq -c "[.files, .git]"
+    reads_reset "$c" "$s"; (cd "$c/src" && git log -1 > /dev/null); reads_collect "$c" "$s" | jq -c .git'
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  [ "$output" = $'[["src/a.txt"],false]\ntrue' ] || { echo "$output"; false; }
+}
+
 @test "R166: a folder's fingerprint follows the names of its tracked files, not their content" {
   run lib 'proofcopy_create_slots 1; c1=$PROOF_COPY; s1=$(dirname "$c1")/reads
     printf "changed\n" > "$VBW_ROOT/src/a.txt"; git -C "$VBW_ROOT" commit -q -am "chore(test): content"
@@ -169,6 +187,42 @@ lib() {
     reads_reset "$c" "$s"; (cd "$c" && cat src/b.txt > /dev/null); reads_collect "$c" "$s" | jq -cS "[.files, (.dirs | map(.path)), .git]"'
   [ "$status" -eq 0 ]
   [ "$output" = $'[["src/a.txt"],["docs"],true]\n[["src/b.txt"],[],false]' ]
+}
+
+@test "R166: build output an earlier run wrote is gone before the next run, so no read list passes through it" {
+  # A Python run writes __pycache__ and .pytest_cache files that the next run in the same
+  # copy would read: each next run starts without them, as in a fresh copy.
+  run lib 'proofcopy_create_slots 1; c=$PROOF_COPY; s=$(dirname "$c")/reads
+    reads_reset "$c" "$s"
+    (cd "$c" && cat src/a.txt > /dev/null && mkdir -p src/__pycache__ .pytest_cache/v/cache && printf "pyc\n" > src/__pycache__/a.pyc \
+      && printf "ids\n" > .pytest_cache/v/cache/nodeids && ls docs > /dev/null && git show HEAD:src/b.txt > /dev/null)
+    reads_collect "$c" "$s" | jq -c "[.files, (.dirs | map(.path)), .git]"
+    reads_reset "$c" "$s"
+    [ ! -e "$c/src/__pycache__" ] && [ ! -e "$c/.pytest_cache" ] && [ -f "$c/src/a.txt" ] || { echo "build output left in the copy"; exit 1; }
+    jq -c "[(.lists | length), (.files | length)]" "$s/written.json"
+    (cd "$c" && { cat src/__pycache__/a.pyc .pytest_cache/v/cache/nodeids; cat src/b.txt; } > /dev/null 2>&1)
+    reads_collect "$c" "$s" | jq -c "[.files, (.dirs | map(.path)), .git]"'
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  [ "$output" = $'[["src/a.txt"],["docs"],true]\n[0,0]\n[["src/b.txt"],[],false]' ]
+}
+
+@test "R166: a file in a build folder that the copy was made with stays, and still passes on the list of a run that changed it" {
+  # bin/tool.sh is tracked, node_modules/pkg/dist/x.js came in with an ignored folder: neither
+  # is build output a run made. A file a run adds beside x.js is, and goes; its folder stays.
+  mkdir -p bin node_modules/pkg/dist
+  printf 'tool\n' > bin/tool.sh
+  printf 'x\n' > node_modules/pkg/dist/x.js
+  git add bin && git commit -q -m "chore(test): tool"
+  run lib 'proofcopy_create_slots 1; c=$PROOF_COPY; s=$(dirname "$c")/reads
+    reads_reset "$c" "$s"
+    (cd "$c" && cat src/a.txt > /dev/null && printf "a\n" >> bin/tool.sh && printf "a\n" >> node_modules/pkg/dist/x.js && printf "a\n" > node_modules/pkg/dist/new.js)
+    reads_collect "$c" "$s" > /dev/null
+    reads_reset "$c" "$s"
+    [ -f "$c/bin/tool.sh" ] && [ -f "$c/node_modules/pkg/dist/x.js" ] && [ ! -e "$c/node_modules/pkg/dist/new.js" ] || { ls -R "$c/bin" "$c/node_modules"; exit 1; }
+    (cd "$c" && cat node_modules/pkg/dist/x.js > /dev/null); reads_collect "$c" "$s" | jq -c .files
+    reads_reset "$c" "$s"; (cd "$c" && cat bin/tool.sh > /dev/null); reads_collect "$c" "$s" | jq -c .files'
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  [ "$output" = $'["src/a.txt"]\n["bin/tool.sh","src/a.txt"]' ] || { echo "$output"; false; }
 }
 
 @test "R166: inherited lists pass on through a chain of runs" {

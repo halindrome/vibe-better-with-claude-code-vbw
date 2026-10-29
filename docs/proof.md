@@ -857,6 +857,12 @@ Build output is not environment: the copy never brings in a folder named `target
 `.ruff_cache`, `.tox`, `.next`, `.nuxt`, `.gradle` or `coverage`, at any depth.
 The copy builds its own, so a proof never reads stale output from the working
 folder, and nothing it builds lands in the working folder or in another copy.
+Each unit builds its own too: before a unit runs in a copy, the files an earlier
+unit wrote inside a folder with one of those names are removed (Python's
+`__pycache__` and `.pytest_cache` files, for example), so every unit starts as the
+first unit of a fresh copy does. A file there that the copy was made with stays:
+a tracked file, or one inside an ignored folder copied in whole, such as a virtual
+environment.
 Untracked files that are not ignored never enter the copy (D54): to make one
 count, commit it or ignore it.
 
@@ -999,7 +1005,9 @@ at its next save. Beside the store, `vbw/run-times.json` keeps each run's
 seconds alone, written with it. Time estimates read only that file, never the
 store, whose read lists can run to hundreds of MB (docs/panel.md).
 
-**Files a unit writes.** A file a unit writes carries that unit's read list. A
+**Files a unit writes.** Build output a unit writes is removed before the next
+unit runs in its copy (see the clean copy, above), so no unit reads
+another's. Any other file a unit writes carries that unit's read list. A
 later unit that reads the file inherits the list, so it runs again when
 anything the writer read changed. A file two units wrote carries both lists,
 and inherited lists pass on through a chain of units. The lists live in the
@@ -1168,7 +1176,15 @@ They read `checks: N ran, M reused` and `test files: N ran, M reused`. After
   (`git config --global` run from the project folder): git opens the
   repository before it does anything else. Such a run keeps no read list
   (above). A test suite that runs such commands from another folder keeps its
-  results reusable.
+  results reusable. VBW sees it by
+  the copy's `.git` file, which every git command run inside the copy reads
+  first. Git run elsewhere in your repository while a unit runs does not count
+  (`git worktree list`, `git branch`, `git gc`, `git fetch`, another proof making
+  its copy), though it reads the copy's `HEAD` in the shared git folder. Two
+  commands do count: `git status --ignored` and `git clean -X` (also with `-n`),
+  run in the project, open each proof copy's `.git` file to see whether it is a
+  repository of its own, exactly as git inside the copy does. A unit running
+  meanwhile counts as reading through git and runs again in the next proof.
 
 To run everything fresh, use `vbw prove --full`, or prove again with
 nothing committed since a passing proof (a second `vbw prove` is a deliberate re-run).

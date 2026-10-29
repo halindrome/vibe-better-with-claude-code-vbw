@@ -4,7 +4,7 @@
 # The copy's written-file store (written.json) holds every run's read list once
 # under "lists" (keyed by a run id) and, under "files", each written path with
 # the ids of the runs that wrote it, so it grows with the number of runs plus
-# the number of written names: a unit that writes 1,000 build-cache files adds
+# the number of written names: a unit that writes 1,000 generated files adds
 # 1,000 names and one list. A later unit that reads any of them still inherits
 # the writer's list, and a file two runs wrote carries both lists, so reuse
 # decisions do not change. L1.
