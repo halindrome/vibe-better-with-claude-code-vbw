@@ -59317,7 +59317,7 @@
       "text": "check-loop-writes.sh sees only builtin writes in the loop body itself: a call to a function that writes with printf (doctor_line in cmd-doctor.sh, found 2026-10-26 in P168.2's hidden-file loop) passes unseen and is left to the reviewer. Teach the tool the repo's writer functions (every function whose body writes with a builtin, found by the tool itself), so such a call in a loop fed by a process substitution is refused like a direct printf",
       "sort": "later",
       "size": "small",
-      "status": "open"
+      "status": "done"
     },
     {
       "id": "T190",
