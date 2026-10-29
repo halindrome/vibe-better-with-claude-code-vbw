@@ -59346,6 +59346,13 @@
       "sort": "later",
       "size": "small",
       "status": "open"
+    },
+    {
+      "id": "T194",
+      "text": "Reuse lost on a root commit when a check runs ./script (2026-10-29, macOS): a test that executes ./greet.sh puts the project root's listing on its read list (sh greet.sh does not; present on main, 2.1.18), so any commit that adds a root file reruns every such check. Find what lists the folder (getcwd on exec?) and whether that read can be told apart from a listing the test depends on; measured with the scratch script ab-reuse.sh, both kernels",
+      "sort": "next",
+      "size": "small",
+      "status": "open"
     }
   ],
   "decisions": [
