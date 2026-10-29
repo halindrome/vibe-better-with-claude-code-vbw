@@ -266,6 +266,10 @@ blocks() {
   blocks "a file outside the run's plan (Bash)" Bash "$(bin 'printf x > README.md' vbw:dev)"
   blocks "a program writing a file the guard cannot name (Bash)" Bash "$(bin $'python3 - <<\'EOF\'\np = "tests/c1.sh"\nopen(p, "w").write("x")\nEOF' vbw:dev)"
   VBW_SESSION_ID=s1 "$VBW" run end > /dev/null
+  VBW_SESSION_ID=s1 "$VBW" run start plan > /dev/null
+  blocks "a product file while planning (file tool)" Write "$(fin Write src/c.txt vbw:lead)"
+  blocks "a product file while planning (Bash)" Bash "$(bin 'printf x > src/c.txt' vbw:lead)"
+  VBW_SESSION_ID=s1 "$VBW" run end > /dev/null
   VBW_SESSION_ID=s1 "$VBW" run start qa > /dev/null
   blocks "a write during a run whose agents only read (file tool)" Write "$(fin Write src/c.txt vbw:qa)"
   blocks "a write during a run whose agents only read (Bash)" Bash "$(bin 'printf x > src/c.txt' vbw:qa)"

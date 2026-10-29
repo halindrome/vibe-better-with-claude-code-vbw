@@ -98,7 +98,7 @@ def covers($p): . as $e | $e == $p or (($e | endswith("/")) and ($p | startswith
 
 # PATH (project-relative) is a test file, by place or by name: the one
 # definition of what a planning run may write besides .vbw/ (R75).
-def test_path: test("(^|/)(tests?|spec|__tests__)/") or (basename | test("\\.test\\.|_test\\.|^test_.*\\.py$"));
+def test_path: test("(^|/)(tests?|spec|__tests__)/|(^|/)t/.*\\.t$") or (basename | test("[._](test|spec)\\.|^test_.*\\.py$"));
 
 # Why a subagent may not write PATH (project-relative) under LEASE, or empty.
 def lease_write_denial($lease; $record):
@@ -116,6 +116,8 @@ def lease_write_denial($lease; $record):
     + (if $lease.new_tests == true then "Next: leave \(.) as it is; put the regression test in a new test file and register it with vbw fix check"
        else "Next: leave \(.) as it is; fix the code through the plan, and edit only the files named above" end)
   elif $lease.new_tests == true and test_path then empty
+  elif $lease.kind == "plan" and $lease.files != null and (. as $p | any($lease.files[]; covers($p)) | not) then
+    "\(.) cannot be written while planning: planning writes the project's test files and .vbw/; product code is the build's\nNext: leave \(.) as it is; put the check in a test file, or name \(.) in a plan's files so the build writes it"
   elif $lease.files != null and (. as $p | any($lease.files[]; covers($p)) | not) then
     "\(.) is outside this run's files (\($lease.files | join(", "))): agents write only their plan's files\nNext: leave \(.) as it is; report that the plan needs it, so the plan can be replanned with vbw apply"
   elif ($lease.kind | test("^(build|fix)$")) and ($record | has("protected") | not) then
