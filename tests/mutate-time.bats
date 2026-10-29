@@ -271,8 +271,11 @@ C3 red" ] || { echo "$output"; false; }
 
 @test "R207: the own-work figure is copies plus tracking plus saving, in minutes with one decimal, of the wall" {
   # mutate_time_say on a timer of known steps: 100 s of copies, 5 unbroken, 20 broken, 10 of tracking, 20 saving, 160 s wall.
+  # The clock stands still: mutate_time_say reads it again, and on a busy machine a real clock
+  # moved on between the readings (2026-10-29: "steps of 160.1 s").
   run env VBW_LIB="$REPO_ROOT/plugin/lib" VBW_RUNTIME="$PWD/.vbw/runtime" bash -c '
     . "$VBW_LIB/core.sh"; . "$VBW_LIB/prooftime.sh"; . "$VBW_LIB/cmd-mutate.sh"
+    prooftime_clock() { printf "%s\n" 1000.000; }
     prooftime_begin
     n=$(prooftime_clock)
     PROOFTIME_T0=$(awk -v n="$n" "BEGIN {printf \"%.3f\", n - 160}")
