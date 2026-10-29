@@ -25,6 +25,13 @@ Not sorted:
 - an approval
 - an idea VBW already has. VBW names the matching requirement or backlog item
   instead, and offers to move a backlog item to `now`.
+- a fix that is already fixed. Before sorting a fix (a bug, a ticket, "X is
+  broken"), VBW checks the code: the code path, its tests and earlier commits
+  that name it. When the evidence says the bug no longer happens, the menu
+  shows that evidence and recommends **already fixed**: VBW records it with
+  `vbw decide` and adds no requirement. **It still happens** asks how, and the
+  answer is sorted as usual. Other work found along the way, such as an
+  obsolete workaround, is a separate idea with its own line.
 
 Several ideas in one message get one line each in the same menu, up to four.
 More than four are sorted four at a time.

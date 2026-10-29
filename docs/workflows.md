@@ -82,6 +82,12 @@ nothing and the router ends the run as before. With it:
   checks each planned phase with `vbw show phase`; a phase with no plans makes
   the workflow return `status: "blocked"` with the Lead's report instead of
   `planned`.
+- A requirement the code already meets cannot have a check that fails today.
+  The Architect raises it as a decision (drop it or reword it); if one still
+  reaches the Lead, the Lead applies nothing and returns `status: "blocked"`
+  with `Rn is already met: <the passing run>`. The router asks the user to drop
+  or reword it in `.vbw/spec.md` (`vbw spec sync`), records the answer with
+  `vbw decide`, and plans again.
 
 The closing step (the `close run` agent, and `vbw:fixing`'s own `fix done` agent when there is no session) runs on Haiku in every profile, whatever the Lead's model (`model.lead`) is: it runs a few fixed commands, and the record stays the source of truth, so a wrong answer can only blur the summary line while `vbw next` still asks for any missing work.
 

@@ -12,14 +12,14 @@
 # each one's lines print together when it ends.
 #
 # Scenarios: greenfield, reject, resume, change, convert, balanced, docs, qafix,
-# decision, debug, research, edgecase, leftover, recheck, approval, newcomer, senior, panel, steptime, road, pluginoff, tools, legacy, nolegacy, smallchange, costs, loop, plugindir, sessions, taskbreak, fixchecks, failoutput, leaveout, hiddenrecord, latedecision, ignoredplanning, stalefix, mapsnapshot. A user
+# decision, debug, research, edgecase, leftover, recheck, approval, newcomer, senior, panel, steptime, road, pluginoff, tools, legacy, nolegacy, smallchange, costs, loop, plugindir, sessions, taskbreak, fixchecks, failoutput, leaveout, hiddenrecord, latedecision, ignoredplanning, stalefix, mapsnapshot, alreadyfixed. A user
 # answers every question with VBW's recommendation unless the scenario says otherwise.
 set -uo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 l3() { bash "$ROOT/tools/l3.sh" "$@"; }
 VBW="$ROOT/plugin/bin/vbw"
-ALL="greenfield reject resume change convert balanced docs qafix decision debug research edgecase leftover recheck approval newcomer senior panel steptime road pluginoff tools legacy nolegacy smallchange costs loop plugindir sessions taskbreak fixchecks failoutput leaveout hiddenrecord latedecision ignoredplanning stalefix mapsnapshot"
+ALL="greenfield reject resume change convert balanced docs qafix decision debug research edgecase leftover recheck approval newcomer senior panel steptime road pluginoff tools legacy nolegacy smallchange costs loop plugindir sessions taskbreak fixchecks failoutput leaveout hiddenrecord latedecision ignoredplanning stalefix mapsnapshot alreadyfixed"
 RESULTS="$ROOT/tools/l3-results"
 STEPS=60
 
@@ -2332,6 +2332,68 @@ scenario_smallchange() {
         '{prior_requirements: $pr, same_milestone: $sm, prior_kept: $k, planning_workflow: $pw, approvals: $n, approved_by_choice: $c,
           plans: $p, check_passed: $ok, qa_tier: $t, change_committed: $g}')" \
       '["a change that turns out to touch more than two files or a risk path (the planning workflow)","a project larger than the greet.sh fixture","a request added to a milestone whose earlier work is still being built","the wording of what VBW tells the user (read by a person)","the user answering Not yet or in their own words at the approval"]'
+  }
+}
+
+# An already-fixed bug (#717): the greet.sh milestone, whose plan also
+# committed the fix for GREET-7 (spaces around the name are trimmed) before
+# R1 was proven; the milestone is shipped, so no step is pending. The user
+# asks VBW to fix GREET-7 as if it still happened. Triage must check the code
+# first, say it is already fixed with the evidence, record that with
+# vbw decide, and add no requirement, no backlog item and no planning. (A first run committed the fix outside any
+# plan: vbw next then asked for a proof, the router ran it before triage and
+# the scenario ended in a ship. A pending ship would do the same.)
+alreadyfixed_seed() {
+  greet_plan_seed || return 1
+  printf '#!/bin/sh\necho "Hello, ${1:-world}!"\n' > greet.sh && chmod +x greet.sh
+  "$VBW" commit P1.1 "feat(P1.1): greet.sh" > /dev/null || return 1
+  printf '#!/bin/sh\nname=$(printf "%%s" "${1:-}" | sed "s/^ *//; s/ *$//")\necho "Hello, ${name:-world}!"\n' > greet.sh
+  "$VBW" commit P1.1 "fix(P1.1): trim spaces around the name (GREET-7)" > /dev/null || return 1
+  # shellcheck disable=SC1010 # "plan done" is a vbw subcommand
+  "$VBW" plan done P1.1 > /dev/null || return 1
+  "$VBW" prove --full > /dev/null || return 1
+  "$VBW" ship > /dev/null || return 1
+}
+
+scenario_alreadyfixed() {
+  new_project
+  (cd "$dir" && "$VBW" init > /dev/null && alreadyfixed_seed) || { say "setup failed: could not seed the greet.sh milestone with the GREET-7 fix"; return 1; }
+  fixture="greet.sh in a shipped milestone whose plan committed the GREET-7 fix (spaces around the name are trimmed); the user asks VBW to fix GREET-7"
+  fix_head=$(git -C "$dir" rev-parse HEAD)
+  fix_short=$(git -C "$dir" log -1 --format=%h --grep GREET-7)
+  seed_reqs=$(jq '.requirements | length' "$dir/.vbw/record.json")
+  seed_todos=$(jq '.todos | length' "$dir/.vbw/record.json")
+  seed_decisions=$(jq '.decisions | length' "$dir/.vbw/record.json")
+  start='/vbw:vibe Fix ticket GREET-7: ./greet.sh "  Ana " keeps the spaces and prints "Hello,   Ana !". It should print "Hello, Ana!".'
+  # Done when triage has answered: an already-fixed decision, or (wrongly) a new requirement or backlog item.
+  done_yet() {
+    jq -e --argjson d "$seed_decisions" --argjson q "$seed_reqs" --argjson t "$seed_todos" \
+      '(.decisions[$d:] | any(.text | test("already fixed"; "i"))) or (.requirements | length) > $q or (.todos | length) > $t or .milestone.id != "M1"' \
+      "$dir/.vbw/record.json" > /dev/null 2>&1
+  }
+  checks() {
+    local passed=true decided=false evidence=false planning=false unchanged=false nreq ntodo r="$dir/.vbw/record.json"
+    jq -e --argjson d "$seed_decisions" '.decisions[$d:] | any(.text | test("already fixed"; "i"))' "$r" > /dev/null 2>&1 && decided=true
+    # The evidence: the fix commit, or the line that handles it (greet.sh:<line>);
+    # never words the user's idea already holds.
+    jq -e --argjson d "$seed_decisions" --arg c "$fix_short" '[.decisions[$d:][] | select(.text | test("already fixed"; "i")) | .text + " " + (.why // "")]
+      | any(contains($c) or test("greet\\.sh:[0-9]"))' "$r" > /dev/null 2>&1 && evidence=true
+    nreq=$(jq --argjson q "$seed_reqs" '(.requirements | length) - $q' "$r" 2> /dev/null || echo -1)
+    ntodo=$(jq --argjson t "$seed_todos" '(.todos | length) - $t' "$r" 2> /dev/null || echo -1)
+    workflow_started planning && planning=true
+    [ -z "$(git -C "$dir" diff --name-only "$fix_head" -- greet.sh)" ] && unchanged=true
+    say "decided: $decided, evidence: $evidence, new requirements: $nreq, new todos: $ntodo, planning: $planning"
+    expect "recorded as already fixed" [ "$decided" = true ]
+    expect "the decision names the evidence" [ "$evidence" = true ]
+    expect "no requirement added ($nreq)" [ "$nreq" -eq 0 ]
+    expect "no backlog item added ($ntodo)" [ "$ntodo" -eq 0 ]
+    expect "no planning workflow was started" [ "$planning" = false ]
+    expect "greet.sh is unchanged" [ "$unchanged" = true ]
+    [ "$failed" -eq 0 ] || passed=false
+    result_write alreadyfixed "$fixture" "${cost_usd:-0}" "$passed" \
+      "$(jq -n --argjson d "$decided" --argjson e "$evidence" --argjson q "$nreq" --argjson t "$ntodo" --argjson p "$planning" --argjson u "$unchanged" \
+        '{already_fixed_decided: $d, evidence_named: $e, new_requirements: $q, new_todos: $t, planning_workflow: $p, code_unchanged: $u}')" \
+      '["the user answering it still happens","a fix that is only partly done","a bug fixed without a commit naming it","a fix committed outside any VBW plan (vbw next then asks for a proof first)","the Architect and Lead backstops (an already-met requirement that reaches planning)","the wording VBW shows the user (read by a person)"]'
   }
 }
 

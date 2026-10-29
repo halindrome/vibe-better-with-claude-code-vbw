@@ -1,0 +1,24 @@
+{
+  "scenario": "alreadyfixed",
+  "fixture": "greet.sh in a shipped milestone whose plan committed the GREET-7 fix (spaces around the name are trimmed); the user asks VBW to fix GREET-7",
+  "cost_usd": 0.2253,
+  "evidence_level": "L3",
+  "at": "2026-10-29T16:12:51Z",
+  "passed": true,
+  "facts": {
+    "already_fixed_decided": true,
+    "evidence_named": true,
+    "new_requirements": 0,
+    "new_todos": 0,
+    "planning_workflow": false,
+    "code_unchanged": true
+  },
+  "not_tested": [
+    "the user answering it still happens",
+    "a fix that is only partly done",
+    "a bug fixed without a commit naming it",
+    "a fix committed outside any VBW plan (vbw next then asks for a proof first)",
+    "the Architect and Lead backstops (an already-met requirement that reaches planning)",
+    "the wording VBW shows the user (read by a person)"
+  ]
+}

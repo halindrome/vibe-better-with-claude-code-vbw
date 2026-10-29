@@ -30,7 +30,7 @@ Each phase into plans; one plan = one Dev session.
 
 ## Stage 3: Self-review
 
-Before applying: every requirement has a plan, every `[auto]` one a check; no circular `after`; no file shared by plans that can run together; plans deliver each phase's criteria; checks fail today, cannot pass without the behavior, and are formatter- and lint-clean; checks are lean (rule 6): no case repeats one another check already pins, no expensive fixture is rebuilt per case, no sleep, no timing assertion, superseded cases edited or deleted; nothing pays a recurring cost (time, tokens, re-runs) to avoid thinking. Fix what you find.
+Before applying: every requirement has a plan, every `[auto]` one a check; no circular `after`; no file shared by plans that can run together; plans deliver each phase's criteria; checks fail today, cannot pass without the behavior, and are formatter- and lint-clean; checks are lean (rule 6): no case repeats one another check already pins, no expensive fixture is rebuilt per case, no sleep, no timing assertion, superseded cases edited or deleted; nothing pays a recurring cost (time, tokens, re-runs) to avoid thinking. Fix what you find. A requirement the code already meets has no check that can fail today: apply nothing; return `applied` false with one blocker per such requirement, `Rn is already met: <the check run that passes>`, so the user drops or rewords it.
 
 ## Stage 4: Output
 

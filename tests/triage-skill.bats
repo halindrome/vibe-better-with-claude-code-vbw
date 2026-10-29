@@ -55,6 +55,20 @@ has() { flat "$1" | grep -qE -- "$2" || { echo "$(basename "$(dirname "$1")")/$(
   has "$SKILL" 'hands-off'
 }
 
+@test "R121 (#717): a fix idea is checked against the code first; already fixed is said with its evidence and adds nothing" {
+  has "$SKILL" 'still happens'
+  has "$SKILL" 'git log --grep'
+  has "$SKILL" 'already fixed.{0,40}\(recommended\)'
+  grep -qF 'vbw decide "<idea>: already fixed by <evidence>"' "$SKILL"
+  has "$SKILL" 'separate idea'
+  grep -qE '^allowed-tools:.*Read' "$SKILL"
+  # No git command is pre-approved: git grep -O runs a program, git log --output writes a file.
+  if grep -E '^allowed-tools:' "$SKILL" | grep -q 'git'; then echo "triage pre-approves a git command"; false; fi
+  has "$DOC" 'already fixed'
+  # The router sends a fix that looks fixed to triage too, instead of answering it itself (seen in L3).
+  has "$ROUTER" 'vbw:triage. first, before you read code.{0,80}already fixed'
+}
+
 @test "R121: the user documentation names the three sorts, the sizes and vbw todo list, and the README links it" {
   [ -f "$DOC" ]
   local w
