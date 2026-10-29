@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # vbw show roadmap | phase ID | req ID | plan ID [--json] | fix ID [--json] |
-# contract | evidence | decisions [--since-approval] | requirements | rigor | qa: views rendered from the record
+# contract | evidence | decisions [--since-approval [PLAN|FIX...]] | requirements | rigor | qa: views rendered from the record
 # and git trailers. Nothing is stored in rendered form. plan and fix are the
 # context a Dev works from.
 
 cmd_show() {
   local view="${1:-}" record cf
   [ $# -gt 0 ] && shift
-  case "$view" in roadmap|phase|req|plan|fix|contract|evidence|decisions|requirements|rigor|qa|costs) ;; *) vbw_usage_error "usage: vbw show roadmap | phase ID | req ID | plan ID [--json] | fix ID [--json] | contract [--changes] | evidence | decisions [--since-approval] | requirements | rigor | qa | costs [--json | --ceiling USD]" ;; esac
+  case "$view" in roadmap|phase|req|plan|fix|contract|evidence|decisions|requirements|rigor|qa|costs) ;; *) vbw_usage_error "usage: vbw show roadmap | phase ID | req ID | plan ID [--json] | fix ID [--json] | contract [--changes] | evidence | decisions [--since-approval [PLAN|FIX...]] | requirements | rigor | qa | costs [--json | --ceiling USD]" ;; esac
   vbw_require_project
   if [ "$view" = costs ]; then
     show_costs "$@"
@@ -143,19 +143,38 @@ cmd_show() {
       ;;
     decisions)
       # --since-approval: the decisions after the latest approval of the contract (T123), the ones a
-      # Dev's plan may predate. Every approval's decision starts "Contract approved" (lib/cmd-approve.sh,
-      # lib/loop-step.sh).
-      [ $# -eq 0 ] || [ "$*" = --since-approval ] || vbw_usage_error "usage: vbw show decisions [--since-approval]"
-      [ $# -eq 0 ] || printf '%s' "$record" | jq -e 'any(.decisions[]; .text | startswith("Contract approved"))' > /dev/null \
-        || vbw_die "the contract has not been approved yet: no decision follows an approval"
-      printf '%s' "$record" | jq -r --arg since "${1:-}" '
+      # Dev's plan may predate. With plan or fix ids (#705): after the latest approval that changed
+      # one of their plans (a fix's are the plans of its requirement, or every plan for a project
+      # command), the earliest of those, so an approval that left a plan as it was hides nothing
+      # from its Dev. Every approval's decision starts "Contract approved" (lib/cmd-approve.sh,
+      # lib/loop-step.sh) and names the plans it changed; one naming none changed every plan.
+      local since="" ids='[]' unknown
+      if [ $# -gt 0 ]; then
+        [ "$1" = --since-approval ] || vbw_usage_error "usage: vbw show decisions [--since-approval [PLAN|FIX...]]"
+        since=yes
+        shift
+        ids=$(jq -nc '$ARGS.positional' --args "$@")
+        printf '%s' "$record" | jq -e 'any(.decisions[]; .text | startswith("Contract approved"))' > /dev/null \
+          || vbw_die "the contract has not been approved yet: no decision follows an approval"
+        unknown=$(printf '%s' "$record" | jq -r --argjson ids "$ids" '$ids - [.plans[].id, .fixes[].id] | join(", ")')
+        [ -z "$unknown" ] || vbw_die "no plan or fix $unknown (vbw show roadmap)"
+      fi
+      printf '%s' "$record" | jq -r --arg since "$since" --argjson ids "$ids" '
         def line: "\(.id) \(.text)\(if .why then " (why: \(.why))" else "" end)";
+        def approval: .text | startswith("Contract approved");
         if $since == "" then
           if (.decisions | length) == 0 then "no decisions recorded yet (vbw decide TEXT [WHY])" else .decisions[] | line end
         else
-          ([.decisions | to_entries[] | select(.value.text | startswith("Contract approved")) | .key] | last) as $a
-          | if (.decisions | length) == $a + 1 then "no decisions since the contract was approved (\(.decisions[$a].id))"
-            else .decisions[$a + 1:][] | line end
+          . as $r
+          | [.decisions | to_entries[] | select(.value | approval)] as $apps
+          | [$ids[] as $i | if any($r.plans[]; .id == $i) then $i
+              else $r.fixes[] | select(.id == $i)
+                | if has("req") then .req as $q | $r.plans[] | select(.reqs | index($q)) | .id else $r.plans[].id end end] as $plans
+          | (if ($plans | length) == 0 then $apps[-1].key
+             else [$plans[] as $p | ([$apps[] | select((.value | has("plans") | not) or (.value.plans | index($p)))][-1].key // $apps[0].key)] | min end) as $a
+          | [.decisions[$a + 1:][] | select(approval | not)] as $after
+          | if ($after | length) == 0 then "no decisions since the contract was approved (\(.decisions[$a].id))"
+            else $after[] | line end
         end'
       ;;
     evidence)

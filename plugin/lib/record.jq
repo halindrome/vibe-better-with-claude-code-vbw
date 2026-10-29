@@ -104,14 +104,19 @@ if type != "object" then ["record must be a JSON object"] else
 | ([($r.shipped // [])[]?.id] + [($r.parked // [])[]?.id] + [$r.milestone.id?]) as $milestones
 | ($plans | map({key: .id, value: (.after // [])}) | from_entries) as $graph
 | [
-    ( select(($r | has("protected") | not) and ($r.schema == 4 or $r.schema == 5))
-      | "protected is missing: a schema-4 or schema-5 record must carry the protected field" ),
-    ( select(($r | has("protected")) and $r.schema != 4 and $r.schema != 5)
-      | "protected is only for a schema-4 or schema-5 record" ),
-    ( select((($r.settings // {}) | type) == "object" and (($r.settings.efforts // null) != null) != ($r.schema == 5))
-      | if $r.schema == 5 then "schema 5 is only for a record with settings.efforts; without them the schema is 4"
-        else "settings.efforts needs schema 5, so a VBW that reads only up to schema 4 asks for an update" end ),
-    ( select(($r | has("protected") | not) and $r.schema != 4 and $r.schema != 5
+    ( select(($r | has("protected") | not) and ($r.schema == 4 or $r.schema == 5 or $r.schema == 6))
+      | "protected is missing: a schema-4, 5 or 6 record must carry the protected field" ),
+    ( select(($r | has("protected")) and $r.schema != 4 and $r.schema != 5 and $r.schema != 6)
+      | "protected is only for a schema-4, 5 or 6 record" ),
+    ( select((($r.settings // {}) | type) == "object" and (($r.settings.efforts // null) != null)
+             and $r.schema != 5 and $r.schema != 6)
+      | "settings.efforts needs schema 5 (6 with a decision's plans), so a VBW that reads only up to schema 4 asks for an update" ),
+    ( select($r.schema == 5 and ((($r.settings // {}) | type) != "object" or ($r.settings.efforts // null) == null))
+      | "schema 5 is only for a record with settings.efforts; without them the schema is 4" ),
+    ( select(((($r.decisions // []) | type) == "array" and any(($r.decisions // [])[]?; type == "object" and has("plans"))) != ($r.schema == 6))
+      | if $r.schema == 6 then "schema 6 is only for a record with a decision that names its plans"
+        else "a decision that names its plans needs schema 6, so a VBW that reads only up to schema 5 asks for an update" end ),
+    ( select(($r | has("protected") | not) and $r.schema != 4 and $r.schema != 5 and $r.schema != 6
              and $r.schema != (if ($r | has("recommendation")) or ((($r.todos // []) | type) == "array" and any(($r.todos // [])[]?; type == "object" and (has("sort") or has("size")))) then 3
                                elif (($r.checks // []) | type) == "array" and any(($r.checks // [])[]?; type == "object" and .alone == true) then 2 else 1 end))
       | "schema must be 3 when a todo is sorted or a recommendation is stored; schema must be 2 when a check is alone, else 1" ),
@@ -309,8 +314,9 @@ if type != "object" then ["record must be a JSON object"] else
         status_rule(["open","in_progress","done","dropped"]) ),
 
     ( arr("decisions")[]
-      | field_rule(["id","text","why","at"]),
+      | field_rule(["id","text","why","at","plans"]),
         ( select((.text | nonempty) | not) | "\(.id) needs non-empty text" ),
+        ( select(has("plans") and ((.plans | type) != "array" or any(.plans[]; nonempty | not))) | "\(.id) plans must be an array of plan ids" ),
         ( select(has("why") and (.why | nonempty | not)) | "\(.id) why must be a non-empty string" ),
         ( select((.at | iso) | not) | "\(.id) needs an ISO-8601 UTC timestamp" ) ),
 

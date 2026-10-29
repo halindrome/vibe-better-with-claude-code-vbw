@@ -8,7 +8,7 @@
 # drops it instead, so readers take the record (bash 3.2 compares file times in
 # whole seconds and would keep a glance written in the same second).
 edit_record() {
-  jq "$1 | if has(\"protected\") then .protected = ([.checks[]?.files // [] | .[]] | unique) | .schema = 4 else . end" .vbw/record.json > "$TEST_ROOT/edit.json" && cp "$TEST_ROOT/edit.json" .vbw/record.json
+  jq "$1 | if has(\"protected\") then .protected = ([.checks[]?.files // [] | .[]] | unique) | .schema = ([.schema, 4] | max) else . end" .vbw/record.json > "$TEST_ROOT/edit.json" && cp "$TEST_ROOT/edit.json" .vbw/record.json
   rm -f .vbw/runtime/glance.json
 }
 

@@ -28,7 +28,7 @@ setup() {
     | .commands = {lint: ["sh","lint.sh"]}
     | .phases = [{id:"P1", title:"Greet", reqs:["R1"], milestone:"M1"}]
     | .plans = [{id:"P1.1", phase:"P1", title:"Greet", reqs:["R1"], files:["greet.sh"], after:[], status:"done"}]
-    | del(.requirements[]?.rules) | if has("protected") then .protected = ([.checks[]?.files // [] | .[]] | unique) | .schema = 4 else . end' \
+    | del(.requirements[]?.rules) | if has("protected") then .protected = ([.checks[]?.files // [] | .[]] | unique) | .schema = ([.schema, 4] | max) else . end' \
     .vbw/record.json > "$TEST_ROOT/e.json" && cp "$TEST_ROOT/e.json" .vbw/record.json
   git add -A && git commit -q -m "chore(vbw): plan"
   "$VBW" approve > /dev/null

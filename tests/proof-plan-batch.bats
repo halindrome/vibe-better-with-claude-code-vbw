@@ -83,7 +83,7 @@ SH
     jq --argjson c "$checks" '.checks = $c
       | .phases = [{id: "P1", title: "Shop", reqs: ["R1"], milestone: "M1"}]
       | .plans = [{id: "P1.1", phase: "P1", title: "Shop", reqs: ["R1"], files: ["src/zzz.txt"], after: [], status: "done"}]
-      | del(.requirements[]?.rules) | if has("protected") then .protected = ([.checks[]?.files // [] | .[]] | unique) | .schema = 4 else . end' \
+      | del(.requirements[]?.rules) | if has("protected") then .protected = ([.checks[]?.files // [] | .[]] | unique) | .schema = ([.schema, 4] | max) else . end' \
       .vbw/record.json > "$TEST_ROOT/edit.json"
     cp "$TEST_ROOT/edit.json" .vbw/record.json
     git add -A && git commit -q -m "chore(vbw): plan"
@@ -104,7 +104,7 @@ counted() {
 count() { [ -f "$COUNT_DIR/$1" ] && wc -l < "$COUNT_DIR/$1" | tr -d ' ' || echo 0; }
 
 edit_record() {
-  jq "$1 | del(.requirements[]?.rules) | if has(\"protected\") then .protected = ([.checks[]?.files // [] | .[]] | unique) | .schema = 4 else . end" .vbw/record.json > "$TEST_ROOT/edit.json" && cp "$TEST_ROOT/edit.json" .vbw/record.json
+  jq "$1 | del(.requirements[]?.rules) | if has(\"protected\") then .protected = ([.checks[]?.files // [] | .[]] | unique) | .schema = ([.schema, 4] | max) else . end" .vbw/record.json > "$TEST_ROOT/edit.json" && cp "$TEST_ROOT/edit.json" .vbw/record.json
   rm -f .vbw/runtime/glance.json
 }
 

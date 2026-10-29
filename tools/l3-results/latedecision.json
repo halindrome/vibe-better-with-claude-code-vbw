@@ -1,0 +1,34 @@
+{
+  "scenario": "latedecision",
+  "fixture": "greet.sh and farewell.sh, one express phase each; contract approved and greet.sh built before the session; then the user recorded a decision for unbuilt farewell.sh (See you instead of Goodbye, and a --quiet flag no plan, requirement or check names) and changed R2 and C2's test to match, so the contract waits for approval again; the user types /vbw:vibe and approves by the choice",
+  "cost_usd": 0.3827,
+  "evidence_level": "L3",
+  "at": "2026-10-28T20:21:58Z",
+  "passed": true,
+  "facts": {
+    "reapproval_plans": [
+      []
+    ],
+    "approval_questions": 1,
+    "dev_asked_with_plan_id": true,
+    "dev_saw_decision": true,
+    "dev_since_approval_output": "P2.1 farewell.sh [building]\nfiles: farewell.sh\ntasks:\n  1. farewell.sh prints Goodbye, NAME! or Goodbye, world! without a name\nrequirements:\n  R2 [auto] ./farewell.sh Ana prints \"See you, Ana!\"; without a name it prints \"See you, world!\"\nrules:\n  R2.1 a name gets See you -> C2\n  R2.2 no name says See you to the world -> C2\ntier: express\nchecks:\n  C2 (R2) sh test_farewell.sh [protects test_farewell.sh]\nD2 farewell.sh says \"See you, NAME!\" and \"See you, world!\" instead of Goodbye (I already changed R2 and the C2 test to match), and takes a --quiet flag that prints nothing (why: Goodbye sounds final)",
+    "quiet_flag_in_code": true,
+    "quiet_prints_nothing": true,
+    "check_passes": true,
+    "built_through_plan": true,
+    "decisions_added": [],
+    "fixes": 0,
+    "since_approval_plan_now": "D2 farewell.sh says \"See you, NAME!\" and \"See you, world!\" instead of Goodbye (I already changed R2 and the C2 test to match), and takes a --quiet flag that prints nothing (why: Goodbye sounds final)",
+    "since_approval_no_id_now": "no decisions since the contract was approved (D3)"
+  },
+  "not_tested": [
+    "a plan built before the decision and reset to be built again (vbw plan reset)",
+    "the user recording the decision by typing in the session (it was recorded with vbw decide before the session)",
+    "a re-approval that rewrote the plan to hold the decision",
+    "a decision that needs files outside the plan (DEVN-04)",
+    "a fix round reading decisions (fixing.js)",
+    "QA judging a decision-driven change (express phases have no QA)",
+    "the milestone shipped (the run stops once every plan is built)"
+  ]
+}

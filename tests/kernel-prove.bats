@@ -7,7 +7,7 @@ load helper
 load fixture-helper
 
 # Hand edits of the record keep the protected list in step with the checks (R150), as the approved check files do.
-KEEP_PROTECTED='if has("protected") then .protected = ([.checks[]?.files // [] | .[]] | unique) | .schema = 4 else . end'
+KEEP_PROTECTED='if has("protected") then .protected = ([.checks[]?.files // [] | .[]] | unique) | .schema = ([.schema, 4] | max) else . end'
 
 # The planned shop, the same shop approved, and approved with P1.1 built (build_pay),
 # each built once per file and copied for every test.

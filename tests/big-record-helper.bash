@@ -61,7 +61,7 @@ twin_project() {
       | .decisions = ([range(1; 121) | {id: "D\(.)", text: ("Old decision \(.)" | p), at: $at}]
                       + [{id: "D121", text: ("Old long decision" + fill($one)), at: $at}])
       | .todos = [range(1; 31) | {id: "T\(.)", text: ("Old idea \(.)" | p), status: "done"}]
-      | if has("protected") then .protected = ([.checks[]?.files // [] | .[]] | unique) | .schema = 4 else . end' \
+      | if has("protected") then .protected = ([.checks[]?.files // [] | .[]] | unique) | .schema = ([.schema, 4] | max) else . end' \
       .vbw/record.json > .vbw/runtime/fixture.json || exit 1
     # The fixture is written as a project restored from git would hold it, not through vbw:
     # no glance beside it either (a kernel write refreshes the glance; a restore has none).

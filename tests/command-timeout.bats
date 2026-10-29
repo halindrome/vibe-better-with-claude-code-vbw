@@ -12,7 +12,7 @@
 load helper
 
 # Hand edits of the record keep the protected list in step with the checks (R150).
-KEEP_PROTECTED='if has("protected") then .protected = ([.checks[]?.files // [] | .[]] | unique) | .schema = 4 else . end'
+KEEP_PROTECTED='if has("protected") then .protected = ([.checks[]?.files // [] | .[]] | unique) | .schema = ([.schema, 4] | max) else . end'
 
 setup() {
   vbw_setup

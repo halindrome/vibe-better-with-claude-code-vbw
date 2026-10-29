@@ -38,7 +38,7 @@ teardown_file() { fixture_teardown; }
   [[ "$output" != *"Contract approved"* ]] || false
 }
 
-@test "T123: after a second approval only the decisions after it are listed" {
+@test "T123: after a second approval only the decisions after it are listed; for a plan, after the latest approval that changed it" {
   "$VBW" approve > /dev/null
   "$VBW" decide "first correction" > /dev/null
   printf '{"plans": [{"id": "P1.1", "phase": "P1", "title": "Pay by card", "reqs": ["R1"], "files": ["src/pay.txt"]}]}' \
@@ -49,6 +49,96 @@ teardown_file() { fixture_teardown; }
   [ "$status" -eq 0 ]
   [[ "$output" == *"second correction"* ]] || false
   [[ "$output" != *"first correction"* ]] || false
+  # The second approval changed P1.1: its plan now holds the first correction.
+  vbw_run show decisions --since-approval P1.1
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"second correction"* ]] || false
+  [[ "$output" != *"first correction"* ]] || false
+}
+
+@test "#705: an approval that left a plan as it was keeps the decisions before it in that plan's list and its fixes'" {
+  "$VBW" approve > /dev/null
+  "$VBW" decide "revert the forced line; check C1 changes to match" > /dev/null
+  # The decision itself changes a check, which needs an approval again; the plan is unchanged.
+  printf 'grep -qx paid src/pay.txt # per the decision\n' > tests/pay.sh
+  "$VBW" approve > /dev/null
+  "$VBW" decide "second correction" > /dev/null
+  jq '.fixes = [{id: "F1", req: "R1", attempts: 0, status: "open", note: "C1"}]' .vbw/record.json > "$TEST_ROOT/r.json"
+  cp "$TEST_ROOT/r.json" .vbw/record.json
+  local id
+  for id in P1.1 F1; do
+    vbw_run show decisions --since-approval "$id"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"revert the forced line"* ]] || { echo "$id: the decision before the re-approval is missing"; false; }
+    [[ "$output" == *"second correction"* ]] || false
+    [[ "$output" != *"Contract approved"* ]] || { echo "$id: an approval is listed as a decision"; false; }
+  done
+  vbw_run show decisions --since-approval P9
+  [ "$status" -ne 0 ]
+  [[ "$output" == *P9* ]] || false
+}
+
+@test "#705: an approval an older VBW recorded, with no plans, counts as changing every plan, even when it is not the first" {
+  "$VBW" approve > /dev/null
+  "$VBW" decide "before the old approval" > /dev/null
+  printf 'grep -qx paid src/pay.txt # edited\n' > tests/pay.sh
+  "$VBW" approve > /dev/null
+  # That approval as an older VBW wrote it: no plans, and the schema it had then.
+  jq '(.decisions[] | select(.text | startswith("Contract approved"))) |= del(.plans)
+      | .schema = (if .settings.efforts then 5 else 4 end)' .vbw/record.json > "$TEST_ROOT/r.json"
+  cp "$TEST_ROOT/r.json" .vbw/record.json
+  "$VBW" decide "after the old approval" > /dev/null
+  printf 'grep -qx paid src/pay.txt # edited again\n' > tests/pay.sh
+  "$VBW" approve > /dev/null
+  vbw_run show decisions --since-approval P1.1
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"after the old approval"* ]] || { echo "$output"; false; }
+  [[ "$output" != *"before the old approval"* ]] || { echo "$output"; false; }
+}
+
+@test "#705: several ids start at the earliest of their plans' approvals; a project command's fix reads every plan's" {
+  "$VBW" config rigor standard > /dev/null # an express phase holds one plan
+  "$VBW" approve > /dev/null
+  "$VBW" decide "decision A" > /dev/null
+  printf '{"plans": [{"id": "P1.2", "phase": "P1", "title": "Receipt", "reqs": ["R1"], "files": ["src/receipt.txt"]}]}' \
+    | "$VBW" apply --patch > /dev/null
+  "$VBW" approve > /dev/null
+  "$VBW" decide "decision B" > /dev/null
+  printf '{"plans": [{"id": "P1.1", "phase": "P1", "title": "Pay by card", "reqs": ["R1"], "files": ["src/pay.txt"]}]}' \
+    | "$VBW" apply --patch > /dev/null
+  "$VBW" approve > /dev/null
+  "$VBW" decide "decision C" > /dev/null
+  jq '.commands.test = ["true"] | .fixes = [{id: "F1", command: "test", attempts: 0, status: "open", note: "test"}]' \
+    .vbw/record.json > "$TEST_ROOT/r.json"
+  cp "$TEST_ROOT/r.json" .vbw/record.json
+  local ids want
+  # P1.1 changed last: C only. P1.2 was added by the second approval: B and C.
+  # Two plans, or a command fix (every plan): the earlier window, B and C.
+  for want in "P1.1:C" "P1.2:BC" "P1.1 P1.2:BC" "P1.2 P1.1:BC" "F1:BC"; do
+    ids=${want%%:*}
+    # shellcheck disable=SC2086 # the ids are words
+    vbw_run show decisions --since-approval $ids
+    [ "$status" -eq 0 ] || { echo "$ids: $output"; false; }
+    [[ "$output" != *"decision A"* ]] || { echo "$ids lists A: $output"; false; }
+    [[ "$output" == *"decision C"* ]] || { echo "$ids misses C: $output"; false; }
+    case ${want#*:} in
+      C) [[ "$output" != *"decision B"* ]] || { echo "$ids lists B: $output"; false; } ;;
+      BC) [[ "$output" == *"decision B"* ]] || { echo "$ids misses B: $output"; false; } ;;
+    esac
+  done
+}
+
+@test "#705: a record whose approval names its plans is schema 6, and a VBW that reads up to schema 5 asks for an update, never calling it corrupt" {
+  "$VBW" approve > /dev/null
+  jq -e '.schema == 4 and all(.decisions[]; has("plans") | not)' .vbw/record.json > /dev/null
+  printf 'grep -qx paid src/pay.txt # changed\n' > tests/pay.sh
+  "$VBW" approve > /dev/null
+  jq -e '.schema == 6 and (.decisions[-1].plans == [])' .vbw/record.json > /dev/null || { jq -c '{schema, decisions}' .vbw/record.json; false; }
+  cp -R "$PLUGIN_ROOT" "$TEST_ROOT/plugin"
+  sed -i.bak 's/^VBW_SCHEMA_MAX=.*$/VBW_SCHEMA_MAX=5/' "$TEST_ROOT/plugin/lib/record.sh"
+  grep -qx 'VBW_SCHEMA_MAX=5' "$TEST_ROOT/plugin/lib/record.sh"
+  run "$TEST_ROOT/plugin/bin/vbw" status < /dev/null
+  [ "$status" -eq 4 ] && [[ "$output" == *"needs a newer VBW"* ]] || { echo "$output"; false; }
 }
 
 @test "T123: with no decision since the approval it says so and succeeds" {
@@ -77,7 +167,7 @@ teardown_file() { fixture_teardown; }
   run node "$RUN" "$PLUGIN_ROOT/workflows/building.js" '{"plans":["P1.1","P1.2"],"docs":["P1.2"]}' '{}'
   [ "$status" -eq 0 ] || { echo "$output"; false; }
   printf '%s' "$output" | jq -e --arg c "$CMD" '[.calls[] | select(.opts.agentType == "vbw:dev" or .opts.agentType == "vbw:docs")]
-    | length == 2 and all(.prompt | contains($c))' > /dev/null
+    | length == 2 and any(.prompt | contains($c + " P1.1")) and any(.prompt | contains($c + " P1.2"))' > /dev/null
 }
 
 @test "T123: every Dev prompt of a fix round names the decisions-since-approval command" {
@@ -85,7 +175,7 @@ teardown_file() { fixture_teardown; }
   run node "$RUN" "$PLUGIN_ROOT/workflows/fixing.js" '{"groups":[["F1","F2"],["F3"]]}' '{}'
   [ "$status" -eq 0 ] || { echo "$output"; false; }
   printf '%s' "$output" | jq -e --arg c "$CMD" '[.calls[] | select(.opts.agentType == "vbw:dev")]
-    | length == 2 and all(.prompt | contains($c))' > /dev/null
+    | length == 2 and any(.prompt | contains($c + " F1 F2")) and any(.prompt | contains($c + " F3"))' > /dev/null
 }
 
 @test "T123: the Dev and Docs agents read those decisions as binding over the plan" {

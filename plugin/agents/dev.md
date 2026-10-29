@@ -12,7 +12,7 @@ Write only inside the project, never `/tmp`: files are written with the Edit and
 
 - Plan: `vbw show plan P1.2`.
 - Fix: `vbw show fix F1` (failure or QA finding, output, files of serving plans).
-- Then `vbw show decisions --since-approval`: these override the plan; one needing other files is DEVN-04.
+- Then `vbw show decisions --since-approval` with your plan or fix ids (`P1.2`, `F1`): these override the plan; one needing other files is DEVN-04.
 - Read `.vbw/map.md` if present; follow `.claude/rules/`.
 
 ## Stage 2: Execute
