@@ -12,14 +12,14 @@
 # each one's lines print together when it ends.
 #
 # Scenarios: greenfield, reject, resume, change, convert, balanced, docs, qafix,
-# decision, debug, research, edgecase, leftover, recheck, approval, newcomer, senior, panel, steptime, road, pluginoff, tools, legacy, nolegacy, smallchange, costs, loop, plugindir, sessions, taskbreak, fixchecks, failoutput, leaveout, hiddenrecord, latedecision. A user
+# decision, debug, research, edgecase, leftover, recheck, approval, newcomer, senior, panel, steptime, road, pluginoff, tools, legacy, nolegacy, smallchange, costs, loop, plugindir, sessions, taskbreak, fixchecks, failoutput, leaveout, hiddenrecord, latedecision, ignoredplanning, stalefix, mapsnapshot, alreadyfixed. A user
 # answers every question with VBW's recommendation unless the scenario says otherwise.
 set -uo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 l3() { bash "$ROOT/tools/l3.sh" "$@"; }
 VBW="$ROOT/plugin/bin/vbw"
-ALL="greenfield reject resume change convert balanced docs qafix decision debug research edgecase leftover recheck approval newcomer senior panel steptime road pluginoff tools legacy nolegacy smallchange costs loop plugindir sessions taskbreak fixchecks failoutput leaveout hiddenrecord latedecision"
+ALL="greenfield reject resume change convert balanced docs qafix decision debug research edgecase leftover recheck approval newcomer senior panel steptime road pluginoff tools legacy nolegacy smallchange costs loop plugindir sessions taskbreak fixchecks failoutput leaveout hiddenrecord latedecision ignoredplanning stalefix mapsnapshot alreadyfixed"
 RESULTS="$ROOT/tools/l3-results"
 STEPS=60
 
@@ -301,6 +301,63 @@ scenario_hiddenrecord() {
       '{gitignore_rule: $r, record_committed: $t, unhide_lines: $u, record_commits: $n}')
     result_write hiddenrecord "$fixture" "${cost_usd:-0}" "$passed" "$facts" \
       '["a rule hiding the whole .vbw folder (covered by tests/hidden-record.bats, L1)","a rule in .git/info/exclude or a global excludes file","an existing project upgraded from an older .vbw/.gitignore","the spec file staying untracked until the first full commit"]'
+  }
+}
+
+# kernel_trees: the kernel's own fingerprints of the project in $dir, the ones
+# vbw next compares with the evidence: "CODE_TREE HEAD_TREE" (empty on failure).
+kernel_trees() {
+  (cd "$dir" && bash -c 'VBW_LIB="$1/plugin/lib"; for l in core record; do . "$VBW_LIB/$l.sh"; done
+    vbw_project; printf "%s %s\n" "$(vbw_code_tree)" "$(vbw_head_tree)"' _ "$ROOT") 2> /dev/null
+}
+
+# A .gitignore that ignores .vbw-planning (#695), with the folder a VBW 1 leftover
+# would leave: one file tracked from before the rule, one untracked. The code
+# fingerprint must still work: the proof records a tree, after the session the
+# kernel's fingerprints equal the evidence (vbw next sees no change), and a proof
+# after an unrelated commit reuses results. Judged in the record and git, never
+# on screen text.
+scenario_ignoredplanning() {
+  new_project
+  mkdir -p "$dir/.vbw-planning"
+  printf '# State\n\nPhase 1 in progress.\n' > "$dir/.vbw-planning/STATE.md"
+  git -C "$dir" add .vbw-planning/STATE.md && git -C "$dir" commit -qm "chore: VBW 1 state"
+  printf '.vbw-planning/\n' > "$dir/.gitignore"
+  printf 'scratch\n' > "$dir/.vbw-planning/notes.md"
+  git -C "$dir" add .gitignore && git -C "$dir" commit -qm "chore: ignore the planning folder"
+  # A file no check will read, edited after the session: an edit keeps the root listing, which a
+  # check that runs ./greet.sh has on its read list (macOS, 2026-10-29), where a new root file would not.
+  printf '# Notes\n' > "$dir/NOTES.md"
+  git -C "$dir" add NOTES.md && git -C "$dir" commit -qm "docs: notes"
+  start=$GREET
+  fixture="greet.sh from scratch in a project whose committed .gitignore holds '.vbw-planning/', with .vbw-planning/STATE.md tracked from before the rule and .vbw-planning/notes.md untracked; the user types /vbw:vibe and the build runs to the end; then the scenario commits an unrelated NOTES.md and runs vbw prove"
+  checks() {
+    common_checks
+    local tree head now nowhead ignored=false proved=false unchanged=false tree2="" proved2=false reused=0 passed=true facts
+    tree=$(jq -r '.evidence.tree // empty' "$dir/.vbw/record.json" 2> /dev/null)
+    head=$(jq -r '.evidence.head // empty' "$dir/.vbw/record.json" 2> /dev/null)
+    [ -n "$tree" ] && jq -e '.evidence.passed == true' "$dir/.vbw/record.json" > /dev/null 2>&1 && proved=true
+    git -C "$dir" check-ignore -q .vbw-planning/notes.md && git -C "$dir" ls-files --error-unmatch .vbw-planning/STATE.md > /dev/null 2>&1 && ignored=true
+    read -r now nowhead <<< "$(kernel_trees)"
+    [ -n "$tree" ] && [ "$now" = "$tree" ] && { [ -z "$head" ] || [ "$nowhead" = "$head" ]; } && unchanged=true
+    # A user commit no check reads (an edit of a seeded file), then a proof: the fingerprint moves
+    # and results are reused.
+    printf '# Notes\n\nMore notes.\n' > "$dir/NOTES.md"
+    git -C "$dir" add NOTES.md && git -C "$dir" commit -qm "docs: more notes"
+    (cd "$dir" && "$VBW" prove > /dev/null 2>&1) || true
+    tree2=$(jq -r '.evidence.tree // empty' "$dir/.vbw/record.json" 2> /dev/null)
+    [ -n "$tree2" ] && [ "$tree2" != "$tree" ] && jq -e '.evidence.passed == true' "$dir/.vbw/record.json" > /dev/null 2>&1 && proved2=true
+    reused=$(jq '[.evidence | (.checks // {}), (.commands // {}), (.test_files // {}) | .[] | select(.reused == true)] | length' "$dir/.vbw/record.json" 2> /dev/null || echo 0)
+    expect "the .vbw-planning rule holds: notes.md ignored, STATE.md tracked ($ignored)" [ "$ignored" = true ]
+    expect "the session's proof passed and recorded a tree (${tree:-none})" [ "$proved" = true ]
+    expect "the kernel's fingerprints equal the evidence after the session ($unchanged)" [ "$unchanged" = true ]
+    expect "the proof after a new commit passed with a new tree (${tree2:-none})" [ "$proved2" = true ]
+    expect "that proof reused results ($reused)" [ "${reused:-0}" -ge 1 ]
+    [ "$failed" -eq 0 ] || passed=false
+    facts=$(jq -n --argjson i "$ignored" --arg t "$tree" --argjson p "$proved" --argjson u "$unchanged" --arg t2 "$tree2" --argjson p2 "$proved2" --argjson r "${reused:-0}" \
+      '{planning_ignored_tracked_and_untracked: $i, proof_passed: $p, evidence_tree: $t, fingerprints_match_evidence: $u, second_proof_passed: $p2, second_tree: $t2, reused_units: $r}')
+    result_write ignoredplanning "$fixture" "${cost_usd:-0}" "$passed" "$facts" \
+      '["a rule ignoring the .vbw folder itself","a rule in .git/info/exclude or a global excludes file","converting the VBW 1 folder (the review recommends Start fresh for a folder with no readable plan)","a real VBW 1 project: the folder holds two small files","vbw next run in the session at each step: the fingerprints are compared once, after the session"]'
   }
 }
 
@@ -947,7 +1004,9 @@ panel_seed() {
   "$VBW" spec sync > /dev/null || return 1
   printf '#!/bin/sh\necho "Hello, ${1:-world}!"\n' > greet.sh
   printf '[ "$(sh greet.sh Ana)" = "Hello, Ana!" ] && [ "$(sh greet.sh)" = "Hello, world!" ]\n' > test_greet.sh
-  printf '[ "$(sh farewell.sh Ana)" = "Goodbye, Ana!" ] && [ "$(sh farewell.sh)" = "Goodbye, world!" ]\n' > test_farewell.sh
+  # Once farewell.sh exists its check takes 20 s, so the Dev who builds it works for minutes
+  # and its Timeline lane reads a time in minutes (#696); red stays quick.
+  printf '[ -f farewell.sh ] || exit 1\nsleep 20\n[ "$(sh farewell.sh Ana)" = "Goodbye, Ana!" ] && [ "$(sh farewell.sh)" = "Goodbye, world!" ]\n' > test_farewell.sh
   git add -A && git commit -qm "feat: greet.sh and its test" || return 1
   panel_apply "farewell.sh prints Goodbye, NAME! or Goodbye, world! without a name" || return 1
   git add -A && git commit -qm "chore: plan" || return 1
@@ -979,7 +1038,7 @@ scenario_panel() {
   new_project
   (cd "$dir" && "$VBW" init > /dev/null && "$VBW" config rigor standard > /dev/null && panel_seed) \
     || { say "setup failed: could not seed the two-phase project"; return 1; }
-  fixture="greet.sh and farewell.sh, two phases: the first passed QA and its requirement R1 is proven, the second plan was reworded after approval and waits for it again; no finished steps in the clone (so no estimate basis); window 200 columns wide, resized to 200x24 and to 60x40 with the needs-you line up and again while the build's helpers work; the user then approves and the build runs"
+  fixture="greet.sh and farewell.sh, two phases: the first passed QA and its requirement R1 is proven, the second plan was reworded after approval and waits for it again; no finished steps in the clone (so no estimate basis); window 200 columns wide, resized to 200x24 and to 60x40 with the needs-you line up and again while the build's helpers work; the user then approves and the build runs; after it the user clicks the Timeline tab and its lanes are read at 200x60 and at 60x40 (#696); the farewell check waits 20 s once farewell.sh exists, so the Dev's lane runs to minutes"
   start="/vbw:panel"
   facts="{}"
   panel_text() { screen | sed 's/[[:space:]][[:space:]]*/ /g'; }
@@ -1023,6 +1082,53 @@ scenario_panel() {
     snd=$(panel_wait "Sound is off.")
     facts=$(jq -c --arg s "$(has "$snd" "Sound is off.")" '. + {sound_shown_off: ($s == "true")}' <<< "$facts")
     comms
+    timeline
+  }
+  # #696: the Timeline tab after the build, in the wide window and in the narrow one.
+  # Each lane is one screen line: a name led by its role (cut in a narrow pane), its bar
+  # and its time. A lane wrapped onto two lines leaves a line under it with a bar or a
+  # time and no name. Echoes true or false, then the lane lines, as the screen at $1
+  # columns by $2 rows shows them (the user clicks the Timeline tab until they show).
+  LANE='^ *(arch|lead|dev|qa|scou|debu|docs|agen)[^█]* (█)+ [0-9]+ (min [0-9]+ s|min|s) *$'
+  timeline_lanes() {
+    local sess="vbw-l3-$scenario" s rows row pre i
+    tmux resize-window -t "$sess" -x "$1" -y "$2" 2> /dev/null
+    sleep 8
+    for ((i = 0; i < 30; i++)); do
+      s=$(screen)
+      # The panel's own text: what is between its borders.
+      rows=$(printf '%s\n' "$s" | sed -n 's/^[^│]*│//p' | sed 's/│.*$//')
+      printf '%s\n' "$rows" | grep -E "$LANE" > /dev/null && break
+      row=$(printf '%s\n' "$s" | grep -n '\[ Timeline \]\|\[ Time \]' | head -1 | cut -d: -f1)
+      pre=$(printf '%s\n' "$s" | grep '\[ Timeline \]\|\[ Time \]' | head -1 | sed 's/\[ Time.*//')
+      [ -n "$row" ] && l3 click "$scenario" "$(($(printf '%s' "$pre" | LC_ALL=en_US.UTF-8 wc -m) + 4))" "$row"
+      sleep 2
+    done
+    printf '%s\n' "$s" > "$dir.panel.timeline.$1x$2.screen.txt"
+    # From the first lane to the first blank line (the runs list and the sparkline come
+    # after one): every line is a lane, or the step's own line that ends the lanes.
+    printf '%s\n' "$rows" | LC_ALL=en_US.UTF-8 awk -v lane="$LANE" '
+      !on && $0 ~ lane { on = 1 }
+      on && !done {
+        if ($0 ~ lane) { n++; out = out "\n" $0; next }
+        if ($0 ~ /^ *$/) { done = 1; next }
+        if ($0 ~ /█/ || $0 ~ /^ *[0-9]* *(min|s)?( [0-9]+ s)? *$/) bad = 1
+        done = 1
+      }
+      END { print ((n > 0 && !bad) ? "true" : "false") out }'
+  }
+  timeline() {
+    local wide narrow
+    wide=$(timeline_lanes 200 60)
+    narrow=$(timeline_lanes "$NARROW_COLUMNS" 40)
+    tmux resize-window -t "vbw-l3-$scenario" -x 200 -y 60 2> /dev/null
+    [ "$(printf '%s\n' "$wide" | head -1)" = true ] || say "Timeline, wide window: a lane is not one line" >&2
+    [ "$(printf '%s\n' "$narrow" | head -1)" = true ] || say "Timeline, narrow window: a lane is not one line" >&2
+    facts=$(jq -c --arg w "$wide" --arg n "$narrow" '
+      def lanes: split("\n") | .[1:] | map(sub(" +$"; ""));
+      . + {timeline_one_line_wide: (($w | split("\n") | .[0]) == "true"), timeline_one_line_narrow: (($n | split("\n") | .[0]) == "true"),
+           timeline_lanes_wide: ($w | lanes), timeline_lanes_narrow: ($n | lanes),
+           timeline_time_in_minutes: ([$w, $n | lanes[] | test(" [0-9]+ min")] | any)}' <<< "$facts")
   }
   # R189: Comms in the real window. Resize the window, wait for the redraw, and
   # read what is drawn: the prompt box must still be whole (two borders of the full
@@ -1159,14 +1265,14 @@ scenario_panel() {
     sleep 2
     l3 stop "$scenario"
     local k passed
-    for k in opened_by_itself milestone_shown progress_shown doing_shown need_shown tabs_shown next_row_shown cost_shown sound_shown_off closed_by_click closed_stays_closed sound_toggle_persisted need_line_shown need_line_cleared helper_seen_working helper_done_cleared no_spill_short no_spill_narrow helper_line_short tabs_whole_short tabs_whole_narrow; do
+    for k in opened_by_itself milestone_shown progress_shown doing_shown need_shown tabs_shown next_row_shown cost_shown sound_shown_off closed_by_click closed_stays_closed sound_toggle_persisted need_line_shown need_line_cleared helper_seen_working helper_done_cleared no_spill_short no_spill_narrow helper_line_short tabs_whole_short tabs_whole_narrow timeline_one_line_wide timeline_one_line_narrow timeline_time_in_minutes; do
       expect "the panel: $k" jq -e --arg k "$k" '.[$k] == true' <<< "$facts"
     done
     expect "the panel shows an estimate or the plain 'no basis yet'" jq -e '.estimate_shown | length > 0' <<< "$facts"
-    passed=$(jq -r '[.opened_by_itself, .milestone_shown, .progress_shown, .doing_shown, .need_shown, .tabs_shown, .next_row_shown, .cost_shown, .sound_shown_off, .closed_by_click, .closed_stays_closed, .sound_toggle_persisted, .need_line_shown, .need_line_cleared, .helper_seen_working, .helper_done_cleared, .no_spill_short, .no_spill_narrow, .helper_line_short, .tabs_whole_short, .tabs_whole_narrow, (.estimate_shown | length > 0)] | all' <<< "$facts")
+    passed=$(jq -r '[.opened_by_itself, .milestone_shown, .progress_shown, .doing_shown, .need_shown, .tabs_shown, .next_row_shown, .cost_shown, .sound_shown_off, .closed_by_click, .closed_stays_closed, .sound_toggle_persisted, .need_line_shown, .need_line_cleared, .helper_seen_working, .helper_done_cleared, .no_spill_short, .no_spill_narrow, .helper_line_short, .tabs_whole_short, .tabs_whole_narrow, .timeline_one_line_wide, .timeline_one_line_narrow, .timeline_time_in_minutes, (.estimate_shown | length > 0)] | all' <<< "$facts")
     [ "$passed" = true ] || failed=1
     result_write panel "$fixture" "${cost_usd:-0}" "$passed" "$facts" \
-      '["the sound itself (nothing was heard: the run only checks the switch)","what a person reads at a glance: wording and layout are judged on the screen text, not by a reader","no spill is read from the visible tmux screen after a resize (prompt box whole, Comms drawn once), not from a real terminal'"'"'s scrollback","one short window (200 columns, 24 rows) and one narrow window (60 columns, 40 rows), with the needs-you line and with helpers at work; no other size","Comms in the 60-column window: Mission Control fills that window and Comms'"'"' own line is not on screen there (seen in the run, not judged), so the narrow check holds the prompt box and the pane'"'"'s bottom edge only","the tab names read as whole [ Name ] buttons in the visible screen text, not their look or other sizes","Mission Control'"'"'s own rows and tabs at those sizes (held by tests/panel/r189/containment.test.mjs, L1)","figure counts and the motion levels (full, calm, off)","a failed helper, a celebration and a ship in the real window","a milestone shipped before the recommendation (the seed stores the recommendation on an active milestone)","a time estimate with a number"]'
+      '["the sound itself (nothing was heard: the run only checks the switch)","what a person reads at a glance: wording and layout are judged on the screen text, not by a reader","no spill is read from the visible tmux screen after a resize (prompt box whole, Comms drawn once), not from a real terminal'"'"'s scrollback","one short window (200 columns, 24 rows) and one narrow window (60 columns, 40 rows), with the needs-you line and with helpers at work; no other size","Comms in the 60-column window: Mission Control fills that window and Comms'"'"' own line is not on screen there (seen in the run, not judged), so the narrow check holds the prompt box and the pane'"'"'s bottom edge only","the tab names read as whole [ Name ] buttons in the visible screen text, not their look or other sizes","Mission Control'"'"'s own rows and tabs at those sizes (held by tests/panel/r189/containment.test.mjs, L1)","figure counts and the motion levels (full, calm, off)","a failed helper, a celebration and a ship in the real window","a milestone shipped before the recommendation (the seed stores the recommendation on an active milestone)","a time estimate with a number","Timeline lanes only from this run'"'"'s real helpers and their real times: no seeded run, no other size than 200x60 and 60x40, and lane times of an hour or more"]'
   }
 }
 
@@ -2234,6 +2340,68 @@ scenario_smallchange() {
   }
 }
 
+# An already-fixed bug (#717): the greet.sh milestone, whose plan also
+# committed the fix for GREET-7 (spaces around the name are trimmed) before
+# R1 was proven; the milestone is shipped, so no step is pending. The user
+# asks VBW to fix GREET-7 as if it still happened. Triage must check the code
+# first, say it is already fixed with the evidence, record that with
+# vbw decide, and add no requirement, no backlog item and no planning. (A first run committed the fix outside any
+# plan: vbw next then asked for a proof, the router ran it before triage and
+# the scenario ended in a ship. A pending ship would do the same.)
+alreadyfixed_seed() {
+  greet_plan_seed || return 1
+  printf '#!/bin/sh\necho "Hello, ${1:-world}!"\n' > greet.sh && chmod +x greet.sh
+  "$VBW" commit P1.1 "feat(P1.1): greet.sh" > /dev/null || return 1
+  printf '#!/bin/sh\nname=$(printf "%%s" "${1:-}" | sed "s/^ *//; s/ *$//")\necho "Hello, ${name:-world}!"\n' > greet.sh
+  "$VBW" commit P1.1 "fix(P1.1): trim spaces around the name (GREET-7)" > /dev/null || return 1
+  # shellcheck disable=SC1010 # "plan done" is a vbw subcommand
+  "$VBW" plan done P1.1 > /dev/null || return 1
+  "$VBW" prove --full > /dev/null || return 1
+  "$VBW" ship > /dev/null || return 1
+}
+
+scenario_alreadyfixed() {
+  new_project
+  (cd "$dir" && "$VBW" init > /dev/null && alreadyfixed_seed) || { say "setup failed: could not seed the greet.sh milestone with the GREET-7 fix"; return 1; }
+  fixture="greet.sh in a shipped milestone whose plan committed the GREET-7 fix (spaces around the name are trimmed); the user asks VBW to fix GREET-7"
+  fix_head=$(git -C "$dir" rev-parse HEAD)
+  fix_short=$(git -C "$dir" log -1 --format=%h --grep GREET-7)
+  seed_reqs=$(jq '.requirements | length' "$dir/.vbw/record.json")
+  seed_todos=$(jq '.todos | length' "$dir/.vbw/record.json")
+  seed_decisions=$(jq '.decisions | length' "$dir/.vbw/record.json")
+  start='/vbw:vibe Fix ticket GREET-7: ./greet.sh "  Ana " keeps the spaces and prints "Hello,   Ana !". It should print "Hello, Ana!".'
+  # Done when triage has answered: an already-fixed decision, or (wrongly) a new requirement or backlog item.
+  done_yet() {
+    jq -e --argjson d "$seed_decisions" --argjson q "$seed_reqs" --argjson t "$seed_todos" \
+      '(.decisions[$d:] | any(.text | test("already fixed"; "i"))) or (.requirements | length) > $q or (.todos | length) > $t or .milestone.id != "M1"' \
+      "$dir/.vbw/record.json" > /dev/null 2>&1
+  }
+  checks() {
+    local passed=true decided=false evidence=false planning=false unchanged=false nreq ntodo r="$dir/.vbw/record.json"
+    jq -e --argjson d "$seed_decisions" '.decisions[$d:] | any(.text | test("already fixed"; "i"))' "$r" > /dev/null 2>&1 && decided=true
+    # The evidence: the fix commit, or the line that handles it (greet.sh:<line>);
+    # never words the user's idea already holds.
+    jq -e --argjson d "$seed_decisions" --arg c "$fix_short" '[.decisions[$d:][] | select(.text | test("already fixed"; "i")) | .text + " " + (.why // "")]
+      | any(contains($c) or test("greet\\.sh:[0-9]"))' "$r" > /dev/null 2>&1 && evidence=true
+    nreq=$(jq --argjson q "$seed_reqs" '(.requirements | length) - $q' "$r" 2> /dev/null || echo -1)
+    ntodo=$(jq --argjson t "$seed_todos" '(.todos | length) - $t' "$r" 2> /dev/null || echo -1)
+    workflow_started planning && planning=true
+    [ -z "$(git -C "$dir" diff --name-only "$fix_head" -- greet.sh)" ] && unchanged=true
+    say "decided: $decided, evidence: $evidence, new requirements: $nreq, new todos: $ntodo, planning: $planning"
+    expect "recorded as already fixed" [ "$decided" = true ]
+    expect "the decision names the evidence" [ "$evidence" = true ]
+    expect "no requirement added ($nreq)" [ "$nreq" -eq 0 ]
+    expect "no backlog item added ($ntodo)" [ "$ntodo" -eq 0 ]
+    expect "no planning workflow was started" [ "$planning" = false ]
+    expect "greet.sh is unchanged" [ "$unchanged" = true ]
+    [ "$failed" -eq 0 ] || passed=false
+    result_write alreadyfixed "$fixture" "${cost_usd:-0}" "$passed" \
+      "$(jq -n --argjson d "$decided" --argjson e "$evidence" --argjson q "$nreq" --argjson t "$ntodo" --argjson p "$planning" --argjson u "$unchanged" \
+        '{already_fixed_decided: $d, evidence_named: $e, new_requirements: $q, new_todos: $t, planning_workflow: $p, code_unchanged: $u}')" \
+      '["the user answering it still happens","a fix that is only partly done","a bug fixed without a commit naming it","a fix committed outside any VBW plan (vbw next then asks for a proof first)","the Architect and Lead backstops (an already-met requirement that reaches planning)","the wording VBW shows the user (read by a person)"]'
+  }
+}
+
 # costs (R173): one VBW run through the real TUI with the working tree's status
 # line on (L3_STATUSLINE, tools/l3.sh), then vbw show costs --json. The cost data
 # comes from the status line, so without it there is nothing to read.
@@ -2872,6 +3040,185 @@ scenario_latedecision() {
           quiet_flag_in_code: $qc, quiet_prints_nothing: $qo, check_passes: $sy, built_through_plan: $pc, decisions_added: $a, fixes: $fx,
           since_approval_plan_now: $kn, since_approval_no_id_now: $ki}')" \
       '["a plan built before the decision and reset to be built again (vbw plan reset)","the user recording the decision by typing in the session (it was recorded with vbw decide before the session)","a re-approval that rewrote the plan to hold the decision","a decision that needs files outside the plan (DEVN-04)","a fix round reading decisions (fixing.js)","QA judging a decision-driven change (express phases have no QA)","the milestone shipped (the run stops once every plan is built)"]'
+  }
+}
+
+# stalefix_seed: greet.sh (R1, P1.1) and its release manifest CHECKSUMS.sha256 (R2, P2.1, checked
+# with shasum -c), both built and proven; then a commit by the user makes the no-name case fail and
+# regenerates the manifest, so the proof fails only C1 and opens a fix of R1. The right repair of
+# greet.sh, the only file a fix of R1 owns, makes the manifest's check fail.
+stalefix_seed() {
+  printf '# Greetings\n\n## Requirements\n\n- R1 [auto] ./greet.sh Ana prints "Hello, Ana!"; without a name it prints "Hello, world!"\n- R2 [auto] CHECKSUMS.sha256 lists the SHA-256 of greet.sh, so a release is verified with shasum -a 256 -c CHECKSUMS.sha256\n' > .vbw/spec.md
+  "$VBW" spec sync > /dev/null || return 1
+  printf '[ "$(sh greet.sh Ana)" = "Hello, Ana!" ] && [ "$(sh greet.sh)" = "Hello, world!" ]\n' > test_greet.sh
+  printf 'shasum -a 256 -c CHECKSUMS.sha256\n' > test_checksums.sh
+  printf '%s' '{"phases": [{"id": "P1", "title": "Greet", "reqs": ["R1"]}, {"id": "P2", "title": "Checksums", "reqs": ["R2"]}],
+    "plans": [{"id": "P1.1", "phase": "P1", "title": "greet.sh", "reqs": ["R1"], "files": ["greet.sh"], "after": [], "tasks": ["greet.sh prints Hello, NAME! or Hello, world! without a name"]},
+      {"id": "P2.1", "phase": "P2", "title": "checksums", "reqs": ["R2"], "files": ["CHECKSUMS.sha256"], "after": ["P1.1"], "tasks": ["CHECKSUMS.sha256 holds the SHA-256 of greet.sh (shasum -a 256 greet.sh)"]}],
+    "checks": [{"id": "C1", "req": "R1", "run": ["sh", "test_greet.sh"], "files": ["test_greet.sh"]},
+      {"id": "C2", "req": "R2", "run": ["sh", "test_checksums.sh"], "files": ["test_checksums.sh"]}],
+    "rules": [{"req": "R1", "text": "a name is greeted", "check": "C1"}, {"req": "R1", "text": "no name greets the world", "check": "C1"},
+      {"req": "R2", "text": "the manifest matches greet.sh", "check": "C2"}]}' \
+    | "$VBW" apply > /dev/null || return 1
+  git add -A && git commit -qm "chore: plan" || return 1
+  "$VBW" approve > /dev/null || return 1
+  printf '#!/bin/sh\necho "Hello, ${1:-world}!"\n' > greet.sh && chmod +x greet.sh
+  "$VBW" commit P1.1 "feat(P1.1): greet.sh" > /dev/null || return 1
+  # shellcheck disable=SC1010 # "plan done" is a vbw subcommand
+  "$VBW" plan done P1.1 > /dev/null || return 1
+  shasum -a 256 greet.sh > CHECKSUMS.sha256
+  "$VBW" commit P2.1 "feat(P2.1): checksums" > /dev/null || return 1
+  # shellcheck disable=SC1010 # "plan done" is a vbw subcommand
+  "$VBW" plan done P2.1 > /dev/null || return 1
+  "$VBW" prove --full > /dev/null || return 1
+  printf '#!/bin/sh\necho "Hello, $1!"\n' > greet.sh
+  shasum -a 256 greet.sh > CHECKSUMS.sha256
+  git commit -qm "chore: greet.sh greets the name it is given" -- greet.sh CHECKSUMS.sha256 || return 1
+  # The proof fails C1 and opens the fix: its exit status is the failure.
+  "$VBW" prove > /dev/null 2>&1 || true
+}
+
+# stalefix_steps: the session's fix rounds, proofs, fix dones and vbw next answers, oldest first,
+# one JSON array of {at, step}: "fix F1" (vbw run start fix), "prove", "fix done", "next ACTION".
+# Read from the tool calls and results in the transcripts (main and subagents), never from screen text.
+stalefix_steps() {
+  transcripts | xargs cat 2> /dev/null | jq -sc '
+    ([.[] | select(.type == "user") | .message.content[]? | select(.type == "tool_result")
+      | {key: .tool_use_id, value: (if (.content | type) == "string" then .content else ([.content[]? | .text? // ""] | join("\n")) end)}]
+      | from_entries) as $res
+    | [.[] | select(.type == "assistant") | . as $m | .message.content[]? | select(.type == "tool_use")
+      | (.input.command // "") as $c | .id as $id
+      | if ($c | test("run start fix")) then {at: $m.timestamp, step: ("fix " + ($c | capture("run start fix (?<f>[F0-9 ]+)").f | sub(" +$"; "")))}
+        elif ($c | test("vbw[^|;&]* fix done")) then {at: $m.timestamp, step: "fix done"}
+        elif ($c | test("vbw[^|;&]* prove")) then {at: $m.timestamp, step: "prove"}
+        elif ($c | test("vbw[^|;&]* next")) then {at: $m.timestamp, step: ("next " + (($res[$id] // "") | try (fromjson | .action) catch "?"))}
+        else empty end]
+    | sort_by(.at)' 2> /dev/null || echo '[]'
+}
+
+# stalefix (#706): a fix round whose repair breaks another finished requirement is proved before
+# the next round. The proof failed C1 and opened F1 (R1) before the session; the Dev of F1 repairs
+# greet.sh, which makes the manifest's check C2 fail, so the round's vbw fix done is refused and F1
+# stays open on code changed since the proof. VBW must prove again before another round (which
+# closes F1 and opens F2 for R2), never send F1's stale failures to a second round. Judged in the
+# transcripts' tool calls and results, in git and in the committed record's history, never on screen.
+scenario_stalefix() {
+  new_project
+  (cd "$dir" && "$VBW" init > /dev/null && "$VBW" config rigor auto > /dev/null && stalefix_seed) \
+    || { say "setup failed: could not seed the broken requirement and its manifest"; return 1; }
+  fixture="greet.sh (R1) and its release manifest CHECKSUMS.sha256 (R2, checked with shasum -c), two express phases built and proven; a later commit by the user makes the no-name case fail and regenerates the manifest, so the proof before the session failed only C1 and opened F1; repairing greet.sh, the only file F1 owns, makes C2 fail; rigor auto; the user types /vbw:vibe"
+  seed_head=$(git -C "$dir" rev-parse HEAD)
+  seed_at=$(jq -r '.evidence.at // empty' "$dir/.vbw/record.json" 2> /dev/null)
+  seed_fixes=$(jq -c '[.fixes[] | {id, req, status}]' "$dir/.vbw/record.json" 2> /dev/null || echo '[]')
+  start="/vbw:vibe"
+  checks() {
+    local passed=true r="$dir/.vbw/record.json" steps hist refused=false round1=false f1_rounds proved_between=false
+    local f2_at f1_closed_at advanced=false f2 f2_closed=false
+    steps=$(stalefix_steps)
+    hist=$(record_history)
+    transcripts | transcript_tool_output 'vbw[^|;&]* fix done' '^vbw: F1 broke finished work: .*C2 fail' && refused=true
+    # The round's repair of greet.sh reached git through its plan.
+    git -C "$dir" log --format=%B "$seed_head..HEAD" -- greet.sh | grep '^VBW-Plan: P1\.1$' > /dev/null && round1=true
+    f1_rounds=$(printf '%s' "$steps" | jq '[.[] | select(.step | test("^fix .*\\bF1\\b"))] | length')
+    # Between F1's round and the next fix round (whatever it names), a proof ran.
+    printf '%s' "$steps" | jq -e '
+      (to_entries | map(select(.value.step | test("^fix .*\\bF1\\b"))) | first.key) as $a
+      | (to_entries | map(select(.key > $a and (.value.step | test("^fix F")))) | first.key) as $b
+      | $a != null and $b != null and any(.[$a + 1:$b][]; .step == "prove")' > /dev/null 2>&1 && proved_between=true
+    # The committed record: the proof that closed F1 is newer than the one before the session.
+    f1_closed_at=$(printf '%s\n' "$hist" | jq -sr '[.[] | select(any(.fixes[]?; .id == "F1" and .status == "closed")) | .evidence.at] | first // empty')
+    f2_at=$(printf '%s\n' "$hist" | jq -sr '[.[] | select(any(.fixes[]?; .id == "F2")) | .evidence.at] | first // empty')
+    [ -n "$seed_at" ] && [ -n "$f1_closed_at" ] && [[ "$f1_closed_at" > "$seed_at" ]] && advanced=true
+    f2=$(jq -c '[.fixes[] | select(.id == "F2") | {req, status, source: (.source // "proof")}] | first // null' "$r" 2> /dev/null || echo null)
+    printf '%s' "$f2" | jq -e '.req == "R2" and .status == "closed"' > /dev/null 2>&1 && f2_closed=true
+    say "fixes before: $seed_fixes; steps: $(printf '%s' "$steps" | jq -c '[.[].step]')"
+    say "evidence.at before $seed_at, at F1 closed ${f1_closed_at:-none}, at F2 first ${f2_at:-none}; F2 $f2"
+    common_checks
+    expect "a fix of R1 (F1) was open before the session ($seed_fixes)" jq -en --argjson s "$seed_fixes" '$s == [{"id": "F1", "req": "R1", "status": "open"}]'
+    expect "the round's repair of greet.sh was committed through P1.1 ($round1)" [ "$round1" = true ]
+    expect "the round's vbw fix done was refused: F1 broke finished work, C2 ($refused)" [ "$refused" = true ]
+    expect "F1 went to exactly one fix round ($f1_rounds)" [ "$f1_rounds" -eq 1 ]
+    expect "a proof ran between F1's round and the next fix round ($proved_between)" [ "$proved_between" = true ]
+    expect "the proof that closed F1 is newer than the proof before the session ($seed_at -> ${f1_closed_at:-none})" [ "$advanced" = true ]
+    expect "F1 is closed" jq -e 'any(.fixes[]; .id == "F1" and .status == "closed")' .vbw/record.json
+    expect "the proof opened F2 for R2 (the manifest) and it is closed ($f2)" [ "$f2_closed" = true ]
+    [ "$failed" -eq 0 ] || passed=false
+    result_write stalefix "$fixture" "${cost_usd:-0}" "$passed" \
+      "$(jq -n --argjson sf "$seed_fixes" --argjson r1 "$round1" --argjson rf "$refused" --argjson n "$f1_rounds" --argjson pb "$proved_between" \
+        --arg sa "$seed_at" --arg ca "${f1_closed_at:-}" --arg fa "${f2_at:-}" --argjson adv "$advanced" --argjson f2 "$f2" --argjson st "$steps" \
+        '{fixes_before: $sf, round_committed_repair: $r1, fix_done_refused: $rf, f1_fix_rounds: $n, proof_between_rounds: $pb,
+          evidence_at_before: $sa, evidence_at_f1_closed: $ca, evidence_at_f2_opened: $fa, evidence_advanced: $adv, f2: $f2,
+          steps: [$st[].step]}')" \
+      '["the failure of a test file of the single-file form or of a project command (tests/kernel-next.bats holds the project-command row)","a fix QA, a restore or a rejection opened (worked at once on stale evidence: tests/kernel-next.bats)","a round interrupted before vbw fix done, or a user commit while a fix is open","the same scenario on the code before the fix (L1 only: tests/kernel-next.bats)","a project larger than the greet.sh fixture","the wording of what VBW tells the user (read by a person)"]'
+  }
+}
+
+# mapsnapshot_seed: a VBW project with existing code (greet.sh) and a test script the README
+# names; one of its two cases fails on the committed code.
+mapsnapshot_seed() {
+  printf '#!/bin/sh\necho "Hello, $1!"\n' > greet.sh && chmod +x greet.sh
+  cat > test.sh <<'SH'
+#!/bin/sh
+fail=0
+if [ "$(sh greet.sh Ana)" = "Hello, Ana!" ]; then echo "ok 1 a name is greeted"; else echo "not ok 1 a name is greeted"; fail=1; fi
+if [ "$(sh greet.sh)" = "Hello, world!" ]; then echo "ok 2 no name greets the world"; else echo "not ok 2 no name greets the world"; fail=1; fi
+exit "$fail"
+SH
+  chmod +x test.sh
+  printf '# Greeter\n\n`./greet.sh NAME` prints a greeting.\n\nRun the tests: `sh test.sh` (TAP output, exit 1 on a failure).\n' > README.md
+  git add greet.sh test.sh README.md && git commit -qm "feat: greet.sh and its tests" -- greet.sh test.sh README.md
+}
+
+# mapsnapshot (#707): the user maps a codebase whose test suite has a failing case. A test
+# result in .vbw/map.md is a snapshot: written "as of <short commit>, <date>", never stated as
+# current, and no advice in the map rests on it. Judged in .vbw/map.md, git and the tool calls
+# in the transcripts (a scout ran the tests), never on screen.
+scenario_mapsnapshot() {
+  new_project
+  (cd "$dir" && "$VBW" init > /dev/null && mapsnapshot_seed) \
+    || { say "setup failed: could not seed the project with a failing test"; return 1; }
+  fixture="greet.sh with a test.sh (named in the README) whose no-name case fails on the committed code; vbw init before the session; the user types /vbw:map"
+  seed_sha=$(git -C "$dir" rev-parse --short HEAD)
+  start="/vbw:map"
+  map="$dir/.vbw/map.md"
+  done_yet() { [ -s "$map" ]; }
+  # The user waits for the map and types nothing else (the default would type /vbw:vibe).
+  on_idle() { sleep 30; return 0; }
+  checks() {
+    local passed=true written=false ran=false head tag="" results=0 untagged="" advice=""
+    [ -s "$map" ] && written=true
+    transcripts | transcript_tool_called '(^|[;&| ])(sh |bash |\./)test\.sh' && ran=true
+    head=$(git -C "$dir" rev-parse --short HEAD)
+    # A result line names the failing case with an outcome (naming the case alone describes the
+    # suite, it states no result), a numbered TAP "not ok 2" (not the format's own
+    # "not ok N description") or a pass/fail count. Each must sit in a block (lines since the
+    # last blank line or heading) with a line "as of <the mapped commit>, <date>"; tag is the
+    # first such line over a result, untagged the result lines without one.
+    results=$(grep -ciE 'not ok [0-9]|no name greets the world.*(fail|broken|red|pass)|(fail|broken|red|pass).*no name greets the world|[0-9]+ (tests? |cases? )?(passed|passing|pass|failed|failing|fail)' "$map" 2> /dev/null || true)
+    # A heading starts a new block and is itself judged: "## Tests (1 failing)" needs its own as of.
+    judged=$(awk -v sha="$seed_sha" '/^[[:space:]]*$/ { asof = ""; next }
+      /^#/ { asof = "" }
+      { l = tolower($0) }
+      l ~ ("as of " sha "[0-9a-f]*[^0-9]?[^0-9]?[^0-9]?[^0-9]?[^0-9]?[^0-9]?[^0-9]?[^0-9]?20[0-9][0-9]-[0-9][0-9]-[0-9][0-9]") { asof = $0 }
+      l ~ /not ok [0-9]|no name greets the world.*(fail|broken|red|pass)|(fail|broken|red|pass).*no name greets the world|[0-9]+ (tests? |cases? )?(passed|passing|pass|failed|failing|fail)/ { print (asof == "" ? "U\t" $0 : "T\t" asof) }' "$map" 2> /dev/null)
+    tag=$(printf '%s\n' "$judged" | sed -n 's/^T	//p' | head -n 1)
+    untagged=$(printf '%s\n' "$judged" | sed -n 's/^U	//p')
+    advice=$(grep -iE 'fix (them|these|it|this|the |tests? |cases? |assert|[0-9])|should be fixed|needs? (to be )?fix|before (the |a |any )?(pr|pull request|merg|commit|release)|(so|until) (that )?(the |all )?(tests?|cases?|it)( [0-9]+)? pass|make [a-z0-9._/-]+ (default|return|print|pass)' "$map" 2> /dev/null || true)
+    say "seed commit $seed_sha, HEAD at end $head, a scout ran the tests: $ran, result lines: $results"
+    say "tag line: ${tag:-none}"
+    [ -z "$untagged" ] || say "result lines without as of: $untagged"
+    [ -z "$advice" ] || say "advice lines: $advice"
+    expect "the map was written to .vbw/map.md ($written)" [ "$written" = true ]
+    expect "a scout ran the project's tests ($ran)" [ "$ran" = true ]
+    expect "the map states at least one test result ($results)" [ "${results:-0}" -ge 1 ]
+    expect "a result is tagged as of the mapped commit $seed_sha and a date" [ -n "$tag" ]
+    expect "every result line sits under an as of $seed_sha with a date" [ -z "$untagged" ]
+    expect "no line advises fixing the failing tests" [ -z "$advice" ]
+    [ "$failed" -eq 0 ] || passed=false
+    result_write mapsnapshot "$fixture" "${cost_usd:-0}" "$passed" \
+      "$(jq -n --argjson w "$written" --argjson r "$ran" --arg s "$seed_sha" --arg h "$head" --arg t "$tag" --argjson n "${results:-0}" --arg u "$untagged" --arg a "$advice" \
+        '{map_written: $w, scout_ran_tests: $r, seed_commit: $s, head_at_end: $h, tag_line: $t, result_lines: $n, untagged_result_lines: $u, advice_lines: $a}')" \
+      '["a second /vbw:map after the failing test is fixed (the tag is what tells a reader the old map is stale; no re-map ran)","a lint result","a project larger than the greet.sh fixture","a scout that reads the tests without running them","the map as read by a person, beyond the patterns checked","/vbw:vibe reaching mapping before a spec (same workflow, not driven here)"]'
   }
 }
 

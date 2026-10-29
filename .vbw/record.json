@@ -59317,7 +59317,7 @@
       "text": "check-loop-writes.sh sees only builtin writes in the loop body itself: a call to a function that writes with printf (doctor_line in cmd-doctor.sh, found 2026-10-26 in P168.2's hidden-file loop) passes unseen and is left to the reviewer. Teach the tool the repo's writer functions (every function whose body writes with a builtin, found by the tool itself), so such a call in a loop fed by a process substitution is refused like a direct printf",
       "sort": "later",
       "size": "small",
-      "status": "open"
+      "status": "done"
     },
     {
       "id": "T190",
@@ -59343,6 +59343,55 @@
     {
       "id": "T193",
       "text": "Widen the R211 refusal: two plans of the same wave whose rules share one check face the same hazard as consecutive plans (the first Dev's mutation step runs the check before the other Dev has committed; a race, so it fails only sometimes). The Lead's brief already says a check's rules belong to one plan; the kernel refusal should cover any two open plans sharing a check (Architect note, M44 planning 2026-10-27)",
+      "sort": "later",
+      "size": "small",
+      "status": "done"
+    },
+    {
+      "id": "T194",
+      "text": "Reuse lost on a root commit when a check runs ./script (2026-10-29, macOS): a test that executes ./greet.sh puts the project root's listing on its read list (sh greet.sh does not; present on main, 2.1.18), so any commit that adds a root file reruns every such check. Find what lists the folder (getcwd on exec?) and whether that read can be told apart from a listing the test depends on; measured with the scratch script ab-reuse.sh, both kernels",
+      "sort": "next",
+      "size": "small",
+      "status": "open"
+    },
+    {
+      "id": "T195",
+      "text": "tests/mutate-time.bats R207 'the figures are measured' asserts a real second (b >= 1.0) in a file the proof runs untimed; it failed on an Ubuntu 26.04 runner in the 2.1.19 CI. Inject the clock as #719 did for the own-work case, or move the case to a timed file",
+      "sort": "later",
+      "size": "small",
+      "status": "open"
+    },
+    {
+      "id": "T196",
+      "text": "Bench blind spot (F327, 2026-10-27): a uniformly slow CI runner passes the busy test (startup under 20 ms) yet fails every absolute budget (Ubuntu 26.04 shards 1 and 2 of the 2.1.18 release run, hooks at 20-21 ms, status line over 60 ms, same code 11-12 ms elsewhere). Give the bench a same-host reference (a budget scaled by the measured startup against a reference startup) or a second run on a fresh runner",
+      "sort": "next",
+      "size": "small",
+      "status": "open"
+    },
+    {
+      "id": "T197",
+      "text": "Guard per-call cost (2026-10-27): R219's unreadable_calls regex is compiled into guard-bash.jq on every call and adds about 1.5 ms (git case 10.6 to 12.1 ms, interp 10.3 to 12.9 ms, A/B against v2.1.17). Keep it out of the common path (a second jq program run only for interpreter commands) or cheapen it",
+      "sort": "next",
+      "size": "small",
+      "status": "open"
+    },
+    {
+      "id": "T198",
+      "text": "Workflow results (F325, 2026-10-27): a Dev that stopped on a hung command returned a placeholder 'blocked' result the workflow took as a report. The building and fixing workflows should reject a result whose commits or checks are empty with no refusal text, and rerun or name it as stopped",
+      "sort": "later",
+      "size": "small",
+      "status": "open"
+    },
+    {
+      "id": "T199",
+      "text": "Empty-match refusal beyond bats (Lead note, M45): R220 refuses a bats --filter that matches no case; extend the same refusal to pytest -k, go test -run and node --test-name-pattern, and to the check vbw fix check writes",
+      "sort": "later",
+      "size": "small",
+      "status": "open"
+    },
+    {
+      "id": "T200",
+      "text": "Refusal text for receiver calls (QA note, M45): the guard's unreadable-write refusal quotes the call from the dot (.write_text(p)) instead of from its receiver (path.write_text(p)); start the quote at the receiver",
       "sort": "later",
       "size": "small",
       "status": "open"

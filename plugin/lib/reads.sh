@@ -1,20 +1,30 @@
 #!/usr/bin/env bash
 # What a run reads in its own clean copy (docs/proof.md, R166). Before a run
 # the access time (atime, the time the system notes when a file is read) of
-# every tracked file and folder of the copy, and of the copy's own git HEAD
-# and index files, is set back with touch -a to an old date. After it, what
-# moved forward was read: a file was opened, a folder was listed, git was used.
-# A file a run writes remembers that run's read list; a later run in the same
-# copy that reads it adds that list to its own.
+# every tracked file and folder of the copy, and of the copy's .git file, is
+# set back with touch -a to an old date. After it, what moved forward was read:
+# a file was opened, a folder was listed, git was used. The copy is a worktree,
+# and its .git file (the line naming its git folder) is what every git command
+# run inside the copy reads first; its HEAD and index sit in the repository's
+# shared git folder, which git run elsewhere in the repository also reads (git
+# worktree list, git branch, another worktree being made), so they would tell
+# nothing about the run. Build output a run writes (a file under a folder named
+# in PROOFCOPY_BUILD_DIRS, proofcopy.sh) is gone before the next run, which
+# starts without it as the first run of a fresh copy does. Any other file a run
+# writes remembers that run's read list; a later run in the same copy that
+# reads it adds that list to its own.
 #
-# Per slot a state folder (outside the copy) holds: gitdir, files and dirs (the
+# Per slot a state folder (outside the copy) holds: files and dirs (the
 # tracked paths, "./"-prefixed, NUL-separated), kids.json ({kids: folder -> names
-# directly in it, files: the tracked file paths}), ref (modification and access
-# time set to the old date plus a day: the yardstick "read since" compares
-# with), mark (just before the run started: "written since"), moved (every path
-# whose access time moved in the last collected run, NUL-separated), wlist
-# (written files, for a full set-back), written.json ({lists: run id -> read
-# list, files: path -> [run id]}) and runid (the last run id given).
+# directly in it, files: the tracked file paths}), built (the files under build
+# folders the copy was made with, NUL-separated), unbuilt (the build output the
+# last reset removed), ready (empty, written last: the first reset completed),
+# ref (modification and access time set to the old date plus a day: the
+# yardstick "read since" compares with), mark (just before the run started:
+# "written since"), moved (every path whose access time moved in the last
+# collected run, NUL-separated), wlist (written files, for a full set-back),
+# written.json ({lists: run id -> read list, files: path -> [run id]}) and
+# runid (the last run id given).
 
 # The old date, for touch -t (local time): a set-back time is a day before the
 # yardstick file (READS_OLD_DAY) that "read since" is compared with.
@@ -25,6 +35,11 @@ READS_OLD_DAY=200001020000
 # file's access time is set back and must stay behind the yardstick; reading
 # the file and listing a folder must then move it past it. The same comparison
 # (find -anewer) the collector uses, so the probe proves what the proof relies on.
+# A copy of a file must move it too, made with cp and with cat into a file: where
+# the file system copies by a copy-on-write clone (btrfs, XFS with reflink), the
+# data is shared and never read, so the source's access time stays, and a run that
+# copies a tracked file (a test copying a fixture) would not have it on its list.
+# Nothing is reused there either; the message says which test failed.
 reads_probe() {
   local p ok=0
   p=$(mktemp -d "$1/probe.XXXXXX" 2> /dev/null) || ok=1
@@ -43,9 +58,24 @@ reads_probe() {
       ls "$p/d" > /dev/null 2>&1
       [ -n "$(find "$p/d" -maxdepth 0 -anewer "$p/ref" 2> /dev/null)" ] || ok=1
     fi
+    # 64 KiB, so that the copy takes the way an ordinary file's would, not a tiny file's.
+    [ "$ok" -ne 0 ] || head -c 65536 /dev/zero > "$p/d/g" 2> /dev/null || ok=1
+    if [ "$ok" -eq 0 ]; then
+      touch -a -t "$READS_OLD" "$p/d/g" 2> /dev/null && cp "$p/d/g" "$p/c1" 2> /dev/null \
+        && [ -n "$(find "$p/d/g" -maxdepth 0 -anewer "$p/ref" 2> /dev/null)" ] || ok=2
+    fi
+    if [ "$ok" -eq 0 ]; then
+      touch -a -t "$READS_OLD" "$p/d/g" 2> /dev/null && cat "$p/d/g" > "$p/c2" 2> /dev/null \
+        && [ -n "$(find "$p/d/g" -maxdepth 0 -anewer "$p/ref" 2> /dev/null)" ] || ok=2
+    fi
   fi
   [ -z "${p:-}" ] || { chmod -R u+rwx "$p" 2> /dev/null; rm -rf "$p"; }
-  [ "$ok" -eq 0 ] || { printf 'this file system does not record which files are read\n' >&2; return 1; }
+  case "$ok" in
+    0) return 0 ;;
+    2) printf 'this file system does not record a copied file as read\n' >&2 ;;
+    *) printf 'this file system does not record which files are read\n' >&2 ;;
+  esac
+  return 1
 }
 
 # reads_mark FILE SECONDS [NOW]: set FILE's modification time to SECONDS before NOW (now
@@ -83,16 +113,60 @@ reads_subsecond() {
   return 1
 }
 
+# reads_built COPY: the files under a build folder (PROOFCOPY_BUILD_DIRS) in COPY,
+# "./"-prefixed and NUL-separated, .git left out: called when the copy was just made,
+# it names the build output the copy came with (tracked, or inside an ignored folder
+# brought in whole, such as a virtual environment), which no run made.
+reads_built() {
+  local n a=()
+  for n in $PROOFCOPY_BUILD_DIRS; do
+    [ ${#a[@]} -eq 0 ] || a+=(-o)
+    a+=(-path "*/$n/*")
+  done
+  [ ${#a[@]} -gt 0 ] || return 0
+  (cd "$1" && find . -path ./.git -prune -o -type f \( ${a[@]+"${a[@]}"} \) -print0)
+}
+
+# reads_unbuild COPY STATE: remove from COPY the build output earlier runs wrote: each
+# file of written.json under a build folder that the copy was not made with (built),
+# then the folders that held only such files, deepest first. written.json forgets
+# them, and every read list no remaining file carries. A run reading build output
+# reads what it made itself, so no read list passes from run to run through it.
+reads_unbuild() {
+  local copy=$1 st=$2
+  jq -j --rawfile b "$st/built" --arg names "$PROOFCOPY_BUILD_DIRS" '
+    ($names | split(" ") | map(select(length > 0) | {key: ., value: true}) | from_entries) as $bn
+    | [.files | keys[] | select(split("/")[:-1] | any(.[]; $bn[.]))] as $c
+    | if ($c | length) == 0 then empty
+      else ($b | split("\u0000") | map(select(length > 0) | sub("^\\./"; "") | {key: ., value: true}) | from_entries) as $made
+        | $c[] | select($made[.] | not) | "./" + . + "\u0000" end' "$st/written.json" > "$st/unbuilt" || return 1
+  [ -s "$st/unbuilt" ] || return 0
+  (cd "$copy" && xargs -0 rm -f -- < "$st/unbuilt") || return 1
+  # rmdir leaves every folder that still holds something.
+  jq -Rs -j --arg names "$PROOFCOPY_BUILD_DIRS" '
+    ($names | split(" ") | map(select(length > 0) | {key: ., value: true}) | from_entries) as $bn
+    | [split("\u0000")[] | select(length > 0) | sub("^\\./"; "") | split("/") | . as $p
+       | range(1; length) | $p[:.] | select(any(.[]; $bn[.])) | join("/")]
+    | unique | sort_by(-(split("/") | length))[] | "./" + . + "\u0000"' "$st/unbuilt" \
+    | (cd "$copy" && xargs -0 rmdir -- 2> /dev/null) || true
+  jq -c --rawfile u "$st/unbuilt" '
+    ($u | split("\u0000") | map(select(length > 0) | sub("^\\./"; "") | {key: ., value: true}) | from_entries) as $gone
+    | .files |= with_entries(select($gone[.key] | not))
+    | ([.files[][]] | map({key: ., value: true}) | from_entries) as $ids
+    | .lists |= with_entries(select($ids[.key]))' "$st/written.json" > "$st/written.tmp" && mv "$st/written.tmp" "$st/written.json"
+}
+
 # reads_reset COPY STATE: before a run (STATE absolute). The first call also
 # records the copy's tracked files and folders (they never change: the copy is
-# a detached checkout) and where its git HEAD and index files are. "Written by
+# a detached checkout) and the build output it was made with. Each call first
+# removes the build output earlier runs wrote (reads_unbuild). "Written by
 # the run" means newer than the mark: 2 seconds back (whole-second file
 # systems), but never before the copy's first reset. A file the previous run
 # wrote just before may be taken for this run's, and then carries both lists.
 reads_reset() {
-  local copy=$1 st=$2 gd slack=2 sec exact=true
+  local copy=$1 st=$2 slack=2 sec exact=true
   mkdir -p "$st" || return 1
-  if [ ! -f "$st/gitdir" ]; then
+  if [ ! -f "$st/ready" ]; then
     # The copy was just made. On a file system with whole-second times, wait for the next whole
     # second, so that no file of it can look written by the first run; with finer times the
     # marks below are exact and nothing waits.
@@ -104,7 +178,8 @@ reads_reset() {
     slack=0
     : > "$st/mark0" || return 1
     [ "$exact" = true ] || reads_mark "$st/mark0" 0 || return 1
-    gd=$(git -C "$copy" rev-parse --absolute-git-dir) || return 1
+    # A worktree's .git is a file (gitrepository-layout): the collection's sign of git use.
+    [ -f "$copy/.git" ] || return 1
     git -C "$copy" ls-files -z | jq -Rs -j '
       (split("\u0000") | map(select(length > 0))) as $f
       | ($f[] | "./" + . + "\u0000")' > "$st/files" || return 1
@@ -113,10 +188,11 @@ reads_reset() {
       | ([$f[] | split("/") | . as $p | range(1; length) | $p[:.] | join("/")] | unique | map("./" + .)) as $d
       | ("." , $d[]) + "\u0000"' > "$st/dirs" || return 1
     reads_kids "$st/files" > "$st/kids.json" || return 1
-    printf '%s\n' "$gd" > "$st/gitdir"
+    reads_built "$copy" > "$st/built" || return 1
+    : > "$st/ready" || return 1
   fi
-  gd=$(cat "$st/gitdir")
   [ -f "$st/written.json" ] || printf '{"lists":{},"files":{}}\n' > "$st/written.json"
+  reads_unbuild "$copy" "$st" || return 1
   : > "$st/ref" && touch -t "$READS_OLD_DAY" "$st/ref" || return 1
   : > "$st/mark" || return 1
   [ "$slack" -eq 0 ] && [ "$exact" = true ] || reads_mark "$st/mark" "$slack" || return 1
@@ -136,8 +212,7 @@ reads_reset() {
     reads_touch "$st/wlist" "$copy"
   fi
   reads_touch "$st/dirs" "$copy"
-  [ ! -e "$gd/HEAD" ] || touch -a -t "$READS_OLD" "$gd/HEAD" 2> /dev/null || true
-  [ ! -e "$gd/index" ] || touch -a -t "$READS_OLD" "$gd/index" 2> /dev/null || true
+  touch -a -t "$READS_OLD" "$copy/.git" 2> /dev/null || return 1
 }
 
 # reads_kids FILES: what a collection needs to know of the tracked paths in FILES (NUL-
@@ -165,10 +240,9 @@ reads_kids() {
 # the files it wrote with a single copy of this list (written.json: lists by run id,
 # files by path).
 reads_collect() {
-  local copy=$1 st=$2 gd git=false line n=0 id
+  local copy=$1 st=$2 git=false line n=0 id
   local -a names
-  gd=$(cat "$st/gitdir")
-  [ -z "$(find "$gd/HEAD" "$gd/index" -maxdepth 0 -anewer "$st/ref" -print 2> /dev/null)" ] || git=true
+  [ -z "$(find "$copy/.git" -maxdepth 0 -anewer "$st/ref" -print 2> /dev/null)" ] || git=true
   (cd "$copy" && find . -path ./.git -prune -o -anewer "$st/ref" -print0) > "$st/moved" 2> /dev/null || true
   # The tracked paths never change (the copy is a detached checkout): sorted out once at the
   # first reset, here only when a state lacks it.

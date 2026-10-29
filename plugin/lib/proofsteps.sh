@@ -27,17 +27,23 @@
 # file decides, vbw_lock_dir). A lock whose owner process is gone, or whose owner
 # never wrote its id for 5 s, is taken over by renaming its owner file
 # (vbw_lock_takeover: of two waiters only one wins, and neither removes a lock a
-# third took in between). A live owner's lock is never taken: after about 5 s
-# the waiter gives up and its caller skips the update (the note is best effort).
-# Fails, and the caller skips its update, where the runtime folder is missing.
+# third took in between). The 5 s count from the last look that found an id:
+# a look without one is often a moment (another process between its mkdir and
+# its id, another waiter's rename while it checks), and counted from the start
+# of the wait it let every long waiter in beside a live owner (13 at once in a
+# proof whose updates were slow, 2026-10-28). A live owner's lock is never
+# taken: after 500 looks the waiter gives up and its caller skips the update
+# (the note is best effort). Fails, and the caller skips its update, where the
+# runtime folder is missing.
 proofsteps_lock() {
   local l="$VBW_RUNTIME/step.lock" i=0 owner quiet=$SECONDS
   [ -d "$VBW_RUNTIME" ] || return 1
   while ! vbw_lock_dir "$l"; do
     owner=$(vbw_lock_holder "$l/pid")
-    if [ -n "$owner" ] && ! kill -0 "$owner" 2> /dev/null; then
-      vbw_lock_takeover "$l/pid" "$owner" && return 0
-    elif [ -z "$owner" ] && [ $((SECONDS - quiet)) -ge 5 ]; then
+    if [ -n "$owner" ]; then
+      quiet=$SECONDS
+      if ! kill -0 "$owner" 2> /dev/null; then vbw_lock_takeover "$l/pid" "$owner" && return 0; fi
+    elif [ $((SECONDS - quiet)) -ge 5 ]; then
       vbw_lock_takeover "$l/pid" "" && return 0
     fi
     i=$((i + 1))

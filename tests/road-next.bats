@@ -96,7 +96,7 @@ hm() {
 
 @test "R191: a piece with no basis gives no end and names the missing kind; a made-up time never appears" {
   jq 'del(.steps[] | select(.kind == "proof"))' "$STEPS" > "$TEST_ROOT/h.json" && cp "$TEST_ROOT/h.json" "$STEPS"
-  rm -f "$(dirname "$STEPS")/runs.json"
+  rm -f "$(dirname "$STEPS")/runs.json" "$(dirname "$STEPS")/run-times.json"
   local r
   r=$(road_of)
   printf '%s' "$r" | jq -e '.end == null and .seconds == null and .rounds == {deep: 2, standard: 0}

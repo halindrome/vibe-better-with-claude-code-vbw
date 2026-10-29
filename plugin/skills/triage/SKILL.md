@@ -1,7 +1,7 @@
 ---
 name: triage
 description: Sort every new idea the user brings as now, next or later, with a reason and a size, before any requirement, planning or file change. Used by the vibe router for each new request.
-allowed-tools: Bash("${CLAUDE_PLUGIN_ROOT}/bin/vbw" *) Bash(vbw *)
+allowed-tools: Bash("${CLAUDE_PLUGIN_ROOT}/bin/vbw" *) Bash(vbw *) Read
 effort: low
 ---
 
@@ -21,6 +21,8 @@ Router calls this for each new idea, before any requirement, planning or file ch
 New idea: a feature, change, fix or wish not yet in the spec. Not a new idea, so no triage: an answer to a question VBW asked, "continue" or "go on", an approval, a question about the project, an autonomy setting stated in words (guided, balanced, hands-off, or a phrase that means one): the router records it; the rest of the same message goes to triage as usual.
 
 Idea already matches a requirement or open backlog item: name it, no new entry. For a backlog item, offer to move it to now (`vbw spec add`, then `vbw todo done`).
+
+A fix (a bug, a ticket, "X is broken"): before sorting, check that it still happens in the current code. Read the code path it names and its tests, and look for an earlier fix (`git log --grep "<ticket or key words>"`). Evidence that it is fixed (a commit, a `file:line` that already handles it, a test that covers it): the menu says so with that evidence, and its options are **already fixed** (Recommended) and **it still happens**. Already fixed: `vbw decide "<idea>: already fixed by <evidence>" "<the user's reason, or: the user agreed>"`, no requirement, no backlog item. It still happens: ask how (the user's words become the idea), then sort it as usual. Anything else found on the way (an obsolete workaround, cleanup) is a separate idea, sorted on its own, never folded into the fix.
 
 ## The sorting menu
 

@@ -430,7 +430,8 @@ scroll it) to read the rest.
   a button for the last 20 lines.
 - **Timeline:** one lane per agent of the live run against the run's clock, the
   three slowest marked, and past steps of the same kind against their usual
-  time. A proof runs no agents: while one runs, the Timeline says so, with the
+  time. Each lane is one line: its bar leaves room for the name and the time, and
+  in a narrow pane the names are cut first. A proof runs no agents: while one runs, the Timeline says so, with the
   checks done of the total (`A proof is running: 12 of 40 checks done. The Proof
   tab shows each check.`). Under it, **Runs this session**: each VBW run of this session on one
   row, its time bar and time beside its cost bar and cost (the session cost
@@ -805,7 +806,10 @@ Milestone end: about 36 min, until around 14:56, counting 2 fix rounds per stand
   below).
 - **A proof's time comes from its units.** Every proof records each unit it ran
   (a check, a test file, a project command) and that unit's own seconds in
-  `steps.json`; `runs.json`, next to it, keeps each unit's last run. A unit's
+  `steps.json`; `run-times.json`, next to it, keeps the seconds of each unit's
+  last run. VBW writes it whenever it saves the store of recorded runs
+  (`runs.json`), and an estimate reads it alone: it never loads the store,
+  whose read lists can run to hundreds of MB (docs/proof.md). A unit's
   cost is the fastest it ran in the latest 10 proofs that recorded units or in
   its last run: a busy day's slow run never sets the promise, and a proof that
   runs late moves its end as it goes (later than usual, below). A proof is
@@ -855,7 +859,7 @@ Milestone end: about 36 min, until around 14:56, counting 2 fix rounds per stand
   committed, not part of `.vbw/record.json`, and never shared with other
   projects (no computer-wide history, D433). To reset it, delete it: end times
   start again from none. A missing, unwritable or damaged file (also
-  `runs.json`) never fails a step; it only means no end time yet. The panel only
+  `run-times.json`) never fails a step; it only means no end time yet. The panel only
   reads: it works no milestone time out itself and shows the road the kernel
   wrote.
 - **It never shows a negative time.** Past the end, the wording above says

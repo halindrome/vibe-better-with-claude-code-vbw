@@ -217,7 +217,7 @@ function body(ui, input, tab, act) {
     case 'proof': return renderProof(ui, proofModel({ record: rec, selected: st.check, open: st.open, now }), act, width - 4)
     // Timeline: the live run's agents on its clock, then every run of the session with its time and cost.
     case 'timeline': return h(ui.Box, { key: 'timeline-tab', flexDirection: 'column' },
-      renderTimeline(ui, timelineModel({ run: st.run, now, steps: st.steps, step: st.step, width: Math.max(10, width - 24) })),
+      renderTimeline(ui, timelineModel({ run: st.run, now, steps: st.steps, step: st.step, width: width - 4 })),
       renderRuns(ui, runsModel({ runs: st.leases, steps: st.steps, sessionCost: st.cost, now, width: Math.max(20, width - 4), fresh: marks, motion: input.motion })))
     case 'sessions': return renderSessions(ui, sessionsModel({ registry, root: st.root, sessionId: st.sessionId, lease: isObj(rec) ? rec.lease : null, stored, now, width: Math.max(10, width - 4), plans: isObj(rec) ? rec.plans : null }))
     case 'settings': return renderSettings(ui, settingsModel({ settings: st.settings, record: rec, now, fresh: marks, motion: input.motion }), act)

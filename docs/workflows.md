@@ -13,7 +13,7 @@ standard: what good output is. Every write to the plan of record goes through
 | `vbw:building` | `build` (one wave: the ready plans, no two sharing a file) | one Dev for every plan (Docs for documentation plans), all at the same time; VBW sets no limit | each plan `done` (one commit per task, its checks green) or `blocked` with a reason |
 | `vbw:fixing` | `fix` (`detail.groups`: open fixes that share files, grouped) | one Dev for every group, all at the same time; after every Dev returns, one `vbw fix done` for every fix whose Dev reported done | each fix `fixed` (verified, committed) or its plan `blocked` |
 | `vbw:verifying` | `qa` (built phases not yet verified on the proven code) | one QA agent for every phase, all at the same time | each phase's verdict recorded (`vbw qa record`), its findings as fixes (`vbw qa finding`) |
-| `vbw:mapping` | `spec` or `plan` on existing code without `.vbw/map.md` | Scouts, one per angle, then one merge | the map, written to `.vbw/map.md` |
+| `vbw:mapping` | `spec` or `plan` on existing code without `.vbw/map.md` | Scouts, one per angle, then one merge | the map, written to `.vbw/map.md`; a test or lint result in it is a snapshot marked with its commit and date, and no advice in the map rests on one; its Tests section names, per test framework, the command that runs one test file (run once while mapping) and what a new test file needs, so the Lead does not work it out while planning (#721) |
 | `vbw:researching` | the user runs `/vbw:research` | four Scouts (sources, practice, current state, this project), then one answer | a sourced answer with a recommendation |
 | `vbw:investigating` | the user runs `/vbw:debug` | three Debuggers (reproduce, trace, history), then one diagnosis; with the diagnosis given, one Debugger fixes it | the root cause with evidence and rejected hypotheses; or the fix, its regression test and commit |
 | `vbw:recommending` | after `vbw ship`, or the user asks `/vbw:vibe what's next` | one Architect | a recommendation: a top pick and up to two runners-up (docs/whats-next.md) |
@@ -82,6 +82,12 @@ nothing and the router ends the run as before. With it:
   checks each planned phase with `vbw show phase`; a phase with no plans makes
   the workflow return `status: "blocked"` with the Lead's report instead of
   `planned`.
+- A requirement the code already meets cannot have a check that fails today.
+  The Architect raises it as a decision (drop it or reword it); if one still
+  reaches the Lead, the Lead applies nothing and returns `status: "blocked"`
+  with `Rn is already met: <the passing run>`. The router asks the user to drop
+  or reword it in `.vbw/spec.md` (`vbw spec sync`), records the answer with
+  `vbw decide`, and plans again.
 
 The closing step (the `close run` agent, and `vbw:fixing`'s own `fix done` agent when there is no session) runs on Haiku in every profile, whatever the Lead's model (`model.lead`) is: it runs a few fixed commands, and the record stays the source of truth, so a wrong answer can only blur the summary line while `vbw next` still asks for any missing work.
 
@@ -581,7 +587,8 @@ needed.
   separated from nice-to-haves. Planning only; it writes nothing.
 - **Lead**: research, then each phase decomposed into plans of 3 to 5 tasks
   (no shared files in a wave; documentation plans marked `docs`), checks that
-  fail today, a self-review, and `vbw apply`.
+  fail today (each shown red by running its own argv once, never the whole
+  suite), a self-review, and `vbw apply`.
 - **Dev**: executes a plan's tasks (or a group of fixes) within its files, one
   commit per task, checks red first and then green; deviations classified
   DEVN-01 to DEVN-05; database safety.

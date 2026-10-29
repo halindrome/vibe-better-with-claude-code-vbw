@@ -179,10 +179,11 @@ proofreuse_allowed() {
 # $(git common dir)/vbw/runs.json, {runs: {"check:ID" | "command:NAME" |
 # "file:PATH": {fp, tree, status, at, seconds, tail, reads, dirs, git}}}.
 # fp: fingerprint of the unit's approved definition; tree: the committed code
-# it ran on; reads: the project files it opened (null: none was written down);
-# dirs: the folders it listed; git: it read the project through git. The store
-# holds runs and nothing else (a form field an older VBW wrote is dropped on
-# reading). A missing or damaged store means nothing is reused.
+# it ran on; reads: the project files it opened (null: none was written down;
+# empty for a run that read through git); dirs: the folders it listed; git: it
+# read the project through git. The store holds runs and nothing else (a form
+# field an older VBW wrote is dropped on reading). A missing or damaged store
+# means nothing is reused.
 proofreuse_store_file() {
   local common
   common=$(git -C "$VBW_ROOT" rev-parse --path-format=absolute --git-common-dir 2> /dev/null) || vbw_die "not a git repository"
@@ -197,18 +198,29 @@ proofreuse_store_read() {
 
 # proofreuse_merge NEW [DROP]: the one writer of the store. NEW (a JSON object
 # key -> run) is merged over the recorded runs, after the runs of DROP (a JSON
-# array of keys: units that no longer exist) are taken out. The
-# read-modify-write runs under a lock beside the file and ends in an atomic move.
+# array of keys: units that no longer exist) are taken out. A run that read the
+# project through git keeps no read list (reads and dirs empty): it runs again
+# whatever changed, so its list can never vouch for it, and git's walk of the
+# whole project put every file on it (a 669 MB store of 1,048 runs, 2026-10-28);
+# the lists an older VBW kept for such runs go at the next save. Beside the
+# store goes run-times.json, {runs: {key: {seconds}}}: each run's seconds alone,
+# which the time estimates read (lib/steps.sh, lib/road.sh), never the store.
+# The read-modify-write runs under a lock beside the store and ends in atomic moves.
 proofreuse_merge() {
-  local file lock tmp
+  local file lock tmp times
   file=$(proofreuse_store_file)
   mkdir -p "${file%/*}" || vbw_die "cannot create ${file%/*}"
   lock="${file%.json}.lock"
   vbw_lock_take "$lock" "runs"
   tmp=$(mktemp "${file%/*}/runs.XXXXXX") || vbw_die "cannot create a temporary file in ${file%/*}"
   vbw_guard_add file "$tmp"
+  times=$(mktemp "${file%/*}/run-times.XXXXXX") || vbw_die "cannot create a temporary file in ${file%/*}"
+  vbw_guard_add file "$times"
   proofreuse_store_read | jq -c --slurpfile nw <(printf '%s' "$1") --slurpfile dr <(printf '%s' "${2:-[]}") \
-    '{runs: ((.runs | del(.[$dr[0][]])) + $nw[0])}' > "$tmp" && mv "$tmp" "$file"
+    '{runs: ((.runs | del(.[$dr[0][]])) + $nw[0] | map_values(if type == "object" and .git == true then .reads = [] | .dirs = [] else . end))}' > "$tmp" \
+    && jq -c '{runs: ([.runs | to_entries[] | select(.value | type == "object") | {key, value: {seconds: .value.seconds}}] | from_entries)}' "$tmp" > "$times" \
+    && mv "$tmp" "$file" && mv "$times" "${file%/*}/run-times.json"
+  vbw_guard_drop "$times"
   vbw_guard_drop "$tmp"
   vbw_guard_drop "$lock"
 }

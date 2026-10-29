@@ -1,9 +1,9 @@
 {
   "scenario": "latedecision",
   "fixture": "greet.sh and farewell.sh, one express phase each; contract approved and greet.sh built before the session; then the user recorded a decision for unbuilt farewell.sh (See you instead of Goodbye, and a --quiet flag no plan, requirement or check names) and changed R2 and C2's test to match, so the contract waits for approval again; the user types /vbw:vibe and approves by the choice",
-  "cost_usd": 0.3827,
+  "cost_usd": 0.2603,
   "evidence_level": "L3",
-  "at": "2026-10-28T20:21:58Z",
+  "at": "2026-10-29T19:57:23Z",
   "passed": true,
   "facts": {
     "reapproval_plans": [

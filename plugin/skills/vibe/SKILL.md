@@ -18,7 +18,7 @@ Kernel decides next step; you carry it out. Even for a one-line fix: no project 
 
 User said: $ARGUMENTS
 
-Every new request, now or later, goes to `vbw:triage` first; "what's next" or "suggest next" follows `vbw:whats-next`.
+Every new request, now or later, goes to `vbw:triage` first, before you read code or run anything for it; a fix too, even one that looks already fixed: triage checks that, says it and records it. "What's next" or "suggest next" follows `vbw:whats-next`.
 
 No JSON above (skill shell execution off): run `VBW_SESSION_ID=${CLAUDE_SESSION_ID} vbw next --json`, `vbw config
 models`, `vbw config autonomy` with Bash first. "not a VBW project": set it up
@@ -103,10 +103,11 @@ Over two files, a risk path or a tier: apply refuses; use the planning workflow.
 `{"requirements": <requirements>, "next_phase": <next_phase>, "models": ...}`. Status `needs_decisions`: user
 decides first. Ask each with AskUserQuestion, one at a time (why it matters in the question, each option's
 trade-off as description, recommended first, "(Recommended)"). Record
-each: `vbw decide "<what was decided>" "<their reason, or the trade-off they accepted>"`. Plan again: `VBW_SESSION_ID=${CLAUDE_SESSION_ID} vbw run start plan`, workflow with
+each: `vbw decide "<what was decided>" "<their reason, or the trade-off they accepted>"`. A requirement already met, dropped or reworded: delete or edit its line in `.vbw/spec.md`, `vbw spec sync`, then take `requirements` from a new `vbw next --json`. Plan again: `VBW_SESSION_ID=${CLAUDE_SESSION_ID} vbw run start plan`, workflow with
 `{"requirements": <requirements>, "next_phase": <next_phase>, "decided": true, "research": <research>, "models": ...}`, `<research>` the
 `research` of the `needs_decisions` reply, so planning starts from what it already found. Planned: give Lead's summary, its
 `choices` (any can change) and Architect's `notes` (offer `vbw todo add`); then the approval menu, never a typed command.
+Status `blocked`: give its summary and blockers. A requirement already met: AskUserQuestion, drop it (delete its line in `.vbw/spec.md`, then `vbw spec sync`) or reword it to what is still missing (edit it there, then `vbw spec sync`); record `vbw decide`; plan again with `requirements` from a new `vbw next --json`.
 
 **contract**: not ready for approval: do what `instruction` says (write the named check files, `vbw spec sync`), then `vbw next --json`.
 

@@ -289,7 +289,19 @@ vbw_code_tree() {
   (
     cd "$VBW_ROOT" || exit 1
     export GIT_INDEX_FILE="$idx"
-    git add -A -- . ':(exclude).vbw' ':(exclude).vbw-planning' > /dev/null 2>&1 &&
+    # git add fails on an exclude naming an ignored path (#695); an ignored
+    # folder needs none, since add -A skips it and git rm drops its tracked files.
+    local ignored dir
+    local -a skip=()
+    ignored=$(git check-ignore --no-index -- .vbw .vbw-planning 2> /dev/null)
+    for dir in .vbw .vbw-planning; do
+      case "
+$ignored
+" in *"
+$dir
+"*) ;; *) skip+=(":(exclude)$dir") ;; esac
+    done
+    git add -A -- . ${skip[@]+"${skip[@]}"} > /dev/null 2>&1 &&
       git rm -r -q --cached --ignore-unmatch -- .vbw .vbw-planning > /dev/null 2>&1 &&
       git write-tree
   )

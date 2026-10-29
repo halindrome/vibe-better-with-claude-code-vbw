@@ -1,10 +1,11 @@
 # The expectation ladders (R191, docs/panel.md): one jq program turns the step
-# history, the per-unit runs store and a step's units into its expected seconds.
+# history, the units' last run times and a step's units into its expected seconds.
 #
-# Interface: jq -n --slurpfile h HISTORY --slurpfile runs RUNS --arg kind K
+# Interface: jq -n --slurpfile h HISTORY --slurpfile runs RUN_TIMES --arg kind K
 #   --slurpfile size SIZE -f steps-expect.jq (a file: a proof's size names every unit)
 #   $h[0]    the history {steps: [...]} or null (a missing or damaged file)
-#   $runs[0] the runs store {runs: {name: {seconds, ...}}} or null
+#   $runs[0] the run times {runs: {name: {seconds}}} or null: run-times.json, which
+#            the save writes beside the run store (never the store itself)
 #   $kind    build | fix | plan | qa | proof
 #   $size[0] build: [{id, tier, tasks, breaks}] (the wave's plans); fix: {tier};
 #            plan: {reqs}; qa: [{id, tier}]; proof: {units: [name]}
@@ -24,7 +25,7 @@
 # A proof takes its units' costs times the learned ratio. The latest 10 proofs
 # that recorded units give the ratio, their total wall time over their total
 # unit time (one proof of two units cannot skew it), and each unit's fastest
-# seconds among them; the store's last run joins that minimum, so a busy day's
+# seconds among them; its last run (the run times) joins that minimum, so a busy day's
 # slow run never sets the promise (a proof that runs late moves its end, D424).
 # A unit never run counts as the median of the known costs.
 

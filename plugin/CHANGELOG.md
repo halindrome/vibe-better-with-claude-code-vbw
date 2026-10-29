@@ -1,5 +1,80 @@
 # Changelog
 
+## [2.1.19] - 2026-10-29
+
+A community release: thirteen pull requests by two contributors,
+[@halindrome](https://github.com/halindrome) and
+[@shacharbard](https://github.com/shacharbard), each from a field report on a
+real project. Thank you both.
+
+### Added
+
+- **A decision recorded after the approval reaches the Dev who builds the
+  plan.** Each approval now records which plans it changed, and a Dev or Docs
+  agent is given every decision since the last approval that changed its own
+  plan, so a `vbw decide` made after the contract was approved is applied by
+  the build instead of being lost behind a later re-approval. The record
+  schema rises to 6 at the first approval after this update; an older VBW
+  refuses the record and says it needs a newer VBW. (#714 by @halindrome,
+  fixes #705)
+- **Planning hands its findings from stage to stage.** The Architect's
+  decide and scope steps return what they verified in the code, and the Scope
+  and the Lead start from those findings instead of reading the same files
+  again; the router passes them back when the user has answered the
+  decisions. (#723 by @halindrome, fixes #720)
+- **A fix round reproves before it starts.** When the code moved past the last
+  proof and a fix of an automatic check or project command is still open,
+  `vbw next` asks for a proof before another fix round, so the Dev reads the
+  failures of the code as it is now, never a stale list. QA, restore and
+  rejection fixes are unchanged. (#712 by @halindrome, fixes #706)
+- **Triage checks the code before planning a bug.** A bug the code already
+  fixes is reported as fixed at triage, and if it reaches the Architect or the
+  Lead anyway, they return it as an already-met requirement for the user to
+  drop or reword instead of planning checks that pass today. (#718 by
+  @halindrome, fixes #717)
+- **The map records the command that runs one test file.** The mapping Scout
+  finds, per test framework, the command that runs one file and what a new
+  test file needs, runs it once and writes it verbatim, so the Lead reads it
+  instead of working it out while planning; a test or lint result in the map
+  is dated with its commit and no advice in the map rests on it. The Lead
+  proves each check red with that check's own command, once, never by
+  rerunning a whole suite while iterating. (#724, #713 and #725 by
+  @halindrome, fix #721, #707 and #722)
+
+### Fixed
+
+- **A proof on a large project no longer loads the whole run store for every
+  time estimate.** Estimates read a small file of each run's seconds, written
+  beside the store; a run that read the project through git keeps no read
+  list, which the reuse rule never consulted; and the step lock stays with its
+  owner while it works. On a 1,000-test Python project the store had reached
+  669 MB and the estimates alone ran the machine out of memory. (#698 by
+  @shacharbard, fixes #697)
+- **Read lists no longer spread through build output.** Build output a unit
+  writes (`__pycache__`, `.pytest_cache`, `bin`, `dist`, `target` and the
+  like) is removed before the next unit runs in the same copy, so no unit
+  inherits another's read list through it; and git run elsewhere in the
+  repository while a unit runs (`git worktree list`, `git branch`, `git gc`,
+  another proof making its copy) no longer marks the unit as reading the
+  project through git. (#701 by @shacharbard, fixes #699 and #700)
+- **On a copy-on-write file system VBW reuses nothing, and says why.** On
+  btrfs and XFS with reflinks a copy (`cp`, `cat a > b`, Python's
+  `shutil.copyfile`) leaves no trace of reading its source, so a unit that
+  copied a tracked file could keep a stale pass. The start-of-proof probe
+  now tries such a copy and, where it is not seen, the proof runs every unit
+  and names the cause. (#703 by @shacharbard, fixes #702)
+- **`vbw prove` works when `.gitignore` ignores `.vbw-planning/` or
+  `.vbw/`.** The fingerprint of the project files no longer dies on an
+  ignored exclude. (#710 by @halindrome, fixes #695)
+- **Panel Timeline rows stay on one line.** The time column has a fixed
+  width, long names are cut first, and the bar shrinks, so a label like
+  `2 min 12 s` no longer wraps and misaligns the next row. (#711 by
+  @halindrome, fixes #696)
+- **A test of the mutation timing no longer depends on the wall clock.**
+  (#719 by @halindrome)
+
+Sizes, for information: kernel 750 KB (`plugin/bin/vbw` and `plugin/lib`), mods 335 KB (hooks, panel and status line), workflows 75 KB, prompts 105 KB (agents and skills).
+
 ## [2.1.18] - 2026-10-27
 
 ### Added

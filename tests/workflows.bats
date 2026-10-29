@@ -176,3 +176,14 @@ agents() { find "$PLUGIN_ROOT/agents" -name '*.md' | LC_ALL=C sort; }
     [ ! -d "$PLUGIN_ROOT/skills/$n" ] || { echo "workflow $n has the name of the skill /vbw:$n"; false; }
   done < <(workflows)
 }
+
+@test "#707: the map states a test or lint run as a snapshot with its commit and date, and the merge keeps it so and bases no advice on it" {
+  local js="$PLUGIN_ROOT/workflows/mapping.js" scout merge
+  # Every angle can run the tests (stack, tests, risks), so the rule is in the prompt all scouts share.
+  scout=$(grep 'Map this codebase from one angle' "$js")
+  printf '%s\n' "$scout" | grep -q 'snapshot' || { echo "the scouts are not told a run result is a snapshot"; false; }
+  printf '%s\n' "$scout" | grep -q 'as of' || { echo "the scouts are not asked for the commit and date"; false; }
+  merge=$(grep 'Merge these verified findings' "$js")
+  printf '%s\n' "$merge" | grep -q 'as of' || { echo "the merge does not keep the commit and date"; false; }
+  printf '%s\n' "$merge" | grep -q 'no recommendation' || { echo "the merge lets advice rest on a run result"; false; }
+}

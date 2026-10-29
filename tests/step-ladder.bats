@@ -104,8 +104,8 @@ step_of() { "$VBW" next --json | jq -c '.step'; }
 }
 
 @test "R191: a fix round takes the median wall time of the latest 10 fix rounds at its tier, whatever the fix count" {
-  step_edit '.plans[].status = "done" | .fixes = [{id: "F1", req: "R1", attempts: 0, status: "open", note: "C1 fail"},
-    {id: "F2", req: "R1", attempts: 0, status: "open", note: "C1 fail"}]'
+  step_edit '.plans[].status = "done" | .fixes = [{id: "F1", req: "R1", source: "qa", phase: "P1", attempts: 0, status: "open", note: "C1 fail"},
+    {id: "F2", req: "R1", source: "qa", phase: "P1", attempts: 0, status: "open", note: "C1 fail"}]'
   git add -A && git commit -q -m "chore(vbw): fixes"
   hist_fix standard 300 3
   hist_fix deep 50 3
@@ -115,8 +115,8 @@ step_of() { "$VBW" next --json | jq -c '.step'; }
 }
 
 @test "R191: a fix round with fewer than 3 rounds at its tier takes the median of any tier; fewer than 3 in all gives none" {
-  step_edit '.plans[].status = "done" | .fixes = [{id: "F1", req: "R1", attempts: 0, status: "open", note: "C1 fail"},
-    {id: "F2", req: "R1", attempts: 0, status: "open", note: "C1 fail"}]'
+  step_edit '.plans[].status = "done" | .fixes = [{id: "F1", req: "R1", source: "qa", phase: "P1", attempts: 0, status: "open", note: "C1 fail"},
+    {id: "F2", req: "R1", source: "qa", phase: "P1", attempts: 0, status: "open", note: "C1 fail"}]'
   git add -A && git commit -q -m "chore(vbw): fix"
   hist_fix deep 50 1
   hist_fix - 80 1

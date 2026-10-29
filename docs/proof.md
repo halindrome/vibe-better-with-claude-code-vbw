@@ -857,6 +857,12 @@ Build output is not environment: the copy never brings in a folder named `target
 `.ruff_cache`, `.tox`, `.next`, `.nuxt`, `.gradle` or `coverage`, at any depth.
 The copy builds its own, so a proof never reads stale output from the working
 folder, and nothing it builds lands in the working folder or in another copy.
+Each unit builds its own too: before a unit runs in a copy, the files an earlier
+unit wrote inside a folder with one of those names are removed (Python's
+`__pycache__` and `.pytest_cache` files, for example), so every unit starts as the
+first unit of a fresh copy does. A file there that the copy was made with stays:
+a tracked file, or one inside an ignored folder copied in whole, such as a virtual
+environment.
 Untracked files that are not ignored never enter the copy (D54): to make one
 count, commit it or ignore it.
 
@@ -992,7 +998,16 @@ a check or command its record names, a test file in its folder. A branch
 checked out in no worktree is not consulted: switching back to it re-runs the
 units only it has, once.
 
-**Files a unit writes.** A file a unit writes carries that unit's read list. A
+A run that read the project through git keeps no read list: it runs again
+whatever changed, so its list could never vouch for it, and git's walk of the
+project would put every file on it. A store an older VBW wrote loses such lists
+at its next save. Beside the store, `vbw/run-times.json` keeps each run's
+seconds alone, written with it. Time estimates read only that file, never the
+store, whose read lists can run to hundreds of MB (docs/panel.md).
+
+**Files a unit writes.** Build output a unit writes is removed before the next
+unit runs in its copy (see the clean copy, above), so no unit reads
+another's. Any other file a unit writes carries that unit's read list. A
 later unit that reads the file inherits the list, so it runs again when
 anything the writer read changed. A file two units wrote carries both lists,
 and inherited lists pass on through a chain of units. The lists live in the
@@ -1113,6 +1128,7 @@ The causes, with the text the summary shows:
 | What happened | Message |
 |---|---|
 | The file system cannot record which files are read | `this file system does not record which files are read` |
+| A copy of a file is no read on the file system: `cp`, or `cat` into a file, leaves the source's access time as it was (a copy-on-write clone, as btrfs and XFS with reflink make), so a unit that copies a tracked file, as a test copies a fixture, would not have it on its read list | `this file system does not record a copied file as read` |
 | The clone has no earlier recorded run | `this clone has no earlier recorded run` |
 | `vbw prove --full` | `vbw prove --full` |
 | Nothing was committed since the last passing proof (`vbw prove` only; `vbw fix done` reuses that proof): the project's files are the tree the last passing proof recorded (`evidence.tree`), the committed code is the tree it ran on (`evidence.head`), the record is as that proof left it (its fingerprint without the evidence is `evidence.record`: a decision, a verdict or a backlog item recorded since is a change, and the proof reuses by read lists), and the record's last proof passed | `nothing was committed since the last passing proof` |
@@ -1152,6 +1168,11 @@ They read `checks: N ran, M reused` and `test files: N ran, M reused`. After
 - What lies outside the project is not tracked: installed tools, the network
   and the clock. A check that depends on them can pass from reuse after they
   changed.
+- On a file system that copies a file by a copy-on-write clone (btrfs, XFS
+  with reflink), nothing is reused: a clone shares the data without reading
+  it, so a copied file never shows on a read list. Every proof there runs
+  everything and says why (the causes above). There is no setting that turns
+  clones off; a project on another file system reuses as usual.
 - A check that only looks whether a file exists, or at its size, without
   opening it or listing its folder, does not put that file on its read list: a
   change to that file does not run the check again, and neither does its
@@ -1159,8 +1180,17 @@ They read `checks: N ran, M reused` and `test files: N ran, M reused`. After
 - Reads through git always run again. Any git command whose working directory
   is inside the project counts, even one that reads nothing of the project
   (`git config --global` run from the project folder): git opens the
-  repository before it does anything else. A test suite that runs such
-  commands from another folder keeps its results reusable.
+  repository before it does anything else. Such a run keeps no read list
+  (above). A test suite that runs such commands from another folder keeps its
+  results reusable. VBW sees it by
+  the copy's `.git` file, which every git command run inside the copy reads
+  first. Git run elsewhere in your repository while a unit runs does not count
+  (`git worktree list`, `git branch`, `git gc`, `git fetch`, another proof making
+  its copy), though it reads the copy's `HEAD` in the shared git folder. Two
+  commands do count: `git status --ignored` and `git clean -X` (also with `-n`),
+  run in the project, open each proof copy's `.git` file to see whether it is a
+  repository of its own, exactly as git inside the copy does. A unit running
+  meanwhile counts as reading through git and runs again in the next proof.
 
 To run everything fresh, use `vbw prove --full`, or prove again with
 nothing committed since a passing proof (a second `vbw prove` is a deliberate re-run).
@@ -1179,7 +1209,7 @@ failing project command. Lifecycle:
 | Before prove | Target passes | Target fails |
 |---|---|---|
 | no fix item | nothing | new fix, `open`, `attempts` 0, once the work is built (below) |
-| `open` (no work yet) | `closed` | stays `open` |
+| `open` (not verified by `vbw fix done`) | `closed` | stays `open`, with this proof's failures |
 | `fixed` (work committed and verified by `vbw fix done`) | `closed` | `attempts` + 1, back to `open`; `escalated` at the cap (3) |
 
 A failure opens a fix only once the work is built: every plan serving the
@@ -1257,7 +1287,12 @@ A fix that cannot close is named, and the others still close. The cases:
 
 The exit code is 0 when every fix closed and non-zero when any could not. A fix
 that could not close keeps its status and `attempts`; fix the cause and run
-`vbw fix done` again for it.
+`vbw fix done` again for it. A fix of an `[auto]` requirement or a project
+command lists the failures of the last proof, so when the code changed since
+that proof (a round committed work and its `vbw fix done` was refused),
+`vbw next` asks for `vbw prove` before another fix round, and the round works
+from the failures of the current code. A fix QA, a restore or a rejection
+opened keeps its own note, which no proof rewrites, and is worked at once.
 
 ### Reusing an unchanged pass
 
