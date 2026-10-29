@@ -12,14 +12,14 @@
 # each one's lines print together when it ends.
 #
 # Scenarios: greenfield, reject, resume, change, convert, balanced, docs, qafix,
-# decision, debug, research, edgecase, leftover, recheck, approval, newcomer, senior, panel, steptime, road, pluginoff, tools, legacy, nolegacy, smallchange, costs, loop, plugindir, sessions, taskbreak, fixchecks, failoutput, leaveout, hiddenrecord, latedecision. A user
+# decision, debug, research, edgecase, leftover, recheck, approval, newcomer, senior, panel, steptime, road, pluginoff, tools, legacy, nolegacy, smallchange, costs, loop, plugindir, sessions, taskbreak, fixchecks, failoutput, leaveout, hiddenrecord, latedecision, ignoredplanning. A user
 # answers every question with VBW's recommendation unless the scenario says otherwise.
 set -uo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 l3() { bash "$ROOT/tools/l3.sh" "$@"; }
 VBW="$ROOT/plugin/bin/vbw"
-ALL="greenfield reject resume change convert balanced docs qafix decision debug research edgecase leftover recheck approval newcomer senior panel steptime road pluginoff tools legacy nolegacy smallchange costs loop plugindir sessions taskbreak fixchecks failoutput leaveout hiddenrecord latedecision"
+ALL="greenfield reject resume change convert balanced docs qafix decision debug research edgecase leftover recheck approval newcomer senior panel steptime road pluginoff tools legacy nolegacy smallchange costs loop plugindir sessions taskbreak fixchecks failoutput leaveout hiddenrecord latedecision ignoredplanning"
 RESULTS="$ROOT/tools/l3-results"
 STEPS=60
 
@@ -301,6 +301,58 @@ scenario_hiddenrecord() {
       '{gitignore_rule: $r, record_committed: $t, unhide_lines: $u, record_commits: $n}')
     result_write hiddenrecord "$fixture" "${cost_usd:-0}" "$passed" "$facts" \
       '["a rule hiding the whole .vbw folder (covered by tests/hidden-record.bats, L1)","a rule in .git/info/exclude or a global excludes file","an existing project upgraded from an older .vbw/.gitignore","the spec file staying untracked until the first full commit"]'
+  }
+}
+
+# kernel_trees: the kernel's own fingerprints of the project in $dir, the ones
+# vbw next compares with the evidence: "CODE_TREE HEAD_TREE" (empty on failure).
+kernel_trees() {
+  (cd "$dir" && bash -c 'VBW_LIB="$1/plugin/lib"; for l in core record; do . "$VBW_LIB/$l.sh"; done
+    vbw_project; printf "%s %s\n" "$(vbw_code_tree)" "$(vbw_head_tree)"' _ "$ROOT") 2> /dev/null
+}
+
+# A .gitignore that ignores .vbw-planning (#695), with the folder a VBW 1 leftover
+# would leave: one file tracked from before the rule, one untracked. The code
+# fingerprint must still work: the proof records a tree, after the session the
+# kernel's fingerprints equal the evidence (vbw next sees no change), and a proof
+# after an unrelated commit reuses results. Judged in the record and git, never
+# on screen text.
+scenario_ignoredplanning() {
+  new_project
+  mkdir -p "$dir/.vbw-planning"
+  printf '# State\n\nPhase 1 in progress.\n' > "$dir/.vbw-planning/STATE.md"
+  git -C "$dir" add .vbw-planning/STATE.md && git -C "$dir" commit -qm "chore: VBW 1 state"
+  printf '.vbw-planning/\n' > "$dir/.gitignore"
+  printf 'scratch\n' > "$dir/.vbw-planning/notes.md"
+  git -C "$dir" add .gitignore && git -C "$dir" commit -qm "chore: ignore the planning folder"
+  start=$GREET
+  fixture="greet.sh from scratch in a project whose committed .gitignore holds '.vbw-planning/', with .vbw-planning/STATE.md tracked from before the rule and .vbw-planning/notes.md untracked; the user types /vbw:vibe and the build runs to the end; then the scenario commits an unrelated NOTES.md and runs vbw prove"
+  checks() {
+    common_checks
+    local tree head now nowhead ignored=false proved=false unchanged=false tree2="" proved2=false reused=0 passed=true facts
+    tree=$(jq -r '.evidence.tree // empty' "$dir/.vbw/record.json" 2> /dev/null)
+    head=$(jq -r '.evidence.head // empty' "$dir/.vbw/record.json" 2> /dev/null)
+    [ -n "$tree" ] && jq -e '.evidence.passed == true' "$dir/.vbw/record.json" > /dev/null 2>&1 && proved=true
+    git -C "$dir" check-ignore -q .vbw-planning/notes.md && git -C "$dir" ls-files --error-unmatch .vbw-planning/STATE.md > /dev/null 2>&1 && ignored=true
+    read -r now nowhead <<< "$(kernel_trees)"
+    [ -n "$tree" ] && [ "$now" = "$tree" ] && { [ -z "$head" ] || [ "$nowhead" = "$head" ]; } && unchanged=true
+    # A user commit no check reads, then a proof: the fingerprint moves and results are reused.
+    printf '# Notes\n' > "$dir/NOTES.md"
+    git -C "$dir" add NOTES.md && git -C "$dir" commit -qm "docs: notes"
+    (cd "$dir" && "$VBW" prove > /dev/null 2>&1) || true
+    tree2=$(jq -r '.evidence.tree // empty' "$dir/.vbw/record.json" 2> /dev/null)
+    [ -n "$tree2" ] && [ "$tree2" != "$tree" ] && jq -e '.evidence.passed == true' "$dir/.vbw/record.json" > /dev/null 2>&1 && proved2=true
+    reused=$(jq '[.evidence | (.checks // {}), (.commands // {}), (.test_files // {}) | .[] | select(.reused == true)] | length' "$dir/.vbw/record.json" 2> /dev/null || echo 0)
+    expect "the .vbw-planning rule holds: notes.md ignored, STATE.md tracked ($ignored)" [ "$ignored" = true ]
+    expect "the session's proof passed and recorded a tree (${tree:-none})" [ "$proved" = true ]
+    expect "the kernel's fingerprints equal the evidence after the session ($unchanged)" [ "$unchanged" = true ]
+    expect "the proof after a new commit passed with a new tree (${tree2:-none})" [ "$proved2" = true ]
+    expect "that proof reused results ($reused)" [ "${reused:-0}" -ge 1 ]
+    [ "$failed" -eq 0 ] || passed=false
+    facts=$(jq -n --argjson i "$ignored" --arg t "$tree" --argjson p "$proved" --argjson u "$unchanged" --arg t2 "$tree2" --argjson p2 "$proved2" --argjson r "${reused:-0}" \
+      '{planning_ignored_tracked_and_untracked: $i, proof_passed: $p, evidence_tree: $t, fingerprints_match_evidence: $u, second_proof_passed: $p2, second_tree: $t2, reused_units: $r}')
+    result_write ignoredplanning "$fixture" "${cost_usd:-0}" "$passed" "$facts" \
+      '["a rule ignoring the .vbw folder itself","a rule in .git/info/exclude or a global excludes file","converting the VBW 1 folder (the review recommends Start fresh for a folder with no readable plan)","a real VBW 1 project: the folder holds two small files","vbw next run in the session at each step: the fingerprints are compared once, after the session"]'
   }
 }
 

@@ -447,6 +447,16 @@ prove_all_green() {
   echo "$output" | jq -e '.action != "prove"'
 }
 
+@test "the fingerprint works when .gitignore ignores the VBW folders, tracked or not (#695)" {
+  mkdir -p .vbw-planning && printf 'x\n' > .vbw-planning/STATE.md
+  git add -f .vbw-planning && git commit -q -m "chore(test): VBW 1 state"
+  printf '.vbw-planning/\n.vbw/\n' > .gitignore
+  run vbw_code_tree
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  [ -z "$(git ls-tree --name-only "$output" -- .vbw .vbw-planning)" ]
+  git ls-tree --name-only "$output" -- .gitignore | grep -qx .gitignore
+}
+
 @test "accepting a requirement closes a fix still open from its earlier rejection" {
   printf '# Shop\n\n## Requirements\n\n- R1 [auto] A customer can pay\n- R2 [human] It feels trustworthy\n' > .vbw/spec.md
   "$VBW" spec sync > /dev/null
