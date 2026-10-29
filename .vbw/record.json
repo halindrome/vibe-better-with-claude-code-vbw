@@ -59374,6 +59374,13 @@
       "sort": "next",
       "size": "small",
       "status": "open"
+    },
+    {
+      "id": "T198",
+      "text": "Workflow results (F325, 2026-10-27): a Dev that stopped on a hung command returned a placeholder 'blocked' result the workflow took as a report. The building and fixing workflows should reject a result whose commits or checks are empty with no refusal text, and rerun or name it as stopped",
+      "sort": "later",
+      "size": "small",
+      "status": "open"
     }
   ],
   "decisions": [
