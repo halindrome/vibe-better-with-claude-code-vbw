@@ -31,13 +31,17 @@ lib() {
 }
 
 @test "R166: the probe passes on a file system that records reads" {
+  # Where cp clones (btrfs, XFS with reflink) the probe rightly refuses: copies are not reads there.
+  head -c 65536 /dev/zero > "$TEST_ROOT/clone.src" && touch -a -t 200001010000 "$TEST_ROOT/clone.src"
+  cp "$TEST_ROOT/clone.src" "$TEST_ROOT/clone.dst"
+  [ -n "$(find "$TEST_ROOT/clone.src" -maxdepth 0 -atime -1)" ] || skip "the test folder's file system copies by clone, so the probe refuses it"
   run lib 'reads_probe "$VBW_RUNTIME"'
   [ "$status" -eq 0 ]
   [ -z "$output" ]
 }
 
 @test "R166: the probe leaves nothing behind" {
-  run lib 'mkdir -p "$VBW_RUNTIME/p"; reads_probe "$VBW_RUNTIME/p"; ls -A "$VBW_RUNTIME/p" | wc -l'
+  run lib 'mkdir -p "$VBW_RUNTIME/p"; reads_probe "$VBW_RUNTIME/p" 2> /dev/null; ls -A "$VBW_RUNTIME/p" | wc -l'
   [ "$status" -eq 0 ]
   [ "$(printf '%s' "$output" | tr -d ' ')" = 0 ]
 }
@@ -59,6 +63,31 @@ lib() {
   run lib 'PATH="'"$TEST_ROOT"'/stub:$PATH"; reads_probe "$VBW_RUNTIME"'
   [ "$status" -ne 0 ]
   [[ "$output" == *'this file system does not record which files are read'* ]]
+}
+
+@test "R166: the probe reports a file system where a copy does not move the source's access time" {
+  # A copy-on-write clone (cp and cat into a file on btrfs, XFS with reflink) copies the
+  # data without reading it: a unit that copies a tracked file would not have it on its list.
+  vbw_clone_cp "$TEST_ROOT/clones"
+  run lib 'PATH="'"$TEST_ROOT"'/clones:$PATH"; reads_probe "$VBW_RUNTIME"'
+  [ "$status" -ne 0 ] || { echo "$output"; false; }
+  [[ "$output" == *'this file system does not record a copied file as read'* ]] || { echo "$output"; false; }
+}
+
+@test "R166: a run that copies a tracked file has it on its read list, unless the probe refuses the file system" {
+  # On the file system of the test folder itself: cp, cat into a file and Python's
+  # shutil.copyfile (when Python is there) each copy one tracked file out of the copy.
+  run lib 'proofcopy_create_slots 1; c=$PROOF_COPY; s=$(dirname "$c")/reads; o=$(dirname "$c")/out
+    if ! reads_probe "$VBW_RUNTIME" 2> /dev/null; then echo refused; exit 0; fi
+    mkdir -p "$o"
+    reads_reset "$c" "$s"; (cd "$c" && cp src/a.txt "$o/1"); reads_collect "$c" "$s" | jq -c .files
+    reads_reset "$c" "$s"; (cd "$c" && cat src/b.txt > "$o/2"); reads_collect "$c" "$s" | jq -c .files
+    if command -v python3 > /dev/null 2>&1; then
+      reads_reset "$c" "$s"; (cd "$c" && python3 -I -c "import shutil, sys; shutil.copyfile(sys.argv[1], sys.argv[2])" docs/guide.txt "$o/3")
+      reads_collect "$c" "$s" | jq -c .files
+    else echo "[\"docs/guide.txt\"]"; fi'
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  [ "$output" = refused ] || [ "$output" = $'["src/a.txt"]\n["src/b.txt"]\n["docs/guide.txt"]' ] || { echo "$output"; false; }
 }
 
 @test "R166: the probe reports a folder it cannot write to" {
@@ -181,8 +210,9 @@ lib() {
 }
 
 @test "R166: a file a run writes remembers that run's read list, and a later run that reads it inherits it" {
+  # Read through a pipe: a copy into a file can be a clone that reads nothing (the probe's case).
   run lib 'proofcopy_create_slots 1; c=$PROOF_COPY; s=$(dirname "$c")/reads
-    reads_reset "$c" "$s"; (cd "$c" && mkdir -p gen && cat src/a.txt > gen/out.txt && ls docs > /dev/null && git show HEAD:src/b.txt > /dev/null); reads_collect "$c" "$s" > /dev/null
+    reads_reset "$c" "$s"; (cd "$c" && mkdir -p gen && cat src/a.txt | cat > gen/out.txt && ls docs > /dev/null && git show HEAD:src/b.txt > /dev/null); reads_collect "$c" "$s" > /dev/null
     reads_reset "$c" "$s"; (cd "$c" && cat gen/out.txt > /dev/null); reads_collect "$c" "$s" | jq -cS "[.files, (.dirs | map(.path)), .git]"
     reads_reset "$c" "$s"; (cd "$c" && cat src/b.txt > /dev/null); reads_collect "$c" "$s" | jq -cS "[.files, (.dirs | map(.path)), .git]"'
   [ "$status" -eq 0 ]
@@ -227,8 +257,8 @@ lib() {
 
 @test "R166: inherited lists pass on through a chain of runs" {
   run lib 'proofcopy_create_slots 1; c=$PROOF_COPY; s=$(dirname "$c")/reads
-    reads_reset "$c" "$s"; (cd "$c" && cat src/a.txt > one.out); reads_collect "$c" "$s" > /dev/null
-    reads_reset "$c" "$s"; (cd "$c" && cat one.out > two.out); reads_collect "$c" "$s" > /dev/null
+    reads_reset "$c" "$s"; (cd "$c" && cat src/a.txt | cat > one.out); reads_collect "$c" "$s" > /dev/null
+    reads_reset "$c" "$s"; (cd "$c" && cat one.out | cat > two.out); reads_collect "$c" "$s" > /dev/null
     reads_reset "$c" "$s"; (cd "$c" && cat two.out > /dev/null); reads_collect "$c" "$s" | jq -cS ".files"'
   [ "$status" -eq 0 ]
   [ "$output" = '["src/a.txt"]' ]

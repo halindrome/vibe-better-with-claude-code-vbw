@@ -35,6 +35,11 @@ READS_OLD_DAY=200001020000
 # file's access time is set back and must stay behind the yardstick; reading
 # the file and listing a folder must then move it past it. The same comparison
 # (find -anewer) the collector uses, so the probe proves what the proof relies on.
+# A copy of a file must move it too, made with cp and with cat into a file: where
+# the file system copies by a copy-on-write clone (btrfs, XFS with reflink), the
+# data is shared and never read, so the source's access time stays, and a run that
+# copies a tracked file (a test copying a fixture) would not have it on its list.
+# Nothing is reused there either; the message says which test failed.
 reads_probe() {
   local p ok=0
   p=$(mktemp -d "$1/probe.XXXXXX" 2> /dev/null) || ok=1
@@ -53,9 +58,24 @@ reads_probe() {
       ls "$p/d" > /dev/null 2>&1
       [ -n "$(find "$p/d" -maxdepth 0 -anewer "$p/ref" 2> /dev/null)" ] || ok=1
     fi
+    # 64 KiB, so that the copy takes the way an ordinary file's would, not a tiny file's.
+    [ "$ok" -ne 0 ] || head -c 65536 /dev/zero > "$p/d/g" 2> /dev/null || ok=1
+    if [ "$ok" -eq 0 ]; then
+      touch -a -t "$READS_OLD" "$p/d/g" 2> /dev/null && cp "$p/d/g" "$p/c1" 2> /dev/null \
+        && [ -n "$(find "$p/d/g" -maxdepth 0 -anewer "$p/ref" 2> /dev/null)" ] || ok=2
+    fi
+    if [ "$ok" -eq 0 ]; then
+      touch -a -t "$READS_OLD" "$p/d/g" 2> /dev/null && cat "$p/d/g" > "$p/c2" 2> /dev/null \
+        && [ -n "$(find "$p/d/g" -maxdepth 0 -anewer "$p/ref" 2> /dev/null)" ] || ok=2
+    fi
   fi
   [ -z "${p:-}" ] || { chmod -R u+rwx "$p" 2> /dev/null; rm -rf "$p"; }
-  [ "$ok" -eq 0 ] || { printf 'this file system does not record which files are read\n' >&2; return 1; }
+  case "$ok" in
+    0) return 0 ;;
+    2) printf 'this file system does not record a copied file as read\n' >&2 ;;
+    *) printf 'this file system does not record which files are read\n' >&2 ;;
+  esac
+  return 1
 }
 
 # reads_mark FILE SECONDS [NOW]: set FILE's modification time to SECONDS before NOW (now

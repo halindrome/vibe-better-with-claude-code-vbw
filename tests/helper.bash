@@ -93,3 +93,15 @@ vbw_hook() {
 vbw_code_tree() {
   vbw_kernel 'vbw_code_tree'
 }
+
+# vbw_clone_cp DIR: put in DIR a cp that copies the way a copy-on-write clone does
+# (btrfs, XFS with reflink): the data is copied, but no source's access time moves, so
+# the copy is no read. Each source file's access time is kept in a reference file
+# (touch -r only reads the file's times) and put back after the real cp.
+vbw_clone_cp() {
+  local real
+  real=$(command -v cp)
+  mkdir -p "$1"
+  printf '#!/bin/sh\nn=$#; i=0\nfor a in "$@"; do i=$((i + 1)); [ "$i" -lt "$n" ] || break; case "$a" in -*) continue ;; esac; [ ! -f "$a" ] || touch -a -r "$a" "%s/.at.$$.$i"; done\n%s "$@"; rc=$?\ni=0\nfor a in "$@"; do i=$((i + 1)); [ ! -f "%s/.at.$$.$i" ] || { touch -a -r "%s/.at.$$.$i" "$a"; rm -f "%s/.at.$$.$i"; }; done\nexit "$rc"\n' "$1" "$real" "$1" "$1" "$1" > "$1/cp"
+  chmod +x "$1/cp"
+}

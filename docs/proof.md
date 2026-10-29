@@ -1128,6 +1128,7 @@ The causes, with the text the summary shows:
 | What happened | Message |
 |---|---|
 | The file system cannot record which files are read | `this file system does not record which files are read` |
+| A copy of a file is no read on the file system: `cp`, or `cat` into a file, leaves the source's access time as it was (a copy-on-write clone, as btrfs and XFS with reflink make), so a unit that copies a tracked file, as a test copies a fixture, would not have it on its read list | `this file system does not record a copied file as read` |
 | The clone has no earlier recorded run | `this clone has no earlier recorded run` |
 | `vbw prove --full` | `vbw prove --full` |
 | Nothing was committed since the last passing proof (`vbw prove` only; `vbw fix done` reuses that proof): the project's files are the tree the last passing proof recorded (`evidence.tree`), the committed code is the tree it ran on (`evidence.head`), the record is as that proof left it (its fingerprint without the evidence is `evidence.record`: a decision, a verdict or a backlog item recorded since is a change, and the proof reuses by read lists), and the record's last proof passed | `nothing was committed since the last passing proof` |
@@ -1167,6 +1168,11 @@ They read `checks: N ran, M reused` and `test files: N ran, M reused`. After
 - What lies outside the project is not tracked: installed tools, the network
   and the clock. A check that depends on them can pass from reuse after they
   changed.
+- On a file system that copies a file by a copy-on-write clone (btrfs, XFS
+  with reflink), nothing is reused: a clone shares the data without reading
+  it, so a copied file never shows on a read list. Every proof there runs
+  everything and says why (the causes above). There is no setting that turns
+  clones off; a project on another file system reuses as usual.
 - A check that only looks whether a file exists, or at its size, without
   opening it or listing its folder, does not put that file on its read list: a
   change to that file does not run the check again, and neither does its
