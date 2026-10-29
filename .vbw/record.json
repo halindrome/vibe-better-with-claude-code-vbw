@@ -59381,6 +59381,13 @@
       "sort": "later",
       "size": "small",
       "status": "open"
+    },
+    {
+      "id": "T199",
+      "text": "Empty-match refusal beyond bats (Lead note, M45): R220 refuses a bats --filter that matches no case; extend the same refusal to pytest -k, go test -run and node --test-name-pattern, and to the check vbw fix check writes",
+      "sort": "later",
+      "size": "small",
+      "status": "open"
     }
   ],
   "decisions": [
