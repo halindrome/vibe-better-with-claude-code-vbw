@@ -4,6 +4,10 @@
 # strings are data (ledger D281), except where the shell runs them: $(...) and
 # `...` inside double quotes, and sh -c / eval strings.
 #
+# The files a command writes by name are read from its redirects and from the
+# shell tools that write (shell_writes: cp, rsync, install, ln, mv, tee, sed -i,
+# rm); during a run each is judged like a redirect (#727).
+#
 # A program an interpreter runs inline (a -c/-e argument, a heredoc) is read for
 # the files it writes (R76), and the guard reads a literal path only: a call
 # that writes a file whose target is held in a variable, an expression or
@@ -145,6 +149,45 @@ def written(rule):
          or (.cmd | test("awk$")) and any(.args[]; test("^(inplace|--in-place)$"))
        else true end));
 def paths: (.args[] | sub("^--?[A-Za-z0-9-]+="; "")), .out[], .in[];
+
+# The files a simple command writes by name, as written (#727): its redirect
+# targets; the destination of a copier (the last operand, or -t DIR) and of mv,
+# whose sources go too, as do rsync --remove-source-files'; tee's and rm's
+# operands; the files sed -i edits, not its script. A destination ending in /
+# (or -t's) is a folder, written at each source's name; ln with one operand
+# links at its name here. Flags are never targets. A folder named without a
+# trailing / is judged as itself: the guard reads text and cannot tell it from
+# a file, so a write there is refused unless the folder is the run's to write
+# and holds no protected check file (lease_write_denial).
+def shell_writes:
+  def at($dir): $dir + (if $dir | endswith("/") then "" else "/" end) + basename;
+  .out[],
+  ( . as $c | [.args[] | select(startswith("-") | not)] as $o
+    | if (.cmd | copier) or .cmd == "mv" then
+        ([.args[] | select(startswith("--target-directory=")) | .[19:]][0]
+         // (.args | (index("-t") // index("--target-directory")) | if . == null then null else $c.args[. + 1] end)) as $t
+        | ( if $t != null then {srcs: ($o - [$t]), dir: $t}
+            elif ($o | length) == 1 and .cmd == "ln" then {srcs: $o, dir: "."}
+            elif ($o | length) < 2 then {srcs: []}
+            elif $o[-1] | endswith("/") then {srcs: $o[:-1], dir: $o[-1]}
+            else {srcs: $o[:-1], file: $o[-1]} end ) as $w
+        | (if $w.dir != null then $w.srcs[] | at($w.dir) else $w.file // empty end),
+          (select(.cmd == "mv" or any(.args[]; . == "--remove-source-files")) | $w.srcs[])
+      elif .cmd == "tee" or .cmd == "rm" then $o[]
+      elif .cmd == "sed" and any(.args[]; test("^-[A-Za-z]*i|^--in-place")) then
+        # The script is the value of -e/-f, else the first operand; a bare -i may take BSD's suffix ('' or .bak).
+        .args | reduce .[] as $a ({skip: false, suffix: false, script: false, ops: []};
+            if .skip then .skip = false
+            elif .suffix and ($a == "" or ($a | test("^\\.[^/]*$"))) then .suffix = false
+            else .suffix = false
+              | if $a | test("^-[A-Za-z]*[ef]$|^--(expression|file)$") then .skip = true | .script = true
+                elif $a | test("^-[A-Za-z]*[ef].|^--(expression|file)=") then .script = true
+                elif $a | test("^-[A-Za-z]*i$") then .suffix = true
+                elif $a | startswith("-") then .
+                else .ops += [$a] end
+            end)
+        | (if .script then .ops else .ops[1:] end)[]
+      else empty end );
 
 def approve_call:
   (if .cmd | shell then {cmd: ((.args[0] // "") | basename), args: .args[1:]} else . end)
@@ -297,7 +340,8 @@ def unreadable_denial:
 
 # A subagent during a run (docs/workflows.md): commits go through vbw commit;
 # builders share one working tree, so nothing may move HEAD or other builders'
-# changes; files are restored and redirects written only within the run's files.
+# changes; files are restored and written by the shell (shell_writes) only
+# within the run's files.
 def in_run($g):
   ( select(written(glance_path)) | glance_reason ),
   ( select(.cmd == "git") | git_words as $w | ($w[0] // "") as $s | $w[1:] as $a
@@ -309,16 +353,14 @@ def in_run($g):
       ( select($s == "checkout" or ($s == "restore" and ((any($a[]; . == "--staged") and (any($a[]; test("^(--worktree|-W)$")) | not)) | not)))
         | (if $s == "checkout" then $a[(($a | index("--")) + 1):] else [$a[] | select(startswith("-") | not)] end)[]
         | shell_write_denial($g) ) ),
-  ( .out[] | shell_write_denial($g) ),
+  ( shell_writes | shell_write_denial($g) ),
   ( select(.cmd | interpreter) | [((.args | join("\n")) | program_writes), inplace_files] | add | program_denial($g) ),
   ( select(.cmd | interpreter) | (.args | join("\n")) | unreadable_calls | unreadable_denial );
 
 # Another session's open run (D11): shell writes of the files it writes.
 def foreign_run($g):
   holder_name($g.foreign; foreign_stored_name($g.foreign); null) as $holder
-  | (.out[], (select(.cmd | test("^(cp|mv|tee|rm)$")) | .args[]), (select(.cmd == "sed" and any(.args[]; test("^-[A-Za-z]*i"))) | .args[]))
-  | select(startswith("-") | not)
-  | project_path(session_dir($g); $root) | foreign_denial($g.foreign; $holder);
+  | shell_writes | project_path(session_dir($g); $root) | foreign_denial($g.foreign; $holder);
 
 # Outside a run, every rule needs one of these words in the raw command,
 # wherever it appears (strings and heredocs included), so a command without any
