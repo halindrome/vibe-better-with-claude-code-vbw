@@ -1,0 +1,52 @@
+{
+  "scenario": "stalefix",
+  "fixture": "greet.sh (R1) and its release manifest CHECKSUMS.sha256 (R2, checked with shasum -c), two express phases built and proven; a later commit by the user makes the no-name case fail and regenerates the manifest, so the proof before the session failed only C1 and opened F1; repairing greet.sh, the only file F1 owns, makes C2 fail; rigor auto; the user types /vbw:vibe",
+  "cost_usd": 0.80,
+  "evidence_level": "L3",
+  "at": "2026-10-28T20:26:04Z",
+  "passed": true,
+  "facts": {
+    "fixes_before": [
+      {
+        "id": "F1",
+        "req": "R1",
+        "status": "open"
+      }
+    ],
+    "round_committed_repair": true,
+    "fix_done_refused": true,
+    "f1_fix_rounds": 1,
+    "proof_between_rounds": true,
+    "evidence_at_before": "2026-10-28T20:17:57Z",
+    "evidence_at_f1_closed": "2026-10-28T20:20:14Z",
+    "evidence_at_f2_opened": "2026-10-28T20:20:14Z",
+    "evidence_advanced": true,
+    "f2": {
+      "req": "R2",
+      "status": "closed",
+      "source": "proof"
+    },
+    "steps": [
+      "fix F1",
+      "fix done",
+      "next prove",
+      "prove",
+      "next fix",
+      "fix F2",
+      "fix done",
+      "next prove",
+      "prove",
+      "next qa",
+      "next ?",
+      "next ship"
+    ]
+  },
+  "not_tested": [
+    "the failure of a test file of the single-file form or of a project command (tests/kernel-next.bats holds the project-command row)",
+    "a fix QA, a restore or a rejection opened (worked at once on stale evidence: tests/kernel-next.bats)",
+    "a round interrupted before vbw fix done, or a user commit while a fix is open",
+    "the same scenario on the code before the fix (L1 only: tests/kernel-next.bats)",
+    "a project larger than the greet.sh fixture",
+    "the wording of what VBW tells the user (read by a person)"
+  ]
+}

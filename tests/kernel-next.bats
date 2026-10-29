@@ -96,6 +96,39 @@ next_after() {
   echo "$output" | jq -e '.action == "fix" and .gate == false and .detail.fixes == ["F1"]'
 }
 
+@test "#706: an open fix whose code changed since the proof is proved before another fix round" {
+  # A round committed work but its vbw fix done was refused: the fix stays open, the evidence is stale.
+  next_after '.requirements[0].status = "failing" | .fixes = [{id:"F1", req:"R1", attempts:0, status:"open", note:"C1"}]' > /dev/null
+  printf 'fixed\n' > a.js
+  git add a.js
+  git commit -q -m 'fix(pay): round 1'
+  run "$VBW" next --json < /dev/null
+  echo "$output" | jq -e '.action == "prove"'
+  # A project command's fix is written by the proof too, with no [auto] requirement to prove.
+  next_after '.requirements |= map(select(.proof == "human")) | .checks = [] | .phases[].reqs = ["R2"] | .plans[].reqs = ["R2"] | .commands = {test: ["true"]} | .fixes = [{id:"F1", command:"test", attempts:0, status:"open", note:"t.sh"}]' > /dev/null
+  printf 'fixed again\n' > a.js
+  git commit -q -am 'fix(pay): round 2'
+  run "$VBW" next --json < /dev/null
+  echo "$output" | jq -e '.action == "prove"'
+  # A rejection's fix carries the user's note, which no proof rewrites: it is worked on stale evidence.
+  next_after '.requirements |= map(select(.proof == "human") | .status = "rejected") | .checks = [] | .phases[].reqs = ["R2"] | .plans[].reqs = ["R2"] | .fixes = [{id:"F1", req:"R2", attempts:0, status:"open", note:"ugly"}]' > /dev/null
+  printf 'fixed a third time\n' > a.js
+  git commit -q -am 'fix(pay): round 3'
+  run "$VBW" next --json < /dev/null
+  echo "$output" | jq -e '.action == "fix"'
+  # So are QA's and a restore's, even on an [auto] requirement whose fix a proof would otherwise wait for.
+  next_after '.requirements[0].status = "failing" | .fixes = [{id:"F1", req:"R1", source:"qa", phase:"P1", attempts:0, status:"open", note:"QA: wrong total"}]' > /dev/null
+  printf 'fixed a fourth time\n' > a.js
+  git commit -q -am 'fix(pay): round 4'
+  run "$VBW" next --json < /dev/null
+  echo "$output" | jq -e '.action == "fix"' || { echo "$output"; false; }
+  next_after '.requirements[0].status = "failing" | .fixes = [{id:"F1", req:"R1", restore:"a.js", attempts:0, status:"open", note:"restore a.js"}]' > /dev/null
+  printf 'fixed a fifth time\n' > a.js
+  git commit -q -am 'fix(pay): round 5'
+  run "$VBW" next --json < /dev/null
+  echo "$output" | jq -e '.action == "fix"' || { echo "$output"; false; }
+}
+
 @test "row 10: unproven auto requirements are proved (including after a fix)" {
   run next_after '.requirements[0].status = "open"'
   echo "$output" | jq -e '.action == "prove" and .gate == false'

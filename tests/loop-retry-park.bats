@@ -161,6 +161,9 @@ parked_clean() {
   printf 'note\n' > .vbw/notes.md
   git add -f src/other.txt .vbw/notes.md && git commit -q -m "chore: code and record together"
   escalated
+  # The new commit makes the proof stale: the retried fix waits for a proof first (#706).
+  [ "$(step)" = prove ] || { cat "$TEST_ROOT/step.json"; false; }
+  loop_prove
   [ "$(step)" = fix ] || { cat "$TEST_ROOT/step.json"; false; }
   escalated
   figures s1 4 2000 200
@@ -214,6 +217,9 @@ parked_clean() {
   printf 'note\n' > .vbw/notes.md
   git add -f src/greet.txt .vbw/notes.md && git commit -q -m "chore: code and record together"
   escalated
+  # The new commit makes the proof stale: the retried fix waits for a proof first (#706).
+  [ "$(step)" = prove ] || { cat "$TEST_ROOT/step.json"; false; }
+  loop_prove
   [ "$(step)" = fix ] || { cat "$TEST_ROOT/step.json"; false; }
   escalated
   figures s1 4 2000 200
@@ -241,6 +247,9 @@ parked_clean() {
   printf 'note\n' > .vbw/notes.md
   git add -f src/greet.txt .vbw/notes.md && git commit -q -m "chore: code and record together"
   escalated
+  # The new commit makes the proof stale: the retried fix waits for a proof first (#706).
+  [ "$(step)" = prove ] || { cat "$TEST_ROOT/step.json"; false; }
+  loop_prove
   [ "$(step)" = fix ] || { cat "$TEST_ROOT/step.json"; false; }
   escalated
   figures s1 4 2000 200
