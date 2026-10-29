@@ -7,7 +7,8 @@
 # rounds, basis, say}, or null. NOTE_JSON is the live step's note, empty when no
 # step is live. One jq run (lib/road.jq): every piece's expected seconds comes
 # from lib/steps-expect.jq's ladders, wrapped as `expect($kind; $size)` in front
-# of the program, and the record, the history, the runs store, vbw next's answer
+# of the program, and the record, the history, the run times (run-times.json
+# beside the run store, step_expect: never the store itself), vbw next's answer
 # and the note reach it by --slurpfile only. steps-expect.jq reads its size as
 # step_expect slurps it, $size[0], so the wrapper hands it [$size]. A missing,
 # damaged or unreadable history only means no end time yet.
@@ -17,7 +18,7 @@ road_compute() {
   [ -n "$note" ] || note=null
   file=$(step_history_file)
   runs=""
-  [ -z "$file" ] || runs="$(dirname "$file")/runs.json"
+  [ -z "$file" ] || runs="$(dirname "$file")/run-times.json"
   expect="def expect(\$kind; \$s): [\$s] as \$size |
 $(cat "$VBW_LIB/steps-expect.jq");
 "
