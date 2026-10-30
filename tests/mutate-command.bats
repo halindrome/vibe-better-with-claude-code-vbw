@@ -96,6 +96,13 @@ refused() {
   breaks P1.1 | jq -e 'length == 1 and .[0].checks == {C1: "red"} and .[0].result == "red"' || { breaks P1.1; false; }
   [ -z "$(git -C sub status --porcelain -- pay.sh)" ] || { git -C sub status --porcelain; false; }
   cmp -s sub/pay.sh <(git -C sub show HEAD:pay.sh)
+  # A proof copy reused for the next break (mutate_clean) gets the file back from the
+  # submodule's last commit, in the submodule's folder of the copy.
+  mkdir -p "$TEST_ROOT/copy/sub"
+  printf 'echo broken\n' > "$TEST_ROOT/copy/sub/pay.sh"
+  # shellcheck disable=SC2016 # expanded by vbw_kernel
+  COPY="$TEST_ROOT/copy" vbw_kernel '. "$VBW_LIB/cmd-mutate.sh"; mutate_clean "$COPY" sub/pay.sh'
+  cmp -s "$TEST_ROOT/copy/sub/pay.sh" <(git -C sub show HEAD:pay.sh) || { ls -la "$TEST_ROOT/copy/sub"; false; }
 }
 
 @test "R188: a rule's own check is the one that runs, even when the requirement has others" {

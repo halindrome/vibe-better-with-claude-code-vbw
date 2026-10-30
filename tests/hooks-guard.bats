@@ -134,6 +134,17 @@ denied() {
   denied
 }
 
+@test "a session started in a submodule with no record of its own is guarded as the VBW project above it, as the kernel finds it" {
+  vbw_submodule "mod dir"
+  mkdir -p "mod dir/deep"
+  run bash_call 'git reset --hard' "$PROJECT/mod dir/deep"
+  denied
+  run file_call Write "$PROJECT/.vbw/record.json" "$PROJECT/mod dir"
+  denied
+  # The kernel works on the same project from there.
+  (cd "$PROJECT/mod dir/deep" && "$VBW" status < /dev/null > /dev/null) || { echo "vbw status failed in the submodule"; false; }
+}
+
 @test "a session started in a subfolder of a VBW project is guarded as at its root; the project is the git top, never a folder above it" {
   local sub="$PROJECT/Sub Folder With Spaces"
   mkdir -p "$sub"

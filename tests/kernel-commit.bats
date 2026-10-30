@@ -141,12 +141,8 @@ teardown() { vbw_teardown; }
 # a.js), committed in the project, and a plan P1.3 whose files lie in it, one
 # in a folder that does not exist yet, and one in the project's own repository.
 with_sub() {
-  git init -q "$TEST_ROOT/subsrc"
-  printf 'a\n' > "$TEST_ROOT/subsrc/a.js"
-  git -C "$TEST_ROOT/subsrc" add a.js
-  git -C "$TEST_ROOT/subsrc" commit -q -m "chore: seed"
-  git -c protocol.file.allow=always submodule add -q "file://$TEST_ROOT/subsrc" sub
-  jq '.plans += [{id:"P1.3", phase:"P1", title:"Sub", reqs:["R1"], files:["sub/a.js", "sub/new dir/b.js", "src/root.js"], after:[], status:"building"}]' \
+  vbw_submodule sub
+  jq '.plans += [{id:"P1.3", phase:"P1", title:"Sub", reqs:["R1"], files:["sub/a.js", "sub/new dir/b.js", "sub/auth/login.js", "src/root.js"], after:[], status:"building"}]' \
     .vbw/record.json > "$TEST_ROOT/r.json" && cp "$TEST_ROOT/r.json" .vbw/record.json
   git add .gitmodules sub .vbw/record.json
   git commit -q -m "chore: add sub"
@@ -203,8 +199,71 @@ with_sub() {
   vbw_run commit P1.3 "feat(sub): both"
   [ "$status" -ne 0 ]
   [[ "$output" == *"sub is on no branch"* ]] || { echo "$output"; false; }
+  [[ "$output" == *"Next: put it on a branch (git -C sub switch BRANCH), then commit again"* ]] || { echo "$output"; false; }
   [ "$(git rev-parse HEAD)" = "$root_head" ]
   [ "$(git -C sub rev-parse HEAD)" = "$sub_head" ]
+}
+
+@test "a risk-path file inside a submodule raises the plan's phase by its project path" {
+  with_sub
+  mkdir -p sub/auth
+  printf 'login\n' > sub/auth/login.js
+  vbw_run commit P1.3 "feat(sub): login"
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  jq -e '.phases[0].tier == "deep" and (.phases[0].escalations[-1].reason | contains("(sub/auth/login.js)"))' .vbw/record.json \
+    || { jq '.phases[0]' .vbw/record.json; false; }
+}
+
+@test "a commit that fails in one repository after another committed names what was committed, escalates it, and a second run commits only the rest" {
+  with_sub
+  mkdir -p sub/auth
+  printf 'login\n' > sub/auth/login.js
+  printf 'r\n' > src/root.js
+  # The project's own pre-commit hook refuses; the submodule (first in the plan) has none.
+  printf '#!/bin/sh\necho "hook says no" >&2\nexit 1\n' > .git/hooks/pre-commit
+  chmod +x .git/hooks/pre-commit
+  local root_head sub_head
+  root_head=$(git rev-parse HEAD)
+  vbw_run commit P1.3 "feat(sub): login"
+  [ "$status" -ne 0 ] || { echo "$output"; false; }
+  sub_head=$(git -C sub rev-parse --short HEAD)
+  [ "$(git rev-parse HEAD)" = "$root_head" ]
+  [ "$(git -C sub log -1 --format='%(trailers:key=VBW-Plan,valueonly)' | tr -d '[:space:]')" = "P1.3" ]
+  [[ "$output" == *"git commit failed in the project"* ]] || { echo "$output"; false; }
+  [[ "$output" == *"already committed: $sub_head in sub (1 file)"* ]] || { echo "$output"; false; }
+  [[ "$output" == *"Next: "*"vbw commit P1.3"*"only the files still changed"* ]] || { echo "$output"; false; }
+  jq -e '.phases[0].tier == "deep" and (.phases[0].escalations[-1].reason | contains("(sub/auth/login.js)"))' .vbw/record.json \
+    || { jq '.phases[0]' .vbw/record.json; false; }
+  rm .git/hooks/pre-commit
+  vbw_run commit P1.3 "feat(sub): login"
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  [ "$output" = "committed $(git rev-parse --short HEAD) for P1.3 (1 file)" ] || { echo "$output"; false; }
+  [ "$(git show --name-only --format= HEAD)" = "src/root.js" ]
+  [ "$(git -C sub rev-parse --short HEAD)" = "$sub_head" ]
+}
+
+@test "a plan's folder entry that holds a submodule covers the submodule's files: they are committed there and count as uncommitted until then" {
+  mkdir -p apps
+  vbw_submodule "apps/mobile app"
+  jq '.plans += [{id:"P1.4", phase:"P1", title:"Apps", reqs:["R1"], files:["apps/"], after:[], status:"building"}]' \
+    .vbw/record.json > "$TEST_ROOT/r.json" && cp "$TEST_ROOT/r.json" .vbw/record.json
+  git add .gitmodules "apps/mobile app" .vbw/record.json
+  git commit -q -m "chore: add apps"
+  local root_head
+  root_head=$(git rev-parse HEAD)
+  printf 'a2\n' > "apps/mobile app/a.js"
+  vbw_run plan done P1.4
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"uncommitted changes in: apps/mobile app/a.js"* ]] || { echo "$output"; false; }
+  printf 'w\n' > apps/web.js
+  vbw_run commit P1.4 "feat(apps): both"
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  [[ "$output" == *"in apps/mobile app for P1.4 (1 file)"* ]] || { echo "$output"; false; }
+  [ "$(git -C "apps/mobile app" show --name-only --format= HEAD)" = "a.js" ]
+  [ "$(git show --name-only --format= HEAD)" = "apps/web.js" ]
+  # The pointer is never moved.
+  [ "$(git rev-parse HEAD^)" = "$root_head" ]
+  [ "$(git ls-tree HEAD "apps/mobile app" | cut -d' ' -f3 | cut -f1)" = "$(git ls-tree "$root_head" "apps/mobile app" | cut -d' ' -f3 | cut -f1)" ]
 }
 
 @test "vbw commit run inside a submodule commits for the project above it" {

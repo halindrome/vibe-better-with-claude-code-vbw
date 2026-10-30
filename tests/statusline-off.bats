@@ -120,6 +120,13 @@ snapshot() { find "$PROJECT" -type f -exec cksum {} + | sort; }
   DIR="$PROJECT/src/deep" hidden
 }
 
+@test "R184: started in a submodule with no record of its own, the settings are read from the VBW project above it" {
+  "$VBW" init > /dev/null
+  vbw_submodule "mod dir"
+  vbw_in "$PROJECT/.claude/settings.json" false
+  DIR="$PROJECT/mod dir" hidden
+}
+
 @test "R184: nothing that does not turn VBW off changes anything: missing files, no entry, another plugin off, or a file that is not JSON" {
   shown
   local body
