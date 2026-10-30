@@ -170,10 +170,16 @@ greet_project() {
   "$VBW" init > /dev/null
   printf '#!/bin/sh\necho hello\n' > greet.sh
   chmod +x greet.sh
+  # C5 runs lister.sh by its path; the script itself lists the folder data/, which stays a read.
+  mkdir data
+  printf 'x\n' > data/x.txt
+  printf '#!/bin/sh\nls data > /dev/null\n' > lister.sh
+  chmod +x lister.sh
   printf '# Shop\n\n## Requirements\n\n- R1 [auto] A customer is greeted\n' > .vbw/spec.md
   "$VBW" spec sync > /dev/null
   edit_record '.checks = [{id:"C3", req:"R1", run:["./greet.sh"], files:["greet.sh"]},
-      {id:"C4", req:"R1", run:["sh","greet.sh"], files:["greet.sh"]}]
+      {id:"C4", req:"R1", run:["sh","greet.sh"], files:["greet.sh"]},
+      {id:"C5", req:"R1", run:["./lister.sh"], files:["lister.sh"]}]
     | .phases = [{id:"P1", title:"Shop", reqs:["R1"], milestone:"M1"}]
     | .plans = [{id:"P1.1", phase:"P1", title:"Shop", reqs:["R1"], files:["src/"], after:[], status:"done"}]'
   git add -A && git commit -q -m "chore(vbw): plan"
@@ -200,4 +206,18 @@ greet_project() {
   [ "$status" -eq 0 ] || { echo "$output"; false; }
   [[ "$(line C3)" == *"reused"* && "$(line C4)" == *"reused"* ]] || { echo "$output"; false; }
   [[ "$output" != *"ran everything"* ]] || { echo "$output"; false; }
+}
+
+@test "R226: a folder the script run by its path lists itself stays on its read list, and a file added to it reruns the check" {
+  fixture_copy greet
+  jq -e '.runs["check:C5"].dirs | map(.path) | index("data") != null' "$STORE" > /dev/null || {
+    echo "read list:"
+    jq -c '.runs["check:C5"]' "$STORE"
+    false
+  }
+  printf 'y\n' > data/y.txt
+  commit "feat: another data file"
+  vbw_run prove
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  [[ "$(line C5)" != *"reused"* ]] || { echo "$output"; false; }
 }
