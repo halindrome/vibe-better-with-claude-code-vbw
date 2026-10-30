@@ -13,7 +13,7 @@ standard: what good output is. Every write to the plan of record goes through
 | `vbw:building` | `build` (one wave: the ready plans, no two sharing a file) | one Dev for every plan (Docs for documentation plans), all at the same time; VBW sets no limit | each plan `done` (one commit per task, its checks green) or `blocked` with a reason |
 | `vbw:fixing` | `fix` (`detail.groups`: open fixes that share files, grouped) | one Dev for every group, all at the same time; after every Dev returns, one `vbw fix done` for every fix whose Dev reported done | each fix `fixed` (verified, committed) or its plan `blocked` |
 | `vbw:verifying` | `qa` (built phases not yet verified on the proven code) | one QA agent for every phase, all at the same time | each phase's verdict recorded (`vbw qa record`), its findings as fixes (`vbw qa finding`) |
-| `vbw:mapping` | `spec` or `plan` on existing code without `.vbw/map.md` | Scouts, one per angle, then one merge | the map, written to `.vbw/map.md`; a test or lint result in it is a snapshot marked with its commit and date, and no advice in the map rests on one; its Tests section names, per test framework, the command that runs one test file (run once while mapping) and what a new test file needs, so the Lead does not work it out while planning (#721) |
+| `vbw:mapping` | `spec` or `plan` on existing code without `.vbw/map.md` | Scouts, one per angle, then one merge | the map, saved to `.vbw/map.md` by `vbw run end --map` in the map run's record commit; a test or lint result in it is a snapshot marked with its commit and date, and no advice in the map rests on one; its Tests section names, per test framework, the command that runs one test file (run once while mapping) and what a new test file needs, so the Lead does not work it out while planning (#721) |
 | `vbw:researching` | the user runs `/vbw:research` | four Scouts (sources, practice, current state, this project), then one answer | a sourced answer with a recommendation |
 | `vbw:investigating` | the user runs `/vbw:debug` | three Debuggers (reproduce, trace, history), then one diagnosis; with the diagnosis given, one Debugger fixes it | the root cause with evidence and rejected hypotheses; or the fix, its regression test and commit |
 | `vbw:recommending` | after `vbw ship`, or the user asks `/vbw:vibe what's next` | one Architect | a recommendation: a top pick and up to two runners-up (docs/whats-next.md) |
@@ -56,10 +56,10 @@ The router opens a lease before it starts a workflow and closes it after:
 ```
 vbw run start build P1.1 P1.2     # or: fix F1 F2 | plan | qa | map
 vbw run confirm P1.1 P1.2         # build, fix and qa runs: was it recorded?
-vbw run end
+vbw run end                       # a map run: vbw run end --map < MAP
 ```
 
-A workflow closes its own run. The router passes `args.session` (its
+A workflow closes its own run, except `vbw:mapping` (below). The router passes `args.session` (its
 `${CLAUDE_SESSION_ID}`) to every workflow. Without it, a workflow closes
 nothing and the router ends the run as before. With it:
 
@@ -77,11 +77,18 @@ nothing and the router ends the run as before. With it:
   `{ended, recorded, report}`. The workflow returns that answer as
   `confirmation` and sets `complete` to true only when no agent stopped early
   and `recorded` and `ended` are both true.
-- `vbw:planning` and `vbw:mapping` close with the same Lead on every way out,
-  including a stop for decisions or an error. Planning's closing agent also
-  checks each planned phase with `vbw show phase`; a phase with no plans makes
-  the workflow return `status: "blocked"` with the Lead's report instead of
-  `planned`.
+- `vbw:planning` closes with the same Lead on every way out, including a stop
+  for decisions or an error. Its closing agent also checks each planned phase
+  with `vbw show phase`; a phase with no plans makes the workflow return
+  `status: "blocked"` with the Lead's report instead of `planned`.
+- `vbw:mapping` never ends its run, with or without `args.session` (#731). It
+  returns the map, and its caller (`/vbw:map`, or the router's map step) ends
+  the run with it: `vbw run end --map`, the map on stdin (from a saved result,
+  `jq -er '.result.map' FILE | vbw run end --map`). The kernel writes
+  `.vbw/map.md` and then makes the run's record commit, so that commit holds
+  the map and no VBW file is left changed. It refuses an empty map, a run that
+  is not a map run, no open run and another session's run, and then writes
+  nothing.
 - A requirement the code already meets cannot have a check that fails today.
   The Architect raises it as a decision (drop it or reword it); if one still
   reaches the Lead, the Lead applies nothing and returns `status: "blocked"`
@@ -120,7 +127,7 @@ VBW_SESSION_ID=<session> vbw run end
 
 The log lines read `the closing agent stopped: run by hand: ...`, `not
 everything was recorded: check by hand with ...` and `the run did not end: run
-by hand: ...`. A planning or mapping run logs only the `vbw run end` line.
+by hand: ...`. A planning run logs only the `vbw run end` line.
 
 The router then finds no open run. `vbw run end` with nothing open prints
 `no run is open` and exits 0, so the router's own call is harmless.
@@ -217,7 +224,7 @@ changes nothing. It also works right after a subcommand. With no command,
 
 ```
 $ vbw run start --help
-usage: vbw run start KIND [IDS] | run confirm ID... | run end [--owner-closed]   open the run lease, check what its agents recorded, close it
+usage: vbw run start KIND [IDS] | run confirm ID... | run end [--owner-closed | --map < MAP]   open the run lease, check what its agents recorded, close it (a map run with its map)
 ```
 
 Help writes no record, makes no commit and does not touch the index. It works

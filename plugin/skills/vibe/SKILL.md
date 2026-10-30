@@ -61,8 +61,8 @@ When `rename_hint` in `vbw next --json` is a sentence, say it once, as given. Ne
 `session` (`${CLAUDE_SESSION_ID}`, so the workflow confirms and ends its own run), `models` (from `vbw config models`), the next JSON's top-level `rigor`, `effort`, `profile` and `root` (the project folder: agents of a session started in a subfolder work there) in every workflow's args.
 
 Before `spec` or a workflow `plan`: code and no `.vbw/map.md` → map first:
-`VBW_SESSION_ID=${CLAUDE_SESSION_ID} vbw run start map`, Workflow `vbw:mapping` (args as above),
-write its `map` to `.vbw/map.md` (from a saved file: `jq -er '.result.map' FILE > .vbw/map.md`), read it.
+`VBW_SESSION_ID=${CLAUDE_SESSION_ID} vbw run start map`, Workflow `vbw:mapping` (args as above; it does not end its run),
+then end the run with its `map` on stdin, which saves `.vbw/map.md` in the run's commit (from a saved file: `jq -er '.result.map' FILE | VBW_SESSION_ID=${CLAUDE_SESSION_ID} vbw run end --map`; else a quoted heredoc, `<<'VBW_MAP'`), then read `.vbw/map.md`.
 
 Then, `profile.ask` true: follow `vbw:interview` before any spec or convert work; resume at
 `profile.pending`; unrecognised answer: ask again, record nothing.

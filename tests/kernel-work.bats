@@ -409,6 +409,56 @@ prove_all_green() {
   git show --name-only --format= HEAD | grep -qx .vbw/map.md
 }
 
+# #731: a map run ends with its map (vbw run end --map, the map on stdin), so the
+# run's record commit holds the map it produced and no VBW file is left changed.
+@test "#731: a map run ends with its map: the map is in the run's record commit and .vbw/ is clean" {
+  printf '## Stack and commands\n- old\n' > .vbw/map.md
+  "$VBW" run start map > /dev/null
+  run bash -c 'printf "## Stack and commands\n- npm test\n" | "$1" run end --map' _ "$VBW"
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  [ "$output" = "run ended" ]
+  [ "$(cat .vbw/map.md)" = "$(printf '## Stack and commands\n- npm test')" ]
+  jq -e '.lease == null and (.costs.runs[-1].kind == "map")' .vbw/record.json
+  git show --format=%s -s HEAD | grep -q '^chore(vbw): record after map-'
+  git show --name-only --format= HEAD | grep -qx .vbw/map.md
+  git show --name-only --format= HEAD | grep -qx .vbw/record.json
+  [ "$(git show HEAD:.vbw/map.md)" = "$(cat .vbw/map.md)" ]
+  [ -z "$(git status --porcelain -- .vbw)" ] || { git status --porcelain -- .vbw; false; }
+}
+
+@test "#731: run end --map refuses an empty map, another kind of run and no run, and writes nothing" {
+  printf 'old map\n' > .vbw/map.md
+  "$VBW" run start map > /dev/null
+  run bash -c '"$1" run end --map < /dev/null' _ "$VBW"
+  [ "$status" -eq 2 ] || { echo "$status $output"; false; }
+  [[ "$output" == *"usage: vbw run end"* ]] || { echo "$output"; false; }
+  [ "$(cat .vbw/map.md)" = "old map" ]
+  jq -e '.lease.kind == "map"' .vbw/record.json
+  "$VBW" run end > /dev/null
+  "$VBW" run start plan > /dev/null
+  run bash -c 'printf "new\n" | "$1" run end --map' _ "$VBW"
+  [ "$status" -eq 1 ] || { echo "$status $output"; false; }
+  [[ "$output" == *"plan run"* && "$output" == *"Next: "* ]] || { echo "$output"; false; }
+  [ "$(cat .vbw/map.md)" = "old map" ]
+  jq -e '.lease.kind == "plan"' .vbw/record.json
+  "$VBW" run end > /dev/null
+  run bash -c 'printf "new\n" | "$1" run end --map' _ "$VBW"
+  [ "$status" -eq 1 ] || { echo "$status $output"; false; }
+  [[ "$output" == *"no run is open"* && "$output" == *"Next: "* ]] || { echo "$output"; false; }
+  [ "$(cat .vbw/map.md)" = "old map" ]
+  [ -z "$(ls .vbw/runtime/ | grep '^map\.')" ]
+}
+
+@test "#731: run end --map refuses another session's map run and leaves the map as it was" {
+  printf 'old map\n' > .vbw/map.md
+  VBW_SESSION_ID=sessA "$VBW" run start map > /dev/null
+  run bash -c 'printf "new\n" | VBW_SESSION_ID=sessB "$1" run end --map' _ "$VBW"
+  [ "$status" -eq 1 ] || { echo "$status $output"; false; }
+  [[ "$output" == *"belongs to another session"* ]] || { echo "$output"; false; }
+  [ "$(cat .vbw/map.md)" = "old map" ]
+  jq -e '.lease.kind == "map"' .vbw/record.json
+}
+
 @test "after an approval, show contract --changes lists only what changed since" {
   apply_plan
   vbw_run show contract --changes

@@ -73,8 +73,8 @@ arrive() {
   arrive verifying '{"phases":["P1","P2"],"tier":"standard"}' 3
 }
 
-@test "R107: mapping passes the Scouts' survey and merge efforts and the close step's" {
-  arrive mapping '{}' 7
+@test "R107: mapping passes the Scouts' survey and merge efforts" {
+  arrive mapping '{}' 6
 }
 
 @test "R107: researching passes the Scouts' survey and answer efforts" {

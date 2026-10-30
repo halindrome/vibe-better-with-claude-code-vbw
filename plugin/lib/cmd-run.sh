@@ -28,9 +28,9 @@ cmd_run() {
   [ $# -gt 0 ] && shift
   case "$sub" in
     start) [ $# -ge 1 ] || vbw_usage_error "usage: vbw run start plan | build PLAN... | fix FIX... | qa | map" ;;
-    end) { [ $# -eq 0 ] || { [ $# -eq 1 ] && [ "$1" = "--owner-closed" ]; }; } || vbw_usage_error "usage: vbw run end [--owner-closed]" ;;
+    end) { [ $# -eq 0 ] || { [ $# -eq 1 ] && { [ "$1" = "--owner-closed" ] || [ "$1" = "--map" ]; }; }; } || vbw_usage_error "usage: vbw run end [--owner-closed | --map < MAP]" ;;
     confirm) [ $# -ge 1 ] || vbw_usage_error "usage: vbw run confirm ID..." ;;
-    *) vbw_usage_error "usage: vbw run start KIND [IDS...] | vbw run confirm ID... | vbw run end [--owner-closed]" ;;
+    *) vbw_usage_error "usage: vbw run start KIND [IDS...] | vbw run confirm ID... | vbw run end [--owner-closed | --map < MAP]" ;;
   esac
   vbw_require_project
   if [ "$sub" = confirm ]; then
@@ -75,7 +75,22 @@ cmd_run() {
     # Plans an interrupted Dev left "building" go back to the next wave.
     # Only the session that owns the run ends it, unless the user states the
     # owner is closed or the run is over VBW_LEASE_HOURS old.
-    local run me refusal holder
+    local run me refusal holder map='' kind
+    # --map (#731): a map run ends with the map its workflow returned, on stdin. The
+    # map is written before the record commit, so that commit holds it. Refused,
+    # nothing is written.
+    if [ "${1:-}" = "--map" ]; then
+      map=$(mktemp "$VBW_RUNTIME/map.XXXXXX") || vbw_die "cannot create a temporary file in $VBW_RUNTIME: the map was not saved"$'\n'"Next: make $VBW_RUNTIME writable, then end the run with the map again"
+      vbw_guard_add file "$map"
+      cat > "$map"
+      [ -s "$map" ] || { vbw_guard_drop "$map"; vbw_usage_error "usage: vbw run end --map < MAP (the map on stdin; it was empty)"; }
+      kind=$(record_read | jq -r '.lease.kind // empty')
+      case "$kind" in
+        map) ;;
+        '') vbw_die "no run is open: the map was not saved"$'\n'"Next: vbw run start map, then end it with this map again" ;;
+        *) vbw_die "the open run is a $kind run, not a map run: the map was not saved"$'\n'"Next: let that run finish (vbw status), then map again" ;;
+      esac
+    fi
     # No run open: nothing to end, nothing to record (a workflow ends its own run).
     record_read | jq -e '.lease != null' > /dev/null || { printf 'no run is open\n'; return 0; }
     me=$(vbw_session)
@@ -85,6 +100,10 @@ cmd_run() {
         and $closed != "--owner-closed" and (now - (.started_at | fromdateiso8601) <= $h * 3600))
       | "run \(.run) belongs to another session, \($holder)\(if $me == "" then " (this session is unknown)" else "" end). Next: wait for it, or if the user says that session is closed, vbw run end --owner-closed"')
     [ -z "$refusal" ] || vbw_die "$refusal"
+    if [ -n "$map" ]; then
+      mv "$map" "$VBW_DIR/map.md"
+      vbw_guard_drop "$map"
+    fi
     run=$(record_read | jq -r '.lease.run // "no run"')
     local lease sid opening closing cost
     lease=$(record_read | jq -c '.lease // empty')
