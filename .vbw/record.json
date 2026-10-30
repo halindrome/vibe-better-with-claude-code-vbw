@@ -16662,6 +16662,62 @@
           "plan": "P178.3"
         }
       ]
+    },
+    {
+      "id": "R221",
+      "text": "The proof's scope check chooses the record version a commit is judged against by git ancestry (the last record commit that is an ancestor of the judged commit), never by commit time, so a record commit that shares a second with a plan commit cannot make the later version the base and report a false violation; a regression test pins two commits in the same second with GIT_COMMITTER_DATE (#715, halindrome, 2026-10-29; seen as the flaky scope-of-its-time case in CI)",
+      "proof": "auto",
+      "status": "open",
+      "milestone": "M46",
+      "rules": []
+    },
+    {
+      "id": "R222",
+      "text": "The hook and status line benchmarks judge each case against a reference measured on the same runner in the same run (the absolute budgets, 20 ms and 60 ms, stay the documented meaning on a nominal runner), so a uniformly slow runner, where shell and jq startup stay under the busy threshold yet every case runs at half speed, reports slow, not failed, and a real regression of one case still fails; the bench output names the reference and the ratio (#716, halindrome; F327: the 2.1.18 and 2.1.19 CI runs failed Linux shards on runner speed with the guard unchanged)",
+      "proof": "auto",
+      "status": "open",
+      "milestone": "M46",
+      "rules": []
+    },
+    {
+      "id": "R223",
+      "text": "jq 1.7 is the floor: vbw doctor refuses jq below 1.7 naming the installed version and how to get a current jq (the jq releases page; on Debian 12 the bookworm-backports package), README.md and docs state the floor, and no kernel jq relies on behaviour that differs between 1.7 and 1.8 (#709, halindrome: jq 1.6's contains(\"\\u0000\") is true for every string, so the record's argv rule rejected every check, and an if without else did not compile; support of 1.6 declined 2026-10-29)",
+      "proof": "auto",
+      "status": "open",
+      "milestone": "M46",
+      "rules": []
+    },
+    {
+      "id": "R224",
+      "text": "Outside a VBW project (no .vbw at or above the current folder) the status line script runs the status line command VBW replaced at install, kept in vbw-statusline-previous.json, and prints its output unchanged; with no previous command it prints nothing; inside a VBW project VBW's line shows as today, and the hand-back stays within the status line's 60 ms budget (#692, halindrome; the per-project option declined 2026-10-29)",
+      "proof": "auto",
+      "status": "open",
+      "milestone": "M46",
+      "rules": []
+    },
+    {
+      "id": "R225",
+      "text": "vbw init states, once, that VBW commits its record and the checks it plans to the branch checked out, naming that branch, and vbw doctor shows the branch the next VBW commit lands on; nothing refuses, prompts or adds a setting (#693, halindrome; refusal, prompt and a branch-guard option declined 2026-10-29)",
+      "proof": "auto",
+      "status": "open",
+      "milestone": "M46",
+      "rules": []
+    },
+    {
+      "id": "R226",
+      "text": "A check whose test only executes a script by path (./greet.sh) has no folder listing on its read list, so a commit that adds an unrelated file at the project root does not rerun it; the cause of the listing (the executed shell's own start-up, not the test) is named in docs/proof.md with what VBW does about it, and a listing the test itself asks for (ls, a glob) stays a read (T194, 2026-10-29: present since 2.1.18, found by the ignoredplanning scenario)",
+      "proof": "auto",
+      "status": "open",
+      "milestone": "M46",
+      "rules": []
+    },
+    {
+      "id": "R227",
+      "text": "The Now panel's empty state says what the panel knows, that VBW is not waiting on the user, instead of that nothing is needed, and every gate: true action of vbw next yields a need in the Now panel, a generic one made from the action's instruction when no case names it (#708, halindrome, the wording point; the milestone-gate symptom itself awaits the reporter's data)",
+      "proof": "auto",
+      "status": "open",
+      "milestone": "M46",
+      "rules": []
     }
   ],
   "phases": [
@@ -70697,6 +70753,17 @@
         "ended": "2026-10-27T16:38:08Z",
         "cost": {
           "usd": 1.032634
+        }
+      },
+      {
+        "id": "plan-20261030T125152Z",
+        "kind": "plan",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M46",
+        "started": "2026-10-30T12:51:52Z",
+        "ended": "2026-10-30T13:03:09Z",
+        "cost": {
+          "usd": 6.170757
         }
       }
     ],
