@@ -296,6 +296,21 @@ bench_split() {
     printf '%s\n' "$output"
     false
   }
+  # The workload is a jq program of fixed size, not the empty startup call: with every jq call
+  # logged, the first call after the startup measure (jq -n empty) is a -n program of some size.
+  local real
+  real=$(command -v jq)
+  mkdir -p "$TEST_ROOT/logjq"
+  printf '#!/bin/sh\necho "$*" >> "%s/jq.log"\nexec "%s" "$@"\n' "$TEST_ROOT" "$real" > "$TEST_ROOT/logjq/jq"
+  chmod +x "$TEST_ROOT/logjq/jq"
+  : > "$TEST_ROOT/jq.log"
+  bench VBW_BENCH_ONLY="guard (answer)" PATH="$TEST_ROOT/logjq:$PATH"
+  quiet_or_skip
+  grep -v -x -e '-n empty' "$TEST_ROOT/jq.log" | head -n 1 | grep -qE '^-n .{30,}' || {
+    echo "the first jq call after the startup measure is not a fixed-size program:"
+    head -n 12 "$TEST_ROOT/jq.log"
+    false
+  }
 }
 
 @test "R222: on a machine twenty times slower than nominal, a guard and a status line above their budgets but within budget times ratio are reported slow on stdout, naming cost, budget, ratio and scaled budget, and the bench exits 0" {
