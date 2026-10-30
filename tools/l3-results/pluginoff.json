@@ -1,9 +1,9 @@
 {
   "scenario": "pluginoff",
   "fixture": "a small VBW project (vbw init, one-requirement spec) whose .claude/settings.json sets enabledPlugins vbw@vbw-marketplace to false; VBW is the installed marketplace plugin, the session shows the working tree's status line; window 200 columns wide",
-  "cost_usd": 0.1933,
+  "cost_usd": 0.1957,
   "evidence_level": "L3",
-  "at": "2026-10-24T16:01:52Z",
+  "at": "2026-10-30T23:12:25Z",
   "passed": true,
   "facts": {
     "plugin_disabled_confirmed": true,

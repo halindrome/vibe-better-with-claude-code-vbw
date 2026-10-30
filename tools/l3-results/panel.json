@@ -1,9 +1,9 @@
 {
   "scenario": "panel",
   "fixture": "greet.sh and farewell.sh, two phases: the first passed QA and its requirement R1 is proven, the second plan was reworded after approval and waits for it again; no finished steps in the clone (so no estimate basis); window 200 columns wide, resized to 200x24 and to 60x40 with the needs-you line up and again while the build's helpers work; the user then approves and the build runs; after it the user clicks the Timeline tab and its lanes are read at 200x60 and at 60x40 (#696); the farewell check waits 20 s once farewell.sh exists, so the Dev's lane runs to minutes",
-  "cost_usd": 0.2792,
+  "cost_usd": 0.3592,
   "evidence_level": "L3",
-  "at": "2026-10-29T20:05:02Z",
+  "at": "2026-10-30T23:16:55Z",
   "passed": true,
   "facts": {
     "opened_by_itself": true,
@@ -32,12 +32,12 @@
     "timeline_one_line_wide": true,
     "timeline_one_line_narrow": true,
     "timeline_lanes_wide": [
-      "dev P2.1       ████████████████████████████████ 1 min 56 s",
-      "lead close run                                 ███ 8 s"
+      "dev P2.1       █████████████████████████████████ 1 min 44 s",
+      "lead close run                                 ███ 6 s"
     ],
     "timeline_lanes_narrow": [
-      " dev P2.1       ███████████████████████ 1 min 56 s",
-      " lead close run                        ██ 8 s"
+      " dev P2.1       ███████████████████████ 1 min 44 s",
+      " lead close run                        ██ 6 s"
     ],
     "timeline_time_in_minutes": true,
     "closed_by_click": true,
