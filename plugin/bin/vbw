@@ -151,6 +151,8 @@ for help_arg in "${1:-}" "${2:-}"; do
       if [ -n "$help_text" ]; then printf '%s\n' "$help_text"; exit 0; fi ;;
   esac
 done
+# Every command but doctor refuses a jq below the floor before reading or writing anything.
+if [ "$cmd" != doctor ]; then vbw_require_jq || exit 1; fi
 case "$cmd" in
   version|--version) jq -r .version "$VBW_PLUGIN/.claude-plugin/plugin.json" ;;
   help|-h|--help) vbw_help ;;
