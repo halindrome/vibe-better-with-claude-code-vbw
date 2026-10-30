@@ -70,7 +70,10 @@ user's `settings.json` (`$CLAUDE_CONFIG_DIR`, else `~/.config/claude-code`, else
 The setting also asks Claude Code to re-run the status line every 5 seconds
 (`statusLine.refreshInterval: 5`), on top of its event-driven redraws, so a
 run's time and its working agents stay current while nothing else happens.
-A run is budgeted at 60 ms (no network, no git process).
+A run is budgeted at 60 ms on a nominal machine (no network, no git process).
+`tools/bench-hooks.sh` measures a reference workload first and prints it with
+the ratio to the nominal cost: on a slower machine (ratio above 1) a run within
+60 ms times the ratio is reported slow, not failed; a run above that fails.
 
 The setting is one object for both lines, so `vbw statusline on` keeps the
 `padding` and the `refreshInterval` of a status line you had before, and writes
