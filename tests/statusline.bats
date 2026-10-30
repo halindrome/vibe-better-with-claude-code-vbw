@@ -146,6 +146,16 @@ render() { cc_json | NO_COLOR=1 bash "$SL"; }
   [ "$status" -eq 3 ] && [ -z "$output" ] || { echo "exit $status, output:"; printf '%s\n' "$output"; false; }
 }
 
+@test "R224: a .vbw folder without a record shows the no-project line and writes no cost side file; with a record the side file is written" {
+  mkdir -p .vbw
+  run render
+  [[ "${lines[0]}" == "[VBW] no project here"* ]] || { printf '%s\n' "$output"; false; }
+  [ ! -e .vbw/runtime ] || { ls -R .vbw; false; }
+  "$VBW" init > /dev/null
+  run render
+  [ -f .vbw/runtime/cost.s1.json ]
+}
+
 @test "a running step shows how long it has run and how many agents are working" {
   "$VBW" init > /dev/null
   printf '# x\n\n## Requirements\n\n- R1 [auto] One\n' > .vbw/spec.md
