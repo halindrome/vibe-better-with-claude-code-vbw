@@ -40,6 +40,22 @@
 # does (the plugin data folder of a vbw@inline copy), a stand-in installed release
 # sits in the same config folder, and the setting runs as above. It is judged against
 # the same limit, and the bench fails if the loaded copy did not render.
+# The reference (R222, #716): before any record is built or case judged, the bench
+# measures one fixed workload (a jq program over a fixed range, run through sh -c as the
+# hooks are, RUNS calls) on this machine in this run, and prints once
+# 'reference: <X> ms CPU per call; nominal <N> ms (...); ratio <R>', R = measured / nominal.
+# NOMINAL_MS is the workload's cost on the two nominal machines (an M1 Max Mac and
+# GitHub's macOS runner), the larger of the two so both sit at a ratio of 1 or less. It is
+# a debt: measure it again whenever the workload or the nominal machines change.
+# At a ratio of 1 or less every case is judged against its absolute budget, as above (the
+# budgets are the documented meaning on a nominal machine). Above 1, a case over its
+# budget but within budget x ratio prints its line on stdout marked ': slow (ratio R,
+# scaled budget S ms)' and the status is unchanged; over budget x ratio it is ': OVER' on
+# stderr and status 1, so a uniformly slow runner reports slow and a real regression of
+# one case still fails. The measure-again rule judges the second measure the same way.
+# VBW_BENCH_REFERENCE_MS stands in for the measured reference (tests), as
+# VBW_HOOK_BUDGET_MS does for a limit. CI sets neither: tools/test.sh --shard runs the
+# bench in shard 1 of each matrix entry, so the reference line shows there.
 # VBW_BENCH_RUNS and VBW_BENCH_PLUGIN_ROOT override the runs and the plugin (tests).
 # VBW_BENCH_ONLY (tests) runs only the cases asked for, and builds only the records
 # they need, so a test that asserts on one line does not pay for the whole bench.
@@ -59,6 +75,15 @@ RUNS="${VBW_BENCH_RUNS:-100}"
 PLUGIN="${VBW_BENCH_PLUGIN_ROOT:-$ROOT/plugin}"
 GUARD_INPUTS="git npm big interp read answer"
 SIZES="51 500 2000"
+# The reference workload's nominal cost (R222): CPU ms per call of the workload in the
+# reference block below, on the two nominal machines, measured NOMINAL_WHEN. This is a
+# debt: measure it again whenever the workload or the nominal machines change.
+# October 2026. M1 Max Mac: 21.7 to 23.0 ms over five runs of this script on 2026-10-30
+# (the larger, 23.0, is pinned). GitHub's macOS runner: figure to be read from the
+# reference line in shard 1 of the pull request's macOS log before merge; the constant
+# is then set to the larger of the two, so both machines sit at a ratio of 1 or less.
+NOMINAL_MS=23.0
+NOMINAL_WHEN="October 2026"
 
 # case_labels: the label of every case, in the order the bench runs them.
 case_labels() {
@@ -154,9 +179,33 @@ cpu_pair() {
 # within COST BUDGET: whether a cost in ms is at or below a budget in ms.
 within() { perl -e 'exit($ARGV[0] <= $ARGV[1] ? 0 : 1)' -- "$1" "$2"; }
 
+# scaled BUDGET: the budget a case is judged against: the absolute budget at a ratio
+# of 1 or less, budget x ratio (one decimal) above it.
+scaled() {
+  if [ "$SLOW" -eq 1 ]; then perl -e 'printf "%.1f", $ARGV[0] * $ARGV[1]' -- "$1" "$RATIO"; else printf '%s' "$1"; fi
+}
+
 # again LABEL FIRST BUDGET: the line printed before a case over its budget is
 # measured once more (D517); FIRST is the first measure as the case's line words it.
-again() { printf '%s: measured again: the first measure gave %s, above the budget of %s ms\n' "$1" "$2" "$3"; }
+# The budget it names is the one the case is judged against (scaled above a ratio of 1).
+again() { printf '%s: measured again: the first measure gave %s, above the budget of %s ms\n' "$1" "$2" "$(scaled "$3")"; }
+
+# over COST BUDGET: whether a cost is above the budget it is judged against.
+over() { ! within "$1" "$(scaled "$2")"; }
+
+# verdict LINE COST BUDGET: print the case's line. Within the absolute budget: the line.
+# Above it, at a ratio above 1 and within budget x ratio: the line marked slow, on stdout,
+# status unchanged. Otherwise the line with ': OVER' on stderr and status 1.
+verdict() {
+  if within "$2" "$3"; then
+    printf '%s\n' "$1"
+  elif [ "$SLOW" -eq 1 ] && within "$2" "$(scaled "$3")"; then
+    printf '%s: slow (ratio %s, scaled budget %s ms)\n' "$1" "$RATIO" "$(scaled "$3")"
+  else
+    printf '%s: OVER\n' "$1" >&2
+    status=1
+  fi
+}
 
 # Measure the platform's sh and jq startup first, before the test records are
 # built: above the hook limit, the machine is too busy to judge anything.
@@ -165,6 +214,15 @@ if perl -e 'exit($ARGV[0] > $ARGV[1] ? 0 : 1)' -- "$startup" "$BUDGET_MS"; then
   printf 'machine too busy to measure: sh and jq startup takes %s ms CPU per call, above the %s ms hook limit; nothing judged\n' "$startup" "$BUDGET_MS"
   exit 0
 fi
+
+# The reference (R222): one fixed jq workload, run through sh -c as the hooks are, on
+# this machine in this run, before any record is built or case judged.
+read -r _ measured < <(cpu_pair /dev/null "jq -n empty" "jq -n '[range(0; 30000) | tostring | length] | add' > /dev/null")
+[ -z "${VBW_BENCH_REFERENCE_MS:-}" ] || measured="$VBW_BENCH_REFERENCE_MS"
+RATIO=$(perl -e 'printf "%.2f", $ARGV[0] / $ARGV[1]' -- "$measured" "$NOMINAL_MS")
+SLOW=0
+if perl -e 'exit($ARGV[0] > 1 ? 0 : 1)' -- "$RATIO"; then SLOW=1; fi
+printf "reference: %s ms CPU per call; nominal %s ms (an M1 Max Mac and GitHub's macOS runner, %s); ratio %s\n" "$measured" "$NOMINAL_MS" "$NOMINAL_WHEN" "$RATIO"
 
 git -C "$work" init -q
 mkdir -p "$work/.vbw"
@@ -280,19 +338,14 @@ guards() {
     fi
     read -r shell total < <(cpu_pair "$file" "$baseline" "$hook")
     own=$(perl -e 'printf "%.1f", $ARGV[0] - $ARGV[1]' -- "$total" "$shell")
-    if ! within "$own" "$BUDGET_MS"; then
+    if over "$own" "$BUDGET_MS"; then
       again "guard ($input$label)" "$own ms own CPU per call (sh and jq startup $shell ms)" "$BUDGET_MS"
       read -r shell total < <(cpu_pair "$file" "$baseline" "$hook")
       own=$(perl -e 'printf "%.1f", $ARGV[0] - $ARGV[1]' -- "$total" "$shell")
     fi
     line=$(printf 'guard (%s%s): %s ms own CPU per call (sh and jq startup %s ms); budget %s ms' \
       "$input" "$label" "$own" "$shell" "$BUDGET_MS")
-    if within "$own" "$BUDGET_MS"; then
-      printf '%s\n' "$line"
-    else
-      printf '%s: OVER\n' "$line" >&2
-      status=1
-    fi
+    verdict "$line" "$own" "$BUDGET_MS"
   done
 }
 
@@ -332,7 +385,7 @@ statusline() {
   fi
   cmd="CLAUDE_CONFIG_DIR='$cfg' NO_COLOR=1 bash '$PLUGIN/scripts/vbw-statusline.sh'"
   read -r _ total < <(cpu_pair "$work/statusline.json" true "$cmd")
-  if ! within "$total" "$STATUS_MS"; then
+  if over "$total" "$STATUS_MS"; then
     again "status line$label" "$total ms CPU per call" "$STATUS_MS"
     read -r _ total < <(cpu_pair "$work/statusline.json" true "$cmd")
   fi
@@ -343,12 +396,7 @@ statusline() {
   rm -f "$dir/.vbw/runtime/cost.bench.json" "$dir/.vbw/runtime/step.json" "$dir/.vbw/runtime/run-open"
   rm -rf "$cfg"
   line=$(printf 'status line%s: %s ms CPU per call; budget %s ms' "$label" "$total" "$STATUS_MS")
-  if within "$total" "$STATUS_MS"; then
-    printf '%s\n' "$line"
-  else
-    printf '%s: OVER\n' "$line" >&2
-    status=1
-  fi
+  verdict "$line" "$total" "$STATUS_MS"
 }
 
 # handback: the setting of `vbw statusline on` in a project that turns VBW off.
@@ -380,18 +428,13 @@ handback() {
   base="cd '$proj' && bash -c : && jq -n empty && sh -c : && sh '$work/earlier-setting.sh'"
   read -r shell total < <(cpu_pair "$work/handback.json" "$base" "$cmd")
   own=$(perl -e 'printf "%.1f", $ARGV[1] - $ARGV[0]' -- "$shell" "$total")
-  if ! within "$own" "$HANDBACK_MS"; then
+  if over "$own" "$HANDBACK_MS"; then
     again "status line (VBW off)" "$own ms own CPU per call (a bash, a jq and a sh startup and the earlier status line: $shell ms)" "$HANDBACK_MS"
     read -r shell total < <(cpu_pair "$work/handback.json" "$base" "$cmd")
     own=$(perl -e 'printf "%.1f", $ARGV[1] - $ARGV[0]' -- "$shell" "$total")
   fi
   line=$(printf 'status line (VBW off): %s ms own CPU per call (a bash, a jq and a sh startup and the earlier status line: %s ms); budget %s ms' "$own" "$shell" "$HANDBACK_MS")
-  if within "$own" "$HANDBACK_MS"; then
-    printf '%s\n' "$line"
-  else
-    printf '%s: OVER\n' "$line" >&2
-    status=1
-  fi
+  verdict "$line" "$own" "$HANDBACK_MS"
 }
 
 # loaded: the setting in a session that loaded the bench's plugin, next to a stand-in release.
@@ -417,18 +460,13 @@ loaded() {
     return 0
   fi
   read -r _ total < <(cpu_pair "$work/loaded.json" true "$cmd")
-  if ! within "$total" "$STATUS_MS"; then
+  if over "$total" "$STATUS_MS"; then
     again "status line (loaded copy)" "$total ms CPU per call" "$STATUS_MS"
     read -r _ total < <(cpu_pair "$work/loaded.json" true "$cmd")
   fi
   rm -f "$work/.vbw/runtime/cost.loaded-bench.json"
   line=$(printf 'status line (loaded copy): %s ms CPU per call; budget %s ms' "$total" "$STATUS_MS")
-  if within "$total" "$STATUS_MS"; then
-    printf '%s\n' "$line"
-  else
-    printf '%s: OVER\n' "$line" >&2
-    status=1
-  fi
+  verdict "$line" "$total" "$STATUS_MS"
 }
 
 guards "$work" ""
