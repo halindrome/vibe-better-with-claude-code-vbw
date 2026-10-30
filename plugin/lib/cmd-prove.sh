@@ -378,27 +378,32 @@ prove_scope() {
 }
 
 # PROVE_SCOPE_THEN_JQ, over the candidates ($o: the scope check's answer, cand
-# [{h, p, f}]), their commit times ($t: {hash: seconds}), the record versions git
-# holds from the one each candidate was made under onward ($v: [{at: seconds, rec}],
-# oldest first) and today's record ($rec). A candidate stays a violation unless its
-# plan allowed the file in one of those versions (its files, or the check files a
-# survivor let it strengthen), or a decision recorded after the commit names both
-# the commit (the 12 characters the violation shows) and the file.
+# [{h, p, f}]), their commit times ($t: {hash: seconds}, used only for decisions), the
+# record commit each candidate descends from ($b: {hash: record commit}, found by git
+# ancestry, never by clock time), the record versions git holds from the oldest of those
+# onward ($v: [{h, rec}], oldest first) and today's record ($rec). A candidate stays a
+# violation unless its plan allowed the file in its base version or one after it (its
+# files, or the check files a survivor let it strengthen; no base found: any version),
+# or a decision recorded after the commit names both the commit (the 12 characters the
+# violation shows) and the file.
 # shellcheck disable=SC2016 # a jq program
-PROVE_SCOPE_THEN_JQ='$o[0] as $o | $t[0] as $t | $v[0] as $v | $rec[0] as $r
+PROVE_SCOPE_THEN_JQ='$o[0] as $o | $t[0] as $t | $b[0] as $b | $v[0] as $v | $rec[0] as $r
   | {scope: [$o.cand[] | . as $c | ($t[$c.h] // 0) as $at
-      | ([$v[] | select(.at <= $at)] | last | .at // $at) as $base
-      | select(any($v[] | select(.at >= $base) | .rec; . as $x | any(($x.plans // [])[]; .id == $c.p and any((.files // [])[]; covers($c.f))) or (($x | strengthen_files($c.p)) | index($c.f) != null)) | not)
+      | ($b[$c.h] // "") as $base
+      | ([range(0; $v | length) | select($v[.].h == $base)] | first // 0) as $from
+      | select(any($v[$from:][] | .rec;. as $x | any(($x.plans // [])[]; .id == $c.p and any((.files // [])[]; covers($c.f))) or (($x | strengthen_files($c.p)) | index($c.f) != null)) | not)
       | select(any(($r.decisions // [])[]; (.at | fromdate) >= $at and ([.text, (.why // empty)] | join("\n") | names($c.h[0:12]) and names($c.f))) | not)
       | "\($c.h[0:12]) (\($c.p)) changed \($c.f), which is not in the plan"],
      undone: $o.undone}'
 
 # prove_scope_then RECORD DIR: the scope answer ({scope, undone}) from DIR/out. With no
-# candidate it is the check's own; else each candidate is judged again by the record of
-# its time and the user's decisions. Fixed cost: one git log of the commits' times, one
-# of the record's versions, one git cat-file of those since the oldest candidate.
+# candidate it is the check's own; else each candidate is judged again by the record
+# version it descends from (git ancestry, not clock time) and the user's decisions.
+# Cost: the fixed git processes (one log of the commits' times, one of the record's
+# versions, one cat-file of those since the oldest base) plus one git log per distinct
+# flagged commit, which stops at the first record commit it meets.
 prove_scope_then() {
-  local dir="$2" hs=() h first
+  local dir="$2" hs=() h base
   if ! jq -e '.cand | length > 0' "$dir/out" > /dev/null; then
     jq -c '{scope: [], undone}' "$dir/out"
     return 0
@@ -406,16 +411,22 @@ prove_scope_then() {
   while IFS= read -r h; do hs+=("$h"); done < <(jq -r '[.cand[].h] | unique[]' "$dir/out")
   git log --no-walk=unsorted --format='%H %ct' "${hs[@]}" 2> /dev/null \
     | jq -R -s -c 'split("\n") | map(select(length > 0) | split(" ") | {key: .[0], value: (.[1] | tonumber)}) | from_entries' > "$dir/times"
-  first=$(jq -r '[.[]] | min // 0' "$dir/times")
-  # The record's versions in its own history, newest first, with their times: those
-  # since the oldest candidate, and the one it was made under.
+  # The record commit each flagged commit descends from: the last one in its ancestry.
+  : > "$dir/bases"
+  for h in "${hs[@]}"; do
+    base=$(git log -1 --format=%H --diff-filter=AM "$h" -- .vbw/record.json 2> /dev/null) || base=""
+    [ -z "$base" ] || printf '%s %s\n' "$h" "$base" >> "$dir/bases"
+  done
+  jq -R -s -c 'split("\n") | map(select(length > 0) | split(" ") | {key: .[0], value: .[1]}) | from_entries' "$dir/bases" > "$dir/b"
+  # The record's versions in its own history, newest first, cut by hash at the oldest
+  # base (all of them when a flagged commit has no base).
   git log --format='%H %ct' --diff-filter=AM "${HISTORY_ARGS[@]}" -- .vbw/record.json 2> /dev/null \
-    | awk -v t="$first" '$2 >= t { print; next } { print; exit }' > "$dir/versions"
+    | awk -v n="${#hs[@]}" -v bf="$dir/bases" 'FILENAME == bf { b[$2] = 1; nb++; next } { l[++c] = $0; if ($1 in b) last = c } END { if (nb < n) last = c; for (i = 1; i <= last; i++) print l[i] }' "$dir/bases" - > "$dir/versions"
   awk '{ print $1 ":.vbw/record.json" }' "$dir/versions" | git cat-file --batch='%(objectsize)' > "$dir/blobs" 2> /dev/null || : > "$dir/blobs"
   jq -n -c --rawfile vs "$dir/versions" '[inputs | objects] as $recs
-    | [$vs | split("\n")[] | select(length > 0) | split(" ")[1] | tonumber] as $ats
-    | [range(0; [($recs | length), ($ats | length)] | min) | {at: $ats[.], rec: $recs[.]}] | reverse' "$dir/blobs" > "$dir/v" 2> /dev/null || printf '[]' > "$dir/v"
-  jq -n -c --slurpfile o "$dir/out" --slurpfile t "$dir/times" --slurpfile v "$dir/v" --slurpfile rec <(printf '%s' "$1") \
+    | [$vs | split("\n")[] | select(length > 0) | split(" ")[0]] as $hs
+    | [range(0; [($recs | length), ($hs | length)] | min) | {h: $hs[.], rec: $recs[.]}] | reverse' "$dir/blobs" > "$dir/v" 2> /dev/null || printf '[]' > "$dir/v"
+  jq -n -c --slurpfile o "$dir/out" --slurpfile t "$dir/times" --slurpfile b "$dir/b" --slurpfile v "$dir/v" --slurpfile rec <(printf '%s' "$1") \
     "$VBW_JQ_DEFS$PROVE_SCOPE_THEN_JQ" || vbw_die "internal error: the scope check failed"
 }
 
