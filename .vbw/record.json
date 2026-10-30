@@ -26025,7 +26025,22 @@
           "to": "deep",
           "reason": "Dev blocked P182.1: Code done and C512/C513 pass, but 12 existing tests of other requirements now fail because their fixtures are git projects with no .vbw folder (exit 3 now): tests/statusline-off.bats (R184 cases 33,34,35,37,41,42 via setup) and tests/statusline.bats cases 'no data from Claude Code', 'branch read in a linked worktree', 'setting finds the newest installed VBW'. Fix is mkdir .vbw in those fixtures (statusline-off.bats setup; three cases in statusline.bats); the guard denies editing both files as outside the plan's files. Replan to add them. Other red: bench/docs cases belong to P182.2/P182.3; reads-docs R226 docs/proof.md case is unrelated and failing from other in-progress edits."
         }
-      ]
+      ],
+      "qa": {
+        "result": "pass",
+        "tier": "deep",
+        "tree": "0870426e8063e327d77c7a6c57b545690d0c2e802a2e68765f05792d91c2b658",
+        "at": "2026-10-30T23:03:26Z",
+        "note": "20/20 checks"
+      },
+      "outcome": {
+        "tier": "deep",
+        "predicted": "deep",
+        "held": true,
+        "fix_rounds": 0,
+        "qa_findings": 0,
+        "escalations": 1
+      }
     },
     {
       "id": "P183",
