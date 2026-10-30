@@ -23,6 +23,10 @@ old_limits() {
     echo "ci.yml still sets a limit or a reference of its own"
     false
   }
+  flat "$REPO_ROOT/docs/guards.md" | grep -qF 'ci sets no reference of its own' || {
+    echo "docs/guards.md does not say CI sets no reference of its own"
+    false
+  }
 }
 
 @test "R151, R222: docs/guards.md states the 20 ms limit per hook call as the meaning on a nominal machine, the reference, the ratio and the slow report, the busy-machine report, and no longer 8 ms" {
