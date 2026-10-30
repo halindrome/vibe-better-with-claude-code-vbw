@@ -25923,7 +25923,22 @@
           "to": "deep",
           "reason": "Dev blocked P179.3: Task 3 (CLAUDE.md hot-path rule, R222.10, C506 test 4): CLAUDE.md is a symlink to AGENTS.md, the write guard refuses both (CLAUDE.md as symlink, AGENTS.md outside the plan files). Plan needs AGENTS.md added via vbw apply. Tasks 1 and 2 committed (0ae427cf, af37c85f). Mutation step not run."
         }
-      ]
+      ],
+      "qa": {
+        "result": "pass",
+        "tier": "deep",
+        "tree": "51e8cb6f8af8211b7989bc346e9a501d9410a0f35d05c094f40e0de737b7e367",
+        "at": "2026-10-30T23:04:56Z",
+        "note": "30/30 checks"
+      },
+      "outcome": {
+        "tier": "deep",
+        "predicted": "deep",
+        "held": true,
+        "fix_rounds": 0,
+        "qa_findings": 0,
+        "escalations": 1
+      }
     },
     {
       "id": "P180",
