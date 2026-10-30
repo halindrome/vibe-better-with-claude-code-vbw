@@ -435,7 +435,7 @@ plugin/
 | :--- | :--- |
 | **Claude Code** 2.1.286+ (2.1.287+ for Mission Control and the instant commands, 2.1.290+ for Comms) | Dynamic workflows and the hooks VBW runs on |
 | A **Sonnet, Opus or Fable** session | Auto mode; workflow agents may also use Haiku |
-| **`bash`** (3.2 or newer), **`jq`** and **`git`** | The kernel. `brew install jq` (macOS) or `apt install jq` (Linux) |
+| **`bash`** (3.2 or newer), **`jq`** (1.7 or newer) and **`git`** | The kernel. `brew install jq` (macOS) or `apt install jq` (Linux); older jq: [github.com/jqlang/jq/releases](https://github.com/jqlang/jq/releases) |
 | A git repository, new or existing | Everything VBW does is committed |
 | The willingness to let an AI build your software and a program check its homework | This is the real barrier to entry |
 
