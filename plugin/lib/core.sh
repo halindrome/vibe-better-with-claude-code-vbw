@@ -358,3 +358,38 @@ vbw_dirty_files() {
     < <(cd "$VBW_ROOT" && { git diff --name-only -z HEAD -- "$@"; git ls-files -z --others --exclude-standard -- "$@"; })
   printf '%s' "$out"
 }
+
+VBW_MIN_JQ=1.7
+
+# version_at_least HAVE NEED: dotted numeric comparison.
+version_at_least() {
+  [ "$(printf '%s\n%s\n' "$2" "$1" | sort -t. -k1,1n -k2,2n -k3,3n | head -n 1)" = "$2" ]
+}
+
+# vbw_jq_floor: read `jq --version` once and set VBW_JQ_VERSION (empty when jq is
+# missing), VBW_JQ_MSG and VBW_JQ_FIX. Returns 1 for a missing jq or one below
+# VBW_MIN_JQ, 0 otherwise. A missing jq never ends a shell running under set -e.
+vbw_jq_floor() {
+  local raw=""
+  raw=$(jq --version 2> /dev/null) || raw=""
+  VBW_JQ_VERSION=$(printf '%s' "$raw" | sed 's/^jq-//; s/-.*//')
+  VBW_JQ_MSG="" VBW_JQ_FIX=""
+  if [ -z "$VBW_JQ_VERSION" ]; then
+    VBW_JQ_MSG="jq is missing"
+    VBW_JQ_FIX="install jq (brew install jq / apt install jq)"
+    return 1
+  fi
+  if ! version_at_least "$VBW_JQ_VERSION" "$VBW_MIN_JQ"; then
+    VBW_JQ_MSG="jq $VBW_JQ_VERSION is too old (VBW needs $VBW_MIN_JQ or later)"
+    VBW_JQ_FIX="a current jq from github.com/jqlang/jq/releases; on Debian 12: apt install -t bookworm-backports jq"
+    return 1
+  fi
+  return 0
+}
+
+# vbw_require_jq: vbw_jq_floor, and on failure the message and its fix on stderr.
+vbw_require_jq() {
+  vbw_jq_floor && return 0
+  vbw_out 'vbw: %s\n    fix: %s\n' "$VBW_JQ_MSG" "$VBW_JQ_FIX" >&2
+  return 1
+}
