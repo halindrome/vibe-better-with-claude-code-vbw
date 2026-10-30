@@ -37,17 +37,10 @@ doctor_line() {
   [ -z "${3:-}" ] || printf '    fix: %s\n' "$3"
 }
 
-# version_at_least HAVE NEED: dotted numeric comparison.
-version_at_least() {
-  [ "$(printf '%s\n%s\n' "$2" "$1" | sort -t. -k1,1n -k2,2n -k3,3n | head -n 1)" = "$2" ]
-}
-
 doctor_tools() {
   local v
-  v=$(jq --version 2> /dev/null | sed 's/^jq-//; s/-.*//')
-  if [ -z "$v" ]; then doctor_line fail "jq is missing" "install jq (brew install jq / apt install jq)"
-  elif version_at_least "$v" 1.6; then doctor_line ok "jq $v"
-  else doctor_line fail "jq $v is too old (VBW needs 1.6 or later)" "update jq"
+  if vbw_jq_floor; then doctor_line ok "jq $VBW_JQ_VERSION"
+  else doctor_line fail "$VBW_JQ_MSG" "$VBW_JQ_FIX"
   fi
   v=$(git --version 2> /dev/null | awk '{print $3}')
   if [ -n "$v" ]; then doctor_line ok "git $v"; else doctor_line fail "git is missing" "install git"; fi
