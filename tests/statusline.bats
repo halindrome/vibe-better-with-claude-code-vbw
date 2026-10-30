@@ -62,6 +62,7 @@ render() { cc_json | NO_COLOR=1 bash "$SL"; }
 }
 
 @test "no data from Claude Code, or garbage, never breaks it" {
+  mkdir -p .vbw
   run bash -c 'printf "" | NO_COLOR=1 bash "$1"' _ "$SL"
   [ "$status" -eq 0 ]
   [ "${#lines[@]}" -eq 4 ]
@@ -72,6 +73,7 @@ render() { cc_json | NO_COLOR=1 bash "$SL"; }
 
 @test "the branch is read in a linked worktree too" {
   git worktree add -q "$TEST_ROOT/wt" -b feature
+  mkdir -p "$TEST_ROOT/wt/.vbw"
   run bash -c 'jq -nc --arg d "$2" "{workspace: {project_dir: \$d}}" | NO_COLOR=1 bash "$1"' _ "$SL" "$TEST_ROOT/wt"
   [[ "${lines[3]}" == *"│ feature │"* ]]
 }
@@ -95,6 +97,7 @@ render() { cc_json | NO_COLOR=1 bash "$SL"; }
 }
 
 @test "the setting finds the newest installed VBW and renders it" {
+  mkdir -p .vbw
   local cache="$CLAUDE_CONFIG_DIR/plugins/cache/vbw-marketplace/vbw"
   mkdir -p "$cache/1.37.1/scripts" "$cache/2.0.0"
   printf 'echo old\n' > "$cache/1.37.1/scripts/vbw-statusline.sh"

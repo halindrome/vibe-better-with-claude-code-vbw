@@ -14,6 +14,7 @@ load helper
 setup() {
   vbw_setup
   vbw_git_project
+  mkdir -p .vbw
   SL="$PLUGIN_ROOT/scripts/vbw-statusline.sh"
   USER_SETTINGS="$CLAUDE_CONFIG_DIR/settings.json"
 }
@@ -195,7 +196,7 @@ jq_calls_of_render() {
 
 @test "R184: the project Claude Code names decides, not the folder the status line runs in" {
   local other="$TEST_ROOT/other"
-  mkdir -p "$other"
+  mkdir -p "$other/.vbw"
   git -C "$other" init -q
   vbw_in "$PROJECT/.claude/settings.json" false
   # Running in the off project, the input names a project that says nothing: VBW is on.
