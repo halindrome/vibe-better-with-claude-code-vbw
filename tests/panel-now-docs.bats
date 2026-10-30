@@ -42,3 +42,9 @@ has() { flat "$1" | grep -qE -- "$2" || { echo "$1 lacks: $2"; return 1; }; }
   has "$DOC" 'until you (have )?(seen|see|open|press)'
   has "$DOC" "'new'|\"new\"|\`new\`"
 }
+
+@test "R227: docs/panel.md says the Now panel's empty state reads 'VBW is not waiting on you.', and the old sentence is gone from plugin/ and docs/" {
+  [ "$(grep -c 'VBW is not waiting on you\.' "$DOC")" -ge 4 ] || { echo "docs/panel.md carries the new empty-state text $(grep -c 'VBW is not waiting on you\.' "$DOC") times, not at each of its four places"; false; }
+  run grep -rnF 'Nothing is needed from you right now' "$PLUGIN_ROOT" "$REPO_ROOT/docs"
+  [ -z "$output" ] || { echo "the old sentence is still here:"; printf '%s\n' "$output"; false; }
+}

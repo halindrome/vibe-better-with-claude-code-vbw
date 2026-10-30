@@ -21,13 +21,10 @@ cc_json() {
 
 render() { cc_json | NO_COLOR=1 bash "$SL"; }
 
-@test "outside a VBW project it says how to start, and still shows the session" {
+@test "R224: outside a VBW project (no .vbw at or above) it prints nothing and exits 3, the hand-back signal, so the setting shows the user's earlier status line instead" {
   run render
-  [ "$status" -eq 0 ]
-  [ "${#lines[@]}" -eq 4 ]
-  [[ "${lines[0]}" == "[VBW] no project here · /vbw:vibe to start" ]]
-  [[ "${lines[1]}" == "Context ▓▓▓░░░░░░░ 31% 62K/200K │ Cost \$1.42 │ +303 −12" ]]
-  [[ "${lines[3]}" == "Sonnet 5.5 │ 10m22s (API 5m55s) │ main │ VBW "* ]]
+  [ "$status" -eq 3 ] || { echo "exit $status, output:"; printf '%s\n' "$output"; false; }
+  [ -z "$output" ] || { printf '%s\n' "$output"; false; }
 }
 
 @test "in a VBW project it shows progress and the last next step" {
@@ -131,7 +128,7 @@ render() { cc_json | NO_COLOR=1 bash "$SL"; }
   jq -e '.enableWorkflows == true' "$s"
 }
 
-@test "started in a subfolder it shows the project; a VBW 1 project is pointed to the conversion" {
+@test "R224: started in a subfolder it shows the project; a .vbw-planning folder with no .vbw at or above is outside a VBW project, so no VBW 1 line shows" {
   "$VBW" init > /dev/null
   "$VBW" milestone rename "A milestone title that is far too long to fit on one line" > /dev/null
   mkdir -p "src/Sub Folder With Spaces"
@@ -143,7 +140,7 @@ render() { cc_json | NO_COLOR=1 bash "$SL"; }
   [ "${lines[0]}" = "[VBW] no project here · /vbw:vibe to start" ]
   rm -rf .vbw && mkdir .vbw-planning
   run render
-  [ "${lines[0]}" = "[VBW] VBW 1 plan here · /vbw:vibe to bring it into VBW 2" ]
+  [ "$status" -eq 3 ] && [ -z "$output" ] || { echo "exit $status, output:"; printf '%s\n' "$output"; false; }
 }
 
 @test "a running step shows how long it has run and how many agents are working" {
