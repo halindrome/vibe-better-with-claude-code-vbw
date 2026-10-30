@@ -119,7 +119,7 @@ above).
 VBW's script only says "off" (it exits with code 3). The setting itself then
 runs the earlier status line with the same input; VBW never runs it.
 
-## Folders with no VBW project
+### Folders with no VBW project
 
 The same hand-back happens where there is no VBW project: no `.vbw` folder at
 or above the folder Claude Code reports (else the folder the script runs in).
@@ -139,7 +139,8 @@ record, with no jq. `tools/bench-hooks.sh` measures VBW's own CPU on this path a
 `status line (VBW off)`, and the no-project hand-back (a walk up the folders
 that starts no process) as `status line (no project)`: the whole call minus one bash, one jq and one sh
 startup and the earlier status line itself, which are the platform's and yours.
-The limit is 10 ms on a nominal machine, scaled by the same reference ratio (slow, not failed, within it) (`VBW_HANDBACK_BUDGET_MS`).
+The limit is 10 ms (`VBW_HANDBACK_BUDGET_MS`) on a nominal machine, scaled by the
+same reference ratio: within budget times ratio is reported slow, not failed.
 
 Only a setting made by this version can hand back. If `vbw doctor` says the
 status line was set by an older VBW, run `vbw statusline on` to update it.

@@ -63,13 +63,16 @@ without_panel() {
 @test "R53: the status line is byte for byte what it is without the panel, outside a VBW project, with colour too" {
   without_panel
   [ -f "$PLUGIN_ROOT/hooks/panel.js" ]
+  # Outside a VBW project the script hands back (R224): nothing printed, exit 3, panel or not.
   for v in 2.1.289 2.1.286; do
-    CC_VERSION=$v cc_json | bash "$PLUGIN_ROOT/scripts/vbw-statusline.sh" > "$TEST_ROOT/with.txt"
-    CC_VERSION=$v cc_json | bash "$TEST_ROOT/plain/scripts/vbw-statusline.sh" > "$TEST_ROOT/without.txt"
-    [ -s "$TEST_ROOT/with.txt" ]
-    cmp "$TEST_ROOT/with.txt" "$TEST_ROOT/without.txt"
+    CC_VERSION=$v cc_json > "$TEST_ROOT/in.json"
+    run bash "$PLUGIN_ROOT/scripts/vbw-statusline.sh" < "$TEST_ROOT/in.json"
+    [ "$status" -eq 3 ]
+    [ -z "$output" ]
+    run bash "$TEST_ROOT/plain/scripts/vbw-statusline.sh" < "$TEST_ROOT/in.json"
+    [ "$status" -eq 3 ]
+    [ -z "$output" ]
   done
-  [ "$(cc_json | NO_COLOR=1 bash "$PLUGIN_ROOT/scripts/vbw-statusline.sh" | sed -n 1p)" = "[VBW] no project here · /vbw:vibe to start" ]
 }
 
 @test "R53: the status line and the kernel know nothing of the panel, so an older Claude Code prints nothing extra" {
