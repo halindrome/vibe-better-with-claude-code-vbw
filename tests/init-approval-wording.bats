@@ -38,6 +38,13 @@ branch_lines() { printf '%s\n' "$output" | grep -E 'branch' || true; }
   [[ "$output" != *branch* ]] || { echo "vbw config has a branch setting:"; echo "$output"; false; }
 }
 
+@test "R225: init on a branch other than main names that branch" {
+  git checkout -q -b feature/xyz
+  run "$VBW" init < /dev/null
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  [[ "$(branch_lines)" == *"feature/xyz"* ]] || { echo "the line does not name feature/xyz:"; echo "$output"; false; }
+}
+
 @test "R225: with no branch checked out, init's line says so and names the commit" {
   git checkout -q --detach
   run "$VBW" init < /dev/null

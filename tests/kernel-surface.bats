@@ -305,6 +305,9 @@ T2 CSV export" ]
   l=$(printf '%s\n' "$output" | grep -E '^· .*branch' || true)
   [ "$(printf '%s\n' "$l" | grep -c . )" -eq 1 ] || { echo "doctor's info lines naming a branch: $l"; echo "$output"; false; }
   [[ "$l" =~ (^|[^a-zA-Z0-9_-])main($|[^a-zA-Z0-9_-]) ]] || { echo "the line does not name main: $l"; false; }
+  git checkout -q -b feature/xyz
+  vbw_run doctor
+  [[ "$output" == *"lands on branch feature/xyz"* ]] || { echo "doctor does not name feature/xyz:"; echo "$output"; false; }
   git checkout -q --detach
   vbw_run doctor
   l=$(printf '%s\n' "$output" | grep -E '^· .*detached HEAD at ' || true)
