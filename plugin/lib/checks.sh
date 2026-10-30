@@ -393,7 +393,7 @@ checks_unit_run() {
   if [ -n "$st" ]; then
     t0=
     [ -z "${PROOFTIME_FILE:-}" ] || t0=$(prooftime_clock)
-    if [ "$reads" = true ] && reads_collect "$copy" "$st" > "$list"; then collected=true; fi
+    if [ "$reads" = true ] && reads_collect "$copy" "$st" "${CU_ARGV[a]:-}" > "$list"; then collected=true; fi
     [ -z "$t0" ] || prooftime_span tracking "$t0"
     # Nothing after this looks into the copy, which the next unit may take at once.
     cd "$here" || return 1
