@@ -160,3 +160,20 @@ line() {
     false
   }
 }
+
+@test "R224: VBW's script above 10 ms, though under the status line's 60 ms, makes the hand-back outside a VBW project fail the bench" {
+  {
+    sed -n 1p "$SCRIPT"
+    burn 35
+    echo
+    sed -n '2,$p' "$SCRIPT"
+  } > "$TEST_ROOT/sl.sh"
+  cat "$TEST_ROOT/sl.sh" > "$SCRIPT"
+  bench VBW_BENCH_ONLY='status line (no project)'
+  quiet_or_skip
+  [ "$status" -eq 1 ] || {
+    printf '%s\n' "$output"
+    false
+  }
+  line '^status line \(no project\): -?[0-9.]+ ms own CPU per call .*; budget 10 ms: OVER$' > /dev/null
+}
