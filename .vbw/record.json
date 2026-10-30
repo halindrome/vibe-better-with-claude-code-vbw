@@ -6958,7 +6958,7 @@
   "milestone": {
     "id": "M46",
     "title": "Community batch 2: scope by ancestry, bench reference, jq floor, status line hand-back, branch note",
-    "status": "active"
+    "status": "shipped"
   },
   "shipped": [
     {
@@ -7180,6 +7180,11 @@
       "id": "M45",
       "title": "Same-wave check refusal and standards-tool blind spots",
       "at": "2026-10-27T16:42:55Z"
+    },
+    {
+      "id": "M46",
+      "title": "Community batch 2: scope by ancestry, bench reference, jq floor, status line hand-back, branch note",
+      "at": "2026-10-30T23:08:20Z"
     }
   ],
   "requirements": [
@@ -64756,6 +64761,11 @@
       "text": "Keep the changes to docs/statusline.md made outside any plan",
       "why": "the fix commit 93c35a03 made the no-project text a subsection of the turned-off section and kept the limit sentence's pinned form, so the R184 docs cases find the hand-back's cost and the vbw doctor note again; the owner chose to keep it (menu, 2026-10-30)",
       "at": "2026-10-30T23:01:00Z"
+    },
+    {
+      "id": "D533",
+      "at": "2026-10-30T23:08:20Z",
+      "text": "Shipped M46 Community batch 2: scope by ancestry, bench reference, jq floor, status line hand-back, branch note: 7 requirements proven or accepted"
     }
   ],
   "commands": {
@@ -75981,6 +75991,10 @@
             "usd": 0,
             "at": "2026-10-30T12:49:49Z"
           }
+        },
+        "total": {
+          "usd": 54.158073,
+          "sessions": 41
         }
       }
     }
