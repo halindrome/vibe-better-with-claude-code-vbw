@@ -2,7 +2,8 @@
 # R78 and R81 (docs/workflows.md): when a build, fix or QA workflow finishes it
 # confirms what its agents recorded (vbw run confirm) and says plainly which
 # were not; every workflow that holds a run lease (plan, build, fix, QA) ends
-# its own run (vbw run end) as its last step, so no lease stays open. The
+# its own run (vbw run end) as its last step, so no lease stays open; a map
+# run is ended by its caller, with the map (#731). The
 # runtime is stubbed (tests/helpers/run-workflow.js), so no model is called (L1).
 # The closing agent is labelled "close run" and answers {ended, recorded, report}.
 
@@ -71,8 +72,22 @@ closer_ok='{"close run": {"ended": true, "recorded": true, "report": "all record
   printf '%s' "$output" | jq -e '.result.status == "blocked" and .calls[-1].opts.label == "close run"' || { echo "$output"; false; }
 }
 
-@test "R81: the mapping workflow ends its own run too" {
-  grep -q 'run end' "$WF/mapping.js"
+# #731: the map run's record commit must hold the map, and only the session has
+# it once the workflow returns: the mapping workflow never ends its run, and
+# both callers end it with the map (vbw run end --map), so the kernel writes the
+# map before it commits.
+@test "#731: the mapping workflow never ends its run, even with the session; it returns the map" {
+  run node "$BATS_TEST_DIRNAME/helpers/run-workflow-all.js" "$WF/mapping.js" '{"session":"s"}' '{"*":{"findings":["a"],"map":"the map","refused":[]}}'
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  printf '%s' "$output" | jq -e '.result.map == "the map" and all(.calls[]; .opts.label != "close run" and (.prompt | contains("run end") | not))' || { echo "$output"; false; }
+}
+
+@test "#731: /vbw:map and the router end the map run with the map, never write .vbw/map.md themselves" {
+  local f
+  for f in "$PLUGIN_ROOT/skills/map/SKILL.md" "$PLUGIN_ROOT/skills/vibe/SKILL.md"; do
+    grep -qF "jq -er '.result.map' FILE | VBW_SESSION_ID=\${CLAUDE_SESSION_ID} vbw run end --map" "$f" || { echo "$f"; false; }
+    ! grep -qF '> .vbw/map.md' "$f" || { echo "$f"; false; }
+  done
 }
 
 @test "R81: the router hands every workflow the session and no longer ends the run after it, but still ends an interrupted one" {

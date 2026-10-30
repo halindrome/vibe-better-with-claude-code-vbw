@@ -15,7 +15,7 @@ RUN="$BATS_TEST_DIRNAME/helpers/run-workflow-all.js"
 WF="$PLUGIN_ROOT/workflows"
 PROFILES="$PLUGIN_ROOT/lib/profiles.json"
 EFFORTS="$PLUGIN_ROOT/lib/efforts.json"
-CLOSERS="building verifying fixing planning mapping"
+CLOSERS="building verifying fixing planning"
 OK='{"ended":true,"recorded":true,"report":"all recorded; run ended","fixdone":"ran","closed":["F1","F2"],"open":[]}'
 DONE='{"status":"done","summary":"s","notes":[],"verdict":"pass","checks":[]}'
 GENERIC='{"findings":["a"],"map":"m","picks":[],"hypotheses":[],"answer":"a","confidence":"high","root_cause":"r","evidence":"e","rejected":[],"fix":"f","unknowns":[],"status":"fixed","summary":"s","files":[],"commit":"c","regression_test":"t","notes":[]}'
@@ -40,7 +40,6 @@ args() {
     verifying) base='{"phases":["P1"],"tier":"standard"}' ;;
     fixing) base='{"groups":[["F1","F2"]]}' ;;
     planning) base=$(jq -nc --argjson r "$REQS" '{requirements: $r}') ;;
-    mapping) base='{}' ;;
   esac
   jq -nc --argjson b "$base" --argjson x "$2" '$b + {session: "s"} + $x'
 }
@@ -56,7 +55,7 @@ closes_on_haiku() {
     || { echo "$1 with models $2:"; printf '%s' "$out" | jq -c '[.calls[] | {label: .opts.label, model: .opts.model}]'; return 1; }
 }
 
-@test "R186: in all five workflows the close run step asks for haiku in every profile, whatever models.lead says" {
+@test "R186: in all four workflows that close their run the close run step asks for haiku in every profile, whatever models.lead says" {
   local p w models
   for p in quality balanced budget; do
     models=$(jq -c --arg p "$p" '.[$p]' "$PROFILES")
@@ -172,8 +171,6 @@ closes_on_haiku() {
     (index("VBW_SESSION_ID=s vbw fix done F1 F2")) as $f | (index("VBW_SESSION_ID=s vbw run confirm F1 F2")) as $c
     | (index("VBW_SESSION_ID=s vbw run end")) as $e | $f != null and $c != null and $e != null and $f < $c and $c < $e)' || { echo "$out"; false; }
   out=$(wf planning '{"models":{"lead":"opus"}}' null)
-  printf '%s' "$out" | jq -e '.logs | any(contains("run by hand: VBW_SESSION_ID=s vbw run end"))' || { echo "$out"; false; }
-  out=$(wf mapping '{"models":{"lead":"opus"}}' null)
   printf '%s' "$out" | jq -e '.logs | any(contains("run by hand: VBW_SESSION_ID=s vbw run end"))' || { echo "$out"; false; }
   out=$(node "$RUN" "$WF/fixing.js" '{"groups":[["F1"]],"models":{"lead":"opus"}}' "$(responses null)")
   printf '%s' "$out" | jq -e '.logs | any(contains("run by hand: vbw fix done F1"))' || { echo "$out"; false; }
