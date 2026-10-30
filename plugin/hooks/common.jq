@@ -164,17 +164,15 @@ def run_write_denial($g):
 # matching). Brace expansion is not read: a check file changed that way stops
 # the proof until the user approves it (docs/proof.md).
 def protected_glob($record):
-  ("^" + (gsub("(?<c>[.+(){}^$|\\\\])"; "\\\(.c)") | gsub("\\*\\*/"; "\u0001") | gsub("\\*"; ".*")
-          | gsub("\\?"; "[^/]") | gsub("\\[!"; "[^") | gsub("\u0001"; "(.*/)?")) + "(/.*)?$") as $re
+  ("^" + gsub("(?<c>[.+(){}^$|\\\\]|\\*\\*/|\\*|\\?|\\[!)"; {"**/": "(.*/)?", "*": ".*", "?": "[^/]", "[!": "[^"}[.c] // "\\" + .c) + "(/.*)?$") as $re
   | try [$record.protected[]? | select(test($re))] catch [$record.protected[]?];
 def shell_write_denial($g):
-  . as $o
-  | if $o | unresolved_path then $o | outside_denial($g.lease; "cannot be resolved by the guard (~ or a shell expansion), so it counts as outside the project")
-    elif ($o | test("[*?\\[]")) and (($g.lease.kind // "") | test("^(build|fix)$"))
-      and ((project_path(session_dir($g); $root) // "") | protected_glob($g.record) | length > 0) then
-      project_path(session_dir($g); $root) as $p
-      | "\($p) matches a protected check file (\($p | protected_glob($g.record) | join(", "))): the contract is fixed while building\nNext: leave the protected check files as they are; name only the files you write"
-    else run_write_denial($g) end;
+  if unresolved_path then outside_denial($g.lease; "cannot be resolved by the guard (~ or a shell expansion), so it counts as outside the project")
+  elif test("[*?\\[]") and (($g.lease.kind // "") | test("^(build|fix)$")) then
+    ((project_path(session_dir($g); $root) // "") as $p | $p | protected_glob($g.record) | select(. != [])
+     | "\($p) matches a protected check file (\(join(", "))): the contract is fixed while building\nNext: leave the protected check files as they are; name only the files you write")
+    // run_write_denial($g)
+  else run_write_denial($g) end;
 
 # The name vbw run start stored for FOREIGN's run: the glance's holder when it is
 # that run's, else null.

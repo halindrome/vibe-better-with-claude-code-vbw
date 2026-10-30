@@ -159,57 +159,42 @@ def paths: (.args[] | sub("^--?[A-Za-z0-9-]+="; "")), .out[], .in[];
 # trailing / is judged as itself: the guard reads text and cannot tell it from
 # a file, so a write there is refused unless the folder is the run's to write
 # and holds no protected check file (lease_write_denial).
-# The flags whose value is the next word, per tool, so the value is not read as a
-# file; any other valued flag only makes the guard judge one path too many.
-def valued_flag($cmd):
-  ({install: "^-[A-Za-z]*[mogS]$|^--(mode|owner|group|suffix)$",
-    rsync: "^-[A-Za-z]*[ef]$|^--(exclude|include|filter|rsh|exclude-from|include-from|files-from)$",
-    cp: "^-S$|^--suffix$", mv: "^-S$|^--suffix$", ln: "^-S$|^--suffix$"}[$cmd] // null) as $re
-  | $re != null and test($re);
+# The words are read by one pattern per tool over the words joined by NUL (the
+# guard's cost is mostly compiling it, and a pattern is one constant): o, an
+# operand; t, GNU's target folder of cp, mv, install or ln (-t DIR, -rtDIR,
+# --target-directory[=]DIR and its abbreviations; rsync's -t is --times); s, a
+# sed script given by -e/-f (else the first operand is the script); m, a dot
+# word after sed's bare -i (BSD's suffix .bak or GNU's file, so it is judged as
+# a file too; BSD's '' suffix is skipped). A valued flag's value is skipped:
+# those of install, rsync and cp/mv/ln's --suffix; any other valued flag only
+# makes the guard judge one path too many.
 def shell_writes:
-  def at($dir): $dir + (if $dir | endswith("/") then "" else "/" end) + basename;
   .out[],
-  ( . as $c
-    | (.args | reduce .[] as $a ({skip: false, ops: []};
-        if .skip then .skip = false
-        elif $a | startswith("-") then .skip = ($a | valued_flag($c.cmd))
-        else .ops += [$a] end) | .ops) as $o
-    | if (.cmd | copier) or .cmd == "mv" then
-        # GNU's target folder of cp, mv, install and ln: -t DIR, -rtDIR, --target-directory[=]DIR
-        # and its abbreviations (rsync's -t is --times).
-        (if .cmd | test("^(cp|mv|install|ln)$") then
-           first(range(.args | length) as $i | .args[$i]
-             | sub("=.*"; "") as $n
-             | if ($n | startswith("--ta")) and ("--target-directory" | startswith($n)) then
-                 (if test("=") then sub("^[^=]*="; "") else $c.args[$i + 1] end)
-               elif test("^-[A-Za-z]*t") then
-                 (sub("^-[A-Za-z]*?t"; "") | if . == "" then $c.args[$i + 1] else . end)
-               else empty end) // null
-         else null end) as $t
-        | ( if $t != null then {srcs: ($o - [$t]), dir: $t}
-            elif ($o | length) == 1 and .cmd == "ln" then {srcs: $o, dir: "."}
-            elif ($o | length) < 2 then {srcs: []}
-            elif $o[-1] | endswith("/") or . == "." or . == ".." then {srcs: $o[:-1], dir: $o[-1]}
-            else {srcs: $o[:-1], file: $o[-1]} end ) as $w
-        | (if $w.dir != null then $w.srcs[] | at($w.dir) else $w.file // empty end),
-          (select(.cmd == "mv" or any(.args[]; . == "--remove-source-files")) | $w.srcs[])
-      elif .cmd == "tee" or .cmd == "rm" then $o[]
-      elif .cmd == "sed" and any(.args[]; test("^-[A-Za-z]*i|^--in-place")) then
-        # The script is the value of -e/-f, else the first operand; a bare -i may take BSD's suffix ('' or .bak).
-        # A dot word there is BSD's suffix or GNU's file, so it is judged as a file too.
-        .args | reduce .[] as $a ({skip: false, suffix: false, script: false, ops: [], maybe: []};
-            if .skip then .skip = false
-            elif .suffix and $a == "" then .suffix = false
-            elif .suffix and ($a | test("^\\.[^/]*$")) then .suffix = false | .maybe += [$a]
-            else .suffix = false
-              | if $a | test("^-[A-Za-z]*[ef]$|^--(expression|file)$") then .skip = true | .script = true
-                elif $a | test("^-[A-Za-z]*[ef].|^--(expression|file)=") then .script = true
-                elif $a | test("^-[A-Za-z]*i$") then .suffix = true
-                elif $a | startswith("-") then .
-                else .ops += [$a] end
-            end)
-        | ((if .script then .ops else .ops[1:] end) + .maybe)[]
-      else empty end );
+  ( .cmd as $cmd
+    | select(($cmd | test("^(cp|mv|rsync|install|ln|tee|rm)$")) or $cmd == "sed" and any(.args[]; test("^-[A-Za-z]*i|^--in-place")))
+    # Each pattern: the tool's valued flags with their value, its target-folder forms (--ta[-a-z]* is
+    # --target-directory and its abbreviations: no other long flag of these tools starts so), any
+    # other flag, else an operand.
+    | ({sed: "\u0000(?:(?<s>-[A-Za-z]*[ef]\u0000|--(?:expression|file)\u0000|-[A-Za-z]*[ef][^\u0000]|--(?:expression|file)=)[^\u0000]*|-[A-Za-z]*i\u0000(?<m>\\.[^/\u0000]*)?(?=\u0000)|-[^\u0000]*|(?<o>[^\u0000]*))(?=\u0000)",
+        install: "\u0000(?:(?:-[A-Za-z]*[mogS]|--(?:mode|owner|group|suffix))\u0000[^\u0000]*|(?:--ta[-a-z]*=|-[A-Za-z]*?t(?=[^\u0000])|(?:--ta[-a-z]*|-[A-Za-z]*?t)\u0000)(?<t>[^\u0000]*)|-[^\u0000]*|(?<o>[^\u0000]*))(?=\u0000)",
+        rsync: "\u0000(?:(?:-[A-Za-z]*[ef]|--(?:exclude|include|filter|rsh|exclude-from|include-from|files-from))\u0000[^\u0000]*|-[^\u0000]*|(?<o>[^\u0000]*))(?=\u0000)",
+        tee: "\u0000(?:-[^\u0000]*|(?<o>[^\u0000]*))(?=\u0000)",
+        rm: "\u0000(?:-[^\u0000]*|(?<o>[^\u0000]*))(?=\u0000)"}[$cmd]
+       // "\u0000(?:(?:-S|--suffix)\u0000[^\u0000]*|(?:--ta[-a-z]*=|-[A-Za-z]*?t(?=[^\u0000])|(?:--ta[-a-z]*|-[A-Za-z]*?t)\u0000)(?<t>[^\u0000]*)|-[^\u0000]*|(?<o>[^\u0000]*))(?=\u0000)") as $re
+    | (reduce (((.args | map("\u0000" + .) | add // "") + "\u0000") | match($re; "g").captures[] | select(.string != null)) as $x
+        ({o: []}; .[$x.name] += [$x.string])) as $r
+    | $r.o as $o
+    | if $cmd == "sed" then (if $r.s then $o else $o[1:] end)[], ($r.m // [])[]
+      elif $cmd == "tee" or $cmd == "rm" then $o[]
+      else
+        ( if $r.t then {srcs: $o, dir: $r.t[0]}
+          elif ($o | length) == 1 and $cmd == "ln" then {srcs: $o, dir: "."}
+          elif ($o | length) < 2 then {srcs: []}
+          elif $o[-1] | endswith("/") or . == "." or . == ".." then {srcs: $o[:-1], dir: $o[-1]}
+          else {srcs: $o[:-1], file: $o[-1]} end ) as $w
+        | (if $w.dir then $w.srcs[] | ($w.dir | rtrimstr("/")) + "/" + basename else $w.file // empty end),
+          (select($cmd == "mv" or any(.args[]; . == "--remove-source-files")) | $w.srcs[])
+      end );
 
 def approve_call:
   (if .cmd | shell then {cmd: ((.args[0] // "") | basename), args: .args[1:]} else . end)
