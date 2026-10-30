@@ -57,7 +57,7 @@ found by VBW's own real-user scenarios. Thank you.
   test asks for itself (`ls`, a glob) stays a read. The cause and the limit
   are in docs/proof.md. (found by the `ignoredplanning` real-user scenario)
 - **The Now panel's empty state says what it knows.** It reads "VBW is not
-  waiting on you" instead of "Nothing is needed from you right now", and every
+  waiting on you" instead of claiming that nothing is needed, and every
   action of `vbw next` that waits on you yields a need in the panel, a generic
   one made from the action's instruction when no case names it. (#708, the
   wording point; the milestone-gate symptom awaits the reporter's data)
