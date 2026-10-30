@@ -57436,12 +57436,30 @@
       "after": [
         "P179.3"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "docs",
       "tasks": [
         "docs/statusline.md, the hand-back passage (lines 125-135): exit 3 is the hand-back both where the plugin is turned off and where there is no VBW project (no .vbw folder at or above the session's folder); with no earlier status line saved nothing shows; the bench measures it as 'status line (no project)' beside 'status line (VBW off)'.",
         "docs/statusline.md, the Engineering bullets (lines 174-182): the exit 3 bullet names both cases; the no-project line is no longer described as what is shown outside a project (it stays only for a folder inside a VBW project whose own git top has no record).",
         "Run C514 (bats --filter 'R224 docs:' tests/statusline-handback.bats)."
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R224",
+            "text": "docs/statusline.md says exit 3 hands back both where VBW is turned off and where there is no VBW project, and no longer shows the no-project line as what is shown outside a project"
+          },
+          "what": "Engineering bullet: exit 3 only where VBW is turned off",
+          "files": [
+            "docs/statusline.md"
+          ],
+          "checks": {
+            "C514": "red"
+          },
+          "result": "red",
+          "at": "2026-10-30T19:00:01Z",
+          "head": "a63900b950752c3049b89ed522fe84de92b8bdbd"
+        }
       ]
     },
     {
@@ -57458,12 +57476,220 @@
       "after": [
         "P180.1"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "plugin/lib/cmd-init.sh: after the two file lines, exactly one line: `VBW commits its plan of record and the checks it plans to the branch checked out: <branch>` (git symbolic-ref --short -q HEAD); with no branch checked out: `... to the commit checked out: no branch (detached HEAD at <12 characters of git rev-parse HEAD>)`. Nothing refuses, nothing asks, no setting is added; init on main is otherwise unchanged.",
         "plugin/lib/cmd-doctor.sh doctor_project: right after `the plan of record is valid`, one info line `the next VBW commit lands on branch <branch>`, or `the next VBW commit lands on detached HEAD at <12 characters>`; nothing of it outside a VBW project.",
         "Run C517 (bats --filter 'R225:' tests/init-approval-wording.bats), C518 (bats --filter 'R225:' tests/kernel-surface.bats), tests/init-*.bats and tests/kernel-surface.bats under /bin/bash."
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R225",
+            "text": "vbw init prints exactly one line saying VBW commits its plan of record and the checks it plans to the branch checked out, naming that branch"
+          },
+          "what": "init names trunk, not the branch",
+          "files": [
+            "plugin/lib/cmd-init.sh"
+          ],
+          "checks": {
+            "C517": "red"
+          },
+          "result": "red",
+          "at": "2026-10-30T19:06:52Z",
+          "head": "833763e4366ac4502c26caf22986a9cf564f4eb7"
+        },
+        {
+          "rule": {
+            "req": "R225",
+            "text": "with no branch checked out (detached HEAD) init's line says so and names the commit"
+          },
+          "what": "detached commit cut to 8 chars",
+          "files": [
+            "plugin/lib/cmd-init.sh"
+          ],
+          "checks": {
+            "C517": "red"
+          },
+          "result": "red",
+          "at": "2026-10-30T19:06:56Z",
+          "head": "833763e4366ac4502c26caf22986a9cf564f4eb7"
+        },
+        {
+          "rule": {
+            "req": "R225",
+            "text": "nothing refuses, no question is asked and no setting is added: init on main succeeds as before and vbw config knows no branch key"
+          },
+          "what": "init refuses on main",
+          "files": [
+            "plugin/lib/cmd-init.sh"
+          ],
+          "checks": {
+            "C517": "red"
+          },
+          "result": "red",
+          "at": "2026-10-30T19:07:00Z",
+          "head": "833763e4366ac4502c26caf22986a9cf564f4eb7"
+        },
+        {
+          "rule": {
+            "req": "R225",
+            "text": "vbw doctor in a VBW project prints an info line naming the branch the next VBW commit lands on, or 'detached HEAD at <12 characters>'"
+          },
+          "what": "doctor names trunk",
+          "files": [
+            "plugin/lib/cmd-doctor.sh"
+          ],
+          "checks": {
+            "C518": "red"
+          },
+          "result": "red",
+          "at": "2026-10-30T19:07:04Z",
+          "head": "833763e4366ac4502c26caf22986a9cf564f4eb7"
+        },
+        {
+          "rule": {
+            "req": "R225",
+            "text": "outside a VBW project doctor's output is unchanged: no branch line"
+          },
+          "what": "branch line outside project",
+          "files": [
+            "plugin/lib/cmd-doctor.sh"
+          ],
+          "checks": {
+            "C518": "red"
+          },
+          "result": "red",
+          "at": "2026-10-30T19:07:07Z",
+          "head": "833763e4366ac4502c26caf22986a9cf564f4eb7"
+        },
+        {
+          "rule": {
+            "req": "R225",
+            "text": "vbw init prints exactly one line saying VBW commits its plan of record and the checks it plans to the branch checked out, naming that branch"
+          },
+          "what": "init names main not branch",
+          "files": [
+            "plugin/lib/cmd-init.sh"
+          ],
+          "checks": {
+            "C517": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-30T20:58:14Z",
+          "head": "833763e4366ac4502c26caf22986a9cf564f4eb7"
+        },
+        {
+          "rule": {
+            "req": "R225",
+            "text": "with no branch checked out (detached HEAD) init's line says so and names the commit"
+          },
+          "what": "init detached cut to 8",
+          "files": [
+            "plugin/lib/cmd-init.sh"
+          ],
+          "checks": {
+            "C517": "red"
+          },
+          "result": "red",
+          "at": "2026-10-30T20:58:17Z",
+          "head": "833763e4366ac4502c26caf22986a9cf564f4eb7"
+        },
+        {
+          "rule": {
+            "req": "R225",
+            "text": "nothing refuses, no question is asked and no setting is added: init on main succeeds as before and vbw config knows no branch key"
+          },
+          "what": "init refuses on main",
+          "files": [
+            "plugin/lib/cmd-init.sh"
+          ],
+          "checks": {
+            "C517": "red"
+          },
+          "result": "red",
+          "at": "2026-10-30T20:58:21Z",
+          "head": "833763e4366ac4502c26caf22986a9cf564f4eb7"
+        },
+        {
+          "rule": {
+            "req": "R225",
+            "text": "vbw doctor in a VBW project prints an info line naming the branch the next VBW commit lands on, or 'detached HEAD at <12 characters>'"
+          },
+          "what": "doctor names main",
+          "files": [
+            "plugin/lib/cmd-doctor.sh"
+          ],
+          "checks": {
+            "C518": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-30T20:58:24Z",
+          "head": "833763e4366ac4502c26caf22986a9cf564f4eb7"
+        },
+        {
+          "rule": {
+            "req": "R225",
+            "text": "outside a VBW project doctor's output is unchanged: no branch line"
+          },
+          "what": "branch line outside project",
+          "files": [
+            "plugin/lib/cmd-doctor.sh"
+          ],
+          "checks": {
+            "C518": "red"
+          },
+          "result": "red",
+          "at": "2026-10-30T20:58:28Z",
+          "head": "833763e4366ac4502c26caf22986a9cf564f4eb7"
+        },
+        {
+          "rule": {
+            "req": "R225",
+            "text": "vbw init prints exactly one line saying VBW commits its plan of record and the checks it plans to the branch checked out, naming that branch"
+          },
+          "what": "init names main not branch",
+          "files": [
+            "plugin/lib/cmd-init.sh"
+          ],
+          "checks": {
+            "C517": "red"
+          },
+          "result": "red",
+          "at": "2026-10-30T21:00:33Z",
+          "head": "349a94f89283e206ece32dbf09d2671c53454281",
+          "strengthened": [
+            "tests/init-approval-wording.bats",
+            "tests/kernel-surface.bats"
+          ],
+          "pending": [
+            "tests/init-approval-wording.bats"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R225",
+            "text": "vbw doctor in a VBW project prints an info line naming the branch the next VBW commit lands on, or 'detached HEAD at <12 characters>'"
+          },
+          "what": "doctor names main",
+          "files": [
+            "plugin/lib/cmd-doctor.sh"
+          ],
+          "checks": {
+            "C518": "red"
+          },
+          "result": "red",
+          "at": "2026-10-30T21:00:36Z",
+          "head": "349a94f89283e206ece32dbf09d2671c53454281",
+          "strengthened": [
+            "tests/init-approval-wording.bats",
+            "tests/kernel-surface.bats"
+          ],
+          "pending": [
+            "tests/kernel-surface.bats"
+          ]
+        }
       ]
     },
     {
@@ -72875,6 +73101,17 @@
         "ended": "2026-10-30T18:56:28Z",
         "cost": {
           "usd": 1.755014
+        }
+      },
+      {
+        "id": "build-20261030T185819Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M46",
+        "started": "2026-10-30T18:58:19Z",
+        "ended": "2026-10-30T21:03:01Z",
+        "cost": {
+          "usd": 3.064037
         }
       }
     ],
