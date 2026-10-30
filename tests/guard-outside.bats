@@ -176,7 +176,7 @@ where() { [[ "$1" == *"agents write only inside the project, and there only $2"*
   # A file tool never expands ~: that is a folder named ~ inside the project, judged by the lease like any file.
   out=$(printf '%s' "$(write_in '~/notes.md')" | vbw_hook PreToolUse Write)
   printf '%s' "$out" | jq -e '.hookSpecificOutput.permissionDecision == "deny"' > /dev/null || { echo "allowed: $out"; false; }
-  [[ "$(printf '%s' "$out" | jq -r .hookSpecificOutput.permissionDecisionReason)" == *"outside this run's files"* ]] || { echo "$out"; false; }
+  [[ "$(printf '%s' "$out" | jq -r .hookSpecificOutput.permissionDecisionReason)" == *"~/notes.md cannot be written while planning"* ]] || { echo "$out"; false; }
 }
 
 @test "R177 (F159): a plan file with a \$ in its name is written through the file tool; a shell redirect to it is refused as unresolved, naming the file" {

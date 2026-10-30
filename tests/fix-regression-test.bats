@@ -100,6 +100,11 @@ fixed_and_ended() {
   ! denied "$out" || { echo "$out"; false; }
   out=$(bash_call 'printf "true\n" > tests/r1-regression.sh')
   ! denied "$out" || { echo "$out"; false; }
+  # The one test-file rule (R75): the runners' usual names next to the code.
+  for f in src/pay.spec.ts lib/pay_spec.rb t/pay.t; do
+    out=$(file_call Write "$f")
+    ! denied "$out" || { echo "$f: $out"; false; }
+  done
 }
 
 @test "R160: during that run the Dev may edit an approved check file of the finding's requirement" {
