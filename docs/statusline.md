@@ -41,8 +41,8 @@ Sonnet 5.5 │ 10m22s (API 5m55s) │ main │ VBW 2.0.6 │ CC 2.1.286
      `✓ idle: prove is next` (from the last `vbw next`) otherwise.
 
    `⟳ auto 3/25` follows while this session's autonomous run is armed (another
-   session's is not shown). Outside a VBW project: `/vbw:vibe to start` (this
-   line, then lines 3 to 5).
+   session's is not shown). In a folder inside a VBW project whose own git top
+   has no record: `/vbw:vibe to start` (this line, then lines 3 to 5).
 2. **Agents or team** (VBW projects, Claude Code before 2.1.287 only): while agents work, each one in its role's
    colour (architect magenta, lead blue, dev green, qa yellow, scout cyan,
    debugger red, docs pink) with its label and model. Otherwise the team: each role's model from the profile and
@@ -119,6 +119,16 @@ above).
 VBW's script only says "off" (it exits with code 3). The setting itself then
 runs the earlier status line with the same input; VBW never runs it.
 
+## Folders with no VBW project
+
+The same hand-back happens where there is no VBW project: no `.vbw` folder at
+or above the folder Claude Code reports (else the folder the script runs in).
+The script prints nothing and exits 3, the setting runs the earlier status line
+and prints its output unchanged, and with no earlier status line saved nothing
+shows. A `.vbw-planning` folder (VBW 1) does not count as a project. Inside a
+VBW project the line renders as usual, and the cost side file is written only
+there. A setting written by an earlier 2.1.x needs no rewrite.
+
 The off path is the cheapest of the status line's paths. The setting starts one
 bash, which runs the installed script inside itself, and that script starts one
 jq: it reads your settings file, the project's two settings files (when the
@@ -126,7 +136,8 @@ session runs in the project, which is nearly always) and Claude Code's JSON
 together, and starts no other process before it says "off". On a session
 that loaded a working tree (`claude --plugin-dir`) it also reads the session's
 record, with no jq. `tools/bench-hooks.sh` measures VBW's own CPU on this path as
-`status line (VBW off)`: the whole call minus one bash, one jq and one sh
+`status line (VBW off)`, and the no-project hand-back (a walk up the folders
+that starts no process) as `status line (no project)`: the whole call minus one bash, one jq and one sh
 startup and the earlier status line itself, which are the platform's and yours.
 The limit is 10 ms on a nominal machine, scaled by the same reference ratio (slow, not failed, within it) (`VBW_HANDBACK_BUDGET_MS`).
 
@@ -178,9 +189,12 @@ status line still renders. It never writes `.vbw/record.json`.
   file below, never the record.
 - It reads stdin with a timeout (Claude Code may send nothing on the first
   render) and never fails: a bad render prints `[VBW] status line unavailable`.
-- Exit 3 is the hand-back signal: the script prints nothing and exits 3 where
-  VBW is turned off. `tools/bench-hooks.sh` measures it as `status line (VBW
-  off)`, judged on VBW's own CPU within 10 ms (see above).
+- Exit 3 is the hand-back signal: the script prints nothing and exits 3 both
+  where VBW is turned off and where there is no VBW project. `tools/bench-hooks.sh`
+  measures them as `status line (VBW off)` and `status line (no project)`, each
+  judged on VBW's own CPU within 10 ms (see above). The no-project line
+  (`/vbw:vibe to start`) remains only for a folder inside a VBW project whose
+  own git top has no record.
 - The script runs on its own (`bash vbw-statusline.sh`) and inside the setting's
   bash (sourced in a subshell of it, which saves a bash start on every render).
   Its exit status is its answer in both, and it finds its own folder from
