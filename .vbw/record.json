@@ -60449,42 +60449,42 @@
       "id": "F327",
       "req": "R53",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "C55 fail (exit 1)"
     },
     {
       "id": "F328",
       "req": "R55",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "C57 fail (exit 1)"
     },
     {
       "id": "F329",
       "req": "R151",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "C231 fail (exit 1)"
     },
     {
       "id": "F330",
       "req": "R173",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "C281 fail (exit 1)"
     },
     {
       "id": "F331",
       "req": "R184",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "C333 fail (exit 1)"
     },
     {
       "id": "F332",
       "command": "test",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "test fail"
     }
   ],
@@ -64668,6 +64668,12 @@
       "id": "D530",
       "at": "2026-10-30T21:04:45Z",
       "text": "Contract approved: 216 requirements, 516 checks, 554 plans (4d28883d9bc3)",
+      "plans": []
+    },
+    {
+      "id": "D531",
+      "at": "2026-10-30T22:54:13Z",
+      "text": "Contract approved: 216 requirements, 516 checks, 554 plans (8fab38741e46)",
       "plans": []
     }
   ],
