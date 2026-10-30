@@ -1,5 +1,5 @@
 {
-  "schema": 4,
+  "schema": 6,
   "lease": null,
   "protected": [
     "tests/adaptive-results.bats",
@@ -63265,6 +63265,26 @@
       "text": "D525 (text: --list) was recorded by a mistyped command and decides nothing; the three decisions of this planning are D522, D523 and D524",
       "why": "The record has one writer and no retraction; the error is named where it stands",
       "at": "2026-10-30T13:05:20Z"
+    },
+    {
+      "id": "D527",
+      "at": "2026-10-30T15:05:23Z",
+      "text": "Contract approved: 216 requirements, 516 checks, 554 plans (687bcef774da)",
+      "plans": [
+        "P179.1",
+        "P179.2",
+        "P179.3",
+        "P180.1",
+        "P180.2",
+        "P180.3",
+        "P181.1",
+        "P182.1",
+        "P182.2",
+        "P182.3",
+        "P183.1",
+        "P183.2",
+        "P183.3"
+      ]
     }
   ],
   "commands": {
