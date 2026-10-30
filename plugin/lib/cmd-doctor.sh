@@ -201,7 +201,14 @@ doctor_project() {
   if n=$(record_newer_schema "$VBW_RECORD"); then
     doctor_line fail "this project needs a newer VBW: its record was written with schema $n, this VBW reads up to schema $VBW_SCHEMA_MAX" "update VBW with /vbw:update"
     return 0
-  elif v=$(record_violation "$VBW_RECORD"); then doctor_line ok "the plan of record is valid"
+  elif v=$(record_violation "$VBW_RECORD"); then
+    doctor_line ok "the plan of record is valid"
+    local dbranch
+    if dbranch=$(git -C "$VBW_ROOT" symbolic-ref --short -q HEAD 2> /dev/null) && [ -n "$dbranch" ]; then
+      doctor_line info "the next VBW commit lands on branch $dbranch"
+    else
+      doctor_line info "the next VBW commit lands on detached HEAD at $(git -C "$VBW_ROOT" rev-parse HEAD 2> /dev/null | cut -c1-12)"
+    fi
   else doctor_line fail "the plan of record is corrupt: $v" "restore .vbw/record.json from git (git checkout -- .vbw/record.json)"
   fi
   # shellcheck source=cmd-spec.sh
