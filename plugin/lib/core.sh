@@ -274,12 +274,25 @@ vbw_require_project() {
 # that holds .git, the project's own repository when none below the project does
 # (the rule the guards use, hooks/project.sh); a path whose folder does not exist
 # yet is read the same way, folder by folder. A repository is named by its folder
-# relative to the project, "" for the project itself.
+# relative to the project, "" for the project itself. A folder holding .git that
+# a symbolic link takes outside the project is no repository of the project: VBW
+# acts on nothing outside it, and its files are the project's, whose git refuses
+# a path beyond a symbolic link (the guards judge such a path by its name too).
+
+# vbw_inside DIR: the project-relative DIR is a folder inside the project, symbolic
+# links resolved. One subshell per folder asked, remembered for the process.
+vbw_inside() {
+  local p k="$VBW_ROOT/$1" root
+  case "${VBW_INSIDE:-}" in *$'\037'"$k"$'\037'*) return 0 ;; esac
+  root=$(cd -P "$VBW_ROOT" 2> /dev/null && pwd -P) || return 1
+  p=$(cd -P "$k" 2> /dev/null && pwd -P) || return 1
+  case "$p" in "$root"/?*) VBW_INSIDE="${VBW_INSIDE:-$'\037'}$k"$'\037' ;; *) return 1 ;; esac
+}
 
 # vbw_repos FILE...: sets VBW_REPOS, the repositories that track the
 # project-relative FILEs (first seen first), VBW_REPO_OF, each FILE's
 # repository, in FILE order, and VBW_PATHS, the FILEs (vbw_in_repo reads them).
-# Builtins only: no process per file.
+# Builtins only, but for one vbw_inside per folder holding .git.
 vbw_repos() {
   local f d x seen
   VBW_REPOS=()
@@ -289,7 +302,7 @@ vbw_repos() {
     d=${f%/}
     case "/$d/" in */../* | */./*) d= ;; esac
     while [ -n "$d" ]; do
-      [ -d "$VBW_ROOT/$d" ] && [ -e "$VBW_ROOT/$d/.git" ] && break
+      [ -d "$VBW_ROOT/$d" ] && [ -e "$VBW_ROOT/$d/.git" ] && vbw_inside "$d" && break
       case "$d" in */*) d=${d%/*} ;; *) d= ;; esac
     done
     VBW_REPO_OF+=("$d")
@@ -421,19 +434,23 @@ Next: put it on a branch (git -C $r switch BRANCH), then commit again"
   done
 }
 
-# vbw_subs: the submodules of the project's HEAD that are checked out, one level
-# deep, "PATH\0" each: the paths .gitmodules names that HEAD holds as a
-# submodule and whose folder holds .git. No .gitmodules: nothing, no git command.
+# vbw_subs [REPO]: the submodules of the HEAD of the project (or of its repository
+# REPO, a folder relative to the project) that are checked out, one level deep,
+# "PATH\0" each, relative to that repository: the paths .gitmodules names that
+# HEAD holds as a submodule and whose folder holds .git. No .gitmodules: nothing,
+# no git command.
+# shellcheck disable=SC2120 # cmd-ship.sh passes REPO
 vbw_subs() {
-  local line paths=()
-  [ -f "$VBW_ROOT/.gitmodules" ] || return 0
+  local line paths=() top="$VBW_ROOT${1:+/$1}"
+  [ -f "$top/.gitmodules" ] || return 0
   # -z: "key NEWLINE value NUL" per entry.
   while IFS= read -r -d '' line; do
     line=${line#*$'\n'}
-    [ ! -e "$VBW_ROOT/$line/.git" ] || paths+=("$line")
-  done < <(git -C "$VBW_ROOT" config -z -f .gitmodules --get-regexp '^submodule\..*\.path$' 2> /dev/null)
+    # Inside the project only: a checkout swapped for a symbolic link out is no submodule.
+    if [ -e "$top/$line/.git" ] && vbw_inside "${1:+$1/}$line"; then paths+=("$line"); fi
+  done < <(git -C "$top" config -z -f .gitmodules --get-regexp '^submodule\..*\.path$' 2> /dev/null)
   [ ${#paths[@]} -gt 0 ] || return 0
-  git -C "$VBW_ROOT" ls-tree -z HEAD -- "${paths[@]}" 2> /dev/null | while IFS= read -r -d '' line; do
+  git -C "$top" ls-tree -z HEAD -- "${paths[@]}" 2> /dev/null | while IFS= read -r -d '' line; do
     case "$line" in "160000 commit "*) printf '%s\0' "${line#*$'\t'}" ;; esac
   done
 }

@@ -650,7 +650,10 @@ A project may hold other git repositories: submodules, or a clone nested in a
 folder. A plan or check file inside one is still named by its path from the
 project folder (`apps/mobile/src/comms.ts`), and VBW does its git work for that
 file in the repository that tracks it: the nearest folder at or above the file
-that holds `.git` (the rule the guards use, docs/guards.md).
+that holds `.git` (the rule the guards use, docs/guards.md). A folder that a
+symbolic link takes outside the project is never such a repository: VBW does
+nothing outside the project, so a plan file reached through it stays the
+project's, and git refuses to commit a path beyond a symbolic link.
 
 - `vbw commit` makes one commit per repository that holds a changed file, each
   with the same message and trailers (`VBW-Plan:`, `VBW-Req:`, or `VBW-Fix:`),
@@ -690,14 +693,16 @@ that holds `.git` (the rule the guards use, docs/guards.md).
 - The proof copy (`vbw prove`, `vbw mutate`, `vbw fix done`) holds each
   checked-out submodule at its own `HEAD`, and `vbw mutate` puts a broken file
   back as its own repository's last commit (docs/proof.md, `vbw prove`).
-- `vbw ship` wants every file committed: a submodule's files in the submodule.
-  Its moved pointer does not count as uncommitted work.
+- `vbw ship` wants every file committed: a submodule's files in the submodule,
+  every level down (a changed file in a submodule's own submodule is named by
+  its project path too). A moved pointer does not count as uncommitted work.
 - A `vbw` command run inside a submodule that has no `.vbw/` of its own works on
   the project above it, and a Claude session started there is guarded as that
   project (docs/guards.md). A clone nested in the project (its `.git` a folder)
   and a linked worktree nested in it (its `.git` file points into a
   `worktrees/` folder) stay projects of their own.
-- One level: a submodule inside a submodule is not followed, and a repository
+- One level: apart from `vbw ship`'s check, a submodule inside a submodule is
+  not followed, and a repository
   nested in the project without being its submodule is committed in, but not
   brought into the proof copy or read by the readers above.
 - Two things still read only the project's repository: a parked loop item's

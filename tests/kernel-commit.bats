@@ -285,6 +285,41 @@ with_sub() {
   [ "$(git rev-parse HEAD)" = "$root_head" ]
 }
 
+@test "a plan path through a symlinked folder holding a repository outside the project is never committed or restored there" {
+  local out="$TEST_ROOT/outside repo" out_head
+  git init -q "$out"
+  printf 'a\n' > "$out/a.js"
+  git -C "$out" add a.js
+  git -C "$out" commit -q -m "chore: seed"
+  out_head=$(git -C "$out" rev-parse HEAD)
+  ln -s "$out" link
+  jq '.plans += [{id:"P1.6", phase:"P1", title:"Link", reqs:["R1"], files:["link/a.js"], after:[], status:"building"}]' \
+    .vbw/record.json > "$TEST_ROOT/r.json" && cp "$TEST_ROOT/r.json" .vbw/record.json
+  git add link .vbw/record.json
+  git commit -q -m "chore: link"
+  printf 'a2\n' > "$out/a.js"
+  vbw_run commit P1.6 "feat(link): a"
+  [ "$status" -ne 0 ] || { echo "$output"; false; }
+  [ "$(git -C "$out" rev-parse HEAD)" = "$out_head" ]
+  [ "$(cat "$out/a.js")" = a2 ]
+  # The one resolver every caller (commit, plan done, mutate's restore) uses: the
+  # file is the project's, whose git refuses a path beyond a symbolic link.
+  run vbw_kernel 'vbw_repos link/a.js; printf "[%s]" "${VBW_REPO_OF[0]}"'
+  [ "$output" = "[]" ] || { echo "$output"; false; }
+}
+
+@test "a submodule folder swapped for a symlink to a repository outside the project is no submodule of it" {
+  with_sub
+  run vbw_kernel 'vbw_subs | tr "\0" "\n"'
+  [ "$output" = sub ] || { echo "$output"; false; }
+  mv sub "$TEST_ROOT/outside sub"
+  ln -s "$TEST_ROOT/outside sub" sub
+  # Proof copies, ship and reads list submodules through vbw_subs: none may reach
+  # a repository outside the project.
+  run vbw_kernel 'vbw_subs | tr "\0" "\n"'
+  [ -z "$output" ] || { echo "$output"; false; }
+}
+
 @test "vbw commit run inside a submodule commits for the project above it" {
   with_sub
   printf 'a2\n' > sub/a.js

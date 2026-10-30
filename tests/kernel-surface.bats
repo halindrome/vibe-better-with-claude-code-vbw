@@ -88,7 +88,15 @@ proven_project() {
   printf 'paid\n' > "$TEST_ROOT/subsrc/pay.txt"
   git -C "$TEST_ROOT/subsrc" add pay.txt
   git -C "$TEST_ROOT/subsrc" commit -q -m "chore: seed"
+  # The submodule holds a submodule of its own.
+  git init -q "$TEST_ROOT/innersrc"
+  printf 'i\n' > "$TEST_ROOT/innersrc/i.txt"
+  git -C "$TEST_ROOT/innersrc" add i.txt
+  git -C "$TEST_ROOT/innersrc" commit -q -m "chore: seed"
+  git -C "$TEST_ROOT/subsrc" -c protocol.file.allow=always submodule add -q "file://$TEST_ROOT/innersrc" "inner dir"
+  git -C "$TEST_ROOT/subsrc" commit -q -m "chore: inner"
   git -c protocol.file.allow=always submodule add -q "file://$TEST_ROOT/subsrc" sub
+  git -c protocol.file.allow=always submodule update -q --init --recursive
   git commit -q -m "chore: sub"
   edit_record '.checks = [{id: "C1", req: "R1", run: ["grep", "-qx", "paid", "sub/pay.txt"]}]
     | .phases = [{id: "P1", title: "Pay", reqs: ["R1", "R2"], milestone: "M1"}]
@@ -104,6 +112,12 @@ proven_project() {
   [ "$status" -eq 1 ]
   [[ "$output" == *"not committed: sub/scratch.txt"* ]] || { echo "$output"; false; }
   rm sub/scratch.txt
+  # Every level down: a file changed in the submodule's own submodule.
+  printf 'i2\n' > "sub/inner dir/i.txt"
+  vbw_run ship
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"not committed: sub/inner dir/i.txt"* ]] || { echo "$output"; false; }
+  git -C "sub/inner dir" checkout -q -- i.txt
   vbw_run ship
   [ "$status" -eq 0 ] || { echo "$output"; false; }
   git status --porcelain -- sub | grep -q '^ M sub$'
