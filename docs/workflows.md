@@ -671,8 +671,16 @@ that holds `.git` (the rule the guards use, docs/guards.md).
   commit, in the repository that tracks each file. In a submodule the record's
   own history ([Whose commits VBW judges](proof.md#whose-commits-vbw-judges))
   starts after the commit the record's first commit pointed the submodule at.
+- The proof copy (`vbw prove`, `vbw mutate`, `vbw fix done`) holds each
+  checked-out submodule at its own `HEAD`, and `vbw mutate` puts a broken file
+  back as its own repository's last commit (docs/proof.md, `vbw prove`).
+- `vbw ship` wants every file committed: a submodule's files in the submodule.
+  Its moved pointer does not count as uncommitted work.
 - A `vbw` command run inside a submodule that has no `.vbw/` of its own works on
   the project above it.
+- One level: a submodule inside a submodule is not followed, and a repository
+  nested in the project without being its submodule is committed in, but not
+  brought into the proof copy.
 
 ## The user's level
 

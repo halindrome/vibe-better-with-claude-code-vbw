@@ -14,10 +14,17 @@ cmd_ship() {
   action=$(cmd_next --json | jq -r .action)
   [ "$action" = ship ] || vbw_die "not ready to ship: vbw next says $action ($(cmd_next | cut -d: -f2- | sed 's/^ //'))"
   # The proof reads the files on disk; shipped work must also be in git history.
-  local entry dirty=""
+  # A submodule's files are read in the submodule; its pointer moving is no change
+  # (vbw commit never moves it: docs/workflows.md, "Submodules").
+  local entry dirty="" p
   while IFS= read -r -d '' entry; do
     dirty="$dirty ${entry:3}"
-  done < <(git -C "$VBW_ROOT" status --porcelain=v1 -z --no-renames --untracked-files=all -- . ':(exclude).vbw')
+  done < <(git -C "$VBW_ROOT" status --porcelain=v1 -z --no-renames --untracked-files=all --ignore-submodules=all -- . ':(exclude).vbw')
+  while IFS= read -r -d '' p; do
+    while IFS= read -r -d '' entry; do
+      dirty="$dirty $p/${entry:3}"
+    done < <(git -C "$VBW_ROOT/$p" status --porcelain=v1 -z --no-renames --untracked-files=all --ignore-submodules=all)
+  done < <(vbw_subs)
   [ -z "$dirty" ] || vbw_die "the proven work is not committed:$dirty (commit it, then vbw ship)"
   # Freeze the milestone's cost; null (unknown) when no session has figures.
   local total

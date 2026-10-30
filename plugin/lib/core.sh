@@ -243,11 +243,14 @@ vbw_require_project() {
   vbw_project
   # Inside a submodule with no record of its own, the project is the nearest
   # repository above it that has one (git's superproject, asked until none is left).
+  # The command then runs from that project's folder, so every path and bare git
+  # command reads the project, as from its own folder.
   while [ ! -f "$VBW_RECORD" ] && up=$(git -C "$VBW_ROOT" rev-parse --show-superproject-working-tree 2> /dev/null) && [ -n "$up" ]; do
     VBW_ROOT=$up
     VBW_DIR="$VBW_ROOT/.vbw"
     VBW_RECORD="$VBW_DIR/record.json"
     VBW_RUNTIME="$VBW_DIR/runtime"
+    [ ! -f "$VBW_RECORD" ] || cd "$VBW_ROOT" || vbw_die "cannot enter $VBW_ROOT"
   done
   [ -f "$VBW_RECORD" ] || vbw_die "not a VBW project (run /vbw:init)"
   mkdir -p "$VBW_RUNTIME"
@@ -362,6 +365,23 @@ Next: put it on a branch (git -C $r switch BRANCH), then commit again"
   done
 }
 
+# vbw_subs: the submodules of the project's HEAD that are checked out, one level
+# deep, "PATH\0" each: the paths .gitmodules names that HEAD holds as a
+# submodule and whose folder holds .git. No .gitmodules: nothing, no git command.
+vbw_subs() {
+  local line paths=()
+  [ -f "$VBW_ROOT/.gitmodules" ] || return 0
+  # -z: "key NEWLINE value NUL" per entry.
+  while IFS= read -r -d '' line; do
+    line=${line#*$'\n'}
+    [ ! -e "$VBW_ROOT/$line/.git" ] || paths+=("$line")
+  done < <(git -C "$VBW_ROOT" config -z -f .gitmodules --get-regexp '^submodule\..*\.path$' 2> /dev/null)
+  [ ${#paths[@]} -gt 0 ] || return 0
+  git -C "$VBW_ROOT" ls-tree -z HEAD -- "${paths[@]}" 2> /dev/null | while IFS= read -r -d '' line; do
+    case "$line" in "160000 commit "*) printf '%s\0' "${line#*$'\t'}" ;; esac
+  done
+}
+
 # vbw_commits_say ID: one line per commit vbw_commit_paths made for ID.
 vbw_commits_say() {
   local c r rest hash n
@@ -393,16 +413,22 @@ vbw_sha256() {
 # vbw_head_tree: the tree of the committed code (HEAD, without .vbw and
 # .vbw-planning), which is what vbw prove runs on: the fingerprint of what a
 # proof proved. Prints nothing when there is no commit yet.
+# A checked-out submodule counts at its own HEAD (vbw_subs), not at the commit
+# the project points it at: what the proof copy holds (lib/proofcopy.sh).
 vbw_head_tree() {
-  local idx status
+  local idx status p sha subs=()
   git -C "$VBW_ROOT" rev-parse -q --verify HEAD > /dev/null 2>&1 || return 0
+  while IFS= read -r -d '' p; do
+    sha=$(git -C "$VBW_ROOT/$p" rev-parse -q --verify HEAD 2> /dev/null) && subs+=("160000,$sha,$p")
+  done < <(vbw_subs)
   idx=$(mktemp "$VBW_RUNTIME/index.XXXXXX") || return 1
   vbw_guard_add file "$idx"
   (
     cd "$VBW_ROOT" || exit 1
     export GIT_INDEX_FILE="$idx"
-    git read-tree HEAD &&
-      git rm -r -q --cached --ignore-unmatch -- .vbw .vbw-planning > /dev/null 2>&1 &&
+    git read-tree HEAD || exit 1
+    for p in ${subs[@]+"${subs[@]}"}; do git update-index --cacheinfo "$p" || exit 1; done
+    git rm -r -q --cached --ignore-unmatch -- .vbw .vbw-planning > /dev/null 2>&1 &&
       git write-tree
   )
   status=$?

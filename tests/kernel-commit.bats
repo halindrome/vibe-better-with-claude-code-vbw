@@ -210,11 +210,16 @@ with_sub() {
 @test "vbw commit run inside a submodule commits for the project above it" {
   with_sub
   printf 'a2\n' > sub/a.js
+  printf 'r\n' > src/root.js
   cd sub
-  vbw_run commit P1.3 "feat(sub): from inside"
+  # Paths are the project's, as from its folder.
+  vbw_run commit P1.3 "feat(sub): from inside" sub/a.js
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  vbw_run commit P1.3 "feat(sub): the rest" src/root.js
   [ "$status" -eq 0 ] || { echo "$output"; false; }
   cd "$PROJECT"
   [ "$(git -C sub log -1 --format='%(trailers:key=VBW-Plan,valueonly)' | tr -d '[:space:]')" = "P1.3" ]
+  [ "$(git show --name-only --format= HEAD)" = "src/root.js" ]
 }
 
 @test "a named file outside the plan is refused with its name" {

@@ -83,6 +83,32 @@ proven_project() {
   [ "$status" -eq 0 ]
 }
 
+@test "ship: work vbw commit committed in a submodule ships with the pointer left moved; an uncommitted file inside the submodule is refused by its project path" {
+  git init -q "$TEST_ROOT/subsrc"
+  printf 'paid\n' > "$TEST_ROOT/subsrc/pay.txt"
+  git -C "$TEST_ROOT/subsrc" add pay.txt
+  git -C "$TEST_ROOT/subsrc" commit -q -m "chore: seed"
+  git -c protocol.file.allow=always submodule add -q "file://$TEST_ROOT/subsrc" sub
+  git commit -q -m "chore: sub"
+  edit_record '.checks = [{id: "C1", req: "R1", run: ["grep", "-qx", "paid", "sub/pay.txt"]}]
+    | .phases = [{id: "P1", title: "Pay", reqs: ["R1", "R2"], milestone: "M1"}]
+    | .plans = [{id: "P1.1", phase: "P1", title: "Pay", reqs: ["R1"], files: ["sub/pay.txt"], after: [], status: "done"}]'
+  "$VBW" approve > /dev/null
+  printf 'paid\nagain\n' > sub/pay.txt
+  "$VBW" commit P1.1 "feat(pay): again" > /dev/null
+  "$VBW" prove > /dev/null
+  "$VBW" qa record P1 pass standard > /dev/null
+  "$VBW" req accept R2 > /dev/null
+  printf 'scratch\n' > sub/scratch.txt
+  vbw_run ship
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"not committed: sub/scratch.txt"* ]] || { echo "$output"; false; }
+  rm sub/scratch.txt
+  vbw_run ship
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  git status --porcelain -- sub | grep -q '^ M sub$'
+}
+
 @test "ship is refused until vbw next says ship, then marks the milestone shipped" {
   proven_project
   vbw_run ship
