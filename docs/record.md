@@ -8,6 +8,8 @@ commits made since the record was first committed count as its own
 ([docs/proof.md](proof.md#whose-commits-vbw-judges)): ids start again in a new
 record, so an older roadmap's trailers name nothing of it.
 
+VBW commits its record and its check files to the branch checked out when it runs. `vbw init` says so once, naming the branch (or the commit, on a detached HEAD), and `vbw doctor` shows it any time. No setting changes it, and nothing refuses or asks.
+
 ## VBW's own files stay visible to git
 
 VBW keeps `.vbw/.gitignore` with `runtime/` and the un-hide lines `!record.json`, `!spec.md`, `!map.md` and `!.gitignore` (the last so a project-wide `*` rule cannot hide the file itself).
