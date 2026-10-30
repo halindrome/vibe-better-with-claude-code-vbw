@@ -25877,7 +25877,15 @@
         "guarded: R12 (C11), R15 (C14), R16 (C15), R31 (C27), R43 (C42, C43), R44 (C44, C45), R46 (C46), R47 (C47), R48 (C49, C50), R49 (C48), R61 (C73, C74, C75, C76, C77), R66 (C95), R70 (C114), R75 (C101), R76 (C102, C103), R77 (C104), R78 (C105, C106), R80 (C108), R97 (C153), R100 (C156), R104 (C161, C162), R105 (C163), R115 (C181), R120 (C185), R128 (C200), R131 (C198), R132 (C199), R134 (C201), R135 (C202), R160 (C247, C263, C264), R161 (C248, C265, C266), R162 (C249), R164 (C251), R165 (C252), R170 (C269), R173 (C281, C282, C283, C284, C285, C286, C289), R174 (C279, C280), R177 (C287, C288), R185 (C334, C335, C336, C337, C338, C339, C340, C341, C342, C343), R188 (C350, C351, C352, C353, C354, C355, C356, C357, C358, C359), R192 (C401, C402, C403, C404, C405, C406, C407, C408, C409, C410), R193 (C411, C412), R194 (C417, C418, C419), R196 (C415, C416), R197 (C413, C414), R198 (C423), R203 (C448, C449, C450), R205 (C455, C456, C457, C458, C467), R206 (C459, C460), R209 (C469, C470, C471, C472, C473), R210 (C474, C475, C476), R211 (C477, C478, C479), R212 (C480, C481, C482), R213 (C483, C484), R214 (C485, C486, C487), R215 (C488, C489, C490), R216 (C491, C492, C493), R217 (C494, C495), R219 (C497, C498, C499), R220 (C500, C501, C502, C503)",
         "tests: project test command"
       ],
-      "predicted": "deep"
+      "predicted": "deep",
+      "escalations": [
+        {
+          "at": "2026-10-30T15:07:27Z",
+          "from": "deep",
+          "to": "deep",
+          "reason": "Dev blocked P179.3: Task 3 (CLAUDE.md hot-path rule, R222.10, C506 test 4): CLAUDE.md is a symlink to AGENTS.md, the write guard refuses both (CLAUDE.md as symlink, AGENTS.md outside the plan files). Plan needs AGENTS.md added via vbw apply. Tasks 1 and 2 committed (0ae427cf, af37c85f). Mutation step not run."
+        }
+      ]
     },
     {
       "id": "P180",
@@ -25905,7 +25913,15 @@
         "guarded: R1 (C1), R2 (C2), R3 (C3), R13 (C12), R14 (C13), R33 (C29), R38 (C33, C34), R40 (C37), R44 (C44, C45), R52 (C58, C91), R53 (C54, C55), R55 (C56, C57), R57 (C59, C70, C71), R58 (C62, C63, C64, C67), R61 (C73, C74, C75, C76, C77), R62 (C78, C79, C80, C81, C82, C83, C93), R65 (C86, C87, C88, C89, C90), R78 (C105, C106), R80 (C108), R99 (C155), R100 (C156), R119 (C180), R122 (C189), R123 (C190, C191), R126 (C186), R127 (C194), R142 (C204, C205), R143 (C206, C207), R157 (C244), R161 (C248, C265, C266), R163 (C250), R165 (C252), R173 (C281, C282, C283, C284, C285, C286, C289), R185 (C334, C335, C336, C337, C338, C339, C340, C341, C342, C343), R188 (C350, C351, C352, C353, C354, C355, C356, C357, C358, C359), R192 (C401, C402, C403, C404, C405, C406, C407, C408, C409, C410), R197 (C413, C414), R201 (C428, C429), R208 (C464, C465, C466, C468)",
         "tests: project test command"
       ],
-      "predicted": "deep"
+      "predicted": "deep",
+      "escalations": [
+        {
+          "at": "2026-10-30T15:14:44Z",
+          "from": "deep",
+          "to": "deep",
+          "reason": "Dev blocked P180.1: R223.7 (hooks and status line gain no version check; C507 last case greps plugin/hooks and plugin/scripts): vbw mutate --none is refused because C507 reads my files plugin/bin/vbw, plugin/lib/*.sh, yet the grep only reads hooks/scripts, which no hook sources core.sh from, so no break in P180.1's files can reach it, and the guard stops me editing plugin/hooks/*. R223.1-R223.6 and tasks 1-3 are broken and red (R223.6 survived once, then I broke it inside the jq floor function). Needs the owner to allow a break in plugin/hooks or plugin/scripts, or accept R223.7 as unbreakable from this plan."
+        }
+      ]
     },
     {
       "id": "P181",
@@ -25963,7 +25979,15 @@
         "guarded: R16 (C15), R48 (C49, C50), R61 (C73, C74, C75, C76, C77), R76 (C102, C103), R77 (C104), R173 (C281, C282, C283, C284, C285, C286, C289), R185 (C334, C335, C336, C337, C338, C339, C340, C341, C342, C343), R192 (C401, C402, C403, C404, C405, C406, C407, C408, C409, C410), R219 (C497, C498, C499)",
         "tests: project test command"
       ],
-      "predicted": "deep"
+      "predicted": "deep",
+      "escalations": [
+        {
+          "at": "2026-10-30T15:11:05Z",
+          "from": "deep",
+          "to": "deep",
+          "reason": "Dev blocked P182.1: Code done and C512/C513 pass, but 12 existing tests of other requirements now fail because their fixtures are git projects with no .vbw folder (exit 3 now): tests/statusline-off.bats (R184 cases 33,34,35,37,41,42 via setup) and tests/statusline.bats cases 'no data from Claude Code', 'branch read in a linked worktree', 'setting finds the newest installed VBW'. Fix is mkdir .vbw in those fixtures (statusline-off.bats setup; three cases in statusline.bats); the guard denies editing both files as outside the plan's files. Replan to add them. Other red: bench/docs cases belong to P182.2/P182.3; reads-docs R226 docs/proof.md case is unrelated and failing from other in-progress edits."
+        }
+      ]
     },
     {
       "id": "P183",
@@ -25992,7 +26016,15 @@
         "guarded: R3 (C3), R31 (C27), R33 (C29), R38 (C33, C34), R40 (C37), R43 (C42, C43), R46 (C46), R47 (C47), R49 (C48), R52 (C58, C91), R53 (C54, C55), R55 (C56, C57), R56 (C61, C65), R57 (C59, C70, C71), R58 (C62, C63, C64, C67), R82 (C117), R85 (C125), R86 (C124), R87 (C126, C127), R88 (C129), R89 (C128), R91 (C130), R99 (C155), R100 (C156), R115 (C181), R119 (C180), R123 (C190, C191), R124 (C192, C193), R127 (C194), R131 (C198), R132 (C199), R133 (C195), R173 (C281, C282, C283, C284, C285, C286, C289), R185 (C334, C335, C336, C337, C338, C339, C340, C341, C342, C343), R188 (C350, C351, C352, C353, C354, C355, C356, C357, C358, C359), R192 (C401, C402, C403, C404, C405, C406, C407, C408, C409, C410), R199 (C424, C425, C430), R200 (C426, C427, C431), R203 (C448, C449, C450), R205 (C455, C456, C457, C458, C467), R208 (C464, C465, C466, C468), R210 (C474, C475, C476), R211 (C477, C478, C479), R212 (C480, C481, C482), R213 (C483, C484), R217 (C494, C495)",
         "tests: project test command"
       ],
-      "predicted": "deep"
+      "predicted": "deep",
+      "escalations": [
+        {
+          "at": "2026-10-30T15:08:48Z",
+          "from": "deep",
+          "to": "deep",
+          "reason": "Dev blocked P183.3: Code and docs are done and C520/C521 pass (commits 4fb93269, 1c90c082, 45c0591a), but task 3's tests/panel-suite.bats (R55) now fails: 6 other panel tests still assert the old sentence with /nothing is needed/i and are outside this plan's files: tests/panel/panel.test.mjs (lines 28, 69, 71), tests/panel/sound.test.mjs (76), tests/panel/view.test.mjs (74), tests/panel/r189/comms-need.test.mjs (187), plus the bench/pane/gate-clear cases that read the same text. They need their regex changed to /not waiting on you/i; no plan owns them. Mutation step not run."
+        }
+      ]
     }
   ],
   "plans": [
@@ -56263,13 +56295,220 @@
         "docs/proof.md"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "prove_scope_then (plugin/lib/cmd-prove.sh): for each distinct flagged commit, its base version is the last commit of .vbw/record.json it descends from, found with one `git log -1 --format=%H --diff-filter=AM <commit> -- .vbw/record.json` per distinct commit (it stops at the first hit, never walks the whole history); the versions list from the record's own history is cut by hash at the oldest base instead of by time (awk on the hashes), each version reaches the jq with its hash, and PROVE_SCOPE_THEN_JQ takes as 'since' the base and the versions after it in that history (no base found: every version, as today when no version is older). The decisions check keeps using the commit's time.",
         "The comment blocks of PROVE_SCOPE_THEN_JQ and prove_scope_then say ancestry, not time, and name the cost: the fixed git processes plus one per distinct flagged commit.",
         "docs/proof.md, step 4 Scope (line 626 on): the base version is the last record commit the judged commit descends from; drop 'the version of the record the commit was made under or any later one'; name the one git lookup per flagged commit in the cost sentence.",
         "Run C504 (bats --filter R221 tests/scope-of-its-time.bats), then tests/scope-of-its-time.bats, tests/scope-history.bats and the other tests/scope-*.bats under /bin/bash (PATH=/bin:$PATH); the R204 trace-count case must stay flat."
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R221",
+            "text": "the record version a flagged commit is judged against is the last commit of .vbw/record.json that is an ancestor of it in git history, never the one nearest in clock time"
+          },
+          "what": "base taken from HEAD, not the flagged commit",
+          "files": [
+            "plugin/lib/cmd-prove.sh"
+          ],
+          "checks": {
+            "C504": "red"
+          },
+          "result": "red",
+          "at": "2026-10-30T15:16:29Z",
+          "head": "cddfbb2aedb35af8680139287dd90ad6ac199fad"
+        },
+        {
+          "rule": {
+            "req": "R221",
+            "text": "the versions 'since' are that base and the versions after it in the record's own history"
+          },
+          "what": "only the base version, not later ones",
+          "files": [
+            "plugin/lib/cmd-prove.sh"
+          ],
+          "checks": {
+            "C504": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-30T15:16:32Z",
+          "head": "cddfbb2aedb35af8680139287dd90ad6ac199fad"
+        },
+        {
+          "rule": {
+            "req": "R221",
+            "text": "a record commit in the same second as the plan commit, whose version no longer allows the plan's file, is not the base: no violation is reported"
+          },
+          "what": "last matching index instead of first",
+          "files": [
+            "plugin/lib/cmd-prove.sh"
+          ],
+          "checks": {
+            "C504": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-30T15:16:36Z",
+          "head": "cddfbb2aedb35af8680139287dd90ad6ac199fad"
+        },
+        {
+          "rule": {
+            "req": "R221",
+            "text": "finding the base costs at most one git process per distinct flagged commit, never a walk of the whole history per candidate"
+          },
+          "what": "extra git process per flagged commit",
+          "files": [
+            "plugin/lib/cmd-prove.sh"
+          ],
+          "checks": {
+            "C504": "red"
+          },
+          "result": "red",
+          "at": "2026-10-30T15:16:40Z",
+          "head": "cddfbb2aedb35af8680139287dd90ad6ac199fad"
+        },
+        {
+          "rule": {
+            "req": "R221",
+            "text": "docs/proof.md's Scope step says the base is the last record commit the judged commit descends from and no longer describes picking it by time"
+          },
+          "what": "docs describe picking by time",
+          "files": [
+            "docs/proof.md"
+          ],
+          "checks": {
+            "C504": "red"
+          },
+          "result": "red",
+          "at": "2026-10-30T15:16:44Z",
+          "head": "cddfbb2aedb35af8680139287dd90ad6ac199fad"
+        },
+        {
+          "rule": {
+            "req": "R221",
+            "text": "a file no version since the base allows stays a violation, and a decision naming the commit and the file accepts it and no other: the four earlier cases pass unchanged"
+          },
+          "what": "decision need not name the file",
+          "files": [
+            "plugin/lib/cmd-prove.sh"
+          ],
+          "checks": {
+            "C504": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-30T15:16:48Z",
+          "head": "cddfbb2aedb35af8680139287dd90ad6ac199fad"
+        },
+        {
+          "rule": {
+            "req": "R221",
+            "text": "a record commit made after the plan commit but stamped earlier (a clock set back) is still after it: no violation is reported"
+          },
+          "what": "ignore the base: every version judges",
+          "files": [
+            "plugin/lib/cmd-prove.sh"
+          ],
+          "checks": {
+            "C504": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-30T15:16:51Z",
+          "head": "cddfbb2aedb35af8680139287dd90ad6ac199fad"
+        },
+        {
+          "rule": {
+            "req": "R221",
+            "text": "the versions 'since' are that base and the versions after it in the record's own history"
+          },
+          "what": "only the base version, not later ones",
+          "files": [
+            "plugin/lib/cmd-prove.sh"
+          ],
+          "checks": {
+            "C504": "red"
+          },
+          "result": "red",
+          "at": "2026-10-30T15:20:04Z",
+          "head": "24bf71d083824531a1454442627d20cc62682bbd",
+          "strengthened": [
+            "tests/scope-of-its-time.bats"
+          ],
+          "pending": [
+            "tests/scope-of-its-time.bats"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R221",
+            "text": "a record commit in the same second as the plan commit, whose version no longer allows the plan's file, is not the base: no violation is reported"
+          },
+          "what": "base picked by clock time",
+          "files": [
+            "plugin/lib/cmd-prove.sh"
+          ],
+          "checks": {
+            "C504": "red"
+          },
+          "result": "red",
+          "at": "2026-10-30T15:20:07Z",
+          "head": "24bf71d083824531a1454442627d20cc62682bbd",
+          "strengthened": [
+            "tests/scope-of-its-time.bats"
+          ],
+          "pending": [
+            "tests/scope-of-its-time.bats"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R221",
+            "text": "a file no version since the base allows stays a violation, and a decision naming the commit and the file accepts it and no other: the four earlier cases pass unchanged"
+          },
+          "what": "decision need not name the file",
+          "files": [
+            "plugin/lib/cmd-prove.sh"
+          ],
+          "checks": {
+            "C504": "red"
+          },
+          "result": "red",
+          "at": "2026-10-30T15:20:11Z",
+          "head": "24bf71d083824531a1454442627d20cc62682bbd",
+          "strengthened": [
+            "tests/scope-of-its-time.bats"
+          ],
+          "pending": [
+            "tests/scope-of-its-time.bats"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R221",
+            "text": "a record commit made after the plan commit but stamped earlier (a clock set back) is still after it: no violation is reported"
+          },
+          "what": "base picked by clock time",
+          "files": [
+            "plugin/lib/cmd-prove.sh"
+          ],
+          "checks": {
+            "C504": "red"
+          },
+          "result": "red",
+          "at": "2026-10-30T15:21:02Z",
+          "head": "24bf71d083824531a1454442627d20cc62682bbd",
+          "strengthened": [
+            "tests/scope-of-its-time.bats"
+          ],
+          "pending": [
+            "tests/scope-of-its-time.bats"
+          ]
+        },
+        {
+          "task": 2,
+          "none": "comment blocks only, no behaviour",
+          "at": "2026-10-30T15:21:12Z"
+        }
       ]
     },
     {
@@ -56283,13 +56522,175 @@
         "tools/bench-hooks.sh"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "tools/bench-hooks.sh: after the busy check and before any record is built or case judged, measure one fixed reference workload with cpu_pair (a jq program of fixed size over fixed input, run through `sh -c` as the hooks are; RUNS calls); pin its nominal cost in a constant with a comment naming the two nominal machines (an M1 Max Mac and GitHub's macOS runner), the date, each machine's figure and that it must be measured again whenever the workload or the machines change; VBW_BENCH_REFERENCE_MS stands in for the measured value; print once `reference: <X> ms CPU per call; nominal <N> ms (an M1 Max Mac and GitHub's macOS runner, <month year>); ratio <R>` with R to two decimals (measured / nominal).",
         "One verdict helper used by guards(), statusline(), handback() and loaded(): within the absolute budget, today's line; ratio above 1 and within budget x ratio, the line plus `: slow (ratio <R>, scaled budget <S> ms)` on stdout with S to one decimal and status unchanged; otherwise `: OVER` on stderr and status 1. At a ratio of 1 or less nothing changes. again() names the scaled budget to one decimal when the ratio is above 1 and the absolute one as today otherwise; the second measure is judged the same way.",
         "The bench's header comment: the reference workload, the nominal constant and its debt (re-measure when the workload or the nominal machines change), the ratio, the slow report, and that CI shows the reference line in shard 1 of each matrix entry because tools/test.sh --shard runs the bench there.",
         "Measure the nominal on this Mac and pin it; the GitHub macOS figure is read from the pull request's macOS shard-1 log before merge and the constant set to the larger of the two, so both nominal machines sit at a ratio of 1 or less (the script's comment names where each figure came from). Then run C505 (bats --filter R222 tests/bench-limits.bats), tests/bench-limits.bats, tests/bench-select.bats and tests/statusline-off-bench.bats under /bin/bash."
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R222",
+            "text": "the bench measures one fixed reference workload (a jq program of fixed size over fixed input, run as the hooks are) on the same machine in the same run, before any case is judged"
+          },
+          "what": "empty reference workload",
+          "files": [
+            "tools/bench-hooks.sh"
+          ],
+          "checks": {
+            "C505": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-30T15:16:08Z",
+          "head": "cddfbb2aedb35af8680139287dd90ad6ac199fad"
+        },
+        {
+          "rule": {
+            "req": "R222",
+            "text": "it prints once the line `reference: <X> ms CPU per call; nominal <N> ms (an M1 Max Mac and GitHub's macOS runner, ...); ratio <R>`, naming the measured cost, the nominal cost pinned in the script and the ratio to two decimals"
+          },
+          "what": "ratio to one decimal",
+          "files": [
+            "tools/bench-hooks.sh"
+          ],
+          "checks": {
+            "C505": "red"
+          },
+          "result": "red",
+          "at": "2026-10-30T15:16:14Z",
+          "head": "cddfbb2aedb35af8680139287dd90ad6ac199fad"
+        },
+        {
+          "rule": {
+            "req": "R222",
+            "text": "at a ratio of 1 or less every case is judged against its absolute budget (20 ms per guard call, 60 ms status line, 10 ms hand-back) with today's lines: a fast machine gets no looser and no tighter budget"
+          },
+          "what": "slow from ratio 0.4",
+          "files": [
+            "tools/bench-hooks.sh"
+          ],
+          "checks": {
+            "C505": "red"
+          },
+          "result": "red",
+          "at": "2026-10-30T15:16:21Z",
+          "head": "cddfbb2aedb35af8680139287dd90ad6ac199fad"
+        },
+        {
+          "rule": {
+            "req": "R222",
+            "text": "at a ratio above 1 a case above its absolute budget but at or under budget times ratio prints its line on stdout marked slow, naming the cost, the absolute budget, the ratio and the scaled budget, and the bench exits 0"
+          },
+          "what": "slow branch never taken",
+          "files": [
+            "tools/bench-hooks.sh"
+          ],
+          "checks": {
+            "C505": "red"
+          },
+          "result": "red",
+          "at": "2026-10-30T15:16:26Z",
+          "head": "cddfbb2aedb35af8680139287dd90ad6ac199fad"
+        },
+        {
+          "rule": {
+            "req": "R222",
+            "text": "at a ratio above 1 a case above budget times ratio prints ': OVER' on stderr and the bench exits 1: a real regression still fails on a slow machine"
+          },
+          "what": "slow branch with no upper bound",
+          "files": [
+            "tools/bench-hooks.sh"
+          ],
+          "checks": {
+            "C505": "red"
+          },
+          "result": "red",
+          "at": "2026-10-30T15:16:29Z",
+          "head": "cddfbb2aedb35af8680139287dd90ad6ac199fad"
+        },
+        {
+          "rule": {
+            "req": "R222",
+            "text": "the measure-again rule (D517) judges the second measure against the scaled budget and its line names that budget"
+          },
+          "what": "again names absolute budget",
+          "files": [
+            "tools/bench-hooks.sh"
+          ],
+          "checks": {
+            "C505": "red"
+          },
+          "result": "red",
+          "at": "2026-10-30T15:16:34Z",
+          "head": "cddfbb2aedb35af8680139287dd90ad6ac199fad"
+        },
+        {
+          "rule": {
+            "req": "R222",
+            "text": "VBW_BENCH_REFERENCE_MS stands in for the measured reference, as VBW_HOOK_BUDGET_MS stands in for a limit"
+          },
+          "what": "reference stand-in ignored",
+          "files": [
+            "tools/bench-hooks.sh"
+          ],
+          "checks": {
+            "C505": "red"
+          },
+          "result": "red",
+          "at": "2026-10-30T15:16:38Z",
+          "head": "cddfbb2aedb35af8680139287dd90ad6ac199fad"
+        },
+        {
+          "rule": {
+            "req": "R222",
+            "text": "the busy rule is unchanged: sh and jq startup alone above the hook limit reports busy, judges nothing and exits 0"
+          },
+          "what": "busy threshold huge",
+          "files": [
+            "tools/bench-hooks.sh"
+          ],
+          "checks": {
+            "C505": "red"
+          },
+          "result": "red",
+          "at": "2026-10-30T15:16:42Z",
+          "head": "cddfbb2aedb35af8680139287dd90ad6ac199fad"
+        },
+        {
+          "rule": {
+            "req": "R222",
+            "text": "the bench measures one fixed reference workload (a jq program of fixed size over fixed input, run as the hooks are) on the same machine in the same run, before any case is judged"
+          },
+          "what": "empty reference workload",
+          "files": [
+            "tools/bench-hooks.sh"
+          ],
+          "checks": {
+            "C505": "red"
+          },
+          "result": "red",
+          "at": "2026-10-30T15:17:50Z",
+          "head": "9557e263cd7ea4274456d2e686028b9bd12492cb",
+          "strengthened": [
+            "tests/bench-limits.bats"
+          ],
+          "pending": [
+            "tests/bench-limits.bats"
+          ]
+        },
+        {
+          "task": 3,
+          "none": "the header comment: no behaviour",
+          "at": "2026-10-30T15:17:58Z"
+        },
+        {
+          "task": 4,
+          "none": "the pinned figure is a measurement; C505 reads the nominal from the printed line, so any value is consistent; the GitHub figure is set from the PR log before merge",
+          "at": "2026-10-30T15:18:01Z"
+        }
       ]
     },
     {
@@ -56305,13 +56706,14 @@
         "CLAUDE.md"
       ],
       "after": [],
-      "status": "planned",
+      "status": "blocked",
       "role": "docs",
       "tasks": [
         "docs/guards.md, the Budget bullet (lines 267-280): the 20 ms budget is the meaning on a nominal machine (an M1 Max Mac, GitHub's macOS runner); the bench measures a fixed reference workload first and prints its cost, the nominal cost and the ratio; above a ratio of 1 a case within budget x ratio is reported slow, not failed, and one above it still fails; the busy report stays.",
         "docs/statusline.md (lines 73, 130 and the Engineering bullets at 162-170): the 60 ms and 10 ms budgets are the nominal meaning, judged against the same reference and ratio, with the slow report.",
         "CLAUDE.md, the hot-path rule (one reviewed commit; a shared file): the budgets are nominal, the bench's reference and ratio scale them on a slower machine and report slow, a real regression still fails; the busy report stays. Then run C506 (bats --filter R222 tests/bench-limits-docs.bats)."
-      ]
+      ],
+      "note": "Task 3 (CLAUDE.md hot-path rule, R222.10, C506 test 4): CLAUDE.md is a symlink to AGENTS.md, the write guard refuses both (CLAUDE.md as symlink, AGENTS.md outside the plan files). Plan needs AGENTS.md added via vbw apply. Tasks 1 and 2 committed (0ae427cf, af37c85f). Mutation step not run."
     },
     {
       "id": "P180.1",
@@ -56326,14 +56728,129 @@
         "plugin/lib/cmd-doctor.sh"
       ],
       "after": [],
-      "status": "planned",
+      "status": "blocked",
       "role": "dev",
       "tasks": [
         "plugin/lib/core.sh: VBW_MIN_JQ=1.7 and one function that reads `jq --version` once (no pipeline that dies under set -e when jq is missing), compares with version_at_least (moved here from cmd-doctor.sh), and on a jq below the floor or a missing jq prints the one-line message and its fix (the installed version and 1.7 as the floor; fix: a current jq from github.com/jqlang/jq/releases, on Debian 12 `apt install -t bookworm-backports jq`; a missing jq keeps `jq is missing` with `install jq (brew install jq / apt install jq)`) and returns 1.",
         "plugin/lib/cmd-doctor.sh doctor_tools: the floor is 1.7 through that function, as `✗ jq 1.6 is too old (VBW needs 1.7 or later)` with the same fix line, `✓ jq 1.7.1` for 1.7.0, 1.7.1 and 1.8.x, and `✗ jq is missing` when there is none; doctor itself never dies on a missing jq.",
         "plugin/bin/vbw: after the libraries are sourced and before `case \"$cmd\"`, every command but doctor calls that function once; on failure the message goes to stderr and the kernel exits 1 before any file is read or written (vbw init creates no .vbw). The help text and the command's usage are untouched.",
         "Run C507 (bats --filter 'R223 kernel:' tests/jq-floor.bats), tests/kernel-surface.bats and tests/plugindir-doctor.bats under /bin/bash; the hooks and the status line are not touched (C507's last case)."
-      ]
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R223",
+            "text": "vbw doctor with a jq below 1.7 prints a fail line naming the installed version and 1.7 as the floor"
+          },
+          "what": "floor 1.6",
+          "files": [
+            "plugin/lib/core.sh"
+          ],
+          "checks": {
+            "C507": "red"
+          },
+          "result": "red",
+          "at": "2026-10-30T15:13:32Z",
+          "head": "e9c47978d44b454a59a7d88fd0e8d74a0acce02e"
+        },
+        {
+          "rule": {
+            "req": "R223",
+            "text": "its fix line names the jq releases page (github.com/jqlang/jq/releases) and, for Debian 12, `apt install -t bookworm-backports jq`"
+          },
+          "what": "fix text",
+          "files": [
+            "plugin/lib/core.sh"
+          ],
+          "checks": {
+            "C507": "red"
+          },
+          "result": "red",
+          "at": "2026-10-30T15:13:35Z",
+          "head": "e9c47978d44b454a59a7d88fd0e8d74a0acce02e"
+        },
+        {
+          "rule": {
+            "req": "R223",
+            "text": "jq 1.7.0, 1.7.1 and 1.8.x each pass doctor as `jq <version>`"
+          },
+          "what": "floor 1.7.1",
+          "files": [
+            "plugin/lib/core.sh"
+          ],
+          "checks": {
+            "C507": "red"
+          },
+          "result": "red",
+          "at": "2026-10-30T15:13:39Z",
+          "head": "e9c47978d44b454a59a7d88fd0e8d74a0acce02e"
+        },
+        {
+          "rule": {
+            "req": "R223",
+            "text": "a missing jq keeps the `jq is missing` line: doctor does not die on it"
+          },
+          "what": "missing msg",
+          "files": [
+            "plugin/lib/core.sh"
+          ],
+          "checks": {
+            "C507": "red"
+          },
+          "result": "red",
+          "at": "2026-10-30T15:13:42Z",
+          "head": "e9c47978d44b454a59a7d88fd0e8d74a0acce02e"
+        },
+        {
+          "rule": {
+            "req": "R223",
+            "text": "every vbw command but doctor refuses a jq below 1.7 before doing anything: doctor's one-line message with its fix on stderr, exit non-zero, nothing written (vbw init creates no .vbw folder)"
+          },
+          "what": "check removed",
+          "files": [
+            "plugin/bin/vbw"
+          ],
+          "checks": {
+            "C507": "red"
+          },
+          "result": "red",
+          "at": "2026-10-30T15:13:45Z",
+          "head": "e9c47978d44b454a59a7d88fd0e8d74a0acce02e"
+        },
+        {
+          "rule": {
+            "req": "R223",
+            "text": "the check is one jq --version per kernel command, after the libraries load and before the dispatch; vbw doctor itself still runs its fuller report"
+          },
+          "what": "check twice",
+          "files": [
+            "plugin/bin/vbw"
+          ],
+          "checks": {
+            "C507": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-30T15:13:49Z",
+          "head": "e9c47978d44b454a59a7d88fd0e8d74a0acce02e"
+        },
+        {
+          "rule": {
+            "req": "R223",
+            "text": "the check is one jq --version per kernel command, after the libraries load and before the dispatch; vbw doctor itself still runs its fuller report"
+          },
+          "what": "jq --version asked twice",
+          "files": [
+            "plugin/lib/core.sh"
+          ],
+          "checks": {
+            "C507": "red"
+          },
+          "result": "red",
+          "at": "2026-10-30T15:14:18Z",
+          "head": "cddfbb2aedb35af8680139287dd90ad6ac199fad"
+        }
+      ],
+      "note": "R223.7 (hooks and status line gain no version check; C507 last case greps plugin/hooks and plugin/scripts): vbw mutate --none is refused because C507 reads my files plugin/bin/vbw, plugin/lib/*.sh, yet the grep only reads hooks/scripts, which no hook sources core.sh from, so no break in P180.1's files can reach it, and the guard stops me editing plugin/hooks/*. R223.1-R223.6 and tasks 1-3 are broken and red (R223.6 survived once, then I broke it inside the jq floor function). Needs the owner to allow a break in plugin/hooks or plugin/scripts, or accept R223.7 as unbreakable from this plan."
     },
     {
       "id": "P180.2",
@@ -56347,13 +56864,73 @@
         ".github/workflows/ci.yml"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "tools/check-jq-builtins.sh (bash 3.2, shellcheck clean under `bash tools/test.sh --lint`): with no arguments it scans every tracked plugin/**/*.jq and plugin/**/*.sh (git ls-files -z); with arguments, the files given. It flags a word-boundary use of trim, ltrim, rtrim, abs, toarray, trimstr, have_decnum and of `add(` (add with an argument) outside comment lines and outside a `def <name>` line, unless the file itself has `def <name>`; ltrimstr, rtrimstr and plain `add` are never flagged. Each hit prints `<file>:<line>: <name> needs jq 1.8; the floor is 1.7`; any hit exits 1, none exits 0 silently.",
         "Run the tool on the plugin: plugin/lib/failing-tests.jq passes through its own `def trim`; if any other use is found, replace it with 1.7-compatible jq in the same commit and name the file in the report.",
         ".github/workflows/ci.yml: `jq --version` right after each `bash --version | head -1` (both run steps), so every shard's log names the jq it ran on.",
         "Run C508 (bats --filter 'R223 standards:' tests/jq-floor.bats) and `bash tools/test.sh --lint`."
+      ],
+      "mutations": [
+        {
+          "task": 2,
+          "none": "task 2 is the run of the tool on the plugin, which needed no change; R223.9's check covers it",
+          "at": "2026-10-30T15:08:30Z"
+        },
+        {
+          "task": 4,
+          "none": "task 4 only runs the checks and lint; nothing to break",
+          "at": "2026-10-30T15:08:34Z"
+        },
+        {
+          "rule": {
+            "req": "R223",
+            "text": "the plugin passes the scan (plugin/lib/failing-tests.jq defines its own trim)"
+          },
+          "what": "ignore def exemption",
+          "files": [
+            "tools/check-jq-builtins.sh"
+          ],
+          "checks": {
+            "C508": "red"
+          },
+          "result": "red",
+          "at": "2026-10-30T15:08:53Z",
+          "head": "f1b157bb01137fc40e02a641275538adbd81dd84"
+        },
+        {
+          "rule": {
+            "req": "R223",
+            "text": "each CI shard prints jq --version beside bash --version"
+          },
+          "what": "removed one jq --version",
+          "files": [
+            ".github/workflows/ci.yml"
+          ],
+          "checks": {
+            "C508": "red"
+          },
+          "result": "red",
+          "at": "2026-10-30T15:08:57Z",
+          "head": "f1b157bb01137fc40e02a641275538adbd81dd84"
+        },
+        {
+          "rule": {
+            "req": "R223",
+            "text": "tools/check-jq-builtins.sh refuses, in plugin/**/*.jq and in the jq programs inside plugin/**/*.sh, a use of trim, ltrim, rtrim, abs, toarray, trimstr, have_decnum or add/1 unless the file defines the name with def, naming file and line; ltrimstr, rtrimstr and plain add are never flagged"
+          },
+          "what": "dropped abs from the flagged names",
+          "files": [
+            "tools/check-jq-builtins.sh"
+          ],
+          "checks": {
+            "C508": "red"
+          },
+          "result": "red",
+          "at": "2026-10-30T15:09:15Z",
+          "head": "f1b157bb01137fc40e02a641275538adbd81dd84"
+        }
       ]
     },
     {
@@ -56368,12 +56945,30 @@
         "docs/diagnostics.md"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "docs",
       "tasks": [
         "README.md, the requirements table row for bash, jq and git (line 438): `jq` 1.7 or newer, with the jq releases page (github.com/jqlang/jq/releases) beside the brew and apt install hints.",
         "docs/diagnostics.md, where vbw doctor is described: the jq line (`jq 1.7 or newer`), its fix line (the releases page; on Debian 12 `apt install -t bookworm-backports jq`), and that every vbw command refuses an older jq up front with the same message while doctor still shows its full report.",
         "Run C509 (bats --filter 'R223 docs:' tests/jq-floor.bats)."
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R223",
+            "text": "README.md and docs/diagnostics.md state 'jq 1.7 or newer' with the jq releases page, and docs/diagnostics.md the Debian 12 backports package"
+          },
+          "what": "removed backports package from diagnostics",
+          "files": [
+            "docs/diagnostics.md"
+          ],
+          "checks": {
+            "C509": "red"
+          },
+          "result": "red",
+          "at": "2026-10-30T15:07:24Z",
+          "head": "59a17ca382c84f59abd6b2b0e08adc2c1d0c9a22"
+        }
       ]
     },
     {
@@ -56412,14 +57007,15 @@
         "plugin/hooks/project.sh"
       ],
       "after": [],
-      "status": "planned",
+      "status": "blocked",
       "role": "dev",
       "tasks": [
         "plugin/hooks/project.sh: a second walk in the same form as vbw_project_of, `vbw_vbw_above DIR`, that sets a variable to the nearest folder at or above DIR holding a .vbw folder ([ -d ] tests and parameter expansion, no process, never above /), empty when none.",
         "plugin/scripts/vbw-statusline.sh: once root is known (the folder Claude Code reports, else the folder the script runs in), when no .vbw folder is at or above it: exit 3 before any other work, printing and writing nothing. The '[VBW] no project here' and 'VBW 1 plan here' lines stay only for a session inside a VBW project (a .vbw above) whose own git top has no record; the cost side file is still written only with a record.",
         "The script's header comment: exit 3 is the hand-back both where the plugin is turned off and where there is no VBW project; the setting needs no rewrite.",
         "Run C512 (bats --filter 'R224:' tests/statusline-handback.bats), C513 (bats --filter R224 tests/statusline.bats), then tests/statusline*.bats and tests/reads-docs.bats (the status line never reads the runs store) under /bin/bash."
-      ]
+      ],
+      "note": "Code done and C512/C513 pass, but 12 existing tests of other requirements now fail because their fixtures are git projects with no .vbw folder (exit 3 now): tests/statusline-off.bats (R184 cases 33,34,35,37,41,42 via setup) and tests/statusline.bats cases 'no data from Claude Code', 'branch read in a linked worktree', 'setting finds the newest installed VBW'. Fix is mkdir .vbw in those fixtures (statusline-off.bats setup; three cases in statusline.bats); the guard denies editing both files as outside the plan's files. Replan to add them. Other red: bench/docs cases belong to P182.2/P182.3; reads-docs R226 docs/proof.md case is unrelated and failing from other in-progress edits."
     },
     {
       "id": "P182.2",
@@ -56519,13 +57115,14 @@
         "docs/panel.md"
       ],
       "after": [],
-      "status": "planned",
+      "status": "blocked",
       "role": "dev",
       "tasks": [
         "plugin/hooks/panel-view.js line 339: the 'your turn' row's empty-state text becomes `VBW is not waiting on you.`; the default branch of gateNeed (lines 77-104) stays as it is.",
         "docs/panel.md lines 39, 61, 76 and 95: the new sentence in place of the old one, the surrounding words adjusted so each sentence still reads well.",
         "Run C520 (node --test tests/panel/r189/now-box.test.mjs tests/panel/gate-default.test.mjs), C521 (bats --filter R227 tests/panel-now-docs.bats) and tests/panel-suite.bats."
-      ]
+      ],
+      "note": "Code and docs are done and C520/C521 pass (commits 4fb93269, 1c90c082, 45c0591a), but task 3's tests/panel-suite.bats (R55) now fails: 6 other panel tests still assert the old sentence with /nothing is needed/i and are outside this plan's files: tests/panel/panel.test.mjs (lines 28, 69, 71), tests/panel/sound.test.mjs (76), tests/panel/view.test.mjs (74), tests/panel/r189/comms-need.test.mjs (187), plus the bench/pane/gate-clear cases that read the same text. They need their regex changed to /not waiting on you/i; no plan owns them. Mutation step not run."
     }
   ],
   "fixes": [
@@ -71771,6 +72368,17 @@
         "ended": "2026-10-30T13:54:22Z",
         "cost": {
           "usd": 18.597481
+        }
+      },
+      {
+        "id": "build-20261030T150613Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M46",
+        "started": "2026-10-30T15:06:13Z",
+        "ended": "2026-10-30T15:22:51Z",
+        "cost": {
+          "usd": 2.028934
         }
       }
     ],
