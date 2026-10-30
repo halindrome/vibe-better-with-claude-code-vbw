@@ -128,7 +128,7 @@ that loaded a working tree (`claude --plugin-dir`) it also reads the session's
 record, with no jq. `tools/bench-hooks.sh` measures VBW's own CPU on this path as
 `status line (VBW off)`: the whole call minus one bash, one jq and one sh
 startup and the earlier status line itself, which are the platform's and yours.
-The limit is 10 ms (`VBW_HANDBACK_BUDGET_MS`).
+The limit is 10 ms on a nominal machine, scaled by the same reference ratio (slow, not failed, within it) (`VBW_HANDBACK_BUDGET_MS`).
 
 Only a setting made by this version can hand back. If `vbw doctor` says the
 status line was set by an older VBW, run `vbw statusline on` to update it.
@@ -162,7 +162,7 @@ status line still renders. It never writes `.vbw/record.json`.
   show the reasons; `vbw show qa` does.
 - It reads `.vbw/runtime/glance.json` when that is newer than the record, and
   the record otherwise (docs/record.md). The glance holds only what the status
-  line shows, so the 60 ms limit holds on a record over 2 MB. Any `vbw` command
+  line shows, so the 60 ms nominal limit holds on a record over 2 MB. Any `vbw` command
   refreshes a missing or stale glance.
 - While a lease is open it also reads Claude Code's list of chats
   (`<claude-config-dir>/sessions/*.json`) in one jq pass per render, to get the
@@ -170,7 +170,7 @@ status line still renders. It never writes `.vbw/record.json`.
   skips a malformed entry. With the list missing, the line renders as with an
   empty list: the stored name from the glance, else the 8 characters of the id.
   `tools/bench-hooks.sh` measures the status line with a lease open and a list
-  on disk, within the same 60 ms.
+  on disk, within the same 60 ms nominal budget (same reference, ratio and slow report).
 - Started in a subfolder, it shows the project that folder is in: the nearest
   folder up that holds `.git`, the same project the kernel and the guards use.
 - No network, no git process (the branch is read from
