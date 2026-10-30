@@ -255,6 +255,8 @@ allowed_sh() {
   judged_as 'cp --target-directory=src lib/a.js' src/a.js
   judged_as 'cp --target src lib/a.js' src/a.js
   judged_as 'install -Dt src lib/a.js' src/a.js
+  # The first t takes the rest of the word as the folder, even a word that ends like -m.
+  judged_as 'install -tfoo lib/a.js' foo/a.js
   # rsync's -t is --times, not a target folder.
   judged_as 'rsync -a -t x.js src/other.js' src/other.js
   judged_as 'rsync -a --remove-source-files src/other.js lib/' src/other.js
@@ -265,6 +267,11 @@ allowed_sh() {
   judged_as 'sed -i s/a/b/ src/other.js' src/other.js
   judged_as "sed -i '' s/a/b/ src/other.js" src/other.js
   judged_as 'sed -i.bak -e s/a/b/ src/pay.js src/other.js' src/other.js
+  # The script given by -f, -e glued or --expression is never judged; the file after it is.
+  judged_as 'sed -f fix.sed -i src/other.js' src/other.js
+  judged_as 'sed -es/a/b/ -i src/other.js' src/other.js
+  judged_as 'sed --expression=s/a/b/ -i src/other.js' src/other.js
+  judged_as 'sed --expression s/a/b/ -i src/other.js' src/other.js
   # After a bare -i, a dot word is BSD's suffix or GNU's file: it is judged as a file too.
   judged_as 'sed -e s/x/y/ -i .eslintrc' .eslintrc
   judged_as 'sed -i .eslintrc -e s/x/y/ src/pay.js' .eslintrc

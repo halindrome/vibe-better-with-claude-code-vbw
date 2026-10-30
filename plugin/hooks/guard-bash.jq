@@ -176,7 +176,7 @@ def shell_writes:
     # --target-directory and its abbreviations: no other long flag of these tools starts so), any
     # other flag, else an operand.
     | ({sed: "\u0000(?:(?<s>-[A-Za-z]*[ef]\u0000|--(?:expression|file)\u0000|-[A-Za-z]*[ef][^\u0000]|--(?:expression|file)=)[^\u0000]*|-[A-Za-z]*i\u0000(?<m>\\.[^/\u0000]*)?(?=\u0000)|-[^\u0000]*|(?<o>[^\u0000]*))(?=\u0000)",
-        install: "\u0000(?:(?:-[A-Za-z]*[mogS]|--(?:mode|owner|group|suffix))\u0000[^\u0000]*|(?:--ta[-a-z]*=|-[A-Za-z]*?t(?=[^\u0000])|(?:--ta[-a-z]*|-[A-Za-z]*?t)\u0000)(?<t>[^\u0000]*)|-[^\u0000]*|(?<o>[^\u0000]*))(?=\u0000)",
+        install: "\u0000(?:(?:--ta[-a-z]*=|-[A-Za-z]*?t(?=[^\u0000])|(?:--ta[-a-z]*|-[A-Za-z]*?t)\u0000)(?<t>[^\u0000]*)|(?:-[A-Za-z]*[mogS]|--(?:mode|owner|group|suffix))\u0000[^\u0000]*|-[^\u0000]*|(?<o>[^\u0000]*))(?=\u0000)",
         rsync: "\u0000(?:(?:-[A-Za-z]*[ef]|--(?:exclude|include|filter|rsh|exclude-from|include-from|files-from))\u0000[^\u0000]*|-[^\u0000]*|(?<o>[^\u0000]*))(?=\u0000)",
         tee: "\u0000(?:-[^\u0000]*|(?<o>[^\u0000]*))(?=\u0000)",
         rm: "\u0000(?:-[^\u0000]*|(?<o>[^\u0000]*))(?=\u0000)"}[$cmd]
