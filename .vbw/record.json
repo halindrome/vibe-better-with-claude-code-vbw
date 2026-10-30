@@ -1,6 +1,15 @@
 {
   "schema": 6,
-  "lease": null,
+  "lease": {
+    "run": "qa-20261030T230129Z",
+    "kind": "qa",
+    "started_at": "2026-10-30T23:01:29Z",
+    "files": [],
+    "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+    "cost": {
+      "usd": 2807.535805
+    }
+  },
   "protected": [
     "tests/adaptive-results.bats",
     "tests/agent-scratch.bats",
@@ -26053,7 +26062,22 @@
           "to": "deep",
           "reason": "Dev blocked P183.3: Code and docs are done and C520/C521 pass (commits 4fb93269, 1c90c082, 45c0591a), but task 3's tests/panel-suite.bats (R55) now fails: 6 other panel tests still assert the old sentence with /nothing is needed/i and are outside this plan's files: tests/panel/panel.test.mjs (lines 28, 69, 71), tests/panel/sound.test.mjs (76), tests/panel/view.test.mjs (74), tests/panel/r189/comms-need.test.mjs (187), plus the bench/pane/gate-clear cases that read the same text. They need their regex changed to /not waiting on you/i; no plan owns them. Mutation step not run."
         }
-      ]
+      ],
+      "qa": {
+        "result": "pass",
+        "tier": "deep",
+        "tree": "046f093cff45cceb36985182144d367ff50d274cbf42d84dc22d16db89add946",
+        "at": "2026-10-30T23:03:18Z",
+        "note": "26/26 checks"
+      },
+      "outcome": {
+        "tier": "deep",
+        "predicted": "deep",
+        "held": true,
+        "fix_rounds": 0,
+        "qa_findings": 0,
+        "escalations": 1
+      }
     }
   ],
   "plans": [
@@ -64675,6 +64699,12 @@
       "at": "2026-10-30T22:54:13Z",
       "text": "Contract approved: 216 requirements, 516 checks, 554 plans (8fab38741e46)",
       "plans": []
+    },
+    {
+      "id": "D532",
+      "text": "Keep the changes to docs/statusline.md made outside any plan",
+      "why": "the fix commit 93c35a03 made the no-project text a subsection of the turned-off section and kept the limit sentence's pinned form, so the R184 docs cases find the hand-back's cost and the vbw doctor note again; the owner chose to keep it (menu, 2026-10-30)",
+      "at": "2026-10-30T23:01:00Z"
     }
   ],
   "commands": {
