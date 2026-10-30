@@ -152,3 +152,29 @@ git_calls() {
   printf '%s\n' "$scope" | grep -qiE 'descends from' || { echo "the Scope section does not say the base is the record commit the judged commit descends from"; false; }
   ! printf '%s\n' "$scope" | grep -qiE 'made under or any later|nearest (in )?time|by (commit |clock )?time' || { echo "the Scope section still describes the base by time"; false; }
 }
+
+@test "R221: a version after the base allows the file: the commit is in scope, whichever version is the base" {
+  plan_commit src/late.txt 'x'
+  record_commit '.plans[0].files += ["src/late.txt"]'
+  record_commit '.plans[0].files -= ["src/late.txt"]'
+  "$VBW" approve > /dev/null
+  vbw_run prove
+  [[ "$output" == *"scope ok"* ]] || { echo "$output"; false; }
+  jq -e '.evidence.scope == []' .vbw/record.json
+}
+
+@test "R221: a file allowed only by a version before the base stays a violation, and a decision naming only the commit does not accept it" {
+  record_commit '.plans[0].files += ["src/early.txt"]'
+  record_commit '.plans[0].files -= ["src/early.txt"]'
+  plan_commit src/early.txt 'x'
+  local h
+  h=$(git rev-parse HEAD | cut -c1-12)
+  "$VBW" approve > /dev/null
+  vbw_run prove
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"$h (P1.1) changed src/early.txt, which is not in the plan"* ]] || { echo "$output"; false; }
+  "$VBW" decide "Accept $h: I looked at it" > /dev/null
+  vbw_run prove
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"$h (P1.1) changed src/early.txt, which is not in the plan"* ]] || { echo "$output"; false; }
+}
