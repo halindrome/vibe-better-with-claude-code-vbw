@@ -35,6 +35,10 @@
 # whole call minus the same earlier status line run on its own by the same shells
 # (what the user would pay without VBW), judged against VBW_HANDBACK_BUDGET_MS
 # (default 10); the bench fails if the earlier status line's marker did not show.
+# Outside a VBW project (R224) the same hand-back is measured as 'status line (no project)':
+# a git folder with no .vbw at or above it (its own folder, apart from the bench's
+# project), the same setting and earlier status line, the same cost rule and budget,
+# and the bench fails when the earlier status line did not show.
 # A session that loaded the plugin (R185) is measured on 'status line (loaded copy)':
 # the bench's plugin's SessionStart hook starts a session the way claude --plugin-dir
 # does (the plugin data folder of a vbw@inline copy), a stand-in installed release
@@ -94,7 +98,7 @@ case_labels() {
   for n in $SIZES; do
     for input in $GUARD_INPUTS; do printf 'guard (%s, %s checks)\n' "$input" "$n"; done
   done
-  printf '%s\n' 'status line' 'status line (large record)' 'status line (step running)' 'status line (VBW off)' 'status line (loaded copy)'
+  printf '%s\n' 'status line' 'status line (large record)' 'status line (step running)' 'status line (VBW off)' 'status line (no project)' 'status line (loaded copy)'
 }
 
 # ONLY is the selector; SELECTED is "|" and every asked-for label followed by "|".
@@ -437,6 +441,43 @@ handback() {
   verdict "$line" "$own" "$HANDBACK_MS"
 }
 
+# noproject: the same setting in a git folder with no .vbw at or above it (R224).
+noproject() {
+  local root cfg="$work/noproject-config" proj cmd base shell total own line out
+  selected 'status line (no project)' || return 0
+  root="$(mktemp -d)"
+  proj="$root/folder"
+  mkdir -p "$proj" "$cfg/plugins/cache/vbw-marketplace/vbw"
+  git -C "$proj" init -q
+  ln -s "$PLUGIN" "$cfg/plugins/cache/vbw-marketplace/vbw/0.0.0"
+  printf '#!/bin/sh\necho "earlier status line (bench)"\n' > "$work/np-earlier.sh"
+  jq -nc --arg c "sh '$work/np-earlier.sh'" '{statusLine: {type: "command", command: $c}}' > "$cfg/settings.json"
+  CLAUDE_CONFIG_DIR="$cfg" "$PLUGIN/bin/vbw" statusline on > /dev/null
+  jq -r '.statusLine.command' "$cfg/settings.json" > "$work/np-setting.sh"
+  jq -nc --arg d "$proj" '{session_id: "bench", workspace: {project_dir: $d}, cwd: $d, model: {display_name: "Opus"},
+    cost: {total_cost_usd: 1.25}, context_window: {total_input_tokens: 12000, total_output_tokens: 3400, context_window_size: 200000}}' > "$work/noproject.json"
+  cmd="cd '$proj' && CLAUDE_CONFIG_DIR='$cfg' NO_COLOR=1 sh '$work/np-setting.sh'"
+  out=$(sh -c "$cmd" < "$work/noproject.json" 2> /dev/null || true)
+  if [ "$out" != "earlier status line (bench)" ]; then
+    printf 'status line (no project): the earlier status line did not show, so the measure left the hand-back out\n' >&2
+    status=1
+    rm -rf "$root"
+    return 0
+  fi
+  printf "sh '%s'\n" "$work/np-earlier.sh" > "$work/np-earlier-setting.sh"
+  base="cd '$proj' && bash -c : && jq -n empty && sh -c : && sh '$work/np-earlier-setting.sh'"
+  read -r shell total < <(cpu_pair "$work/noproject.json" "$base" "$cmd")
+  own=$(perl -e 'printf "%.1f", $ARGV[1] - $ARGV[0]' -- "$shell" "$total")
+  if over "$own" "$HANDBACK_MS"; then
+    again "status line (no project)" "$own ms own CPU per call (a bash, a jq and a sh startup and the earlier status line: $shell ms)" "$HANDBACK_MS"
+    read -r shell total < <(cpu_pair "$work/noproject.json" "$base" "$cmd")
+    own=$(perl -e 'printf "%.1f", $ARGV[1] - $ARGV[0]' -- "$shell" "$total")
+  fi
+  rm -rf "$root"
+  line=$(printf 'status line (no project): %s ms own CPU per call (a bash, a jq and a sh startup and the earlier status line: %s ms); budget %s ms' "$own" "$shell" "$HANDBACK_MS")
+  verdict "$line" "$own" "$HANDBACK_MS"
+}
+
 # loaded: the setting in a session that loaded the bench's plugin, next to a stand-in release.
 loaded() {
   local cfg="$work/loaded-config" cmd total line out ver inst
@@ -490,5 +531,6 @@ statusline "$work" ""
 statusline "$large" " (large record)"
 statusline "$work" " (step running)" step
 handback
+noproject
 loaded
 exit $status
