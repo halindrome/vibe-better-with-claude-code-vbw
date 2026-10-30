@@ -56707,12 +56707,68 @@
         "CLAUDE.md"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "docs",
       "tasks": [
         "docs/guards.md, the Budget bullet (lines 267-280): the 20 ms budget is the meaning on a nominal machine (an M1 Max Mac, GitHub's macOS runner); the bench measures a fixed reference workload first and prints its cost, the nominal cost and the ratio; above a ratio of 1 a case within budget x ratio is reported slow, not failed, and one above it still fails; the busy report stays.",
         "docs/statusline.md (lines 73, 130 and the Engineering bullets at 162-170): the 60 ms and 10 ms budgets are the nominal meaning, judged against the same reference and ratio, with the slow report.",
         "CLAUDE.md, the hot-path rule (one reviewed commit; a shared file): the budgets are nominal, the bench's reference and ratio scale them on a slower machine and report slow, a real regression still fails; the busy report stays. Then run C506 (bats --filter R222 tests/bench-limits-docs.bats)."
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R222",
+            "text": "docs/guards.md's Budget bullet, docs/statusline.md and CLAUDE.md's hot-path rule state the reference, the ratio and the slow report, with the absolute budgets as the meaning on a nominal machine"
+          },
+          "what": "guards.md no longer names the reference or the slow report",
+          "files": [
+            "docs/guards.md"
+          ],
+          "checks": {
+            "C506": "red"
+          },
+          "result": "red",
+          "at": "2026-10-30T18:33:17Z",
+          "head": "78df761f805bd9bd30c463daa4fd565e4935cc5c"
+        },
+        {
+          "rule": {
+            "req": "R222",
+            "text": "CI sets no stand-in reference and no CI-only limit, so the release run's benchmark shard shows the reference line and a slow runner is never a failed shard"
+          },
+          "what": "guards.md says CI sets a reference",
+          "files": [
+            "docs/guards.md"
+          ],
+          "checks": {
+            "C506": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-30T18:37:34Z",
+          "head": "05902f8ea3762407152ad152df5b1450614aaf0c"
+        },
+        {
+          "rule": {
+            "req": "R222",
+            "text": "CI sets no stand-in reference and no CI-only limit, so the release run's benchmark shard shows the reference line and a slow runner is never a failed shard"
+          },
+          "what": "guards.md says CI sets a reference",
+          "files": [
+            "docs/guards.md"
+          ],
+          "checks": {
+            "C506": "red"
+          },
+          "result": "red",
+          "at": "2026-10-30T18:38:25Z",
+          "head": "e72c212a42ddf4fa8008b3462b43325105f89a4a",
+          "strengthened": [
+            "tests/bench-limits-docs.bats"
+          ],
+          "pending": [
+            "tests/bench-limits-docs.bats"
+          ]
+        }
       ]
     },
     {
@@ -56728,7 +56784,7 @@
         "plugin/lib/cmd-doctor.sh"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "plugin/lib/core.sh: VBW_MIN_JQ=1.7 and one function that reads `jq --version` once (no pipeline that dies under set -e when jq is missing), compares with version_at_least (moved here from cmd-doctor.sh), and on a jq below the floor or a missing jq prints the one-line message and its fix (the installed version and 1.7 as the floor; fix: a current jq from github.com/jqlang/jq/releases, on Debian 12 `apt install -t bookworm-backports jq`; a missing jq keeps `jq is missing` with `install jq (brew install jq / apt install jq)`) and returns 1.",
@@ -56985,13 +57041,137 @@
       "after": [
         "P179.1"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "Measure first, no code: in the proof's clean copy (or a scratch folder under .vbw/runtime/scratch/) set the folder's access time back (touch -a -t 200001010000 .), run the command, read it again (stat -f %a on macOS, stat -c %X on Linux). The Lead's probe on macOS (2026-10-30): the parent folder's access time moves on the FIRST exec of a fresh script by its path from any caller (perl exec, sh -c exec, bash, python os.execv) and never on a second exec, nor on `sh greet.sh`, `/bin/sh ./greet.sh` or `cat greet.sh`; a fresh copy of /bin/echo behaves the same, so it is the system's handling of the first exec of a new file, not the shell's start-up. Repeat on Linux (docker run ubuntu with strace -f -e trace=openat,getdents64 -- perl -e 'exec {$ARGV[0]} @ARGV' ./greet.sh) and record whether Linux shows the read at all. Write the findings in the plan's report.",
         "The mechanism, general and never keyed on how the command is spelled: the preferred route removes the cause (if the measurement shows a start-up read the environment can satisfy); if the read is the system's first-exec handling and cannot be prevented, VBW tells it apart from a test's own listing in one way that applies to any unit whose program is a file inside the copy (resolved from argv[0] by path or by PATH lookup, in checks_unit_run or reads_collect), and states its limit (a test that both executes a project script by path and lists that script's folder loses that listing). No sleep, no timing. Keep `sh greet.sh` and the R166/R168 listing cases as they are.",
         "docs/proof.md (the read list and 'what does not count as a read' passages, lines 1138-1180): name the cause of the listing, what VBW does about it and its limit, and that a listing the test itself asks for (ls, a glob, find) stays a read.",
         "Run C510 (bats --filter R226 tests/reads-listing.bats), C511 (bats --filter R226 tests/reads-docs.bats) and every tests/reads-*.bats under /bin/bash; the Linux CI shard must pass the same cases."
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R226",
+            "text": "a check whose test only executes a script by its path (./greet.sh) has no folder listing on its read list"
+          },
+          "what": "never leave the program's folder out",
+          "files": [
+            "plugin/lib/reads.sh"
+          ],
+          "checks": {
+            "C510": "red"
+          },
+          "result": "red",
+          "at": "2026-10-30T18:51:53Z",
+          "head": "c54848cc7ab02a649f2cec8df81ae1e522437237"
+        },
+        {
+          "rule": {
+            "req": "R226",
+            "text": "a check that runs the script through sh (sh greet.sh) has none either, as today"
+          },
+          "what": "a run through sh lists the project root",
+          "files": [
+            "plugin/lib/checks.sh"
+          ],
+          "checks": {
+            "C510": "red"
+          },
+          "result": "red",
+          "at": "2026-10-30T18:51:56Z",
+          "head": "c54848cc7ab02a649f2cec8df81ae1e522437237"
+        },
+        {
+          "rule": {
+            "req": "R226",
+            "text": "a commit that adds an unrelated file at the project root reuses that check, and the proof names it as reused"
+          },
+          "what": "a script run by its path marks the run as git use",
+          "files": [
+            "plugin/lib/reads.sh"
+          ],
+          "checks": {
+            "C510": "red"
+          },
+          "result": "red",
+          "at": "2026-10-30T18:52:00Z",
+          "head": "c54848cc7ab02a649f2cec8df81ae1e522437237"
+        },
+        {
+          "rule": {
+            "req": "R226",
+            "text": "a test that lists a folder itself (ls, a glob, find) keeps that listing on its read list, and a file added to that folder still reruns it: the R166 and R168 cases pass unchanged"
+          },
+          "what": "every listing is dropped when the program is in the project",
+          "files": [
+            "plugin/lib/reads.sh"
+          ],
+          "checks": {
+            "C510": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-30T18:52:03Z",
+          "head": "c54848cc7ab02a649f2cec8df81ae1e522437237"
+        },
+        {
+          "rule": {
+            "req": "R226",
+            "text": "docs/proof.md names the cause of the start-up listing, what VBW does about it and its limit, and that a listing the test itself asks for stays a read"
+          },
+          "what": "the doc no longer says a listing the test itself asks for stays a read",
+          "files": [
+            "docs/proof.md"
+          ],
+          "checks": {
+            "C511": "red"
+          },
+          "result": "red",
+          "at": "2026-10-30T18:52:06Z",
+          "head": "c54848cc7ab02a649f2cec8df81ae1e522437237"
+        },
+        {
+          "rule": {
+            "req": "R226",
+            "text": "a test that lists a folder itself (ls, a glob, find) keeps that listing on its read list, and a file added to that folder still reruns it: the R166 and R168 cases pass unchanged"
+          },
+          "what": "every listing is dropped when the program is in the project",
+          "files": [
+            "plugin/lib/reads.sh"
+          ],
+          "checks": {
+            "C510": "red"
+          },
+          "result": "red",
+          "at": "2026-10-30T18:54:15Z",
+          "head": "a8ea65e7122bf6147fd32b0cb142ca9f6e8e2427",
+          "strengthened": [
+            "tests/reads-listing.bats"
+          ],
+          "pending": [
+            "tests/reads-listing.bats"
+          ]
+        },
+        {
+          "task": 1,
+          "none": "measurement only, no code",
+          "at": "2026-10-30T18:54:21Z"
+        },
+        {
+          "task": 4,
+          "none": "runs the checks, builds nothing",
+          "at": "2026-10-30T18:54:25Z"
+        },
+        {
+          "task": 2,
+          "none": "covered by the R226.1-R226.4 breaks",
+          "at": "2026-10-30T18:54:29Z"
+        },
+        {
+          "task": 3,
+          "none": "covered by the R226.5 break",
+          "at": "2026-10-30T18:54:32Z"
+        }
       ]
     },
     {
@@ -57006,13 +57186,135 @@
         "plugin/hooks/project.sh"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "plugin/hooks/project.sh: a second walk in the same form as vbw_project_of, `vbw_vbw_above DIR`, that sets a variable to the nearest folder at or above DIR holding a .vbw folder ([ -d ] tests and parameter expansion, no process, never above /), empty when none.",
         "plugin/scripts/vbw-statusline.sh: once root is known (the folder Claude Code reports, else the folder the script runs in), when no .vbw folder is at or above it: exit 3 before any other work, printing and writing nothing. The '[VBW] no project here' and 'VBW 1 plan here' lines stay only for a session inside a VBW project (a .vbw above) whose own git top has no record; the cost side file is still written only with a record.",
         "The script's header comment: exit 3 is the hand-back both where the plugin is turned off and where there is no VBW project; the setting needs no rewrite.",
         "Run C512 (bats --filter 'R224:' tests/statusline-handback.bats), C513 (bats --filter R224 tests/statusline.bats), then tests/statusline*.bats and tests/reads-docs.bats (the status line never reads the runs store) under /bin/bash."
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R224",
+            "text": "outside a VBW project (no .vbw folder at or above the folder Claude Code reports, else the one the script runs in) the status line script prints nothing and exits 3"
+          },
+          "what": "no-project check no longer exits",
+          "files": [
+            "plugin/scripts/vbw-statusline.sh"
+          ],
+          "checks": {
+            "C513": "red"
+          },
+          "result": "red",
+          "at": "2026-10-30T18:45:04Z",
+          "head": "de26ee2901d56221c9f2a8b3b8b8c1a514c35544"
+        },
+        {
+          "rule": {
+            "req": "R224",
+            "text": "the setting's hand-back then runs the saved earlier status line with Claude Code's own input and prints its output unchanged, several lines and colour codes included"
+          },
+          "what": "no-project exit code 1 instead of 3",
+          "files": [
+            "plugin/scripts/vbw-statusline.sh"
+          ],
+          "checks": {
+            "C512": "red"
+          },
+          "result": "red",
+          "at": "2026-10-30T18:45:11Z",
+          "head": "de26ee2901d56221c9f2a8b3b8b8c1a514c35544"
+        },
+        {
+          "rule": {
+            "req": "R224",
+            "text": "with no earlier status line saved nothing at all is printed: neither the no-project line nor the VBW 1 line; a .vbw-planning folder with no .vbw at or above is outside"
+          },
+          "what": "no-project prints the no project line",
+          "files": [
+            "plugin/scripts/vbw-statusline.sh"
+          ],
+          "checks": {
+            "C512": "red"
+          },
+          "result": "red",
+          "at": "2026-10-30T18:45:18Z",
+          "head": "de26ee2901d56221c9f2a8b3b8b8c1a514c35544"
+        },
+        {
+          "rule": {
+            "req": "R224",
+            "text": "inside a VBW project (a .vbw folder at or above) VBW's line renders as today, the plugin-off hand-back keeps working, and the cost side file is written only there"
+          },
+          "what": "cost side file also written without a record",
+          "files": [
+            "plugin/scripts/vbw-statusline.sh"
+          ],
+          "checks": {
+            "C513": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-30T18:45:23Z",
+          "head": "de26ee2901d56221c9f2a8b3b8b8c1a514c35544"
+        },
+        {
+          "rule": {
+            "req": "R224",
+            "text": "a setting written by an earlier 2.1.x needs no rewrite: its unchanged text hands back outside a project"
+          },
+          "what": "no-project exit code 4",
+          "files": [
+            "plugin/scripts/vbw-statusline.sh"
+          ],
+          "checks": {
+            "C512": "red"
+          },
+          "result": "red",
+          "at": "2026-10-30T18:45:30Z",
+          "head": "de26ee2901d56221c9f2a8b3b8b8c1a514c35544"
+        },
+        {
+          "rule": {
+            "req": "R224",
+            "text": "inside a VBW project (a .vbw folder at or above) VBW's line renders as today, the plugin-off hand-back keeps working, and the cost side file is written only there"
+          },
+          "what": "cost side file also written without a record",
+          "files": [
+            "plugin/scripts/vbw-statusline.sh"
+          ],
+          "checks": {
+            "C513": "red"
+          },
+          "result": "red",
+          "at": "2026-10-30T18:46:49Z",
+          "head": "e4ac9df74b0c54e6f055a3613fedf53d2b588587",
+          "strengthened": [
+            "tests/statusline.bats"
+          ],
+          "pending": [
+            "tests/statusline.bats"
+          ]
+        },
+        {
+          "task": 1,
+          "what": "walk never finds .vbw",
+          "files": [
+            "plugin/hooks/project.sh"
+          ],
+          "checks": {
+            "C512": "red"
+          },
+          "result": "red",
+          "at": "2026-10-30T18:47:23Z",
+          "head": "e4ac9df74b0c54e6f055a3613fedf53d2b588587"
+        },
+        {
+          "task": 3,
+          "none": "header comment only, no behaviour to break",
+          "at": "2026-10-30T18:47:27Z"
+        }
       ]
     },
     {
@@ -57028,12 +57330,97 @@
       "after": [
         "P179.2"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "tools/bench-hooks.sh: a noproject() case modelled on handback(): a git folder without .vbw, the bench's plugin installed in its own Claude config folder, an earlier status line saved, the setting written by `vbw statusline on`, run as Claude Code runs it; VBW's own cost is the whole call minus one bash, one jq, one sh and the earlier line itself, judged against HANDBACK_MS through the shared verdict (the ratio applies as to every case); the bench fails when the earlier line did not show (`status line (no project): the earlier status line did not show, so the measure left the hand-back out`). Its label 'status line (no project)' joins case_labels right after 'status line (VBW off)', so the full bench and VBW_BENCH_ONLY know it.",
         "The header comment names the new case beside 'status line (VBW off)'.",
         "Run C515 (bats --filter R224 tests/statusline-off-bench.bats), C516 (bats --filter R224 tests/bench-select.bats, the full bench), and tests/bench-select.bats whole under /bin/bash."
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R224",
+            "text": "the case is listed with the others: the full bench runs 38 cases, 'status line (no project)' among them"
+          },
+          "what": "label dropped from case_labels",
+          "files": [
+            "tools/bench-hooks.sh"
+          ],
+          "checks": {
+            "C516": "red"
+          },
+          "result": "red",
+          "at": "2026-10-30T18:40:33Z",
+          "head": "e72c212a42ddf4fa8008b3462b43325105f89a4a"
+        },
+        {
+          "rule": {
+            "req": "R224",
+            "text": "the walk up starts no process: the hand-back outside a project stays within the 10 ms hand-back budget"
+          },
+          "what": "no-project judged against the 60 ms status budget",
+          "files": [
+            "tools/bench-hooks.sh"
+          ],
+          "checks": {
+            "C515": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-30T18:40:36Z",
+          "head": "e72c212a42ddf4fa8008b3462b43325105f89a4a"
+        },
+        {
+          "rule": {
+            "req": "R224",
+            "text": "tools/bench-hooks.sh measures 'status line (no project)' as it measures 'status line (VBW off)' (the whole call minus the shells and the earlier line), against the 10 ms hand-back budget scaled by the reference where it applies, and fails when the earlier line did not show"
+          },
+          "what": "no-project missing earlier line no longer fails",
+          "files": [
+            "tools/bench-hooks.sh"
+          ],
+          "checks": {
+            "C515": "red"
+          },
+          "result": "red",
+          "at": "2026-10-30T18:43:10Z",
+          "head": "de26ee2901d56221c9f2a8b3b8b8c1a514c35544",
+          "pending": [
+            "tests/statusline-off-bench.bats"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R224",
+            "text": "the walk up starts no process: the hand-back outside a project stays within the 10 ms hand-back budget"
+          },
+          "what": "no-project judged against 60 ms",
+          "files": [
+            "tools/bench-hooks.sh"
+          ],
+          "checks": {
+            "C515": "red"
+          },
+          "result": "red",
+          "at": "2026-10-30T18:43:17Z",
+          "head": "de26ee2901d56221c9f2a8b3b8b8c1a514c35544",
+          "strengthened": [
+            "tests/statusline-off-bench.bats"
+          ],
+          "pending": [
+            "tests/statusline-off-bench.bats"
+          ]
+        },
+        {
+          "task": 2,
+          "none": "header comment only; no behaviour",
+          "at": "2026-10-30T18:43:26Z"
+        },
+        {
+          "task": 3,
+          "none": "task runs checks C515/C516 and bench-select; no code",
+          "at": "2026-10-30T18:43:30Z"
+        }
       ]
     },
     {
@@ -57093,12 +57480,30 @@
       "after": [
         "P180.3"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "docs",
       "tasks": [
         "docs/diagnostics.md, the vbw doctor description: the info line naming the branch the next VBW commit lands on (or the detached commit).",
         "docs/record.md, the opening passage on git holding the history: VBW commits its record and its check files to the branch checked out when it runs; vbw init says so once, naming the branch, and vbw doctor shows it any time; no setting changes it.",
         "Run C519 (bats --filter 'R225 docs:' tests/init-approval-wording.bats)."
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R225",
+            "text": "docs/diagnostics.md lists doctor's branch line and docs/record.md says VBW commits to the branch checked out"
+          },
+          "what": "record.md no longer says branch checked out",
+          "files": [
+            "docs/record.md"
+          ],
+          "checks": {
+            "C519": "red"
+          },
+          "result": "red",
+          "at": "2026-10-30T18:33:14Z",
+          "head": "78df761f805bd9bd30c463daa4fd565e4935cc5c"
+        }
       ]
     },
     {
@@ -57113,12 +57518,83 @@
         "docs/panel.md"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "plugin/hooks/panel-view.js line 339: the 'your turn' row's empty-state text becomes `VBW is not waiting on you.`; the default branch of gateNeed (lines 77-104) stays as it is.",
         "docs/panel.md lines 39, 61, 76 and 95: the new sentence in place of the old one, the surrounding words adjusted so each sentence still reads well.",
         "Run C520 (node --test tests/panel/r189/now-box.test.mjs tests/panel/gate-default.test.mjs), C521 (bats --filter R227 tests/panel-now-docs.bats) and tests/panel-suite.bats."
+      ],
+      "mutations": [
+        {
+          "task": 3,
+          "none": "task 3 only runs C520, C521 and the panel suite; no code to break",
+          "at": "2026-10-30T18:34:14Z"
+        },
+        {
+          "rule": {
+            "req": "R227",
+            "text": "the Now panel's empty-state 'your turn' row reads `VBW is not waiting on you.`, and the old sentence is gone from the panel's rows"
+          },
+          "what": "empty-state text reverted to old sentence",
+          "files": [
+            "plugin/hooks/panel-view.js"
+          ],
+          "checks": {
+            "C520": "red"
+          },
+          "result": "red",
+          "at": "2026-10-30T18:35:33Z",
+          "head": "78df761f805bd9bd30c463daa4fd565e4935cc5c"
+        },
+        {
+          "rule": {
+            "req": "R227",
+            "text": "the old sentence appears nowhere under plugin/ or docs/, and docs/panel.md carries the new text at each of its four places"
+          },
+          "what": "docs line 95 old sentence",
+          "files": [
+            "docs/panel.md"
+          ],
+          "checks": {
+            "C521": "red"
+          },
+          "result": "red",
+          "at": "2026-10-30T18:35:46Z",
+          "head": "78df761f805bd9bd30c463daa4fd565e4935cc5c"
+        },
+        {
+          "rule": {
+            "req": "R227",
+            "text": "a gate whose action no gateNeed case names still asks the user: the generic sentence in the 'your turn' row and the box, with the request built from the kernel's instruction ('a decision is needed' without one)"
+          },
+          "what": "default gate no longer falls back to 'a decision is needed'",
+          "files": [
+            "plugin/hooks/panel-view.js"
+          ],
+          "checks": {
+            "C520": "red"
+          },
+          "result": "red",
+          "at": "2026-10-30T18:35:53Z",
+          "head": "78df761f805bd9bd30c463daa4fd565e4935cc5c"
+        },
+        {
+          "rule": {
+            "req": "R227",
+            "text": "nothing else about gates changes: the approve, accept and spec needs keep their sentence and command, said once"
+          },
+          "what": "approve sentence changed",
+          "files": [
+            "plugin/hooks/panel-view.js"
+          ],
+          "checks": {
+            "C520": "red"
+          },
+          "result": "red",
+          "at": "2026-10-30T18:36:02Z",
+          "head": "78df761f805bd9bd30c463daa4fd565e4935cc5c"
+        }
       ]
     }
   ],
@@ -72388,6 +72864,17 @@
         "ended": "2026-10-30T15:22:51Z",
         "cost": {
           "usd": 2.028934
+        }
+      },
+      {
+        "id": "build-20261030T183141Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M46",
+        "started": "2026-10-30T18:31:41Z",
+        "ended": "2026-10-30T18:56:28Z",
+        "cost": {
+          "usd": 1.755014
         }
       }
     ],
