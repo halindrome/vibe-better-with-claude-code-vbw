@@ -17070,7 +17070,8 @@
         {
           "text": "the hooks and the status line gain no version check: none of them asks jq its version",
           "check": "C507",
-          "plan": "P180.1"
+          "plan": "P180.1",
+          "retired": "a negative rule on plugin/hooks and plugin/scripts, files no plan of R223 builds: its case (the last of C507) greps them for a jq version call and keeps running; a break would add such a call to a hook, and vbw mutate --none is refused because C507 also reads P180.1 files (D527)"
         },
         {
           "text": "tools/check-jq-builtins.sh refuses, in plugin/**/*.jq and in the jq programs inside plugin/**/*.sh, a use of trim, ltrim, rtrim, abs, toarray, trimstr, have_decnum or add/1 unless the file defines the name with def, naming file and line; ltrimstr, rtrimstr and plain add are never flagged",
@@ -56706,14 +56707,13 @@
         "CLAUDE.md"
       ],
       "after": [],
-      "status": "blocked",
+      "status": "planned",
       "role": "docs",
       "tasks": [
         "docs/guards.md, the Budget bullet (lines 267-280): the 20 ms budget is the meaning on a nominal machine (an M1 Max Mac, GitHub's macOS runner); the bench measures a fixed reference workload first and prints its cost, the nominal cost and the ratio; above a ratio of 1 a case within budget x ratio is reported slow, not failed, and one above it still fails; the busy report stays.",
         "docs/statusline.md (lines 73, 130 and the Engineering bullets at 162-170): the 60 ms and 10 ms budgets are the nominal meaning, judged against the same reference and ratio, with the slow report.",
         "CLAUDE.md, the hot-path rule (one reviewed commit; a shared file): the budgets are nominal, the bench's reference and ratio scale them on a slower machine and report slow, a real regression still fails; the busy report stays. Then run C506 (bats --filter R222 tests/bench-limits-docs.bats)."
-      ],
-      "note": "Task 3 (CLAUDE.md hot-path rule, R222.10, C506 test 4): CLAUDE.md is a symlink to AGENTS.md, the write guard refuses both (CLAUDE.md as symlink, AGENTS.md outside the plan files). Plan needs AGENTS.md added via vbw apply. Tasks 1 and 2 committed (0ae427cf, af37c85f). Mutation step not run."
+      ]
     },
     {
       "id": "P180.1",
@@ -56728,7 +56728,7 @@
         "plugin/lib/cmd-doctor.sh"
       ],
       "after": [],
-      "status": "blocked",
+      "status": "planned",
       "role": "dev",
       "tasks": [
         "plugin/lib/core.sh: VBW_MIN_JQ=1.7 and one function that reads `jq --version` once (no pipeline that dies under set -e when jq is missing), compares with version_at_least (moved here from cmd-doctor.sh), and on a jq below the floor or a missing jq prints the one-line message and its fix (the installed version and 1.7 as the floor; fix: a current jq from github.com/jqlang/jq/releases, on Debian 12 `apt install -t bookworm-backports jq`; a missing jq keeps `jq is missing` with `install jq (brew install jq / apt install jq)`) and returns 1.",
@@ -56849,8 +56849,7 @@
           "at": "2026-10-30T15:14:18Z",
           "head": "cddfbb2aedb35af8680139287dd90ad6ac199fad"
         }
-      ],
-      "note": "R223.7 (hooks and status line gain no version check; C507 last case greps plugin/hooks and plugin/scripts): vbw mutate --none is refused because C507 reads my files plugin/bin/vbw, plugin/lib/*.sh, yet the grep only reads hooks/scripts, which no hook sources core.sh from, so no break in P180.1's files can reach it, and the guard stops me editing plugin/hooks/*. R223.1-R223.6 and tasks 1-3 are broken and red (R223.6 survived once, then I broke it inside the jq floor function). Needs the owner to allow a break in plugin/hooks or plugin/scripts, or accept R223.7 as unbreakable from this plan."
+      ]
     },
     {
       "id": "P180.2",
@@ -57007,15 +57006,14 @@
         "plugin/hooks/project.sh"
       ],
       "after": [],
-      "status": "blocked",
+      "status": "planned",
       "role": "dev",
       "tasks": [
         "plugin/hooks/project.sh: a second walk in the same form as vbw_project_of, `vbw_vbw_above DIR`, that sets a variable to the nearest folder at or above DIR holding a .vbw folder ([ -d ] tests and parameter expansion, no process, never above /), empty when none.",
         "plugin/scripts/vbw-statusline.sh: once root is known (the folder Claude Code reports, else the folder the script runs in), when no .vbw folder is at or above it: exit 3 before any other work, printing and writing nothing. The '[VBW] no project here' and 'VBW 1 plan here' lines stay only for a session inside a VBW project (a .vbw above) whose own git top has no record; the cost side file is still written only with a record.",
         "The script's header comment: exit 3 is the hand-back both where the plugin is turned off and where there is no VBW project; the setting needs no rewrite.",
         "Run C512 (bats --filter 'R224:' tests/statusline-handback.bats), C513 (bats --filter R224 tests/statusline.bats), then tests/statusline*.bats and tests/reads-docs.bats (the status line never reads the runs store) under /bin/bash."
-      ],
-      "note": "Code done and C512/C513 pass, but 12 existing tests of other requirements now fail because their fixtures are git projects with no .vbw folder (exit 3 now): tests/statusline-off.bats (R184 cases 33,34,35,37,41,42 via setup) and tests/statusline.bats cases 'no data from Claude Code', 'branch read in a linked worktree', 'setting finds the newest installed VBW'. Fix is mkdir .vbw in those fixtures (statusline-off.bats setup; three cases in statusline.bats); the guard denies editing both files as outside the plan's files. Replan to add them. Other red: bench/docs cases belong to P182.2/P182.3; reads-docs R226 docs/proof.md case is unrelated and failing from other in-progress edits."
+      ]
     },
     {
       "id": "P182.2",
@@ -57115,14 +57113,13 @@
         "docs/panel.md"
       ],
       "after": [],
-      "status": "blocked",
+      "status": "planned",
       "role": "dev",
       "tasks": [
         "plugin/hooks/panel-view.js line 339: the 'your turn' row's empty-state text becomes `VBW is not waiting on you.`; the default branch of gateNeed (lines 77-104) stays as it is.",
         "docs/panel.md lines 39, 61, 76 and 95: the new sentence in place of the old one, the surrounding words adjusted so each sentence still reads well.",
         "Run C520 (node --test tests/panel/r189/now-box.test.mjs tests/panel/gate-default.test.mjs), C521 (bats --filter R227 tests/panel-now-docs.bats) and tests/panel-suite.bats."
-      ],
-      "note": "Code and docs are done and C520/C521 pass (commits 4fb93269, 1c90c082, 45c0591a), but task 3's tests/panel-suite.bats (R55) now fails: 6 other panel tests still assert the old sentence with /nothing is needed/i and are outside this plan's files: tests/panel/panel.test.mjs (lines 28, 69, 71), tests/panel/sound.test.mjs (76), tests/panel/view.test.mjs (74), tests/panel/r189/comms-need.test.mjs (187), plus the bench/pane/gate-clear cases that read the same text. They need their regex changed to /not waiting on you/i; no plan owns them. Mutation step not run."
+      ]
     }
   ],
   "fixes": [
@@ -63882,6 +63879,18 @@
         "P183.2",
         "P183.3"
       ]
+    },
+    {
+      "id": "D528",
+      "text": "R223.7 (hooks and status line gain no version check) is retired as a rule: its case stays in C507 and runs",
+      "why": "a mutation break needs a jq version call added to a hook, code no plan of R223 builds; vbw mutate --none is refused because C507 also reads P180.1 files; the case greps plugin/hooks and plugin/scripts and keeps the constraint tested without a break owed",
+      "at": "2026-10-30T15:34:20Z"
+    },
+    {
+      "id": "D529",
+      "at": "2026-10-30T17:04:54Z",
+      "text": "Contract approved: 216 requirements, 516 checks, 554 plans (fb39c66b81f9)",
+      "plans": []
     }
   ],
   "commands": {
