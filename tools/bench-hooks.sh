@@ -82,11 +82,10 @@ SIZES="51 500 2000"
 # The reference workload's nominal cost (R222): CPU ms per call of the workload in the
 # reference block below, on the two nominal machines, measured NOMINAL_WHEN. This is a
 # debt: measure it again whenever the workload or the nominal machines change.
-# October 2026. M1 Max Mac: 21.7 to 23.0 ms over five runs of this script on 2026-10-30
-# (the larger, 23.0, is pinned). GitHub's macOS runner: figure to be read from the
-# reference line in shard 1 of the pull request's macOS log before merge; the constant
-# is then set to the larger of the two, so both machines sit at a ratio of 1 or less.
-NOMINAL_MS=23.0
+# October 2026. M1 Max Mac: 21.7 to 23.0 ms over five runs of this script on 2026-10-30.
+# GitHub's macOS runner: 23.5 and 24.0 ms in the two bench shards of pull request #739
+# (2026-10-30). The larger, 24.0, is pinned, so both machines sit at a ratio of 1 or less.
+NOMINAL_MS=24.0
 NOMINAL_WHEN="October 2026"
 
 # case_labels: the label of every case, in the order the bench runs them.

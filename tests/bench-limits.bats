@@ -113,9 +113,12 @@ line() {
   # burns 200 ms on its first two calls, the first measure's, and nothing after.
   # The counter itself costs a cat and a write, so the budget is 100 ms here:
   # the test holds the second measure, not the guard's margin (its own test is next).
+  # The reference stands in below nominal (ratio under 1), so the budget the
+  # again line names is the absolute one: this case holds the rule, not the
+  # ratio (GitHub's macOS runner measured ratio 1.02 and named 102.0 ms, 2026-10-30).
   local calls="$TEST_ROOT/calls"
   hooks_with '^Bash$' "c=\$(cat '$calls' 2>/dev/null || echo 0); c=\$((c+1)); echo \$c > '$calls'; [ \$c -gt 2 ] || $(burn 200)"
-  bench VBW_HOOK_BUDGET_MS=100 VBW_BENCH_ONLY="guard (git)"
+  bench VBW_HOOK_BUDGET_MS=100 VBW_BENCH_REFERENCE_MS=1 VBW_BENCH_ONLY="guard (git)"
   quiet_or_skip
   [ "$status" -eq 0 ] || { printf '%s\n' "$output"; false; }
   line '^guard \(git\): measured again: the first measure gave [0-9.]+ ms own CPU per call \(sh and jq startup [0-9.]+ ms\), above the budget of 100 ms$' > /dev/null
