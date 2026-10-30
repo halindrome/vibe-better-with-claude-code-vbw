@@ -113,10 +113,11 @@ code_grep() {
   local limit='^[[:space:]]*ulimit -t [0-9]+( 2>/dev/null)?[[:space:]]*;'
   # The only loops allowed, exactly these texts: the walk up to the project (the nearest
   # folder holding .git, then from a submodule with no record the nearest folder above
-  # holding .git and a record, as hooks/project.sh and the kernel find it), [ ] tests,
-  # case and parameter expansion only.
+  # holding .git and a record, as hooks/project.sh and the kernel find it; a submodule
+  # is a .git file whose gitdir is under modules/, never a linked worktree's), [ ] tests,
+  # case, read from the .git file and parameter expansion only.
   local walk=' while [ "$p" != / ] && [ -n "$p" ] && [ ! -e "$p/.git" ]; do case "$p" in */*) p="${p%/*}"; p="${p:-/}" ;; *) p=/ ;; esac; done;'
-  local up=' while [ "$u" != / ] && [ -f "$u/.git" ] && [ ! -f "$u/.vbw/record.json" ]; do case "$u" in */*) u="${u%/*}"; u="${u:-/}" ;; *) u=/ ;; esac; while [ "$u" != / ] && [ ! -e "$u/.git" ]; do case "$u" in */*) u="${u%/*}"; u="${u:-/}" ;; *) u=/ ;; esac; done; done;'
+  local up=' while [ "$u" != / ] && [ -f "$u/.git" ] && [ ! -f "$u/.vbw/record.json" ]; do l=; read -r l < "$u/.git" || :; case "$l" in */modules/*) ;; *) break ;; esac; case "${l##*/worktrees/}" in "$l" | */*) ;; *) break ;; esac; case "$u" in */*) u="${u%/*}"; u="${u:-/}" ;; *) u=/ ;; esac; while [ "$u" != / ] && [ ! -e "$u/.git" ]; do case "$u" in */*) u="${u%/*}"; u="${u:-/}" ;; *) u=/ ;; esac; done; done;'
   [ -f "$hooks" ] || return 0
   while IFS= read -r cmd; do
     rest=$cmd

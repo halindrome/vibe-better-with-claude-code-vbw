@@ -239,17 +239,21 @@ vbw_project() {
 }
 
 vbw_require_project() {
-  local up
+  local up l
   vbw_project
-  # Inside a submodule (its .git is a file) with no record of its own, the project
-  # is the nearest folder above it holding .git and a record: the walk the guards
-  # and the status line make (hooks/project.sh), so a session there is guarded as
-  # the project the commands work on. A clone inside the project (its .git is a
-  # folder) stays a project of its own. The command then runs from that project's
-  # folder, so every path and bare git command reads the project, as from its own
-  # folder.
+  # Inside a submodule (its .git is a file whose gitdir: line names a folder under
+  # modules/) with no record of its own, the project is the nearest folder above
+  # it holding .git and a record: the walk the guards and the status line make
+  # (hooks/project.sh), so a session there is guarded as the project the commands
+  # work on. A clone inside the project (its .git a folder) and a linked worktree
+  # inside it (its gitdir worktrees/NAME) stay projects of their own. The command
+  # then runs from that project's folder, so every path and bare git command
+  # reads the project, as from its own folder.
   up=$VBW_ROOT
   while [ "$up" != / ] && [ -f "$up/.git" ] && [ ! -f "$up/.vbw/record.json" ]; do
+    l=; read -r l < "$up/.git" || :
+    case "$l" in */modules/*) ;; *) break ;; esac
+    case "${l##*/worktrees/}" in "$l" | */*) ;; *) break ;; esac
     up=${up%/*}
     up=${up:-/}
     while [ "$up" != / ] && [ ! -e "$up/.git" ]; do up=${up%/*}; up=${up:-/}; done

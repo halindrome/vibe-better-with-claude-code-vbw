@@ -266,6 +266,25 @@ with_sub() {
   [ "$(git ls-tree HEAD "apps/mobile app" | cut -d' ' -f3 | cut -f1)" = "$(git ls-tree "$root_head" "apps/mobile app" | cut -d' ' -f3 | cut -f1)" ]
 }
 
+@test "a plan of every file (*) covers each submodule's files: they count as uncommitted and are committed there" {
+  vbw_submodule sub
+  jq '.plans += [{id:"P1.5", phase:"P1", title:"All", reqs:["R1"], files:["*"], after:[], status:"building"}]' \
+    .vbw/record.json > "$TEST_ROOT/r.json" && cp "$TEST_ROOT/r.json" .vbw/record.json
+  git add .gitmodules sub .vbw/record.json
+  git commit -q -m "chore: add sub"
+  local root_head
+  root_head=$(git rev-parse HEAD)
+  printf 'a2\n' > sub/a.js
+  vbw_run plan done P1.5
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"uncommitted changes in: sub/a.js"* ]] || { echo "$output"; false; }
+  vbw_run commit P1.5 "feat(sub): all"
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  [[ "$output" == "committed "*" in sub for P1.5 (1 file)" ]] || { echo "$output"; false; }
+  [ "$(git -C sub show --name-only --format= HEAD)" = "a.js" ]
+  [ "$(git rev-parse HEAD)" = "$root_head" ]
+}
+
 @test "vbw commit run inside a submodule commits for the project above it" {
   with_sub
   printf 'a2\n' > sub/a.js

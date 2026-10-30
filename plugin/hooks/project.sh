@@ -10,22 +10,26 @@
 # vbw_project_of DIR: sets root to the project of a session started in DIR: the
 # nearest folder at or above DIR that holds .git (a folder, or the file of a
 # linked worktree or a submodule), never above /; DIR itself when none does.
-# When that folder's .git is a file (a submodule) and it has no
+# When that folder is a submodule (its .git is a file whose gitdir: line names a
+# folder under modules/, not a linked worktree's worktrees/NAME) and it has no
 # .vbw/record.json, the nearest folder above it holding .git and a record is the
-# project, as for the kernel; a repository whose .git is a folder (a clone
-# inside the project) stays a project of its own. No process: [ -e ] tests and
-# parameter expansion, for the hot paths. It is a VBW project when
-# $root/.vbw/record.json exists.
+# project, as for the kernel; a clone inside the project (its .git a folder) and
+# a linked worktree inside it stay projects of their own. No process: [ -e ]
+# tests, read and parameter expansion, for the hot paths. It is a VBW project
+# when $root/.vbw/record.json exists.
 # shellcheck disable=SC2034 # root is the function's answer, read by the caller
 vbw_project_of() {
   root=$1
-  local d=$1
+  local d=$1 l
   while [ "$d" != / ] && [ -n "$d" ] && [ ! -e "$d/.git" ]; do
     case "$d" in */*) d=${d%/*}; d=${d:-/} ;; *) d=/ ;; esac
   done
   [ -e "$d/.git" ] || return 0
   root=$d
   while [ "$d" != / ] && [ -f "$d/.git" ] && [ ! -f "$d/.vbw/record.json" ]; do
+    l=; read -r l < "$d/.git" || :
+    case "$l" in */modules/*) ;; *) break ;; esac
+    case "${l##*/worktrees/}" in "$l" | */*) ;; *) break ;; esac
     case "$d" in */*) d=${d%/*}; d=${d:-/} ;; *) d=/ ;; esac
     while [ "$d" != / ] && [ ! -e "$d/.git" ]; do
       case "$d" in */*) d=${d%/*}; d=${d:-/} ;; *) d=/ ;; esac

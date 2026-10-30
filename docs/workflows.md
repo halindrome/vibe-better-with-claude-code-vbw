@@ -695,7 +695,8 @@ that holds `.git` (the rule the guards use, docs/guards.md).
 - A `vbw` command run inside a submodule that has no `.vbw/` of its own works on
   the project above it, and a Claude session started there is guarded as that
   project (docs/guards.md). A clone nested in the project (its `.git` a folder)
-  stays a project of its own.
+  and a linked worktree nested in it (its `.git` file points into a
+  `worktrees/` folder) stay projects of their own.
 - One level: a submodule inside a submodule is not followed, and a repository
   nested in the project without being its submodule is committed in, but not
   brought into the proof copy or read by the readers above.
