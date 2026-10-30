@@ -24,6 +24,8 @@ A project rule that hides one of VBW's own files (a rule for the whole `.vbw` fo
 
 Without such a rule, the doctor says nothing about hidden files.
 
+VBW needs `jq 1.7 or newer`. The doctor prints the installed version as `jq <version>`. With an older jq it fails the line, names the version, and gives the fix: download a current jq from github.com/jqlang/jq/releases; on Debian 12, run `apt install -t bookworm-backports jq`. Every other `vbw` command refuses an older jq up front with the same message and writes nothing; the doctor still shows its full report.
+
 ### Project state
 
 milestone M1 active
