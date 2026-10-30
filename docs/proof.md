@@ -628,12 +628,13 @@ form in `.vbw/spec.md`.
    trailer naming a plan of the current milestone must change only that plan's
    files. Each commit is judged by what its plan allowed when it was made: a
    file the plan listed, or a check file a mutation survivor let it
-   strengthen, in the version of the record the commit was made under or any
-   later one, as well as today's. A file a later change renamed or dropped
+   strengthen, in the version of the record the commit descends from (the last
+   record commit in its git ancestry, whatever the clocks say) or any later
+   one in the record's history, as well as today's. A file a later change renamed or dropped
    (a check's test file renamed for the project's test runner) leaves its
    earlier commits in scope. Only a commit that looks out of scope today is
-   judged again this way: one git listing of the record's versions and one
-   read of those since the oldest such commit. A file no version allowed is
+   judged again this way: one git listing of the record's versions, one
+   read of those since the oldest base, and one git lookup per flagged commit. A file no version allowed is
    a violation (`abc123456789 (P1.1) changed src/other.txt, which is not in
    the plan`). The user accepts one by a decision recorded after the commit
    that names both the commit (those 12 characters) and the file (`vbw decide
