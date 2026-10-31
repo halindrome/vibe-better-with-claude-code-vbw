@@ -73,6 +73,9 @@ merge_prompt() {
   grep -qE 'ran as of' "$MAPSKILL"
   grep -qF '## Commands' "$MAPSKILL"
   grep -qF 'Never write `.vbw/map.md` yourself' "$MAPSKILL"
+  grep -qF 'or `Not run` (no scout ran it' "$MAPSKILL"
+  grep -qF '(a scout ran it' "$MAPSKILL"
+  grep -qF '` from these marks' "$MAPSKILL"
 }
 
 @test "R228 docs: docs/workflows.md's mapping row names the two marks, and docs/proof.md's project commands say the router chooses them from the map's Tests section and asks before planning about a suite marked Not run" {
