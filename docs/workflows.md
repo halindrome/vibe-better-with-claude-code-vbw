@@ -306,7 +306,7 @@ cannot fail, and QA would otherwise find it one round at a time.
   is dropped and named (its bytes belong to older files): make it again. Check
   files that differ from their last commit stop the run, and `vbw plan done`
   names breaks still queued. Only a rule break queues; a task break and
-  `--none` run at once. A second `--run` of the same plan is refused while one
+  `--none` run at once. VBW refuses a second `--run` of the same plan while one
   is still running: it exits non-zero, before it reads or copies anything, with
   a line naming the running one (its pid and command) and `Next: wait for it to
   finish`. The running one holds a marker, `run.pid` under
