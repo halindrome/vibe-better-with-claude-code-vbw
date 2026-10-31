@@ -102,3 +102,15 @@ old_limits() {
     false
   }
 }
+
+@test "R231: docs/guards.md describes the reference workload as a guard-shaped jq call over a fixed document and program" {
+  local f="$REPO_ROOT/docs/guards.md"
+  flat "$f" | grep -qE 'guard-shaped|shape of a guard|guard.{0,20}shape' || {
+    echo "docs/guards.md does not describe the reference as guard-shaped"
+    false
+  }
+  flat "$f" | grep -qE 'reference[^.]{0,200}fixed[^.]{0,80}(document|program)' || {
+    echo "docs/guards.md does not say the reference runs over a fixed document and program"
+    false
+  }
+}

@@ -153,6 +153,7 @@
     "tests/l3-leaveout.bats",
     "tests/l3-legacy.bats",
     "tests/l3-loop.bats",
+    "tests/l3-mapnotrun.bats",
     "tests/l3-panel-comms.bats",
     "tests/l3-panel.bats",
     "tests/l3-plugindir-probe.bats",
@@ -222,6 +223,7 @@
     "tests/mutate-pending-check.bats",
     "tests/mutate-plan-done.bats",
     "tests/mutate-prompts.bats",
+    "tests/mutate-queue.bats",
     "tests/mutate-rule-none-docs.bats",
     "tests/mutate-rule-none-done.bats",
     "tests/mutate-rule-none.bats",
@@ -447,6 +449,7 @@
     "tests/step-proof-history.bats",
     "tests/step-proof-units.bats",
     "tests/step-proof.bats",
+    "tests/step-replan.bats",
     "tests/step-skill.bats",
     "tests/step-units-history.bats",
     "tests/stop-line.bats",
@@ -6945,6 +6948,184 @@
       ],
       "files": [
         "tests/panel-now-docs.bats"
+      ]
+    },
+    {
+      "id": "C522",
+      "req": "R228",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "--filter",
+        "R228:",
+        "tests/testfiles-docs.bats"
+      ],
+      "files": [
+        "tests/testfiles-docs.bats"
+      ]
+    },
+    {
+      "id": "C523",
+      "req": "R228",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "--filter",
+        "R228 docs",
+        "tests/testfiles-docs.bats"
+      ],
+      "files": [
+        "tests/testfiles-docs.bats"
+      ]
+    },
+    {
+      "id": "C524",
+      "req": "R228",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "--filter",
+        "R228:",
+        "tests/router-spec-rules.bats"
+      ],
+      "files": [
+        "tests/router-spec-rules.bats"
+      ]
+    },
+    {
+      "id": "C525",
+      "req": "R228",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/l3-mapnotrun.bats"
+      ],
+      "files": [
+        "tests/l3-mapnotrun.bats"
+      ]
+    },
+    {
+      "id": "C526",
+      "req": "R229",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/step-replan.bats"
+      ],
+      "files": [
+        "tests/step-replan.bats"
+      ]
+    },
+    {
+      "id": "C527",
+      "req": "R229",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "--filter",
+        "R229:",
+        "tests/suggestions.bats"
+      ],
+      "files": [
+        "tests/suggestions.bats"
+      ]
+    },
+    {
+      "id": "C528",
+      "req": "R229",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "--filter",
+        "R229 docs",
+        "tests/suggestions.bats"
+      ],
+      "files": [
+        "tests/suggestions.bats"
+      ]
+    },
+    {
+      "id": "C529",
+      "req": "R229",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "--filter",
+        "R229",
+        "tests/triage-skill.bats"
+      ],
+      "files": [
+        "tests/triage-skill.bats"
+      ]
+    },
+    {
+      "id": "C530",
+      "req": "R230",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "--filter",
+        "R230:",
+        "tests/mutate-queue.bats"
+      ],
+      "files": [
+        "tests/mutate-queue.bats"
+      ]
+    },
+    {
+      "id": "C531",
+      "req": "R230",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "--filter",
+        "R230 wording",
+        "tests/mutate-queue.bats"
+      ],
+      "files": [
+        "tests/mutate-queue.bats"
+      ]
+    },
+    {
+      "id": "C532",
+      "req": "R231",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "--filter",
+        "R231",
+        "tests/bench-limits.bats"
+      ],
+      "files": [
+        "tests/bench-limits.bats"
+      ]
+    },
+    {
+      "id": "C533",
+      "req": "R231",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "--filter",
+        "R231",
+        "tests/bench-limits-docs.bats"
+      ],
+      "files": [
+        "tests/bench-limits-docs.bats"
+      ]
+    },
+    {
+      "id": "C534",
+      "req": "R232",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "--filter",
+        "R232",
+        "tests/mutate-time.bats"
+      ],
+      "files": [
+        "tests/mutate-time.bats"
       ]
     }
   ],
@@ -17253,7 +17434,48 @@
       "proof": "auto",
       "status": "open",
       "milestone": "M47",
-      "rules": []
+      "rules": [
+        {
+          "text": "the mapping workflow's merge prompt tells the Lead to mark every test or lint command in the Tests section `ran as of <short commit>, <date>: <what happened, how long it took>` when a scout ran it, or `Not run` when none did",
+          "check": "C522",
+          "plan": "P184.1"
+        },
+        {
+          "text": "the map skill says what the two marks mean, that the router chooses ## Commands from them, and still never writes .vbw/map.md itself",
+          "check": "C522",
+          "plan": "P184.1"
+        },
+        {
+          "text": "the spec step chooses ## Commands from the map's Tests section and prefers a command the map ran and dated; sub-project, interpreter and recommend stay",
+          "check": "C524",
+          "plan": "P184.2"
+        },
+        {
+          "text": "a whole suite marked Not run is never written into ## Commands silently: before planning, one AskUserQuestion per such suite names it as unverified with the expected time (or that it is unknown) and offers run it now (Recommended), leave it out and use only the verified commands, add it unverified; under hands-off the router takes run it now and says so",
+          "check": "C524",
+          "plan": "P184.2"
+        },
+        {
+          "text": "run it now is its own step before any planning run: the suite runs once (a long one in the background, its whole result read), the user hears green or red with the failing tests' names, and the dated outcome is recorded with vbw decide (Commands: <command> ran <date> at <short commit>: green|red (<n> failing)), never by editing .vbw/map.md",
+          "check": "C524",
+          "plan": "P184.2"
+        },
+        {
+          "text": "a suite that fails today, by the map's dated result or the run just made, is named before planning with the narrower command (one-test-file form or the sub-project's green command) recommended; it enters ## Commands only on the user's choice, the router then says the first proof will be red, and the chosen lines are written under ## Commands followed by vbw spec sync",
+          "check": "C524",
+          "plan": "P184.2"
+        },
+        {
+          "text": "tools/l3-suite.sh has the mapnotrun scenario in ALL and its header: two suites, one the map ran green and one the map did not run and which is red today; it passes when ## Commands holds only the green (or narrower) command and a dated decision names the red suite, judged in .vbw/spec.md, the record and the transcripts' tool calls",
+          "check": "C525",
+          "plan": "P184.3"
+        },
+        {
+          "text": "the docs describe the two marks (docs/workflows.md mapping row) and the before-planning question with its options (docs/proof.md project commands)",
+          "check": "C523",
+          "plan": "P184.4"
+        }
+      ]
     },
     {
       "id": "R229",
@@ -17261,7 +17483,48 @@
       "proof": "auto",
       "status": "open",
       "milestone": "M47",
-      "rules": []
+      "rules": [
+        {
+          "text": "vbw next --json at the approve step carries detail.replan: the sentence for a planning run of the open requirements plus one, built as step.say is for a plan step, reading 'Planning the work: about N min, until around HH:MM' with history",
+          "check": "C526",
+          "plan": "P185.1"
+        },
+        {
+          "text": "with fewer than 3 planning steps in the history detail.replan reads 'Planning the work: no end time yet (VBW has timed fewer than 3 steps like this here)'",
+          "check": "C526",
+          "plan": "P185.1"
+        },
+        {
+          "text": "detail.replan exists at no step but approve: the plan and build steps carry no such field",
+          "check": "C526",
+          "plan": "P185.1"
+        },
+        {
+          "text": "the triage skill's now outcome follows vbw:suggest once after the ideas are added, before the first planning run; a now idea during a run waits for the run to end",
+          "check": "C529",
+          "plan": "P185.2"
+        },
+        {
+          "text": "the suggest skill names its three moments (spec proposal, right after triage adds requirements, plan approval) in its description and under When, and still never offers mid-run or mid-build",
+          "check": "C527",
+          "plan": "P185.2"
+        },
+        {
+          "text": "at plan approval a suggestion that would add a requirement states the cost of a yes from detail.replan (a new planning run) and offers add to the backlog (Recommended, vbw todo add --sort next --size <small|medium|large>), add to this milestone (replan) or no; a choice or constraint (vbw decide) costs no replan; at spec proposal and after triage the answers stay Yes/No because a yes costs nothing there",
+          "check": "C527",
+          "plan": "P185.2"
+        },
+        {
+          "text": "the router offers suggestions at the spec step, at the approve step (passing detail.replan to vbw:suggest as the cost of a yes) and after triage adds work, and nowhere else (build, fix, qa, prove, run)",
+          "check": "C527",
+          "plan": "P185.2"
+        },
+        {
+          "text": "the docs for the suggest and triage skills say the three moments and the priced yes with the backlog recommended",
+          "check": "C528",
+          "plan": "P185.3"
+        }
+      ]
     },
     {
       "id": "R230",
@@ -17269,7 +17532,43 @@
       "proof": "auto",
       "status": "open",
       "milestone": "M47",
-      "rules": []
+      "rules": [
+        {
+          "text": "vbw mutate PLAN --run takes the per-plan marker .vbw/runtime/mutate-queue/PLAN/run.pid holding its own pid before it reads any queue entry, and removes it when the run ends, on success, on a survivor and on a refusal",
+          "check": "C530",
+          "plan": "P186.1"
+        },
+        {
+          "text": "a second --run while the marker's pid is alive exits non-zero before reading, copying or deleting any queue entry and before recording anything, with a line beginning vbw: that names the running one (its pid and the command) and a Next: line telling the Dev to wait for it to finish and never start a second run",
+          "check": "C530",
+          "plan": "P186.1"
+        },
+        {
+          "text": "a marker whose pid is dead, empty or not a number does not block: the next run takes it over, holds its own pid while the breaks run and leaves no marker after",
+          "check": "C530",
+          "plan": "P186.1"
+        },
+        {
+          "text": "two --run of the same plan never both make copies: while the first holds its slot the second is refused, exactly one set of proof copies exists, and each queue entry is recorded once",
+          "check": "C530",
+          "plan": "P186.1"
+        },
+        {
+          "text": "the marker lives only under .vbw/runtime and mutate-queue.sh's header comment names run.pid",
+          "check": "C530",
+          "plan": "P186.1"
+        },
+        {
+          "text": "the Dev agent's instructions say to start a long --run in the background on purpose (the 10-minute one-command limit), wait for it and read its whole result, never start a second --run of the same plan, and that a refusal naming a running one means wait",
+          "check": "C531",
+          "plan": "P186.2"
+        },
+        {
+          "text": "docs/workflows.md documents the refusal with its Next: wait for it to finish wording, the run.pid marker, the dead-marker takeover and the background advice",
+          "check": "C531",
+          "plan": "P186.2"
+        }
+      ]
     },
     {
       "id": "R231",
@@ -17277,7 +17576,24 @@
       "proof": "auto",
       "status": "open",
       "milestone": "M47",
-      "rules": []
+      "rules": [
+        {
+          "text": "the bench's reference workload is one jq call of the guard's shape (--rawfile glance, --arg root, --arg dir, --arg open, -f PROGRAM - DOCUMENT END) over the bench's own program and document, never the shipped guard, a project file or the old counting program",
+          "check": "C532"
+        },
+        {
+          "text": "the reference program and document are deterministic and of fixed size: the program within 10% of 25061 bytes, the document a JSON object of at least 50 KB, and the guard-shaped call runs on them; VBW_BENCH_REFERENCE_FILES=DIR writes them for inspection",
+          "check": "C532"
+        },
+        {
+          "text": "the provenance comment names the shape and the two sizes in bytes, the M1 Max figures from five runs dated on or after 2026-10-31 and GitHub's figure from the shard-1 log; NOMINAL_MS is a number and NOMINAL_WHEN names a month",
+          "check": "C532"
+        },
+        {
+          "text": "docs/guards.md describes the reference workload as a guard-shaped jq call over a fixed document and program",
+          "check": "C533"
+        }
+      ]
     },
     {
       "id": "R232",
@@ -17285,7 +17601,28 @@
       "proof": "auto",
       "status": "open",
       "milestone": "M47",
-      "rules": []
+      "rules": [
+        {
+          "text": "when VBW_PROOFTIME_CLOCK names a readable file, prooftime_detect sets the clock kind to file and prooftime_clock prints that file's first line",
+          "check": "C534"
+        },
+        {
+          "text": "with VBW_PROOFTIME_CLOCK unset or naming an unreadable file, the machine clock is read as before (nanos, perl or whole seconds)",
+          "check": "C534"
+        },
+        {
+          "text": "the figures-are-measured case runs vbw with the injected clock, a check on broken code moving it by 1.000 s, and asserts break R1.1 = 1.0, unbroken = 0.0, the total 1.0 and the sum, without a real second",
+          "check": "C534"
+        },
+        {
+          "text": "tests/mutate-time.bats pauses the shell nowhere (no sleep) and reads no clock, so the default run measures no duration",
+          "check": "C534"
+        },
+        {
+          "text": "docs/proof.md names VBW_PROOFTIME_CLOCK as a test hook",
+          "check": "C534"
+        }
+      ]
     }
   ],
   "phases": [
@@ -26174,6 +26511,124 @@
         "qa_findings": 0,
         "escalations": 1
       }
+    },
+    {
+      "id": "P184",
+      "title": "The router builds the proof commands from what the map actually ran",
+      "reqs": [
+        "R228"
+      ],
+      "milestone": "M47",
+      "goal": "When VBW agrees what to build on an existing codebase, the test commands it puts in the spec's `## Commands` (the commands every proof runs) come from the map's Tests section, and no whole test suite the map never ran, and no suite known to fail today, gets in without the user hearing about it first.",
+      "criteria": [
+        "plugin/workflows/mapping.js: the merge prompt (today line 82) tells the Lead to mark every test or lint command in the Tests section with one of two states, using these words: `ran as of <short commit>, <date>: <what happened, how long it took>` for a command a scout ran, or the exact words `Not run` for a command no scout ran; a test pins both phrases in the prompt text.",
+        "plugin/skills/map/SKILL.md says what the two marks mean (ran and dated, or `Not run`), that the router chooses `## Commands` from them, and keeps `Never write .vbw/map.md yourself` (tests/workflows-run-end.bats:87 and tests/workflow-result-file.bats:15 still pass); a test pins the two marks' words in the skill.",
+        "plugin/skills/vibe/SKILL.md spec step: `## Commands` is chosen from the map's Tests section; a command the map ran and dated is preferred; the existing words `sub-project` and `interpreter` and `recommend` stay (tests/router-spec-rules.bats:13 still passes).",
+        "plugin/skills/vibe/SKILL.md spec step: a whole suite marked `Not run` is never written into `## Commands` silently. Before planning, one AskUserQuestion per such suite names it as unverified, with the expected time when the map gives one (else says the time is unknown), and offers exactly the three D534 options in this order: run it now (Recommended); leave it out and use only the commands the map verified; add it unverified. Under hands-off autonomy the router takes `run it now` itself and says so in one line.",
+        "`Run it now` is its own step before any planning run: the router runs the suite once (a long one in the background, reading its whole result), tells the user green or red with the failing tests' names, and records the dated outcome with `vbw decide` (`Commands: <command> ran <date> at <short commit>: green|red (<n> failing)`), never by editing `.vbw/map.md`; a test pins `vbw decide` and the `Not run`, `unverified`, `run it now` words inside the spec step's text.",
+        "A suite that fails today, by the map's dated result or by the run just made, is named to the user before planning with the narrower command (the one-test-file form from the map's Tests section, or the sub-project's green command) as the recommended option; the red suite goes into `## Commands` only if the user picks it, and the router then says the first proof will be red; a test pins `narrower` (or `one test file`) in the spec step.",
+        "After the choice the router writes the chosen lines under `## Commands` in `.vbw/spec.md` and runs `vbw spec sync` (the existing `fix there, then vbw spec sync` rule is kept).",
+        "tools/l3-suite.sh gains a scenario (name it `mapnotrun`, added to ALL at line 22) on a project with two suites, one the map ran green and one the map did not run and which is red today; it passes when `## Commands` holds only the green command (or the narrower command) and a dated decision names the red suite, judged in `.vbw/spec.md`, the record and the transcript's tool calls; the scenario is run, together with `greenfield` and `mapsnapshot`, before this phase is accepted, and the progress log names which ran.",
+        "docs (docs/ for the map and the vibe loop) describe the marks and the before-planning question; no behaviour of this phase is claimed above L1 without naming the L3 scenario that ran."
+      ],
+      "tier": "deep",
+      "reasons": [
+        "requirements: 1",
+        "files: 6 (394656 bytes)",
+        "files: more than 2 in a repository tracking 1223 files",
+        "risk: none",
+        "breaks: R40, R41, R60, R75, R78, R81, R95, R96, R107, R121, R160, R162, R167, R186, R207, R216, R219, R220",
+        "guarded: R4 (C4), R5 (C5), R8 (C8), R12 (C11), R13 (C12), R14 (C13), R22 (C19), R24 (C23), R25 (C24), R26 (C22), R28 (C25), R31 (C27), R32 (C28), R34 (C30), R37 (C35), R39 (C36), R42 (C38), R43 (C42, C43), R44 (C44, C45), R45 (C39, C40, C41), R46 (C46), R47 (C47), R48 (C49, C50), R49 (C48), R50 (C51), R51 (C52, C53, C66), R59 (C68, C92), R61 (C73, C74, C75, C76, C77), R62 (C78, C79, C80, C81, C82, C83, C93), R64 (C84, C85), R65 (C86, C87, C88, C89, C90), R66 (C95), R67 (C96), R69 (C110, C120, C122), R70 (C114), R72 (C116, C118), R73 (C98), R74 (C99, C100), R76 (C102, C103), R77 (C104), R79 (C107), R80 (C108), R83 (C119), R92 (C131, C132, C133, C134, C135, C136, C137, C138, C139), R93 (C140, C141, C142, C143, C144), R94 (C145, C146, C147, C148), R97 (C153), R98 (C154), R99 (C155), R100 (C156), R101 (C179), R103 (C160), R104 (C161, C162), R105 (C163), R106 (C164, C165), R110 (C169, C170), R111 (C171, C172, C173, C174, C175), R115 (C181), R116 (C182, C183), R118 (C184), R122 (C189), R123 (C190, C191), R129 (C196), R130 (C197), R131 (C198), R132 (C199), R134 (C201), R135 (C202), R144 (C208, C209), R147 (C212, C215, C237), R148 (C213, C214, C216, C238), R152 (C233, C234), R153 (C235, C236, C239), R156 (C242, C243), R157 (C244), R158 (C245), R159 (C246), R161 (C248, C265, C266), R163 (C250), R166 (C253, C254, C255, C256, C267), R168 (C261, C262), R169 (C268), R170 (C269), R171 (C270), R173 (C281, C282, C283, C284, C285, C286, C289), R174 (C279, C280), R175 (C274, C275), R176 (C276, C277, C278), R179 (C297, C298, C299, C300, C301, C302, C303, C304, C305, C306, C312), R180 (C307, C308, C309, C310), R181 (C313, C314, C315, C316, C317, C318, C319, C320, C321), R182 (C322, C323, C324, C325, C326), R183 (C327), R184 (C328, C329, C330, C331, C332, C333), R185 (C334, C335, C336, C337, C338, C339, C340, C341, C342, C343), R188 (C350, C351, C352, C353, C354, C355, C356, C357, C358, C359), R189 (C360, C361, C362, C363, C364, C365, C366, C367, C368, C369, C370, C371, C372, C373), R190 (C374, C375, C376, C377, C378, C379, C380, C381, C382, C383, C384, C385, C386, C387, C388), R191 (C389, C390, C391, C392, C393, C394, C395, C396, C397, C398, C399, C400), R192 (C401, C402, C403, C404, C405, C406, C407, C408, C409, C410), R193 (C411, C412), R194 (C417, C418, C419), R195 (C420, C421, C422), R196 (C415, C416), R197 (C413, C414), R199 (C424, C425, C430), R200 (C426, C427, C431), R201 (C428, C429), R202 (C432, C433, C434, C435, C436, C437, C438, C439, C440, C441, C442, C443, C444, C445, C446, C447), R203 (C448, C449, C450), R204 (C451, C452, C453, C454), R205 (C455, C456, C457, C458, C467), R206 (C459, C460), R208 (C464, C465, C466, C468), R209 (C469, C470, C471, C472, C473), R210 (C474, C475, C476), R211 (C477, C478, C479), R212 (C480, C481, C482), R213 (C483, C484), R214 (C485, C486, C487), R215 (C488, C489, C490), R217 (C494, C495), R221 (C504), R226 (C510, C511)",
+        "tests: project test command"
+      ],
+      "predicted": "deep"
+    },
+    {
+      "id": "P185",
+      "title": "Suggestions right after triage, and a priced yes at approval",
+      "reqs": [
+        "R229"
+      ],
+      "milestone": "M47",
+      "goal": "VBW offers its ideas when saying yes is free (right after triage adds work to the milestone, before the first planning run) and, when it still offers one at plan approval, it says what a yes costs and recommends the backlog, so planning minutes stop being spent on replans.",
+      "criteria": [
+        "plugin/lib: `vbw next --json` at the `approve` step carries `detail.replan`: the sentence the kernel would say for a planning run of this milestone's open requirements plus one, built by the same code as `step.say` for kind plan (steps.sh step_say/step_expect with step_size's `reqs` + 1), so it reads `Planning the work: about N min, ...` with history or `Planning the work: no end time yet (VBW has timed fewer than 3 steps like this here)` without; a bats case checks both forms from a seeded steps.json; the field is null at every other step.",
+        "plugin/skills/triage/SKILL.md Outcomes `now`: after every `now` idea of one menu is added with `vbw spec add`, the router follows `vbw:suggest` once, before the first planning run (`then the normal flow` comes after it); a `now` sorted during a run waits for the run to end and the suggestions come then, still before planning; tests/triage-skill.bats:45 still passes and a new case pins `vbw:suggest` inside the Outcomes section.",
+        "plugin/skills/suggest/SKILL.md When: three moments, named: at spec proposal, right after triage adds requirements to the active milestone (before the first planning run), and at plan approval; `never mid-run, mid-build` stays; the description line names the three moments.",
+        "plugin/skills/suggest/SKILL.md Answers at plan approval, for a suggestion that would add a requirement: the AskUserQuestion text states the cost of a yes (`a new planning run: <detail.replan from vbw next --json>`) and offers exactly: add to the backlog (Recommended) -> `vbw todo add --sort next --size <small|medium|large> \"<text>\"`; add to this milestone (replan) -> `vbw spec add`, then planning again and a new approval; no -> `vbw suggest decline`. A suggestion that is a choice or constraint (`vbw decide`) costs no replan and keeps Yes/No. At spec proposal and after triage the options stay Yes/No (a yes costs nothing there) and the skill says why.",
+        "plugin/skills/vibe/SKILL.md approve step: `Follow vbw:suggest` passes `detail.replan` as the cost of a yes; the spec step keeps `Follow vbw:suggest`.",
+        "tests/suggestions.bats:106 (`at spec proposal and at plan approval, and nowhere else`) is edited, not stacked: it now checks the spec step, the approve step and the triage skill's `now` outcome offer suggestions and that build, fix, qa, prove and run do not; cases pin the words `backlog`, `replan`, `vbw todo add`, `detail.replan` in the suggest skill; the limit of three and the duplicate check (lines 83-96) still hold.",
+        "docs for the suggest and triage skills (docs/ and README where the moments are described) say the three moments and the priced yes."
+      ],
+      "tier": "deep",
+      "reasons": [
+        "requirements: 1",
+        "files: 9 (127703 bytes)",
+        "files: more than 2 in a repository tracking 1223 files",
+        "risk: none",
+        "breaks: R20, R40, R60, R78, R81, R107, R121, R160",
+        "guarded: R3 (C3), R13 (C12), R14 (C13), R22 (C19), R24 (C23), R25 (C24), R26 (C22), R28 (C25), R31 (C27), R37 (C35), R38 (C33, C34), R39 (C36), R47 (C47), R49 (C48), R50 (C51), R51 (C52, C53, C66), R52 (C58, C91), R53 (C54, C55), R55 (C56, C57), R57 (C59, C70, C71), R59 (C68, C92), R61 (C73, C74, C75, C76, C77), R62 (C78, C79, C80, C81, C82, C83, C93), R65 (C86, C87, C88, C89, C90), R67 (C96), R69 (C110, C120, C122), R70 (C114), R71 (C115, C121), R72 (C116, C118), R73 (C98), R74 (C99, C100), R79 (C107), R80 (C108), R83 (C119), R98 (C154), R99 (C155), R100 (C156), R101 (C179), R102 (C158, C159), R106 (C164, C165), R111 (C171, C172, C173, C174, C175), R116 (C182, C183), R119 (C180), R122 (C189), R123 (C190, C191), R127 (C194), R132 (C199), R133 (C195), R134 (C201), R135 (C202), R146 (C211), R149 (C217, C218, C219, C220, C221, C222), R152 (C233, C234), R157 (C244), R161 (C248, C265, C266), R165 (C252), R171 (C270), R179 (C297, C298, C299, C300, C301, C302, C303, C304, C305, C306, C312), R180 (C307, C308, C309, C310), R185 (C334, C335, C336, C337, C338, C339, C340, C341, C342, C343), R189 (C360, C361, C362, C363, C364, C365, C366, C367, C368, C369, C370, C371, C372, C373), R190 (C374, C375, C376, C377, C378, C379, C380, C381, C382, C383, C384, C385, C386, C387, C388), R191 (C389, C390, C391, C392, C393, C394, C395, C396, C397, C398, C399, C400), R192 (C401, C402, C403, C404, C405, C406, C407, C408, C409, C410), R201 (C428, C429), R202 (C432, C433, C434, C435, C436, C437, C438, C439, C440, C441, C442, C443, C444, C445, C446, C447), R210 (C474, C475, C476), R223 (C507, C508, C509)",
+        "tests: project test command"
+      ],
+      "predicted": "deep"
+    },
+    {
+      "id": "P186",
+      "title": "One `vbw mutate PLAN --run` at a time per plan",
+      "reqs": [
+        "R230"
+      ],
+      "milestone": "M47",
+      "goal": "Two runs of the same plan's queued breaks can never run at once: the second refuses and names the first, a run that died never blocks the next, and the Dev knows to wait for a long run instead of starting it again.",
+      "criteria": [
+        "plugin/lib/mutate-queue.sh: mutate_queue_run takes a per-plan marker under `.vbw/runtime/mutate-queue/<PLAN>/` (a `run.pid` lock in the pattern of record.sh vbw_lock_dir/vbw_lock_holder/vbw_lock_takeover) holding its own pid, before it reads any queue entry; the marker is removed when the run ends, on success, on a survivor, and on a `vbw_die` refusal (an EXIT trap), and is never a reason to skip removing queue entries.",
+        "A second `vbw mutate PLAN --run` while the marker's pid is alive (vbw_lock_alive) exits non-zero before reading, copying or deleting any queue entry and before recording anything, with a message beginning `vbw:` that names the running one (its pid and the command) and ends with a `Next:` line telling the Dev to wait for it to finish (a long run started in the background, its result read when it ends) and not start another; a bats case in tests/mutate-queue.bats writes a marker with a live pid (a sleeping child of the test) and asserts the exit status, the two message lines, the untouched queue folder and an unchanged record.",
+        "A marker whose pid is dead, empty or not a number does not block: the next run takes it over (as proofsteps.sh:45 does for the proof lock) and proceeds; a bats case writes a marker with a dead pid and asserts the run runs the breaks and leaves a marker with its own pid during the run and none after.",
+        "Two `--run` of the same plan never both make copies: a bats case starts one run that holds its slot (a slow check) and a second during it, and asserts the second refused and exactly one set of proof copies existed (the `.vbw/runtime/proof.*` count) and each queue entry was recorded once.",
+        "The marker lives only under `.vbw/runtime` (nothing outside the project), its file name is listed in the file's header comment, and the bash 3.2 rules hold (tests/standards.bats passes).",
+        "plugin/agents/dev.md line 26 says: start `vbw mutate PLAN --run` in the background on purpose when the plan has several breaks (Claude Code's one-command limit is 10 minutes), wait for it and read its whole result before anything else; never start a second `--run` of the same plan; a refusal naming a running one means wait for that one, then run again if breaks are still queued; a test pins `background`, `never start a second` (or equivalent fixed wording) in dev.md.",
+        "docs/workflows.md (the `--queue`/`--run` paragraph at 297-322) documents the refusal, the marker and the background advice; a docs test pins the refusal's `Next:` wording there."
+      ],
+      "tier": "deep",
+      "reasons": [
+        "requirements: 1",
+        "files: 3 (67986 bytes)",
+        "files: more than 2 in a repository tracking 1223 files",
+        "risk: none",
+        "breaks: R60, R75, R78, R81, R95, R96, R107, R160, R162, R167, R177, R186, R207, R216, R219, R220",
+        "guarded: R13 (C12), R14 (C13), R24 (C23), R25 (C24), R28 (C25), R31 (C27), R39 (C36), R44 (C44, C45), R50 (C51), R61 (C73, C74, C75, C76, C77), R69 (C110, C120, C122), R70 (C114), R73 (C98), R74 (C99, C100), R76 (C102, C103), R77 (C104), R79 (C107), R80 (C108), R99 (C155), R101 (C179), R106 (C164, C165), R116 (C182, C183), R118 (C184), R123 (C190, C191), R129 (C196), R130 (C197), R134 (C201), R135 (C202), R147 (C212, C215, C237), R148 (C213, C214, C216, C238), R156 (C242, C243), R157 (C244), R158 (C245), R159 (C246), R163 (C250), R179 (C297, C298, C299, C300, C301, C302, C303, C304, C305, C306, C312), R180 (C307, C308, C309, C310), R182 (C322, C323, C324, C325, C326), R188 (C350, C351, C352, C353, C354, C355, C356, C357, C358, C359), R192 (C401, C402, C403, C404, C405, C406, C407, C408, C409, C410), R193 (C411, C412), R194 (C417, C418, C419), R196 (C415, C416), R197 (C413, C414), R203 (C448, C449, C450), R209 (C469, C470, C471, C472, C473), R210 (C474, C475, C476), R211 (C477, C478, C479), R212 (C480, C481, C482), R213 (C483, C484), R215 (C488, C489, C490)",
+        "tests: project test command"
+      ],
+      "predicted": "deep"
+    },
+    {
+      "id": "P187",
+      "title": "Honest measurements: a guard-shaped bench reference and an injected proof clock",
+      "reqs": [
+        "R231",
+        "R232"
+      ],
+      "milestone": "M47",
+      "goal": "The hook benchmark's reference workload has the same shape as a guard call so its ratio tracks the guards on every runner, and the mutate timing test proves its figures from an injected clock instead of a real second, so neither fails on a Linux runner for a reason that is not a bug.",
+      "criteria": [
+        "tools/bench-hooks.sh: the reference workload (today line 223) is one `jq` call of the guard's shape: `jq -nc --rawfile glance <file> --arg root <x> --arg dir <x> --arg open 0 -f <program file> - <document file> <end file>` (the PreToolUse command's form in plugin/hooks/hooks.json), where the program and the document are written by the bench itself at the start of the run with fixed, deterministic content and fixed sizes (program within 10% of guard-bash.jq's 25061 bytes, document the size of the bench's medium record), never the shipped guard program or a project file, so the reference does not drift with releases; the sizes are stated in the provenance comment at lines 85-89.",
+        "The reference line keeps its exact form `reference: <X> ms CPU per call; nominal <N> ms (an M1 Max Mac and GitHub's macOS runner, <WHEN>); ratio <R>` (tests/bench-limits.bats:275 REFERENCE regex and the R222 cases at 291-374 pass unchanged; `VBW_BENCH_REFERENCE_MS` still stands in), and docs/guards.md:276 describes the workload as a guard-shaped jq call over a fixed document and program (tests/bench-limits-docs.bats:32,61 pass).",
+        "NOMINAL_MS is remeasured for the new shape: the comment names the M1 Max figures (five runs, date) and the GitHub macOS figure read from this pull request's shard-1 log, and the larger of the two is pinned before merge; NOMINAL_WHEN names the month; tests/timed-bench-hooks.bats passes locally under `PATH=\"/bin:$PATH\"`.",
+        "plugin/lib/prooftime.sh: when `VBW_PROOFTIME_CLOCK` names a readable file, prooftime_detect sets the clock kind to `file` and prooftime_clock prints that file's first line (seconds with milliseconds) instead of the machine clock; unset or unreadable, nothing changes; the variable reaches a unit's subshell and the vbw process a test starts (an environment variable, not a shell function); docs/proof.md names it as a test hook.",
+        "tests/mutate-time.bats:168-178 (`the figures are measured`) no longer writes `sleep 1` nor asserts on real elapsed time: the check script on broken code writes a reading 1.000 s later into the clock file (an absolute path outside the proof copy), the case runs vbw with `VBW_PROOFTIME_CLOCK` set and asserts the exact figures from the injected readings (break R1.1 = 1.0, unbroken = 0.0, and sum_ok); the case passes with the real clock replaced and fails when the injection is removed (shown red first).",
+        "tests/mutate-time.bats contains no `sleep` (a grep in the file's own header case or in tests/release-run.bats's clock rule at 292), and tests/release-run.bats:292 (`no test file of the default run measures a duration`) passes; every other case of tests/mutate-time.bats passes unchanged."
+      ],
+      "tier": "deep",
+      "reasons": [
+        "requirements: 2",
+        "files: 4 (154369 bytes)",
+        "files: more than 2 in a repository tracking 1223 files",
+        "risk: CI (R232)",
+        "breaks: R75, R78, R81, R151, R160, R162, R167, R177, R207, R216, R219, R220, R222",
+        "guarded: R12 (C11), R15 (C14), R31 (C27), R32 (C28), R43 (C42, C43), R44 (C44, C45), R45 (C39, C40, C41), R46 (C46), R47 (C47), R48 (C49, C50), R49 (C48), R61 (C73, C74, C75, C76, C77), R66 (C95), R69 (C110, C120, C122), R70 (C114), R73 (C98), R74 (C99, C100), R76 (C102, C103), R77 (C104), R79 (C107), R80 (C108), R92 (C131, C132, C133, C134, C135, C136, C137, C138, C139), R93 (C140, C141, C142, C143, C144), R94 (C145, C146, C147, C148), R97 (C153), R98 (C154), R100 (C156), R103 (C160), R104 (C161, C162), R105 (C163), R110 (C169, C170), R111 (C171, C172, C173, C174, C175), R115 (C181), R118 (C184), R120 (C185), R128 (C200), R131 (C198), R132 (C199), R134 (C201), R135 (C202), R144 (C208, C209), R147 (C212, C215, C237), R148 (C213, C214, C216, C238), R149 (C217, C218, C219, C220, C221, C222), R150 (C223, C224, C225, C226, C227, C228, C229, C230), R152 (C233, C234), R153 (C235, C236, C239), R161 (C248, C265, C266), R165 (C252), R166 (C253, C254, C255, C256, C267), R168 (C261, C262), R169 (C268), R170 (C269), R174 (C279, C280), R175 (C274, C275), R176 (C276, C277, C278), R178 (C290, C291, C292, C293, C294, C295, C296, C311), R179 (C297, C298, C299, C300, C301, C302, C303, C304, C305, C306, C312), R180 (C307, C308, C309, C310), R181 (C313, C314, C315, C316, C317, C318, C319, C320, C321), R182 (C322, C323, C324, C325, C326), R183 (C327), R184 (C328, C329, C330, C331, C332, C333), R185 (C334, C335, C336, C337, C338, C339, C340, C341, C342, C343), R188 (C350, C351, C352, C353, C354, C355, C356, C357, C358, C359), R190 (C374, C375, C376, C377, C378, C379, C380, C381, C382, C383, C384, C385, C386, C387, C388), R192 (C401, C402, C403, C404, C405, C406, C407, C408, C409, C410), R193 (C411, C412), R194 (C417, C418, C419), R195 (C420, C421, C422), R196 (C415, C416), R197 (C413, C414), R198 (C423), R202 (C432, C433, C434, C435, C436, C437, C438, C439, C440, C441, C442, C443, C444, C445, C446, C447), R203 (C448, C449, C450), R204 (C451, C452, C453, C454), R205 (C455, C456, C457, C458, C467), R206 (C459, C460), R209 (C469, C470, C471, C472, C473), R210 (C474, C475, C476), R211 (C477, C478, C479), R212 (C480, C481, C482), R213 (C483, C484), R214 (C485, C486, C487), R215 (C488, C489, C490), R217 (C494, C495), R221 (C504), R224 (C512, C513, C514, C515, C516), R226 (C510, C511)",
+        "tests: project test command"
+      ],
+      "predicted": "deep"
     }
   ],
   "plans": [
@@ -57970,6 +58425,236 @@
           "head": "78df761f805bd9bd30c463daa4fd565e4935cc5c"
         }
       ]
+    },
+    {
+      "id": "P184.1",
+      "phase": "P184",
+      "title": "Map marks: every test or lint command is 'ran as of ...' or 'Not run'",
+      "reqs": [
+        "R228"
+      ],
+      "files": [
+        "plugin/workflows/mapping.js",
+        "plugin/skills/map/SKILL.md"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "mapping.js merge prompt: every test or lint command in the Tests section carries one of two marks, in these exact words: `ran as of <short commit>, <date>: <what happened, how long it took>` for a command a scout ran, `Not run` for one no scout ran (the existing 'as of' dating of results stays)",
+        "map/SKILL.md: say what the two marks mean (ran and dated, or Not run), that the router chooses `## Commands` from them, and keep the sentence 'Never write `.vbw/map.md` yourself' and the `jq -er '.result.map' FILE | ... vbw run end --map` form unchanged",
+        "mapping.js and map/SKILL.md: tests/workflows.bats, tests/workflows-run-end.bats and tests/workflow-result-file.bats stay green (the prompt's structure and the run-end form); fix any wording that broke one"
+      ]
+    },
+    {
+      "id": "P184.2",
+      "phase": "P184",
+      "title": "Router spec step: ## Commands from the map, the Not-run question, run it now, the red suite",
+      "reqs": [
+        "R228"
+      ],
+      "files": [
+        "plugin/skills/vibe/SKILL.md"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "spec step: `## Commands` is chosen from the map's Tests section, a command the map ran and dated preferred; keep the words sub-project, interpreter, recommend and 'fix there, then `vbw spec sync`'",
+        "spec step, the Not-run question: a whole suite marked Not run is never written silently; before planning, one AskUserQuestion per such suite names it as unverified, with the expected time the map gives (else says the time is unknown), and offers exactly, in this order: run it now (Recommended); leave it out and use only the commands the map verified; add it unverified; under hands-off the router takes run it now itself and says so in one line",
+        "spec step, run it now as its own step before any planning run: run the suite once (a long one in the background, its whole result read when it ends), tell the user green or red with the failing tests' names, record the dated outcome with `vbw decide \"Commands: <command> ran <date> at <short commit>: green|red (<n> failing)\"`, never by editing `.vbw/map.md`",
+        "spec step, a suite red today (the map's dated result or the run just made): name it before planning with the narrower command (the one-test-file form from the map's Tests section, or the sub-project's green command) as the recommended option; the red suite enters `## Commands` only on the user's choice and the router then says the first proof will be red; after the choice write the chosen lines under `## Commands` in `.vbw/spec.md` and run `vbw spec sync`"
+      ]
+    },
+    {
+      "id": "P184.3",
+      "phase": "P184",
+      "title": "L3 scenario mapnotrun: two suites, one green and mapped, one red and never run",
+      "reqs": [
+        "R228"
+      ],
+      "files": [
+        "tools/l3-suite.sh"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "mapnotrun_seed: a greet.sh project with a quick green test.sh and a second suite script (e2e, red today, prints `not ok`) that the README presents as the long end-to-end run taking many minutes, both named in the README with their commands; committed before the session",
+        "scenario_mapnotrun: /vbw:vibe on the seeded project, answering with the recommendation (run it now, then the narrower command); judged in .vbw/spec.md (`## Commands` holds the green command or the narrower one and not the red suite), the record (a dated decision naming the red suite's command), .vbw/map.md (its Not run or dated marks) and the transcripts' tool calls (transcript_tool_called: the red suite ran), never on screen; facts map_marks_not_run, commands_lines, green_in_commands, red_in_commands, narrower_in_commands, red_decision, red_suite_ran; result_write mapnotrun with a not_tested list",
+        "add mapnotrun to ALL (line 22) and to the header's scenario list (lines 14-15); tests/l3-mapnotrun.bats green"
+      ]
+    },
+    {
+      "id": "P184.4",
+      "phase": "P184",
+      "title": "Docs: the map's two marks and the before-planning question",
+      "reqs": [
+        "R228"
+      ],
+      "files": [
+        "docs/workflows.md",
+        "docs/proof.md"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "docs",
+      "tasks": [
+        "docs/workflows.md: the `vbw:mapping` row (line 16) names the two marks a test or lint command carries in the Tests section (`ran as of <short commit>, <date>: ...` or `Not run`) and that the router chooses `## Commands` from them",
+        "docs/proof.md, Project commands: `## Commands` is chosen from the map's Tests section (a dated ran command preferred); a suite marked Not run is put to the user before planning as unverified, with its expected time or that it is unknown, with run it now (Recommended), leave it out, add it unverified; a run-now outcome is recorded as a dated decision (the map is written only by the map run); a suite red today is named with the narrower command recommended and enters only on the user's choice (the first proof then red)",
+        "docs/proof.md and docs/workflows.md: state the evidence level honestly: the behaviour is proven at L1 by the wording checks and at L3 only by the `mapnotrun` scenario when it has run (name it); claim nothing above that"
+      ]
+    },
+    {
+      "id": "P185.1",
+      "phase": "P185",
+      "title": "Kernel: detail.replan at the approve step",
+      "reqs": [
+        "R229"
+      ],
+      "files": [
+        "plugin/lib/steps.sh",
+        "plugin/lib/cmd-next.sh",
+        "docs/next.md"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "steps.sh: step_replan_say RECORD prints the sentence of a planning run of the milestone's open requirements plus one: step_size for kind plan with its reqs + 1, step_expect plan, the words by step_say with kind plan and parts null (the same code path as step.say; with no basis it reads 'Planning the work: no end time yet (VBW has timed fewer than 3 steps like this here)')",
+        "cmd-next.sh: in the command path (FUNCNAME[1] = main, where step and road are added) and only when action is approve, add detail.replan with that sentence; the key is never added at any other step (other tests compare whole detail objects)",
+        "docs/next.md: name detail.replan at the approve step, what it says and why (the cost of a yes to a suggestion that adds a requirement)"
+      ]
+    },
+    {
+      "id": "P185.2",
+      "phase": "P185",
+      "title": "Skills: suggestions after triage, and a priced yes at approval",
+      "reqs": [
+        "R229"
+      ],
+      "files": [
+        "plugin/skills/suggest/SKILL.md",
+        "plugin/skills/triage/SKILL.md",
+        "plugin/skills/vibe/SKILL.md"
+      ],
+      "after": [
+        "P184.2"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "suggest/SKILL.md description and When: three moments, named: at spec proposal, right after triage adds requirements to the active milestone (before the first planning run), and at plan approval; keep 'never mid-run, mid-build'",
+        "suggest/SKILL.md Answers: at plan approval a suggestion that would add a requirement states the cost of a yes (`a new planning run: <detail.replan from vbw next --json>`) and offers exactly: add to the backlog (Recommended) -> `vbw todo add --sort next --size <small|medium|large> \"<text>\"`; add to this milestone (replan) -> `vbw spec add`, then planning again and a new approval; no -> `vbw suggest decline`; a choice or constraint (`vbw decide`) costs no replan and keeps Yes/No; at spec proposal and after triage the options stay Yes/No and the skill says why (a yes costs nothing there)",
+        "triage/SKILL.md Outcomes, now: after every now idea of one menu is added with `vbw spec add`, follow `vbw:suggest` once, before the first planning run (then the normal flow); a now sorted during a run waits for the run to end and the suggestions come then, still before planning",
+        "vibe/SKILL.md approve step: `Follow vbw:suggest` passes `detail.replan` as the cost of a yes; the spec step keeps `Follow vbw:suggest`; build, fix, qa, prove and run steps stay without it"
+      ]
+    },
+    {
+      "id": "P185.3",
+      "phase": "P185",
+      "title": "Docs: the three suggestion moments and the priced yes",
+      "reqs": [
+        "R229"
+      ],
+      "files": [
+        "docs/interview.md",
+        "docs/triage.md",
+        "README.md"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "docs",
+      "tasks": [
+        "docs/interview.md Suggestions: the three moments (spec proposal, right after triage adds work, plan approval) instead of 'two moments'; at approval a yes that adds a requirement costs a new planning run (VBW states the kernel's estimate) and the backlog (`vbw todo add`) is recommended, the milestone (replan) and no are the other answers",
+        "docs/triage.md: the now outcome says VBW offers its suggestions once after the ideas are added, before the first planning run",
+        "README.md: where triage's now flow is described (the Triage row), one clause that VBW offers its ideas right after sorting, before planning"
+      ]
+    },
+    {
+      "id": "P186.1",
+      "phase": "P186",
+      "title": "Kernel: one --run at a time per plan, a dead run never blocks",
+      "reqs": [
+        "R230"
+      ],
+      "files": [
+        "plugin/lib/mutate-queue.sh"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "mutate_queue_run: before reading any queue entry, make the plan's queue folder if missing and take the marker `.vbw/runtime/mutate-queue/<PLAN>/run.pid` holding this process's pid with vbw_lock_create; register its removal with vbw_guard_add so it goes on every end (success, survivor, vbw_die refusal, signals), remove it before the folder's rmdir, and never let it be a reason to skip removing queue entries; the header comment lists run.pid among the folder's files",
+        "a holder that is alive (vbw_lock_holder, vbw_lock_alive): vbw_die with exactly these two lines before reading, copying, deleting or recording anything: `another run of <PLAN>'s queued breaks is still running (pid <N>, vbw mutate <PLAN> --run)` and `Next: wait for it to finish (a long run started in the background: read its whole result when it ends), then run vbw mutate <PLAN> --run again only if breaks are still queued; never start a second run of the same plan`",
+        "a holder that is dead, empty or not a number: take the marker over as proofsteps.sh does (vbw_lock_takeover with the old holder), then proceed; two runs that both find the dead holder cannot both win",
+        "the 'no break waits' path and the 'queued at another commit' path leave no marker and no empty folder behind; tests/mutate-queue.bats (all cases) and tests/standards.bats green under /bin/bash"
+      ]
+    },
+    {
+      "id": "P186.2",
+      "phase": "P186",
+      "title": "Dev agent and docs: wait for a long run, never start a second",
+      "reqs": [
+        "R230"
+      ],
+      "files": [
+        "plugin/agents/dev.md",
+        "docs/workflows.md"
+      ],
+      "after": [
+        "P184.4"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "dev.md line 26: with several breaks, start `vbw mutate PLAN --run` in the background on purpose (Claude Code's one-command limit is 10 minutes), wait for it and read its whole result before anything else",
+        "dev.md line 26: never start a second `--run` of the same plan; a refusal naming a running one means wait for that one, then run again only if breaks are still queued",
+        "docs/workflows.md --queue/--run paragraph: the refusal of a second run of the same plan with its `Next: wait for it to finish` line, the `run.pid` marker under .vbw/runtime/mutate-queue/PLAN/, that a marker whose process ended never blocks (taken over), the background advice, and that a run waiting for a slot holds the marker for the whole wait (intended: a second run would compete for the same slots)"
+      ]
+    },
+    {
+      "id": "P187.1",
+      "phase": "P187",
+      "title": "Bench: a guard-shaped reference workload, remeasured nominal",
+      "reqs": [
+        "R231"
+      ],
+      "files": [
+        "tools/bench-hooks.sh",
+        "docs/guards.md"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "bench-hooks.sh: write the reference program (a .jq file, deterministic content, within 10% of 25061 bytes, reading $glance, $root, $dir, $open and its inputs like a guard) and the reference document (a .json object, deterministic, the size of the bench's medium record) into the work folder at the start of the run, from the bench's own text, never from the shipped guard or a project file; VBW_BENCH_REFERENCE_FILES=DIR (tests) writes the two files into DIR and exits 0 without measuring; document both in the header's variable list",
+        "bench-hooks.sh reference measure: one call of the guard's shape, `jq -nc --rawfile glance <file> --arg root <x> --arg dir <x> --arg open 0 -f <program> - <document> <end file>`, through cpu_pair as before; the reference line keeps its exact form and VBW_BENCH_REFERENCE_MS still stands in; the old counting program goes",
+        "bench-hooks.sh provenance comment and NOMINAL_MS: remeasure on the M1 Max (five runs, dated today or later) for the new shape; the comment names the shape, the program's and document's sizes in bytes, the M1 Max figures, and GitHub's macOS figure as read from shard 1 of the pull request (until that log exists, keep the #739 figure and say the larger of the two is pinned before merge); NOMINAL_WHEN names the month; tests/timed-bench-hooks.bats passes under PATH=\"/bin:$PATH\"",
+        "docs/guards.md line 276: the reference is a guard-shaped jq call over a fixed document and program written by the bench; tests/bench-limits-docs.bats and the R222 cases of tests/bench-limits.bats stay green"
+      ]
+    },
+    {
+      "id": "P187.2",
+      "phase": "P187",
+      "title": "Proof clock injection: VBW_PROOFTIME_CLOCK",
+      "reqs": [
+        "R232"
+      ],
+      "files": [
+        "plugin/lib/prooftime.sh",
+        "docs/proof.md"
+      ],
+      "after": [
+        "P184.4"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "prooftime.sh: prooftime_detect sets PROOFTIME_NS=file when VBW_PROOFTIME_CLOCK names a readable file; prooftime_clock then prints that file's first line (seconds with milliseconds) instead of the machine clock; unset or unreadable, nanos|perl|none as today; the header comment documents the hook",
+        "prooftime.sh: the file clock reaches a unit's subshell and the vbw process a test starts (an exported environment variable read at detect time, no shell function), so tracking spans and mutate steps read the same injected clock",
+        "docs/proof.md: name VBW_PROOFTIME_CLOCK as a test hook (a file whose first line is the clock reading), beside the own-work section; tests/mutate-time.bats and tests/release-run.bats green under /bin/bash"
+      ]
     }
   ],
   "fixes": [
@@ -64813,6 +65498,30 @@
       "id": "D533",
       "at": "2026-10-30T23:08:20Z",
       "text": "Shipped M46 Community batch 2: scope by ancestry, bench reference, jq floor, status line hand-back, branch note: 7 requirements proven or accepted"
+    },
+    {
+      "id": "D534",
+      "text": "A whole test suite the map lists but never ran is put to the user before planning: named as unverified with the expected time, with run it now (recommended), leave it out and use only the commands the map verified, or add it unverified; under hands-off autonomy VBW takes the recommended answer itself",
+      "why": "the user keeps the choice of waiting minutes for a suite; a suite the map never ran goes into no contract silently, so a suite that fails today is found before planning, never by the first proof (#733; owner's choice 2026-10-31, the Architect's recommendation)",
+      "at": "2026-10-31T07:55:43Z"
+    },
+    {
+      "id": "D535",
+      "at": "2026-10-31T08:41:19Z",
+      "text": "Contract approved: 221 requirements, 529 checks, 565 plans (2fc05dfb0920)",
+      "plans": [
+        "P184.1",
+        "P184.2",
+        "P184.3",
+        "P184.4",
+        "P185.1",
+        "P185.2",
+        "P185.3",
+        "P186.1",
+        "P186.2",
+        "P187.1",
+        "P187.2"
+      ]
     }
   ],
   "commands": {

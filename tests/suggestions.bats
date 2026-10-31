@@ -10,6 +10,9 @@ load helper
 
 SKILL="$PLUGIN_ROOT/skills/suggest/SKILL.md"
 ROUTER="$PLUGIN_ROOT/skills/vibe/SKILL.md"
+TRIAGE="$PLUGIN_ROOT/skills/triage/SKILL.md"
+DOC="$REPO_ROOT/docs/interview.md"
+TRIAGE_DOC="$REPO_ROOT/docs/triage.md"
 
 setup() {
   vbw_setup
@@ -103,12 +106,58 @@ step_text() {
   awk -v s="$1" 'index($0, "**" s "**") == 1 { on = 1; print; next } /^\*\*[A-Za-z]/ { on = 0 } /^## / { on = 0 } on' "$ROUTER"
 }
 
-@test "R40: the router offers suggestions at spec proposal and at plan approval, and nowhere else" {
+@test "R40, R229: the router offers suggestions at spec proposal, at plan approval and right after triage adds work, and nowhere else" {
   [ "$(grep -cF 'vbw:suggest' "$ROUTER")" -ge 2 ]
   step_text spec | grep -qF 'vbw:suggest'
   step_text approve | grep -qF 'vbw:suggest'
+  sed -n '/^## Outcomes/,/^## /p' "$TRIAGE" | grep -qF 'vbw:suggest'
   local step
   for step in build fix qa prove run; do
     if step_text "$step" | grep -qF 'vbw:suggest'; then echo "suggestions offered at $step"; false; fi
   done
+}
+
+# R229 (#734): suggestions come when a yes is free (spec proposal; right after triage adds
+# requirements to the active milestone, before the first planning run) and at plan
+# approval, where a yes that adds a requirement costs a new planning run: the question
+# states that cost from detail.replan of vbw next --json and offers add to the backlog
+# (Recommended, vbw todo add), add to this milestone (replan: vbw spec add, planning
+# again, a new approval) or no (vbw suggest decline). A choice or constraint (vbw decide)
+# costs no replan and keeps Yes/No, as do the two free moments. L1: the skills' words.
+
+# flat FILE: the file on one line, lower case, spaces squeezed.
+flat() { tr '\n' ' ' < "$1" | tr -s ' ' | tr '[:upper:]' '[:lower:]'; }
+
+@test "R229: the suggest skill names its three moments, in the description and under When, and still never offers mid-run" {
+  grep -E '^description:' "$SKILL" | grep -qi 'triage'
+  grep -E '^description:' "$SKILL" | grep -qi 'approval'
+  sed -n '/^## When/,/^## /p' "$SKILL" | tr '\n' ' ' | grep -qi 'triage'
+  sed -n '/^## When/,/^## /p' "$SKILL" | tr '\n' ' ' | grep -qi 'before the first planning run'
+  sed -n '/^## When/,/^## /p' "$SKILL" | tr '\n' ' ' | grep -qi 'never[^.]*mid-run, mid-build'
+}
+
+@test "R229: at plan approval a suggestion that adds a requirement is priced from detail.replan and offers the backlog (Recommended), the milestone (replan) or no" {
+  grep -qF 'detail.replan' "$SKILL"
+  flat "$SKILL" | grep -qE 'backlog[^.]{0,60}\(recommended\)|\(recommended\)[^.]{0,60}backlog'
+  flat "$SKILL" | grep -q 'replan'
+  grep -qE 'vbw todo add --sort next --size <small\|medium\|large>' "$SKILL"
+  flat "$SKILL" | grep -qE 'a new planning run'
+  flat "$SKILL" | grep -qE 'vbw decide[^.]{0,120}no replan|no replan[^.]{0,120}vbw decide'
+  flat "$SKILL" | grep -qE '(spec proposal|after triage)[^.]{0,160}(costs nothing|free)'
+}
+
+@test "R229: the router's approve step passes detail.replan to vbw:suggest as the cost of a yes" {
+  step_text approve | tr '\n' ' ' | grep -qE 'vbw:suggest[^.]{0,120}detail\.replan|detail\.replan[^.]{0,120}vbw:suggest'
+}
+
+@test "R229 docs: docs/interview.md's Suggestions name the three moments and the priced yes with the backlog recommended; docs/triage.md's now outcome names the suggestions" {
+  local sec
+  sec=$(sed -n '/^## Suggestions/,/^## /p' "$DOC" | tr '\n' ' ' | tr -s ' ' | tr '[:upper:]' '[:lower:]')
+  printf '%s' "$sec" | grep -q 'triage' || { echo "docs/interview.md does not name the after-triage moment"; false; }
+  printf '%s' "$sec" | grep -q 'approval' || { echo "docs/interview.md does not name plan approval"; false; }
+  printf '%s' "$sec" | grep -q 'backlog' || { echo "docs/interview.md does not name the backlog option"; false; }
+  printf '%s' "$sec" | grep -qE 'planning run|replan' || { echo "docs/interview.md does not name the cost of a yes at approval"; false; }
+  printf '%s' "$sec" | grep -q 'vbw todo add' || { echo "docs/interview.md does not name vbw todo add"; false; }
+  ! printf '%s' "$sec" | grep -q 'two moments' || { echo "docs/interview.md still says two moments"; false; }
+  flat "$TRIAGE_DOC" | grep -qE 'now[^|]{0,200}suggest' || { echo "docs/triage.md's now outcome does not name the suggestions"; false; }
 }

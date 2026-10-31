@@ -45,3 +45,44 @@ LEAD="$PLUGIN_ROOT/agents/lead.md"
   grep -E '^8\. \*\*One-file test form' "$LEAD" | grep -qF '.vbw/map.md'
   grep -E '^\| `vbw:mapping`' "$FLOW" | grep -q 'one test file'
 }
+
+# R228 (#733): the map's Tests section marks every test or lint command as run and dated
+# ("ran as of <short commit>, <date>: ...") or as "Not run", so the router can choose
+# the spec's ## Commands from what the map verified; the map skill says what the marks
+# mean, and the docs say so too. L1: the merge prompt's text, the skill and the docs.
+
+MAPSKILL="$PLUGIN_ROOT/skills/map/SKILL.md"
+
+# merge_prompt: the mapping workflow's merge prompt, as the scout receives it.
+merge_prompt() {
+  node "$BATS_TEST_DIRNAME/helpers/run-workflow-all.js" "$PLUGIN_ROOT/workflows/mapping.js" '{}' '{}' | jq -r '.calls[] | select(.opts.label == "scout merge") | .prompt'
+}
+
+@test "R228: the merge prompt tells the Lead to mark each test or lint command ran and dated, or Not run, in these words" {
+  command -v node > /dev/null 2>&1 || skip "node not installed"
+  local prompt
+  prompt=$(merge_prompt)
+  [ -n "$prompt" ] || { echo "no merge prompt"; false; }
+  printf '%s' "$prompt" | grep -qF 'ran as of <short commit>, <date>: <what happened, how long it took>' || { echo "the ran mark is not in the merge prompt"; false; }
+  printf '%s' "$prompt" | grep -qF 'Not run' || { echo "the Not run mark is not in the merge prompt"; false; }
+  printf '%s' "$prompt" | grep -qi 'Tests section' || { echo "the marks are not tied to the Tests section"; false; }
+}
+
+@test "R228: the map skill says what the two marks mean and that the router chooses ## Commands from them, and still never writes the map itself" {
+  grep -qF 'Not run' "$MAPSKILL"
+  grep -qE 'ran as of' "$MAPSKILL"
+  grep -qF '## Commands' "$MAPSKILL"
+  grep -qF 'Never write `.vbw/map.md` yourself' "$MAPSKILL"
+}
+
+@test "R228 docs: docs/workflows.md's mapping row names the two marks, and docs/proof.md's project commands say the router chooses them from the map's Tests section and asks before planning about a suite marked Not run" {
+  grep -E '^\| `vbw:mapping`' "$FLOW" | grep -qF 'Not run'
+  grep -E '^\| `vbw:mapping`' "$FLOW" | grep -qF 'ran as of'
+  local section
+  section=$(sed -n '/^## Project commands/,/^## /p' "$DOC" | tr '\n' ' ' | tr -s ' ')
+  printf '%s' "$section" | grep -qi 'tests section' || { echo "docs/proof.md does not say ## Commands comes from the map's Tests section"; false; }
+  printf '%s' "$section" | grep -qF 'Not run' || { echo "docs/proof.md does not name the Not run mark"; false; }
+  printf '%s' "$section" | grep -qi 'unverified' || { echo "docs/proof.md does not say an unrun suite is offered as unverified"; false; }
+  printf '%s' "$section" | grep -qi 'before planning' || { echo "docs/proof.md does not place the question before planning"; false; }
+  printf '%s' "$section" | grep -qi 'run it now' || { echo "docs/proof.md does not name the run-it-now option"; false; }
+}

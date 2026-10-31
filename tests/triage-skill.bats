@@ -83,3 +83,16 @@ has() { flat "$1" | grep -qE -- "$2" || { echo "$(basename "$(dirname "$1")")/$(
   grep -qF 'T3 [next, small] Refunds' "$DOC"
   grep -qF 'T2 [later, large] Gift cards' "$DOC"
 }
+
+# R229 (#734): after every now idea of one menu is added with vbw spec add, the router
+# follows vbw:suggest once, before the first planning run (the normal flow comes after
+# it); a now sorted during a run waits for the run to end and the suggestions come
+# then, still before planning.
+@test "R229: the now outcome follows vbw:suggest once after the ideas are added, before the first planning run" {
+  local out
+  out=$(sed -n '/^## Outcomes/,/^## /p' "$SKILL" | tr '\n' ' ' | tr -s ' ')
+  printf '%s' "$out" | grep -qF 'vbw:suggest' || { echo "the Outcomes section does not follow vbw:suggest"; false; }
+  printf '%s' "$out" | grep -qiE 'vbw spec add[^.]*vbw:suggest[^.]*(planning|normal flow)' || { echo "vbw:suggest does not come between vbw spec add and the planning"; false; }
+  printf '%s' "$out" | grep -qi 'before the first planning run' || { echo "the Outcomes section does not place the suggestions before the first planning run"; false; }
+  printf '%s' "$out" | grep -qiE 'during a run[^.]*(waits|wait)' || { echo "the Outcomes section does not say a now idea during a run waits"; false; }
+}
