@@ -3242,6 +3242,46 @@ SH
   git add greet.sh test.sh e2e.sh README.md && git commit -qm "feat: greet.sh, its quick tests and the end-to-end run" -- greet.sh test.sh e2e.sh README.md
 }
 
+# mapnotrun (#733, R228): two suites, the quick one green and mapped, the end-to-end one red
+# today and presented as taking many minutes. The user types /vbw:vibe and answers every
+# question with the recommendation (run it now, then the narrower command). Judged in
+# .vbw/spec.md (## Commands holds the green command and not the red suite), the record (a dated
+# decision naming the red suite's command), .vbw/map.md (its Not run or dated marks) and the
+# transcripts' tool calls (the red suite ran), never on screen.
+scenario_mapnotrun() {
+  new_project
+  (cd "$dir" && "$VBW" init > /dev/null && mapnotrun_seed) \
+    || { say "setup failed: could not seed the two suites"; return 1; }
+  fixture="greet.sh with a green test.sh and a red e2e.sh (the README presents e2e.sh as the long end-to-end run taking many minutes, both with their commands); vbw init before the session; the user types /vbw:vibe and answers with the recommendation"
+  start="/vbw:vibe"
+  spec="$dir/.vbw/spec.md"
+  commands_lines() { sed -n '/^## Commands/,/^## /p' "$spec" 2> /dev/null | grep -E '^- ' || true; }
+  red_decision_text() { jq -r '[.decisions[]? | select((.text | startswith("Contract approved") | not) and (.text | test("e2e[.]sh"))) | .text] | first // empty' "$dir/.vbw/record.json" 2> /dev/null; }
+  done_yet() { commands_lines | grep -q 'test\.sh' && [ -n "$(red_decision_text)" ]; }
+  checks() {
+    local passed=true marks=false cmds green=false red=false narrower=false dec ran=false
+    cmds=$(commands_lines)
+    grep -iE 'e2e' "$dir/.vbw/map.md" 2> /dev/null | grep -qiE 'not run|as of' && marks=true
+    printf '%s\n' "$cmds" | grep -q 'test\.sh' && green=true
+    printf '%s\n' "$cmds" | grep -q 'e2e' && red=true
+    printf '%s\n' "$cmds" | grep 'test\.sh' | grep -vq 'e2e' && narrower=true
+    dec=$(red_decision_text)
+    transcripts | transcript_tool_called '(^|[;&| ])(sh |bash |\./)e2e\.sh' && ran=true
+    say "## Commands: $(printf '%s' "$cmds" | tr '\n' ' ')"
+    say "decision naming the red suite: ${dec:-none}"
+    expect "the map marks the end-to-end suite Not run or dated ($marks)" [ "$marks" = true ]
+    expect "## Commands holds the green command ($green)" [ "$green" = true ]
+    expect "## Commands does not hold the red suite ($red)" [ "$red" = false ]
+    expect "a decision in the record names the red suite's command" [ -n "$dec" ]
+    expect "the red suite ran once, in a tool call ($ran)" [ "$ran" = true ]
+    [ "$failed" -eq 0 ] || passed=false
+    result_write mapnotrun "$fixture" "${cost_usd:-0}" "$passed" \
+      "$(jq -n --argjson m "$marks" --arg c "$cmds" --argjson g "$green" --argjson r "$red" --argjson n "$narrower" --arg d "$dec" --argjson ran "$ran" \
+        '{map_marks_not_run: $m, commands_lines: $c, green_in_commands: $g, red_in_commands: $r, narrower_in_commands: $n, red_decision: $d, red_suite_ran: $ran}')" \
+      '["hands-off autonomy, where the router takes run it now by itself","a sub-project with its own green command (the one-test-file form was not driven)","a suite whose map mark says Not run but which the scout ran anyway (the mark is checked, not its truth)","a project larger than the greet.sh fixture","the wording of what VBW tells the user (read by a person)"]'
+  }
+}
+
 failed=0
 # shellcheck disable=SC2086 # the default list splits on purpose
 [ $# -gt 0 ] || set -- $ALL
