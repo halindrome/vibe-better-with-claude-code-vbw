@@ -17246,6 +17246,46 @@
           "check": "C520"
         }
       ]
+    },
+    {
+      "id": "R228",
+      "text": "The router chooses the spec's `## Commands` from the map's Tests section: a command the map ran and dated is preferred; a whole suite the map marked \"Not run\" is never put in `## Commands` silently, the router runs it once (its own step, before planning) or proposes it to the user marked unverified; a suite that fails today, as the map or that run shows, is named to the user before planning with the narrower command as the recommendation; `plugin/skills/vibe/SKILL.md` and `plugin/skills/map/SKILL.md` say so and tests pin the wording (#733, halindrome, 2026-10-30: two Angular suites the map had not run went into the contract and one was red)",
+      "proof": "auto",
+      "status": "open",
+      "milestone": "M47",
+      "rules": []
+    },
+    {
+      "id": "R229",
+      "text": "Suggestions (`vbw:suggest`) are offered right after triage adds requirements to the active milestone, before the first planning run, so a yes costs nothing; and a suggestion at plan approval that would add a requirement states what a yes costs (a new planning run, with the kernel's estimate from `vbw next`) and offers \"add to this milestone (replan)\" or \"add to the backlog\" (`vbw todo add`), the backlog as the recommendation; the suggest, triage and vibe skills say so and tests pin the wording (#734, halindrome: 26 of 52 planning minutes were replans after approval-time yeses)",
+      "proof": "auto",
+      "status": "open",
+      "milestone": "M47",
+      "rules": []
+    },
+    {
+      "id": "R230",
+      "text": "`vbw mutate PLAN --run` refuses, with a Next line naming the running one, to start while another `--run` of the same plan is still running, through a per-plan marker in `.vbw/runtime` that a dead process does not hold, so two runs of one plan never make their own copies and compete for slots; the Dev's instructions say how to wait for a long run (start it in the background and read its result) (#738, halindrome: a run past Claude Code's 600 s limit was followed by a second run of the same plan)",
+      "proof": "auto",
+      "status": "open",
+      "milestone": "M47",
+      "rules": []
+    },
+    {
+      "id": "R231",
+      "text": "The bench's reference workload has the guard's shape, one jq call that reads a JSON document of fixed size with a program of fixed size, so its ratio tracks the hooks' startup-and-parse-bound cost on every runner; the nominal figure is remeasured for the new shape on the Mac, GitHub's macOS figure read from the pull request's shard-1 log before merge and the larger pinned, and the reference line keeps its form (T201: on PR #739 the Ubuntu 26.04 runner measured ratio 0.90 while every guard case read 21 ms against 20)",
+      "proof": "auto",
+      "status": "open",
+      "milestone": "M47",
+      "rules": []
+    },
+    {
+      "id": "R232",
+      "text": "The R207 case 'the figures are measured' in tests/mutate-time.bats holds without a real elapsed second: the clock mutate's timer reads is injected in the test (a clock file or variable prooftime reads when set, as a test may set the proof's), and the case asserts the figures from injected readings; no test file outside tests/timed-*.bats asserts elapsed time (T195: the case failed on Linux runners in the 2.1.19, 2.1.20 and #736 CI runs with unbroken and break both at 1.1 s)",
+      "proof": "auto",
+      "status": "open",
+      "milestone": "M47",
+      "rules": []
     }
   ],
   "phases": [
@@ -73494,6 +73534,17 @@
         "ended": "2026-10-30T23:05:48Z",
         "cost": {
           "usd": 1.444207
+        }
+      },
+      {
+        "id": "plan-20261031T073732Z",
+        "kind": "plan",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M47",
+        "started": "2026-10-31T07:37:32Z",
+        "ended": "2026-10-31T07:45:03Z",
+        "cost": {
+          "usd": 4.832409
         }
       }
     ],
