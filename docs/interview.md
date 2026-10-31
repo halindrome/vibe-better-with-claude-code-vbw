@@ -106,12 +106,24 @@ $ vbw suggest list
 Should visitors be able to search the page?
 ```
 
-VBW may offer you ideas, but only at two moments: when it proposes
-requirements (the spec step) and when it presents the plan for approval. It
-never asks mid-run, mid-build or while a step is working. The `suggest` skill
-(`/vbw:vibe` follows it at those two moments) offers at most three, each a yes
-or no. Zero is valid: when nothing is worth raising, VBW says nothing about
+VBW may offer you ideas, but only at three moments: when it proposes
+requirements (the spec step), right after triage adds work to the active
+milestone (before the first planning run), and when it presents the plan for
+approval. It never asks mid-run, mid-build or while a step is working. The
+`suggest` skill (`/vbw:vibe` follows it at those three moments) offers at most
+three. Zero is valid: when nothing is worth raising, VBW says nothing about
 suggestions.
+
+At the spec step and after triage a yes costs nothing yet, so the answers are
+Yes or No. At plan approval a yes that adds a requirement costs a new planning
+run, so VBW states that cost (the estimate from `vbw next`) and offers three
+answers:
+
+- add to the backlog (Recommended): `vbw todo add --sort next --size <small|medium|large>`
+- add to this milestone (replan): a new planning run
+- no
+
+A choice or constraint (`vbw decide`) costs no replan, so it stays Yes or No.
 
 The wording follows your `level` and `depth`: a first-time builder gets plain
 outcomes ("Should visitors be able to find the page by searching?"), a senior

@@ -101,6 +101,13 @@ already held this milestone's requirements). VBW then says the plan changed and
 shows only the changes (`vbw show contract --changes`), instead of presenting it
 as a new plan. The first approval of a milestone carries no `changed`.
 
+At the `approve` stop, `detail.replan` is the sentence for a planning run of the
+milestone's open requirements plus one, worded as `step.say` is for a plan step
+(for example `Planning the work: about 20 min, until around 14:35`, or `no end
+time yet` with fewer than 3 timed planning steps). It is the cost of a yes to a
+suggestion that adds a requirement now: a new planning run. No other step
+carries the key.
+
 At the `plan` step, `detail.tier` is the early tier (docs/rigor.md): `express`
 for one small, risk-free `auto` requirement in a repository of at most 30
 tracked files, else `standard` (`deep` when forced). On `express` the router

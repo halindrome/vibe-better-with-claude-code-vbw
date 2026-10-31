@@ -430,7 +430,9 @@ R1 [auto] A customer can pay once
 
 The project's own test, lint and build commands live in `.vbw/spec.md`, under
 `## Commands`, one per line: a name, then the command as words, or as a JSON
-array when an argument contains spaces:
+array when an argument contains spaces. The router chooses them from the Tests
+section of the map, and asks before planning about a suite marked `Not run`,
+offering to run it now or add it unverified (details below the example):
 
 ```markdown
 ## Commands
@@ -447,6 +449,28 @@ Edit a line to change a command, delete it to stop running it, then
 without the section keeps the commands it has. A command whose exact argv the
 user has not approved makes `vbw next` ask for approval again, and
 `vbw prove` runs only approved commands.
+
+The router chooses `## Commands` from the Tests section of `.vbw/map.md`, and
+prefers a command the map ran and dated (`ran as of <short commit>, <date>`).
+A whole suite the map marked `Not run` is never added silently. Before planning,
+the router asks once per such suite, naming it as unverified with its expected
+time (or saying the time is unknown), and offers:
+
+- run it now (Recommended): the suite runs once, you hear green or red with the
+  names of failing tests, and the dated outcome is recorded as a decision
+  (`Commands: <command> ran <date> at <short commit>: green|red (<n> failing)`).
+  The map itself is written only by the map run.
+- leave it out: only the verified commands are used.
+- add it unverified: the line goes into `## Commands` as it is.
+
+Under hands-off the router takes run it now and says so. A suite that is red
+today, by the map or by that run, is named with a narrower command recommended
+(one test file, or the sub-project's green command). It enters `## Commands`
+only if you choose it, and the router then tells you the first proof will be red.
+
+Evidence: the wording is pinned at L1 by bats checks of the skills and these
+docs. At L3 only the `mapnotrun` scenario in `tools/l3-suite.sh` covers it, and
+only once it has run; nothing beyond that is claimed.
 
 ### The time limit of project commands
 
@@ -1058,6 +1082,12 @@ running, or a wait for a slot ([The computer-wide limit](#the-computer-wide-limi
 Writing the split itself, the record's commit and the printed summary come after
 it. Read tracking is summed over the units, and units run side by side, so with
 several running at once own work can exceed the wall time.
+
+**Test hook: `VBW_PROOFTIME_CLOCK`.** A test may set this environment variable
+to a file whose first line is the clock reading (seconds with milliseconds);
+the proof's timer, and the timer of `vbw mutate`, then read that file instead of
+the machine clock, so a test moves the clock by writing the file and waits no
+real time. Unset or unreadable, the machine clock is read.
 
 **`ran again: N of M units; top reasons: ...`.** M counts every unit the proof
 covers (checks, approved commands, test files); N counts those that really ran.

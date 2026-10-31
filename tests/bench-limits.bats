@@ -378,3 +378,70 @@ bench_split() {
   printf '%s\n' "$output" | grep -qi 'too busy to measure' || { printf '%s\n' "$output"; false; }
   ! printf '%s\n' "$output" | grep -qE '^guard \(|^status line|OVER|: slow \(' || { echo "a busy machine was judged:"; printf '%s\n' "$output"; false; }
 }
+
+# R231 (T201): the reference workload has the guard's shape: one jq call reading a JSON
+# document of fixed size with a program of fixed size, in the PreToolUse command's form
+# (jq -nc --rawfile glance F --arg root X --arg dir X --arg open 0 -f PROGRAM - DOCUMENT
+# END), so its ratio tracks the hooks' startup-and-parse-bound cost on every runner. The
+# program and the document are written by the bench itself with fixed, deterministic
+# content (the program within 10% of guard-bash.jq's 25061 bytes), never the shipped
+# guard or a project file, so the reference does not drift with releases; the sizes are
+# stated in the provenance comment. VBW_BENCH_REFERENCE_FILES=DIR (tests) writes the two
+# files into DIR and exits without measuring. The nominal figure is remeasured for the
+# shape: the comment names the M1 Max figures (five runs, dated) and GitHub's figure from
+# the pull request's shard-1 log; the larger is pinned before merge.
+
+# reference_block: the bench's reference measure, from its comment to the RATIO line.
+reference_block() { sed -n '/^# The reference (R222/,/^RATIO=/p' "$BENCH"; }
+
+# provenance: the comment block right above NOMINAL_MS=.
+provenance() { awk '/^NOMINAL_MS=/ { exit } /^#/ { b = b $0 " "; next } { b = "" } END { print b }' "$BENCH"; }
+
+@test "R231: the reference is one jq call of the guard's shape, over the bench's own program and document, never the shipped guard, a project file or the old counting program" {
+  local block
+  block=$(reference_block)
+  [ -n "$block" ] || { echo "no reference block in the bench"; false; }
+  printf '%s\n' "$block" | grep -q -- '--rawfile glance' || { echo "no --rawfile glance"; false; }
+  printf '%s\n' "$block" | grep -q -- '--arg root' || { echo "no --arg root"; false; }
+  printf '%s\n' "$block" | grep -q -- '--arg dir' || { echo "no --arg dir"; false; }
+  printf '%s\n' "$block" | grep -q -- '--arg open' || { echo "no --arg open"; false; }
+  printf '%s\n' "$block" | grep -qE -- ' -f [^ ]+ - ' || { echo "no -f PROGRAM - DOCUMENT form"; false; }
+  ! printf '%s\n' "$block" | grep -q 'range(0; 30000)' || { echo "the old counting program is still the reference"; false; }
+  ! printf '%s\n' "$block" | grep -qE 'guard-bash\.jq|guard-file\.jq|common\.jq|\$PLUGIN|hooks/' || { echo "the reference reads a shipped file"; false; }
+}
+
+@test "R231: the reference program and document are deterministic and of fixed size: the program within 10% of 25061 bytes, the document a JSON object of at least 50 KB, and the guard-shaped call runs on them" {
+  local a="$TEST_ROOT/ref-a" b="$TEST_ROOT/ref-b" prog doc
+  run env VBW_BENCH_REFERENCE_FILES="$a" bash "$BENCH"
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  run env VBW_BENCH_REFERENCE_FILES="$b" bash "$BENCH"
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  prog=$(ls "$a"/*.jq 2> /dev/null | head -n 1)
+  doc=$(ls "$a"/*.json 2> /dev/null | head -n 1)
+  [ -n "$prog" ] && [ -n "$doc" ] || { echo "no .jq program and .json document in $a:"; ls -la "$a"; false; }
+  diff -r "$a" "$b" || { echo "two generations differ"; false; }
+  local size
+  size=$(wc -c < "$prog" | tr -d ' ')
+  [ "$size" -ge 22555 ] && [ "$size" -le 27567 ] || { echo "program size $size is not within 10% of 25061"; false; }
+  [ "$(wc -c < "$doc" | tr -d ' ')" -ge 51200 ] || { echo "document smaller than 50 KB"; false; }
+  jq -e 'type == "object"' "$doc" > /dev/null || { echo "the document is not a JSON object"; false; }
+  printf '{}' > "$TEST_ROOT/end.json"
+  printf '{"schema": 4}' > "$TEST_ROOT/glance.json"
+  jq -nc --rawfile glance "$TEST_ROOT/glance.json" --arg root "$TEST_ROOT" --arg dir "$TEST_ROOT" --arg open 0 -f "$prog" - "$doc" "$TEST_ROOT/end.json" < /dev/null > "$TEST_ROOT/ref.out" \
+    || { echo "the guard-shaped call fails on the bench's program and document"; cat "$TEST_ROOT/ref.out"; false; }
+}
+
+@test "R231: the provenance comment names the shape and the sizes, the M1 Max figures from five dated runs and GitHub's shard-1 figure, and NOMINAL_WHEN names a month" {
+  local p
+  p=$(provenance)
+  printf '%s' "$p" | grep -qi 'guard' || { echo "the provenance does not name the guard's shape"; false; }
+  printf '%s' "$p" | grep -qiE 'program[^.]{0,80}[0-9]+ bytes|[0-9]+ bytes[^.]{0,80}program' || { echo "the provenance does not state the program's size"; false; }
+  printf '%s' "$p" | grep -qiE 'document[^.]{0,80}[0-9]+ bytes|[0-9]+ bytes[^.]{0,80}document' || { echo "the provenance does not state the document's size"; false; }
+  printf '%s' "$p" | grep -q 'M1 Max' || { echo "no M1 Max figure"; false; }
+  printf '%s' "$p" | grep -qi 'five runs' || { echo "no five runs"; false; }
+  printf '%s' "$p" | grep -qE '2026-(10-3[1]|1[12]-[0-9]{2})|202[7-9]-[0-9]{2}-[0-9]{2}' || { echo "the M1 Max remeasure is not dated on or after 2026-10-31"; false; }
+  printf '%s' "$p" | grep -q 'GitHub' || { echo "no GitHub figure"; false; }
+  printf '%s' "$p" | grep -qi 'shard' || { echo "the GitHub figure is not tied to the shard-1 log"; false; }
+  grep -qE '^NOMINAL_MS=[0-9]+\.[0-9]$' "$BENCH"
+  grep -E '^NOMINAL_WHEN=' "$BENCH" | grep -qE 'January|February|March|April|May|June|July|August|September|October|November|December'
+}

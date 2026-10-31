@@ -271,8 +271,8 @@ A command that contains none of the words any rule needs (`rm`, `git`, `vbw`,
   a busy machine never counts, and a case over its budget is measured once more
   before it is judged (the bench says so): a slow hook is slow twice. The 20 ms is the
   meaning on a nominal machine (an M1 Max Mac, GitHub's macOS runner). The bench
-  first measures a fixed reference workload (a small jq program over fixed
-  input) and prints its cost, the nominal cost and the ratio:
+  first measures a reference workload (a guard-shaped jq call over a fixed
+  document and program, both written by the bench) and prints its cost, the nominal cost and the ratio:
   `reference: <X> ms CPU per call; nominal <N> ms (...); ratio <R>`. At a ratio
   of 1 or less every case is judged against 20 ms. Above 1, a case over 20 ms
   but within 20 ms times the ratio is reported slow (the line names the cost,

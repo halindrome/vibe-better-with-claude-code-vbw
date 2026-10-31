@@ -12,14 +12,14 @@
 # each one's lines print together when it ends.
 #
 # Scenarios: greenfield, reject, resume, change, convert, balanced, docs, qafix,
-# decision, debug, research, edgecase, leftover, recheck, approval, newcomer, senior, panel, steptime, road, pluginoff, tools, legacy, nolegacy, smallchange, costs, loop, plugindir, sessions, taskbreak, fixchecks, failoutput, leaveout, hiddenrecord, latedecision, ignoredplanning, stalefix, mapsnapshot, alreadyfixed. A user
+# decision, debug, research, edgecase, leftover, recheck, approval, newcomer, senior, panel, steptime, road, pluginoff, tools, legacy, nolegacy, smallchange, costs, loop, plugindir, sessions, taskbreak, fixchecks, failoutput, leaveout, hiddenrecord, latedecision, ignoredplanning, stalefix, mapsnapshot, alreadyfixed, mapnotrun. A user
 # answers every question with VBW's recommendation unless the scenario says otherwise.
 set -uo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 l3() { bash "$ROOT/tools/l3.sh" "$@"; }
 VBW="$ROOT/plugin/bin/vbw"
-ALL="greenfield reject resume change convert balanced docs qafix decision debug research edgecase leftover recheck approval newcomer senior panel steptime road pluginoff tools legacy nolegacy smallchange costs loop plugindir sessions taskbreak fixchecks failoutput leaveout hiddenrecord latedecision ignoredplanning stalefix mapsnapshot alreadyfixed"
+ALL="greenfield reject resume change convert balanced docs qafix decision debug research edgecase leftover recheck approval newcomer senior panel steptime road pluginoff tools legacy nolegacy smallchange costs loop plugindir sessions taskbreak fixchecks failoutput leaveout hiddenrecord latedecision ignoredplanning stalefix mapsnapshot alreadyfixed mapnotrun"
 RESULTS="$ROOT/tools/l3-results"
 STEPS=60
 
@@ -3219,6 +3219,66 @@ scenario_mapsnapshot() {
       "$(jq -n --argjson w "$written" --argjson r "$ran" --arg s "$seed_sha" --arg h "$head" --arg t "$tag" --argjson n "${results:-0}" --arg u "$untagged" --arg a "$advice" \
         '{map_written: $w, scout_ran_tests: $r, seed_commit: $s, head_at_end: $h, tag_line: $t, result_lines: $n, untagged_result_lines: $u, advice_lines: $a}')" \
       '["a second /vbw:map after the failing test is fixed (the tag is what tells a reader the old map is stale; no re-map ran)","a lint result","a project larger than the greet.sh fixture","a scout that reads the tests without running them","the map as read by a person, beyond the patterns checked","/vbw:vibe reaching mapping before a spec (same workflow, not driven here)"]'
+  }
+}
+
+# mapnotrun_seed: a VBW project with existing code (greet.sh), a quick green test script
+# (test.sh) and a second suite script (e2e.sh, red today, prints "not ok") that the README
+# presents as the long end-to-end run taking many minutes; both are named with their commands.
+mapnotrun_seed() {
+  printf '#!/bin/sh\nif [ -n "$1" ]; then echo "Hello, $1!"; else echo "Hello, world!"; fi\n' > greet.sh && chmod +x greet.sh
+  cat > test.sh <<'SH'
+#!/bin/sh
+if [ "$(sh greet.sh Ana)" = "Hello, Ana!" ]; then echo "ok 1 a name is greeted"; else echo "not ok 1 a name is greeted"; exit 1; fi
+SH
+  chmod +x test.sh
+  cat > e2e.sh <<'SH'
+#!/bin/sh
+echo "not ok 1 the nightly greeting mail is sent"
+exit 1
+SH
+  chmod +x e2e.sh
+  printf '# Greeter\n\n`./greet.sh NAME` prints a greeting.\n\nQuick tests: `sh test.sh` (a few seconds).\n\nEnd-to-end run: `sh e2e.sh`. It is the long run and takes many minutes; run it before a release.\n' > README.md
+  git add greet.sh test.sh e2e.sh README.md && git commit -qm "feat: greet.sh, its quick tests and the end-to-end run" -- greet.sh test.sh e2e.sh README.md
+}
+
+# mapnotrun (#733, R228): two suites, the quick one green and mapped, the end-to-end one red
+# today and presented as taking many minutes. The user types /vbw:vibe and answers every
+# question with the recommendation (run it now, then the narrower command). Judged in
+# .vbw/spec.md (## Commands holds the green command and not the red suite), the record (a dated
+# decision naming the red suite's command), .vbw/map.md (its Not run or dated marks) and the
+# transcripts' tool calls (the red suite ran), never on screen.
+scenario_mapnotrun() {
+  new_project
+  (cd "$dir" && "$VBW" init > /dev/null && mapnotrun_seed) \
+    || { say "setup failed: could not seed the two suites"; return 1; }
+  fixture="greet.sh with a green test.sh and a red e2e.sh (the README presents e2e.sh as the long end-to-end run taking many minutes, both with their commands); vbw init before the session; the user types /vbw:vibe and answers with the recommendation"
+  start="/vbw:vibe"
+  spec="$dir/.vbw/spec.md"
+  commands_lines() { sed -n '/^## Commands/,/^## /p' "$spec" 2> /dev/null | grep -E '^- ' || true; }
+  red_decision_text() { jq -r '[.decisions[]? | select((.text | startswith("Contract approved") | not) and (.text | test("e2e[.]sh"))) | .text] | first // empty' "$dir/.vbw/record.json" 2> /dev/null; }
+  done_yet() { commands_lines | grep 'test\.sh' > /dev/null && [ -n "$(red_decision_text)" ]; }
+  checks() {
+    local passed=true marks=false cmds green=false red=false narrower=false dec ran=false
+    cmds=$(commands_lines)
+    grep -iE 'e2e' "$dir/.vbw/map.md" 2> /dev/null | grep -iE 'not run|as of' > /dev/null && marks=true
+    printf '%s\n' "$cmds" | grep 'test\.sh' > /dev/null && green=true
+    printf '%s\n' "$cmds" | grep 'e2e' > /dev/null && red=true
+    printf '%s\n' "$cmds" | grep 'test\.sh' | grep -v 'e2e' > /dev/null && narrower=true
+    dec=$(red_decision_text)
+    transcripts | transcript_tool_called '(^|[;&| ])(sh |bash |\./)e2e\.sh' && ran=true
+    say "## Commands: $(printf '%s' "$cmds" | tr '\n' ' ')"
+    say "decision naming the red suite: ${dec:-none}"
+    expect "the map marks the end-to-end suite Not run or dated ($marks)" [ "$marks" = true ]
+    expect "## Commands holds the green command ($green)" [ "$green" = true ]
+    expect "## Commands does not hold the red suite ($red)" [ "$red" = false ]
+    expect "a decision in the record names the red suite's command" [ -n "$dec" ]
+    expect "the red suite ran once, in a tool call ($ran)" [ "$ran" = true ]
+    [ "$failed" -eq 0 ] || passed=false
+    result_write mapnotrun "$fixture" "${cost_usd:-0}" "$passed" \
+      "$(jq -n --argjson m "$marks" --arg c "$cmds" --argjson g "$green" --argjson r "$red" --argjson n "$narrower" --arg d "$dec" --argjson ran "$ran" \
+        '{map_marks_not_run: $m, commands_lines: $c, green_in_commands: $g, red_in_commands: $r, narrower_in_commands: $n, red_decision: $d, red_suite_ran: $ran}')" \
+      '["hands-off autonomy, where the router takes run it now by itself","a sub-project with its own green command (the one-test-file form was not driven)","a suite whose map mark says Not run but which the scout ran anyway (the mark is checked, not its truth)","a project larger than the greet.sh fixture","the wording of what VBW tells the user (read by a person)"]'
   }
 }
 

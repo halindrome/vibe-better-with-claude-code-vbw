@@ -1,5 +1,65 @@
 # Changelog
 
+## [2.1.21] - 2026-10-31
+
+A third community release. The first four items come from field reports by
+[@halindrome](https://github.com/halindrome) on a real project, who also
+contributed the map fix; the last two close gaps VBW's own CI runs showed.
+Thank you.
+
+### Added
+
+- **The router chooses the project commands from the map's verified ones.** The
+  map marks every test and lint command it tried as `ran as of <commit>, <date>`
+  or `Not run`. At the spec step the router prefers a command the map ran; a
+  whole suite marked `Not run` never enters `## Commands` silently: VBW runs
+  it once before planning (its own step) or offers it to you marked unverified,
+  and a suite that is red today is named before planning with the narrower
+  command as the recommendation. The outcome is recorded as a dated decision.
+  A real-user scenario, `mapnotrun`, drives a project with a green test and a
+  red end-to-end suite. (#733; two Angular suites the map had not run went
+  into a contract and one was red)
+- **Suggestions come when a yes is free, and a late yes shows its price.**
+  VBW offers its suggestions right after triage adds requirements to the
+  milestone, before the first planning run. A suggestion at plan approval that
+  would add a requirement states what a yes costs, as the kernel's own estimate
+  of a new planning run (`detail.replan` in `vbw next --json`), and offers
+  "add to the backlog" (recommended) or "add to this milestone (replan)".
+  (#734; 26 of 52 planning minutes in one session were replans after
+  approval-time yeses)
+- **One mutation run per plan.** `vbw mutate PLAN --run` refuses to start while
+  another run of the same plan is still going, with a Next line naming the
+  running one, through a per-plan marker in `.vbw/runtime` that a dead process
+  does not hold. The Dev's instructions say how to wait for a long run: start
+  it in the background and read its result. (#738, the part about two runs of
+  one plan; the clean-copy reuse it also asks for is designed on the issue for
+  2.1.22)
+
+### Fixed
+
+- **A new map is committed with its own run.** The map run used to end, and
+  make its record commit, before `.vbw/map.md` was written, so the map landed
+  in the next VBW commit. `vbw run end --map` now takes the map on standard
+  input, writes `.vbw/map.md` and then makes the run's record commit, so the
+  commit holds the map; it refuses an empty map, a run of another kind and
+  another session's run, and then writes nothing. (#731, fixed by
+  [@halindrome](https://github.com/halindrome) in #736)
+- **The benchmark's reference workload has the shape of a hook call.** It is
+  now one jq call over a program and a document of fixed size, written by the
+  bench itself, in place of a compute-bound counting loop. The nominal figure
+  was measured again for the new shape on the Mac and on GitHub's macOS
+  runner, and the larger is pinned. On GitHub's Linux runners the guard still
+  costs about one and a half times what the reference predicts, so a slow
+  Linux runner can read over budget; the cause is being traced for the next
+  release. Nothing changes on macOS. (the 2.1.20 pull request's Ubuntu shard)
+- **The mutation-timing test no longer waits on a real second.** The clock the
+  timer reads can be injected (`VBW_PROOFTIME_CLOCK`, a test-only file), the
+  R207 case asserts figures from injected readings, and no test file outside
+  the timed ones asserts elapsed time. (the case failed on Linux runners in
+  three CI runs)
+
+Sizes, for information: kernel 759 KB (`plugin/bin/vbw` and `plugin/lib`), mods 336 KB (hooks, panel and status line), workflows 73 KB, prompts 109 KB (agents and skills).
+
 ## [2.1.20] - 2026-10-30
 
 A second community release. Every item below comes from a field report by
