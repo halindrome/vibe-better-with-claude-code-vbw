@@ -101,6 +101,13 @@ already held this milestone's requirements). VBW then says the plan changed and
 shows only the changes (`vbw show contract --changes`), instead of presenting it
 as a new plan. The first approval of a milestone carries no `changed`.
 
+At the `approve` stop, `detail.replan` is the sentence for a planning run of the
+milestone's open requirements plus one, worded as `step.say` is for a plan step
+(for example `Planning the work: about 20 min, until around 14:35`, or `no end
+time yet` with fewer than 3 timed planning steps). It is the cost of a yes to a
+suggestion that adds a requirement now: a new planning run. No other step
+carries the key.
+
 At the `plan` step, `detail.tier` is the early tier (docs/rigor.md): `express`
 for one small, risk-free `auto` requirement in a repository of at most 30
 tracked files, else `standard` (`deep` when forced). On `express` the router
@@ -133,7 +140,7 @@ adding the one phase with `vbw apply --add` (docs/rigor.md).
 | 10b | the latest proof is partial (it reused results or used the quick command) and a phase is about to go to QA, or the milestone to ship | `prove` with `detail.full` true: `Run vbw prove --full: ...` (docs/proof.md) | no |
 | 10a | a phase of the current milestone is built and QA must check it again (never passed, failed, its own files, tests, goal or plan changed since it passed, the tests of a phase it builds on changed, or a file its plans delivered changed outside any plan with no decision of the user covering it, which row 10c settles first; docs/proof.md). An express phase is skipped when every requirement is `auto` and it has no escalations; a `human` requirement or an escalation brings QA back | `qa` (`detail.phases`: only the phases to check again, not the whole project, and `detail.tier`: the highest QA tier of those phases in the profile's table) | no |
 | 11 | a `human` requirement is `open` and not skipped, or one moved from a shipped milestone is `open` | `accept` (one scenario at a time) | yes |
-| 12 | otherwise | `ship` (`vbw ship`, which refuses while the proven work is not committed: the proof reads files on disk, a shipped milestone must be in git history); when the only unfinished requirements are `human` ones you skipped, `detail.later` lists them: ship now and judge them in the next milestone, or judge them now | yes |
+| 12 | otherwise | `ship` (`vbw ship`, which refuses while the proven work is not committed: the proof reads files on disk, a shipped milestone must be in git history; a submodule's files are read in the submodule, and its pointer moved by VBW's commits there is no change, docs/workflows.md "Submodules"); when the only unfinished requirements are `human` ones you skipped, `detail.later` lists them: ship now and judge them in the next milestone, or judge them now | yes |
 
 ## The loop step
 

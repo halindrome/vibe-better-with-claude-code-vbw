@@ -71,7 +71,7 @@ test('how long the current run has gone on is told in whole minutes', () => {
 test('when nothing needs the user it says so, and the need is empty', () => {
   const v = show({ record: record(), next: next() })
   assert.equal(v.need, null)
-  assert.match(row(v, 'need').text, /nothing is needed/i)
+  assert.match(row(v, 'need').text, /not waiting on you/i)
 })
 
 test('when VBW needs the user it says what for', () => {

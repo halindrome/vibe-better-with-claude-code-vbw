@@ -37,17 +37,10 @@ doctor_line() {
   [ -z "${3:-}" ] || printf '    fix: %s\n' "$3"
 }
 
-# version_at_least HAVE NEED: dotted numeric comparison.
-version_at_least() {
-  [ "$(printf '%s\n%s\n' "$2" "$1" | sort -t. -k1,1n -k2,2n -k3,3n | head -n 1)" = "$2" ]
-}
-
 doctor_tools() {
   local v
-  v=$(jq --version 2> /dev/null | sed 's/^jq-//; s/-.*//')
-  if [ -z "$v" ]; then doctor_line fail "jq is missing" "install jq (brew install jq / apt install jq)"
-  elif version_at_least "$v" 1.6; then doctor_line ok "jq $v"
-  else doctor_line fail "jq $v is too old (VBW needs 1.6 or later)" "update jq"
+  if vbw_jq_floor; then doctor_line ok "jq $VBW_JQ_VERSION"
+  else doctor_line fail "$VBW_JQ_MSG" "$VBW_JQ_FIX"
   fi
   v=$(git --version 2> /dev/null | awk '{print $3}')
   if [ -n "$v" ]; then doctor_line ok "git $v"; else doctor_line fail "git is missing" "install git"; fi
@@ -208,7 +201,14 @@ doctor_project() {
   if n=$(record_newer_schema "$VBW_RECORD"); then
     doctor_line fail "this project needs a newer VBW: its record was written with schema $n, this VBW reads up to schema $VBW_SCHEMA_MAX" "update VBW with /vbw:update"
     return 0
-  elif v=$(record_violation "$VBW_RECORD"); then doctor_line ok "the plan of record is valid"
+  elif v=$(record_violation "$VBW_RECORD"); then
+    doctor_line ok "the plan of record is valid"
+    local dbranch
+    if dbranch=$(git -C "$VBW_ROOT" symbolic-ref --short -q HEAD 2> /dev/null) && [ -n "$dbranch" ]; then
+      doctor_line info "the next VBW commit lands on branch $dbranch"
+    else
+      doctor_line info "the next VBW commit lands on detached HEAD at $(git -C "$VBW_ROOT" rev-parse HEAD 2> /dev/null | cut -c1-12)"
+    fi
   else doctor_line fail "the plan of record is corrupt: $v" "restore .vbw/record.json from git (git checkout -- .vbw/record.json)"
   fi
   # shellcheck source=cmd-spec.sh

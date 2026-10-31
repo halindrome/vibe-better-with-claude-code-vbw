@@ -133,3 +133,47 @@ line() {
     false
   fi
 }
+
+@test "R224: the bench measures VBW's own cost in the hand-back outside a VBW project as 'status line (no project)', as it measures 'status line (VBW off)', against the 10 ms hand-back budget" {
+  bench VBW_BENCH_ONLY='status line (no project)' VBW_HOOK_BUDGET_MS=100000 VBW_STATUSLINE_BUDGET_MS=100000 VBW_HANDBACK_BUDGET_MS=100000
+  [ "$status" -eq 0 ] || {
+    printf '%s\n' "$output"
+    false
+  }
+  line '^status line \(no project\): -?[0-9.]+ ms own CPU per call \(a bash, a jq and a sh startup and the earlier status line: [0-9.]+ ms\); budget 100000 ms$' > /dev/null
+  [[ "$output" != *"did not show"* ]]
+  bench VBW_BENCH_ONLY='status line (no project)'
+  quiet_or_skip
+  line '^status line \(no project\): -?[0-9.]+ ms own CPU per call \(a bash, a jq and a sh startup and the earlier status line: [0-9.]+ ms\); budget 10 ms(: OVER|: slow \([^)]*\))?$' > /dev/null
+}
+
+@test "R224: a hand-back outside a VBW project that never shows the earlier status line fails the bench" {
+  # A script that renders where there is no project: the setting never hands over.
+  printf '#!/usr/bin/env bash\nwhile IFS= read -t 1 -r l; do :; done\necho "[VBW] no project here"\n' > "$SCRIPT"
+  bench VBW_BENCH_ONLY='status line (no project)' VBW_HOOK_BUDGET_MS=100000 VBW_STATUSLINE_BUDGET_MS=100000
+  [ "$status" -eq 1 ] || {
+    printf '%s\n' "$output"
+    false
+  }
+  [[ "$output" == *"status line (no project): the earlier status line did not show"* ]] || {
+    printf '%s\n' "$output"
+    false
+  }
+}
+
+@test "R224: VBW's script above 10 ms, though under the status line's 60 ms, makes the hand-back outside a VBW project fail the bench" {
+  {
+    sed -n 1p "$SCRIPT"
+    burn 35
+    echo
+    sed -n '2,$p' "$SCRIPT"
+  } > "$TEST_ROOT/sl.sh"
+  cat "$TEST_ROOT/sl.sh" > "$SCRIPT"
+  bench VBW_BENCH_ONLY='status line (no project)'
+  quiet_or_skip
+  [ "$status" -eq 1 ] || {
+    printf '%s\n' "$output"
+    false
+  }
+  line '^status line \(no project\): -?[0-9.]+ ms own CPU per call .*; budget 10 ms: OVER$' > /dev/null
+}

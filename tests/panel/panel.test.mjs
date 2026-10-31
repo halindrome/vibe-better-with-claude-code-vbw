@@ -25,7 +25,7 @@ test('the pane shows the milestone, its progress, what VBW is doing and whether 
   assert.match(text, /Live VBW panel/)
   assert.match(text, /2 of 5 requirements done/i)
   assert.match(text, /idle|nothing is running/i)
-  assert.match(text, /nothing is needed/i)
+  assert.match(text, /not waiting on you/i)
   assert.deepEqual(h.errors, [])
 })
 
@@ -66,9 +66,9 @@ test('a need for the user shows with what it is for within 5 seconds, and clears
   h.project(undefined, next({ action: 'accept', gate: true, detail: { requirements: ['R54'] } }))
   let took = await h.until(async () => /R54/.test(await h.text()), 10000)
   assert.ok(took >= 0 && took <= 5000, 'took ' + took + ' ms')
-  assert.doesNotMatch(await h.text(), /nothing is needed/i)
+  assert.doesNotMatch(await h.text(), /not waiting on you/i)
   h.project(undefined, next())
-  took = await h.until(async () => /nothing is needed/i.test(await h.text()), 10000)
+  took = await h.until(async () => /not waiting on you/i.test(await h.text()), 10000)
   assert.ok(took >= 0 && took <= 5000, 'took ' + took + ' ms')
 })
 

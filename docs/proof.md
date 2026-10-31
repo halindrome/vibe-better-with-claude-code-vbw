@@ -430,7 +430,9 @@ R1 [auto] A customer can pay once
 
 The project's own test, lint and build commands live in `.vbw/spec.md`, under
 `## Commands`, one per line: a name, then the command as words, or as a JSON
-array when an argument contains spaces:
+array when an argument contains spaces. The router chooses them from the Tests
+section of the map, and asks before planning about a suite marked `Not run`,
+offering to run it now or add it unverified (details below the example):
 
 ```markdown
 ## Commands
@@ -447,6 +449,28 @@ Edit a line to change a command, delete it to stop running it, then
 without the section keeps the commands it has. A command whose exact argv the
 user has not approved makes `vbw next` ask for approval again, and
 `vbw prove` runs only approved commands.
+
+The router chooses `## Commands` from the Tests section of `.vbw/map.md`, and
+prefers a command the map ran and dated (`ran as of <short commit>, <date>`).
+A whole suite the map marked `Not run` is never added silently. Before planning,
+the router asks once per such suite, naming it as unverified with its expected
+time (or saying the time is unknown), and offers:
+
+- run it now (Recommended): the suite runs once, you hear green or red with the
+  names of failing tests, and the dated outcome is recorded as a decision
+  (`Commands: <command> ran <date> at <short commit>: green|red (<n> failing)`).
+  The map itself is written only by the map run.
+- leave it out: only the verified commands are used.
+- add it unverified: the line goes into `## Commands` as it is.
+
+Under hands-off the router takes run it now and says so. A suite that is red
+today, by the map or by that run, is named with a narrower command recommended
+(one test file, or the sub-project's green command). It enters `## Commands`
+only if you choose it, and the router then tells you the first proof will be red.
+
+Evidence: the wording is pinned at L1 by bats checks of the skills and these
+docs. At L3 only the `mapnotrun` scenario in `tools/l3-suite.sh` covers it, and
+only once it has run; nothing beyond that is claimed.
 
 ### The time limit of project commands
 
@@ -617,6 +641,9 @@ form in `.vbw/spec.md`.
 2. Makes a clean copy of the committed code (`HEAD`) inside the project, under
    `.vbw/runtime/`. The copy's folder is named after the process that made it
    (its owner, by process id), for example `.vbw/runtime/proof.48213.k3Xa9Q`.
+   Each checked-out submodule is in it at the submodule's own `HEAD`, with its
+   git-ignored files, since `vbw commit` commits there and leaves the project's
+   pointer where it was (docs/workflows.md, "Submodules").
 3. Runs every check (up to `check_jobs` at a time, `alone` checks by themselves),
    and every project command whose argv is approved, from the
    root of that copy; an unapproved command is skipped and reported, never run.
@@ -628,12 +655,13 @@ form in `.vbw/spec.md`.
    trailer naming a plan of the current milestone must change only that plan's
    files. Each commit is judged by what its plan allowed when it was made: a
    file the plan listed, or a check file a mutation survivor let it
-   strengthen, in the version of the record the commit was made under or any
-   later one, as well as today's. A file a later change renamed or dropped
+   strengthen, in the version of the record the commit descends from (the last
+   record commit in its git ancestry, whatever the clocks say) or any later
+   one in the record's history, as well as today's. A file a later change renamed or dropped
    (a check's test file renamed for the project's test runner) leaves its
    earlier commits in scope. Only a commit that looks out of scope today is
-   judged again this way: one git listing of the record's versions and one
-   read of those since the oldest such commit. A file no version allowed is
+   judged again this way: one git listing of the record's versions, one
+   read of those since the oldest base, and one git lookup per flagged commit. A file no version allowed is
    a violation (`abc123456789 (P1.1) changed src/other.txt, which is not in
    the plan`). The user accepts one by a decision recorded after the commit
    that names both the commit (those 12 characters) and the file (`vbw decide
@@ -687,7 +715,12 @@ loop's report) reads only the record's own history: the commits after the
 newest commit that added `.vbw/record.json`. The record is in git before any
 plan can commit, because `vbw approve` commits it and a build needs an approved
 contract. A project whose record was never committed keeps its whole history.
-One limit: an older branch merged in after the record was born is part of its
+Each of those readers also reads each checked-out submodule's history, where
+`vbw commit` commits the plan files inside it, and names a file there by its
+path from the project folder. A submodule has no record of its own: its own
+history starts after the commit the record's first commit pointed it at, or is
+all of it when that commit had no submodule there (docs/workflows.md,
+"Submodules"). One limit: an older branch merged in after the record was born is part of its
 history, because git has it after the record's first commit.
 
 ### Delivered files
@@ -1058,6 +1091,12 @@ Writing the split itself, the record's commit and the printed summary come after
 it. Read tracking is summed over the units, and units run side by side, so with
 several running at once own work can exceed the wall time.
 
+**Test hook: `VBW_PROOFTIME_CLOCK`.** A test may set this environment variable
+to a file whose first line is the clock reading (seconds with milliseconds);
+the proof's timer, and the timer of `vbw mutate`, then read that file instead of
+the machine clock, so a test moves the clock by writing the file and waits no
+real time. Unset or unreadable, the machine clock is read.
+
 **`ran again: N of M units; top reasons: ...`.** M counts every unit the proof
 covers (checks, approved commands, test files); N counts those that really ran.
 A reason is the unit's own (the list under "When a check runs again", for
@@ -1177,6 +1216,19 @@ They read `checks: N ran, M reused` and `test files: N ran, M reused`. After
   opening it or listing its folder, does not put that file on its read list: a
   change to that file does not run the check again, and neither does its
   addition or deletion unless a plan of the check's requirement lists it.
+- A script a unit executes by its path (`./greet.sh`) does not put its folder
+  on the read list. The cause is a start-up listing: the first time the system
+  executes a new file by its path (macOS does; Linux was measured and does not),
+  it notes the folder holding that file as listed, though no test asked for it,
+  and an unrelated file added to that folder would then re-run the unit. VBW
+  cannot prevent that read, so it leaves out of a unit's own read list the
+  folder of its program, whenever the program (the first word of the command,
+  given by its path or found on `PATH`) is a file inside the project. Running
+  the script through `sh greet.sh` never had the listing. The limit: a test that
+  both executes a script of a folder by its path and lists that same folder
+  itself loses that listing. A listing the test itself asks for (`ls`, a glob,
+  `find`) in any other folder stays a read, and a file added there re-runs the
+  unit.
 - Reads through git always run again. Any git command whose working directory
   is inside the project counts, even one that reads nothing of the project
   (`git config --global` run from the project folder): git opens the
@@ -1191,6 +1243,11 @@ They read `checks: N ran, M reused` and `test files: N ran, M reused`. After
   run in the project, open each proof copy's `.git` file to see whether it is a
   repository of its own, exactly as git inside the copy does. A unit running
   meanwhile counts as reading through git and runs again in the next proof.
+- A commit in a submodule runs every check and command again: git names only
+  the submodule's folder as changed, never the files inside it, so no read list
+  can vouch for a run made before. Files read inside a submodule are on the read
+  lists by their project paths (`apps/mobile/src/comms.ts`), and git run inside a
+  submodule of the copy counts as reading through git.
 
 To run everything fresh, use `vbw prove --full`, or prove again with
 nothing committed since a passing proof (a second `vbw prove` is a deliberate re-run).
@@ -1382,8 +1439,9 @@ plan on each rule.
 
 A break with several checks (a task break) runs them one at a time, fastest
 first by their last recorded time, and stops at the first that goes red; a
-survivor runs them all. Each check first runs once on the unbroken code at that
-commit, unless an earlier break at the same commit already ran it. A slow test
+survivor runs them all. Each check first runs once on the unbroken code, unless
+an earlier break of the same committed code (each submodule at its own `HEAD`)
+already ran it. A slow test
 suite therefore pays for the checks a break needs, not for every check.
 
 - A check that notices the break is **red**: the rule is covered.

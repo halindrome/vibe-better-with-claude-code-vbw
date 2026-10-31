@@ -4,12 +4,16 @@
 #   vbw mutate PLAN --run                       run every queued break of PLAN, side by side
 # A queued break waits in .vbw/runtime/mutate-queue/PLAN/NNNN/: files/ holds its
 # broken bytes (a file it deleted is absent), meta.json what it is {target, req,
-# rk, check, what, files, broke, head}. The run judges each break as the single
-# form does: the rule's check once on the unbroken code at HEAD (unless a recorded
-# break at HEAD already ran it), then each break in its own proof copy, as many at
+# rk, check, what, files, broke, head, tree}. The run judges each break as the single
+# form does: the rule's check once on the unbroken code (unless a recorded break of
+# the same committed code, tree as vbw_head_tree counts it, already ran it), then each break in its own proof copy, as many at
 # a time as there are copies (check_jobs, under the computer-wide slots), and each
-# result recorded in queue order (mutate_record). A break queued at another commit
-# is dropped and named: its bytes belong to older files.
+# result recorded in queue order (mutate_record). A break queued at other committed
+# code (another commit of the project or of a submodule) is dropped and named: its bytes belong to older files.
+# One --run of a plan at a time (R230): the run holds the marker
+# .vbw/runtime/mutate-queue/PLAN/run.pid with its own pid from before it reads any
+# entry until it ends, on every end. A second run finds a live pid and is refused;
+# a marker of a dead, empty or unreadable pid is taken over (vbw_lock_takeover).
 
 # mutate_queue_dir PLAN: the plan's queue folder.
 mutate_queue_dir() {
@@ -42,23 +46,62 @@ mutate_queue_add() {
     "$(printf '%s' "$3" | jq -r .target)" "$(mutate_queue_entries "$1" | wc -l | tr -d ' ')" "$1"
 }
 
+# mutate_queue_hold PLAN: take the plan's run marker run.pid, or refuse while a live run holds it.
+mutate_queue_hold() {
+  local plan="$1" q marker owner i msg next
+  q=$(mutate_queue_dir "$plan")
+  marker="$q/run.pid"
+  next="Next: wait for it to finish (a long run started in the background: read its whole result when it ends), then run vbw mutate $plan --run again only if breaks are still queued; never start a second run of the same plan"
+  mkdir -p "$q" || vbw_die "cannot create $q"
+  for ((i = 0; i < 50; i++)); do
+    if vbw_lock_create "$marker"; then
+      vbw_guard_add lock "$marker"
+      return 0
+    fi
+    owner=$(vbw_lock_holder "$marker")
+    if [ -n "$owner" ] && vbw_lock_alive "$owner"; then
+      msg="another run of $plan's queued breaks is still running (pid $owner, vbw mutate $plan --run)"
+      vbw_die "$msg"$'\n'"$next"
+    fi
+    if vbw_lock_takeover "$marker" "$owner"; then
+      vbw_guard_add lock "$marker"
+      return 0
+    fi
+  done
+  msg="another run of $plan's queued breaks is still running (vbw mutate $plan --run)"
+  vbw_die "$msg"$'\n'"$next"
+}
+
+# mutate_queue_release PLAN: give up the run marker, and the folder when nothing is left in it.
+mutate_queue_release() {
+  local q
+  q=$(mutate_queue_dir "$1")
+  vbw_guard_drop "$q/run.pid"
+  rmdir "$q" 2> /dev/null || true
+}
+
 # mutate_queue_run PLAN: vbw mutate PLAN --run.
 mutate_queue_run() {
-  local plan="$1" record head e entries=() keep=() stale=0 surv=0 bad='' checks ids=() cfiles=() f base unb=() n i k
+  local plan="$1" record head tree e entries=() keep=() stale=0 surv=0 bad='' checks ids=() cfiles=() f base unb=() n i k
   vbw_require_project
   cd "$VBW_ROOT" || vbw_die "cannot enter $VBW_ROOT"
   record=$(record_read)
   printf '%s' "$record" | jq -e --arg p "$plan" 'any(.plans[]; .id == $p)' > /dev/null || vbw_die "unknown plan $plan: vbw show roadmap lists the plans"
+  mutate_queue_hold "$plan"
   while IFS= read -r e; do [ -n "$e" ] && entries+=("$e"); done < <(mutate_queue_entries "$plan")
-  [ ${#entries[@]} -gt 0 ] || vbw_die "no break waits for $plan: make each break and queue it with vbw mutate $plan Rn.k --queue \"what you broke\" FILE..., then run vbw mutate $plan --run"
+  if [ ${#entries[@]} -eq 0 ]; then
+    mutate_queue_release "$plan"
+    vbw_die "no break waits for $plan: make each break and queue it with vbw mutate $plan Rn.k --queue \"what you broke\" FILE..., then run vbw mutate $plan --run"
+  fi
   head=$(git rev-parse HEAD) || vbw_die "the project has no commit yet"
+  tree=$(vbw_head_tree) || vbw_die "cannot fingerprint the committed code"
   for e in "${entries[@]}"; do
-    if [ "$(jq -r .head "$e/meta.json")" = "$head" ]; then keep+=("$e"); continue; fi
+    if [ "$(jq -r '.tree // ""' "$e/meta.json")" = "$tree" ]; then keep+=("$e"); continue; fi
     printf '%s was queued at another commit, so its break is of older files: break it again\n' "$(jq -r .target "$e/meta.json")" >&2
     rm -rf "$e"
     stale=1
   done
-  [ ${#keep[@]} -gt 0 ] || { rmdir "$(mutate_queue_dir "$plan")" 2> /dev/null || true; return 1; }
+  [ ${#keep[@]} -gt 0 ] || { mutate_queue_release "$plan"; return 1; }
   # The checks the breaks need, each once, and their files: those must be the committed ones.
   checks=$(for e in "${keep[@]}"; do jq -r .check "$e/meta.json"; done | jq -R . | jq -sc 'unique')
   while IFS= read -r f; do [ -n "$f" ] && ids+=("$f"); done < <(printf '%s' "$checks" | jq -r '.[]')
@@ -67,8 +110,8 @@ mutate_queue_run() {
     vbw_die "check files differ from the last commit: $(vbw_dirty_files "${cfiles[@]}"): commit them first, so the breaks are run against the approved tests"
   fi
   checks_begin "$record"
-  base=$(printf '%s' "$record" | jq -c --arg p "$plan" --arg h "$head" \
-    '[.plans[] | select(.id == $p) | (.mutations // [])[] | select(.head == $h) | (.checks // {}) | keys[]] | unique')
+  base=$(printf '%s' "$record" | jq -c --arg p "$plan" --arg t "$tree" \
+    '[.plans[] | select(.id == $p) | (.mutations // [])[] | select(.tree == $t) | (.checks // {}) | keys[]] | unique')
   for f in "${ids[@]}"; do
     printf '%s' "$base" | jq -e --arg c "$f" 'index($c) != null' > /dev/null || unb+=("$f")
   done
@@ -129,10 +172,10 @@ mutate_queue_run() {
     m=$(jq -c . "$e/meta.json")
     ruledoc=$(printf '%s' "$record" | jq -c --argjson m "$m" '.requirements[] | select(.id == $m.req) | (.rules // [])[$m.rk - 1] | {req: $m.req, text, check}')
     mutate_record "$plan" "$(printf '%s' "$m" | jq -r .target)" "$(printf '%s' "$m" | jq -r .what)" "$head" "$(cat "$e/result.json")" \
-      "$(record_read)" "$ruledoc" "" "$(printf '%s' "$m" | jq -c .files)" || surv=1
+      "$(record_read)" "$ruledoc" "" "$(printf '%s' "$m" | jq -c .files)" "$tree" || surv=1
     rm -rf "$e"
   done
-  rmdir "$(mutate_queue_dir "$plan")" 2> /dev/null || true
+  mutate_queue_release "$plan"
   SLOTS_WAITED=$waited SLOTS_LOST=$lost
   mutate_time_say
   slots_say

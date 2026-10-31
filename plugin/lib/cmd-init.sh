@@ -44,6 +44,12 @@ cmd_init() {
   printf 'Initialized VBW in %s\n' "$VBW_ROOT"
   printf '  .vbw/spec.md      what you are building (you own this file)\n'
   printf '  .vbw/record.json  the plan of record (written only by vbw)\n'
+  local init_branch
+  if init_branch=$(git -C "$VBW_ROOT" symbolic-ref --short -q HEAD 2> /dev/null) && [ -n "$init_branch" ]; then
+    printf 'VBW commits its plan of record and the checks it plans to the branch checked out: %s\n' "$init_branch"
+  else
+    printf 'VBW commits its plan of record and the checks it plans to the commit checked out: no branch (detached HEAD at %s)\n' "$(git -C "$VBW_ROOT" rev-parse HEAD 2> /dev/null | cut -c1-12)"
+  fi
   if [ "$commands" != "{}" ]; then
     printf '\nDetected project commands, not approved yet (vbw prove runs them only after\nyou approve them in the approval menu). Edit or delete them in .vbw/spec.md under Commands:\n'
     printf '%s\n' "$commands" | jq -r 'to_entries[] | "  \(.key): \(.value | join(" "))"'

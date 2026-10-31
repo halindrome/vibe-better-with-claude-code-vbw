@@ -133,7 +133,14 @@ does: the top folder of the git repository, which is the nearest folder at or
 above the session's folder (`$CLAUDE_PROJECT_DIR`) that holds `.git`, never a
 folder above it. A session started in a subfolder of a VBW project is guarded
 exactly as one started at its top folder; a git repository inside the project
-(a submodule, a nested clone) is a project of its own. A path in a tool call
+is a project of its own, with one exception: a submodule (its `.git` is a file
+whose `gitdir:` line points into a `modules/` folder) with no
+`.vbw/record.json` of its own belongs to the nearest folder above it that holds
+`.git` and a record, so a session started there is guarded as the VBW project
+that `vbw` commands there work on (docs/workflows.md, "Submodules"). A clone
+nested in the project (its `.git` is a folder) and a linked worktree nested in
+it (its `.git` file points into a `worktrees/` folder) stay projects of their
+own. A path in a tool call
 that is not absolute is read from the session's working folder, as the tool
 reads it, and "outside the project" means outside that top folder:
 
@@ -152,7 +159,7 @@ input names an `agent_type`) is also held to the lease. The main session never i
 |---|---|
 | Writing a project file outside `lease.files` (file tools, shell redirects; paths resolved, `..` included) | Builders write only their plan's files |
 | Writing any path outside the project folder (file tools, shell redirects, programs that write files; `/tmp` included; in a shell command, a path the guard cannot resolve counts as outside: one starting with `~` or holding a shell expansion such as `$HOME`, since the guard reads the text and never expands it (a file tool's path is taken as written, so a plan file named `app/routes/$id.tsx` is written through the file tool); `/dev/null`, `/dev/stdout`, `/dev/stderr` and `/dev/tty` excepted) | A run writes only inside the project, and there only where the lease allows: nothing for a read-only run, the project's test files and `.vbw/` while planning, the plan's files while building. The refusal says so and ends with `Next: write inside the project folder instead, or put scratch work in .vbw/runtime/scratch/`; for a read-only run it ends with `Next: leave it; report what you needed in your result, this run's agents write nothing` |
-| During `plan`, writing a project file that is neither under `.vbw/` nor a test file (`tests/`, `test/`, `spec/` or `__tests__/` folders; `*.test.*`, `*_test.*`, `test_*.py`) | Planning writes the spec, plans and tests, never product code |
+| During `plan`, writing a project file that is neither under `.vbw/` nor a test file (`tests/`, `test/`, `spec/` or `__tests__/` folders; `.t` files under `t/`; `*.test.*`, `*_test.*`, `*.spec.*`, `*_spec.*`, `test_*.py`) | Planning writes the spec, plans and tests, never product code. The refusal says planning writes the project's test files and `.vbw/` and that product code is the build's, and ends with `Next: leave <file> as it is; put the check in a test file, or name <file> in a plan's files so the build writes it` |
 | Writing `.vbw/runtime/glance.json` | Under any run, an agent's write is refused: only `vbw` writes the glance, like the record |
 | Writing under `.vbw/runtime/scratch/` during a run | Allowed under `plan`, `build` and `fix`: the agents' one scratch folder for debugging scripts and logs, ignored by git and never read by a proof (agents create it). A read-only run (QA, mapping) still writes nothing, and under `build` or `fix` the rest of `.vbw/runtime/` stays refused as outside the run's files |
 | Writing a protected check file (any check's `files`) during `build` or `fix` | The contract is fixed while building; the one exception in a `build` run: after `vbw mutate` records a survivor, the check files that a check of the plan's own rules names, shared with other requirements' checks or not, open for the run's agents; a check file no check of the plan's own rules names stays protected. The opened files wait for one approval before the proof (docs/proof.md). The Lead runs the project's formatter and linter on check files before approval, and Devs format only their own files, so a formatter never changes an approved file |
@@ -269,7 +276,16 @@ A command that contains none of the words any rule needs (`rm`, `git`, `vbw`,
   measured by `tools/bench-hooks.sh` in the release run (CI runs it on every
   pull request), including on a 20 KB heredoc command. CPU time, so waiting for
   a busy machine never counts, and a case over its budget is measured once more
-  before it is judged (the bench says so): a slow hook is slow twice. Measured in October 2026 (an M1 Max Mac and
+  before it is judged (the bench says so): a slow hook is slow twice. The 20 ms is the
+  meaning on a nominal machine (an M1 Max Mac, GitHub's macOS runner). The bench
+  first measures a reference workload (a guard-shaped jq call over a fixed
+  document and program, both written by the bench) and prints its cost, the nominal cost and the ratio:
+  `reference: <X> ms CPU per call; nominal <N> ms (...); ratio <R>`. At a ratio
+  of 1 or less every case is judged against 20 ms. Above 1, a case over 20 ms
+  but within 20 ms times the ratio is reported slow (the line names the cost,
+  the budget, the ratio and the scaled budget) and the bench still passes; a
+  case above the scaled budget fails. `VBW_BENCH_REFERENCE_MS` stands in for the
+  measured reference. CI sets no reference of its own. Measured in October 2026 (an M1 Max Mac and
   GitHub's macOS runners): the file guard about 4 to 5 ms, the Bash guard about
   10 to 13 ms, the answer hook about 1 ms. A real slowdown
   (an added subprocess costs several ms) still shows. When the machine is too

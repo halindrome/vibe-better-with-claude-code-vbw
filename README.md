@@ -239,7 +239,7 @@ The loop above is the core. Around it:
 
 | Feature | What you get |
 | :--- | :--- |
-| **Triage** | Every new idea is sorted into now, next or later, with a size. You confirm or overrule in one menu. [docs/triage.md](docs/triage.md) |
+| **Triage** | Every new idea is sorted into now, next or later, with a size. You confirm or overrule in one menu. VBW offers its ideas right after sorting, before planning. [docs/triage.md](docs/triage.md) |
 | **What's next** | After each ship, and whenever you ask, the Architect recommends a top pick and up to two runners-up, each with a reason and a size. [docs/whats-next.md](docs/whats-next.md) |
 | **Decisions, recorded** | Cost, where data lives, security, anything hard to undo: asked one at a time with a recommendation, recorded with your reason (`vbw show decisions`). When someone asks "who decided this?", the record and git say it was you. |
 | **Rigor that fits** | A typo gets one Dev and one approval. Payments or sign-in code gets the full team and deep review. VBW sizes the process from what the work touches, raises the bar when a build goes badly, and tells you why. [docs/rigor.md](docs/rigor.md) |
@@ -435,7 +435,7 @@ plugin/
 | :--- | :--- |
 | **Claude Code** 2.1.286+ (2.1.287+ for Mission Control and the instant commands, 2.1.290+ for Comms) | Dynamic workflows and the hooks VBW runs on |
 | A **Sonnet, Opus or Fable** session | Auto mode; workflow agents may also use Haiku |
-| **`bash`** (3.2 or newer), **`jq`** and **`git`** | The kernel. `brew install jq` (macOS) or `apt install jq` (Linux) |
+| **`bash`** (3.2 or newer), **`jq`** (1.7 or newer) and **`git`** | The kernel. `brew install jq` (macOS) or `apt install jq` (Linux); older jq: [github.com/jqlang/jq/releases](https://github.com/jqlang/jq/releases) |
 | A git repository, new or existing | Everything VBW does is committed |
 | The willingness to let an AI build your software and a program check its homework | This is the real barrier to entry |
 

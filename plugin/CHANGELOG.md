@@ -1,5 +1,129 @@
 # Changelog
 
+## [2.1.21] - 2026-10-31
+
+A third community release. The first four items come from field reports by
+[@halindrome](https://github.com/halindrome) on a real project, who also
+contributed the map fix; the last two close gaps VBW's own CI runs showed.
+Thank you.
+
+### Added
+
+- **The router chooses the project commands from the map's verified ones.** The
+  map marks every test and lint command it tried as `ran as of <commit>, <date>`
+  or `Not run`. At the spec step the router prefers a command the map ran; a
+  whole suite marked `Not run` never enters `## Commands` silently: VBW runs
+  it once before planning (its own step) or offers it to you marked unverified,
+  and a suite that is red today is named before planning with the narrower
+  command as the recommendation. The outcome is recorded as a dated decision.
+  A real-user scenario, `mapnotrun`, drives a project with a green test and a
+  red end-to-end suite. (#733; two Angular suites the map had not run went
+  into a contract and one was red)
+- **Suggestions come when a yes is free, and a late yes shows its price.**
+  VBW offers its suggestions right after triage adds requirements to the
+  milestone, before the first planning run. A suggestion at plan approval that
+  would add a requirement states what a yes costs, as the kernel's own estimate
+  of a new planning run (`detail.replan` in `vbw next --json`), and offers
+  "add to the backlog" (recommended) or "add to this milestone (replan)".
+  (#734; 26 of 52 planning minutes in one session were replans after
+  approval-time yeses)
+- **One mutation run per plan.** `vbw mutate PLAN --run` refuses to start while
+  another run of the same plan is still going, with a Next line naming the
+  running one, through a per-plan marker in `.vbw/runtime` that a dead process
+  does not hold. The Dev's instructions say how to wait for a long run: start
+  it in the background and read its result. (#738, the part about two runs of
+  one plan; the clean-copy reuse it also asks for is designed on the issue for
+  2.1.22)
+
+### Fixed
+
+- **A new map is committed with its own run.** The map run used to end, and
+  make its record commit, before `.vbw/map.md` was written, so the map landed
+  in the next VBW commit. `vbw run end --map` now takes the map on standard
+  input, writes `.vbw/map.md` and then makes the run's record commit, so the
+  commit holds the map; it refuses an empty map, a run of another kind and
+  another session's run, and then writes nothing. (#731, fixed by
+  [@halindrome](https://github.com/halindrome) in #736)
+- **The benchmark's reference workload has the shape of a hook call.** It is
+  now one jq call over a program and a document of fixed size, written by the
+  bench itself, in place of a compute-bound counting loop. The nominal figure
+  was measured again for the new shape on the Mac and on GitHub's macOS
+  runner, and the larger is pinned. On GitHub's Linux runners the guard still
+  costs about one and a half times what the reference predicts, so a slow
+  Linux runner can read over budget; the cause is being traced for the next
+  release. Nothing changes on macOS. (the 2.1.20 pull request's Ubuntu shard)
+- **The mutation-timing test no longer waits on a real second.** The clock the
+  timer reads can be injected (`VBW_PROOFTIME_CLOCK`, a test-only file), the
+  R207 case asserts figures from injected readings, and no test file outside
+  the timed ones asserts elapsed time. (the case failed on Linux runners in
+  three CI runs)
+
+Sizes, for information: kernel 759 KB (`plugin/bin/vbw` and `plugin/lib`), mods 336 KB (hooks, panel and status line), workflows 73 KB, prompts 109 KB (agents and skills).
+
+## [2.1.20] - 2026-10-30
+
+A second community release. Every item below comes from a field report by
+[@halindrome](https://github.com/halindrome) on a real project; one was
+found by VBW's own real-user scenarios. Thank you.
+
+### Added
+
+- **jq 1.7 is the floor, and VBW says so.** Every `vbw` command refuses a jq
+  older than 1.7 before doing anything, naming the installed version and how
+  to get a current one (the jq releases page; on Debian 12 the
+  `bookworm-backports` package); `vbw doctor` reports it the same way and
+  still runs its full report, and the hooks and the status line never ask jq
+  its version. A maintainer scan refuses jq builtins that differ between 1.7
+  and 1.8, and each CI shard prints its jq version. On jq 1.6 the record's
+  argv rule rejected every check and one program did not compile; support of
+  1.6 was declined. (#709)
+- **`vbw init` and `vbw doctor` name the branch VBW commits to.** `vbw init`
+  states once that VBW commits its record and the checks it plans to the
+  branch checked out, naming it (or the commit, on a detached HEAD), and
+  `vbw doctor` shows the branch the next VBW commit lands on. Nothing refuses,
+  prompts or adds a setting. (#693; a refusal, a prompt and a branch-guard
+  option were declined)
+- **The status line hands back outside a VBW project.** With no `.vbw` folder
+  at or above the folder Claude Code reports, VBW's status line script prints
+  nothing and exits 3, so the setting runs the status line you had before
+  `vbw statusline on` and shows its output unchanged; with none saved,
+  nothing shows. Inside a VBW project the line renders as before. The
+  benchmark measures this hand-back as `status line (no project)` against the
+  same 10 ms budget as the turned-off path. (#692; a per-project option was
+  declined)
+
+### Fixed
+
+- **The proof's scope check judges a commit against the right record
+  version.** The base version is now the last record commit the judged commit
+  descends from, found by git ancestry, never by commit time; a record commit
+  that shares a second with a plan commit can no longer make the later version
+  the base and report a false violation. A regression test pins two commits in
+  the same second. (#715; the flaky `scope-of-its-time` case in CI)
+- **The benchmarks judge a slow runner as slow, not failed.** The hook and
+  status line benchmarks first measure a fixed reference workload on the same
+  machine and print it with the ratio to a nominal figure; a case over its
+  budget but within budget times ratio is reported slow and the bench exits 0,
+  while a case over the scaled budget still fails. The absolute budgets (20 ms
+  per hook call, 60 ms status line, 10 ms hand-back) stay the documented
+  meaning on a nominal machine; the busy report is unchanged. (#716; the 2.1.18
+  and 2.1.19 CI runs failed Linux shards on runner speed with the guard
+  unchanged)
+- **A check whose test runs a script by path no longer reruns for every new
+  root file.** Executing a fresh script (`./greet.sh`) moved the project
+  root's listing onto the check's read list through the shell's own start-up,
+  so a commit adding an unrelated file at the root reran the check. The
+  executed script's folder is left off the unit's own listings; a listing the
+  test asks for itself (`ls`, a glob) stays a read. The cause and the limit
+  are in docs/proof.md. (found by the `ignoredplanning` real-user scenario)
+- **The Now panel's empty state says what it knows.** It reads "VBW is not
+  waiting on you" instead of claiming that nothing is needed, and every
+  action of `vbw next` that waits on you yields a need in the panel, a generic
+  one made from the action's instruction when no case names it. (#708, the
+  wording point; the milestone-gate symptom awaits the reporter's data)
+
+Sizes, for information: kernel 755 KB (`plugin/bin/vbw` and `plugin/lib`), mods 335 KB (hooks, panel and status line), workflows 75 KB, prompts 105 KB (agents and skills).
+
 ## [2.1.19] - 2026-10-29
 
 A community release: thirteen pull requests by two contributors,

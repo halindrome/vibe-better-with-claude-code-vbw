@@ -74,13 +74,14 @@ nothing_built() {
   done
 }
 
-@test "R152: without a selector the bench is the full bench: every case it can be asked for runs, in the listed order" {
+@test "R152, R224: without a selector the bench is the full bench: every case it can be asked for runs, in the listed order, the no-project hand-back among them" {
   bench VBW_BENCH_ONLY='no such case'
   [ "$status" -eq 2 ]
   local listed
   listed=$(printf '%s\n' "$output" | sed -n -E 's/^  (.*):$/\1/p')
-  # Six inputs on five projects, the loop case on two, and five status lines.
-  [ "$(printf '%s\n' "$listed" | wc -l | tr -d ' ')" -eq 37 ] || { echo "$listed"; false; }
+  # Six inputs on five projects, the loop case on two, and six status lines.
+  [ "$(printf '%s\n' "$listed" | wc -l | tr -d ' ')" -eq 38 ] || { echo "$listed"; false; }
+  printf '%s\n' "$listed" | grep -qxF 'status line (no project)' || { echo "the no-project hand-back is not a case:"; echo "$listed"; false; }
   bench
   [ "$status" -eq 0 ] || { echo "$output"; false; }
   [ "$(measured)" = "$listed" ] || { printf 'listed:\n%s\nmeasured:\n%s\n' "$listed" "$(measured)"; false; }

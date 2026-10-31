@@ -81,3 +81,9 @@ DOC="$REPO_ROOT/docs/proof.md"
   a=$(stat -c %X "$store" 2> /dev/null || stat -f %a "$store")
   [ "$a" -ge 978307200 ] || { echo "this file system does not record reads, so the test proves nothing here"; false; }
 }
+
+@test "R226: docs/proof.md names the cause of a start-up listing of the folder holding a script run by its path, what VBW does about it, and that a listing the test itself asks for stays a read" {
+  grep -qiE 'start-?up' "$DOC" || { echo "docs/proof.md does not name the start-up listing"; false; }
+  grep -qiE 'by (its )?path|\./greet\.sh' "$DOC" || { echo "docs/proof.md does not name a script run by its path"; false; }
+  grep -qiE 'the test itself' "$DOC" || { echo "docs/proof.md does not say a listing the test itself asks for stays a read"; false; }
+}

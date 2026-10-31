@@ -1,17 +1,17 @@
 {
   "scenario": "mapsnapshot",
   "fixture": "greet.sh with a test.sh (named in the README) whose no-name case fails on the committed code; vbw init before the session; the user types /vbw:map",
-  "cost_usd": 0.3253,
+  "cost_usd": 0.3987,
   "evidence_level": "L3",
-  "at": "2026-10-29T19:58:14Z",
+  "at": "2026-10-31T11:02:37Z",
   "passed": true,
   "facts": {
     "map_written": true,
     "scout_ran_tests": true,
-    "seed_commit": "673dc4a",
-    "head_at_end": "ae48a91",
-    "tag_line": "- Result as of 673dc4a, 2026-10-29: 1 passed, 1 failed, exit code 1.",
-    "result_lines": 2,
+    "seed_commit": "a703a23",
+    "head_at_end": "e421bcd",
+    "tag_line": "- `sh test.sh`: ran as of a703a23, 2026-10-31: test 1 `ok` (a name is greeted), test 2 `not ok 2 no name greets the world`, exit code 1. Run time was not recorded. Cause per scouts: greet.sh prints `Hello, !` where the test expects `Hello, world!`.",
+    "result_lines": 1,
     "untagged_result_lines": "",
     "advice_lines": ""
   },

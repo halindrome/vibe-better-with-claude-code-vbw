@@ -274,3 +274,114 @@ got_input() {
   setting
   [ "$output" = "my own line 1" ]
 }
+
+# R224 (#692): outside a VBW project (no .vbw folder at or above the folder Claude Code
+# reports, else the one the script runs in) the installed script prints nothing and exits
+# 3, and the setting's hand-back path then runs the earlier status line with Claude Code's
+# own input, its output printed unchanged; with none saved, nothing at all shows. The
+# setting written by an earlier 2.1.x needs no rewrite: it already honours exit 3.
+
+# The setting `vbw statusline on` wrote in 2.1.19 with `sh "$HOME/mine.sh"` saved as the
+# earlier status line, byte for byte.
+SETTING_2_1_19='bash -c '"'"'i=; while IFS= read -t 1 -r l; do i=$i$l$'"'"'\'"'"''"'"'\n'"'"'\'"'"''"'"'; done; [ -z "$l" ] || i=$i$l; rc=0; sid=; _s=; for _d in "${CLAUDE_CONFIG_DIR:-}" "$HOME/.config/claude-code" "$HOME/.claude"; do [ -z "$_d" ] && continue; f=; p=; if [ -z "$_s" ] && [ -d "$_d/vbw/sessions" ]; then _s=1; sid=$(printf %s "$i" | jq -r '"'"'\'"'"''"'"'.session_id // empty'"'"'\'"'"''"'"' 2>/dev/null); case "$sid" in *[!A-Za-z0-9_-]*) sid= ;; esac; fi; [ -z "$sid" ] || { read -r p < "$_d/vbw/sessions/$sid"; } 2>/dev/null || p=; if [ -n "$p" ] && [ -f "$p/.claude-plugin/plugin.json" ] && [ -f "$p/scripts/vbw-statusline.sh" ]; then f=$p/scripts/vbw-statusline.sh; else set -- "$_d"/plugins/cache/vbw-marketplace/vbw/*/scripts/vbw-statusline.sh; if [ $# -eq 1 ]; then f=$1; else f=$(ls -1 "$@" 2>/dev/null | sort -V | tail -1 || true); fi; fi; if [ -f "$f" ]; then printf %s "$i" | { . "$f"; }; rc=$?; [ "$rc" -eq 3 ] && break; exit "$rc"; fi; done; [ "$rc" -eq 3 ] && printf %s "$i" | sh -c '"'"'\'"'"''"'"'sh "$HOME/mine.sh"'"'"'\'"'"''"'"'; exit 0'"'"' vbw'
+
+# installed_real: the setting runs the plugin under test (the session's record names it, R185).
+installed_real() {
+  mkdir -p "$CLAUDE_CONFIG_DIR/vbw/sessions"
+  printf '%s\n' "$PLUGIN_ROOT" > "$CLAUDE_CONFIG_DIR/vbw/sessions/s1"
+}
+
+# outside: OUT is a folder with no .vbw at or above it (and no .git); Claude Code's input
+# names it. A .vbw above the test root would make the test prove nothing, so it is refused.
+outside() {
+  local d="$TEST_ROOT"
+  while [ "$d" != / ] && [ -n "$d" ]; do
+    [ ! -d "$d/.vbw" ] || { echo "a .vbw folder sits above the test root: $d"; return 1; }
+    d=${d%/*}
+  done
+  OUT="$TEST_ROOT/elsewhere"
+  mkdir -p "$OUT"
+  jq -nc --arg d "$OUT" '{session_id: "s1", workspace: {project_dir: $d, current_dir: $d}, cwd: $d,
+    model: {display_name: "Sonnet 5.5"}, version: "2.1.286", cost: {total_cost_usd: 1.25}}' > "$TEST_ROOT/cc.json"
+}
+
+# setting_in DIR: run the statusLine command from the settings as Claude Code does, in DIR.
+setting_in() {
+  local cmd
+  cmd=$(jq -r '.statusLine.command' "$SETTINGS")
+  run sh -c "cd \"\$1\" && $cmd" _ "$1" < "$TEST_ROOT/cc.json"
+}
+
+# two_lines: the earlier status line prints two lines with colour codes and keeps its input.
+two_lines() {
+  printf '#!/bin/sh\ncat > "$HOME/mine.input"\nprintf "\\033[32mline one\\033[0m\\nline two \\033[1m$MY_LINE\\033[0m\\n"\n' > "$HOME/it's my line.sh"
+}
+
+@test "R224: outside a VBW project the setting shows the user's earlier status line unchanged, several lines and colour codes included, given Claude Code's own input" {
+  two_lines
+  settings_with "$(mine)"
+  vbw_run statusline on
+  [ "$status" -eq 0 ]
+  installed_real
+  outside
+  setting_in "$OUT"
+  [ "$status" -eq 0 ] && [ "$output" = "$(printf '\033[32mline one\033[0m\nline two \033[1m1\033[0m')" ] || {
+    echo "exit $status, output:"
+    printf '%s\n' "$output" | cat -v
+    false
+  }
+  got_input
+}
+
+@test "R224: outside a VBW project with no earlier status line, the setting shows nothing at all: no 'no project here' line, and no VBW 1 line for a .vbw-planning folder" {
+  vbw_run statusline on
+  installed_real
+  outside
+  mkdir -p "$OUT/.vbw-planning"
+  setting_in "$OUT"
+  [ "$status" -eq 0 ] && [ -z "$output" ] || {
+    echo "exit $status, output:"
+    printf '%s\n' "$output"
+    false
+  }
+}
+
+@test "R224: the script judges by the folder Claude Code reports, else the one it runs in: no input from an outside folder exits 3; an outside folder with a project named in the input renders as today" {
+  outside
+  cd "$OUT"
+  # Nothing on stdin: the folder it runs in decides (tests/statusline.bats pins the plain outside render).
+  run bash "$PLUGIN_ROOT/scripts/vbw-statusline.sh" < /dev/null
+  [ "$status" -eq 3 ] && [ -z "$output" ] || { echo "exit $status, output:"; printf '%s\n' "$output"; false; }
+  # Inside a VBW project, from a folder outside it: the folder Claude Code reports wins.
+  cd "$PROJECT" && "$VBW" init > /dev/null
+  cd "$OUT"
+  jq -nc --arg d "$PROJECT" '{session_id: "s1", workspace: {project_dir: $d, current_dir: $d}, cwd: $d, model: {display_name: "Sonnet 5.5"}}' > "$TEST_ROOT/inside.json"
+  NO_COLOR=1 run bash "$PLUGIN_ROOT/scripts/vbw-statusline.sh" < "$TEST_ROOT/inside.json"
+  [ "$status" -eq 0 ] && [[ "${lines[0]}" == "[VBW] project with space │"* ]] || { echo "exit $status, output:"; printf '%s\n' "$output"; false; }
+}
+
+@test "R224: a setting written by 2.1.19, its text unchanged, hands back outside a VBW project: no rewrite is needed" {
+  printf '#!/bin/sh\necho "mine from 2.1.19"\n' > "$HOME/mine.sh"
+  settings_with "$(jq -nc --arg c "$SETTING_2_1_19" '{type: "command", command: $c, refreshInterval: 5}')"
+  installed_real
+  outside
+  setting_in "$OUT"
+  [ "$status" -eq 0 ] && [ "$output" = "mine from 2.1.19" ] || {
+    echo "exit $status, output:"
+    printf '%s\n' "$output"
+    false
+  }
+}
+
+@test "R224 docs: docs/statusline.md says exit 3 hands back both where VBW is turned off and where there is no VBW project, and no longer shows the no-project line as what is shown outside a project" {
+  local doc="$REPO_ROOT/docs/statusline.md"
+  tr '\n' ' ' < "$doc" | tr -s ' ' | grep -qiE 'exit 3[^.]*(no vbw project|outside a vbw project|not (part of|in) a vbw project)|(no vbw project|outside a vbw project)[^.]*exit 3' || {
+    echo "docs/statusline.md does not say exit 3 is the hand-back where there is no VBW project"
+    false
+  }
+  tr '\n' ' ' < "$doc" | tr -s ' ' | grep -qiE 'exit 3[^.]*turned off|turned off[^.]*exit 3' || {
+    echo "docs/statusline.md does not say exit 3 is the hand-back where VBW is turned off"
+    false
+  }
+  ! grep -qF 'no project here' "$doc" || { echo "docs/statusline.md still shows the no-project line"; false; }
+}

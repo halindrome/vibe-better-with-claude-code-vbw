@@ -184,7 +184,7 @@ test('the gate leaves next.json: the line clears at the next refresh', async () 
   h.write(NEXT, next())
   await h.advance(TICK)
   assert.deepEqual(await needLines(h), [])
-  assert.match(await h.text(), /nothing is needed/i)
+  assert.match(await h.text(), /not waiting on you/i)
 })
 
 test('a question: the line stands while the menu is open and is gone at the redraw after it is answered', async () => {

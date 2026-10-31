@@ -1,6 +1,6 @@
 #!/usr/bin/env bats
-# R95 and R96 (docs/workflows.md, workflow part, L1): the build, fix, QA,
-# planning and mapping workflows close with an agent whose own instructions
+# R95 and R96 (docs/workflows.md, workflow part, L1): the build, fix, QA and
+# planning workflows close with an agent whose own instructions
 # allow it (the Lead), a workflow reports complete only when every result was
 # recorded, an unrecorded result is named, a closing agent that stops leaves
 # the exact commands to run by hand, and QA is always told the project's test
@@ -68,9 +68,6 @@ wf() { node "$RUN" "$WF/$1.js" "$2" "$3"; }
   local reqs='[{"id":"R1","proof":"auto","text":"x"}]'
   run wf planning "$(jq -nc --argjson r "$reqs" '{requirements: $r, session: "s"}')" '{"architect (decide)": {"decisions": []}, "architect (scope)": {"phases":[{"id":"P1","title":"t","reqs":["R1"],"goal":"g","criteria":["c"]}],"notes":[]}, "lead": {"applied": true, "summary": "s", "blockers": []}}'
   printf '%s' "$output" | jq -e '.calls[-1].opts.label == "close run" and .calls[-1].opts.agentType == "vbw:lead"' || { echo "$output"; false; }
-  # The mapping workflow needs the runtime's parallel(), which the stub lacks: read its closing step.
-  sed -n '/^const closeRun/,/^}/p' "$WF/mapping.js" | grep -q "agentType: 'vbw:lead'"
-  ! sed -n '/^const closeRun/,/^}/p' "$WF/mapping.js" | grep -q "vbw:scout"
 }
 
 @test "R96: when the closing agent stops, the output names the exact commands to run by hand, with the session" {

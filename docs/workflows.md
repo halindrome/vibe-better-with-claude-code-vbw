@@ -13,7 +13,7 @@ standard: what good output is. Every write to the plan of record goes through
 | `vbw:building` | `build` (one wave: the ready plans, no two sharing a file) | one Dev for every plan (Docs for documentation plans), all at the same time; VBW sets no limit | each plan `done` (one commit per task, its checks green) or `blocked` with a reason |
 | `vbw:fixing` | `fix` (`detail.groups`: open fixes that share files, grouped) | one Dev for every group, all at the same time; after every Dev returns, one `vbw fix done` for every fix whose Dev reported done | each fix `fixed` (verified, committed) or its plan `blocked` |
 | `vbw:verifying` | `qa` (built phases not yet verified on the proven code) | one QA agent for every phase, all at the same time | each phase's verdict recorded (`vbw qa record`), its findings as fixes (`vbw qa finding`) |
-| `vbw:mapping` | `spec` or `plan` on existing code without `.vbw/map.md` | Scouts, one per angle, then one merge | the map, written to `.vbw/map.md`; a test or lint result in it is a snapshot marked with its commit and date, and no advice in the map rests on one; its Tests section names, per test framework, the command that runs one test file (run once while mapping) and what a new test file needs, so the Lead does not work it out while planning (#721) |
+| `vbw:mapping` | `spec` or `plan` on existing code without `.vbw/map.md` | Scouts, one per angle, then one merge | the map, saved to `.vbw/map.md` by `vbw run end --map` in the map run's record commit; a test or lint result in it is a snapshot marked with its commit and date, and no advice in the map rests on one; every test or lint command in its Tests section carries one of two marks, `ran as of <short commit>, <date>: <what happened, how long it took>` when a scout ran it, or `Not run` when none did, and the router chooses the spec's `## Commands` from them (#733; pinned at L1 by wording checks, at L3 only by the `mapnotrun` scenario of `tools/l3-suite.sh` once it has run); its Tests section names, per test framework, the command that runs one test file (run once while mapping) and what a new test file needs, so the Lead does not work it out while planning (#721) |
 | `vbw:researching` | the user runs `/vbw:research` | four Scouts (sources, practice, current state, this project), then one answer | a sourced answer with a recommendation |
 | `vbw:investigating` | the user runs `/vbw:debug` | three Debuggers (reproduce, trace, history), then one diagnosis; with the diagnosis given, one Debugger fixes it | the root cause with evidence and rejected hypotheses; or the fix, its regression test and commit |
 | `vbw:recommending` | after `vbw ship`, or the user asks `/vbw:vibe what's next` | one Architect | a recommendation: a top pick and up to two runners-up (docs/whats-next.md) |
@@ -56,10 +56,10 @@ The router opens a lease before it starts a workflow and closes it after:
 ```
 vbw run start build P1.1 P1.2     # or: fix F1 F2 | plan | qa | map
 vbw run confirm P1.1 P1.2         # build, fix and qa runs: was it recorded?
-vbw run end
+vbw run end                       # a map run: vbw run end --map < MAP
 ```
 
-A workflow closes its own run. The router passes `args.session` (its
+A workflow closes its own run, except `vbw:mapping` (below). The router passes `args.session` (its
 `${CLAUDE_SESSION_ID}`) to every workflow. Without it, a workflow closes
 nothing and the router ends the run as before. With it:
 
@@ -77,11 +77,18 @@ nothing and the router ends the run as before. With it:
   `{ended, recorded, report}`. The workflow returns that answer as
   `confirmation` and sets `complete` to true only when no agent stopped early
   and `recorded` and `ended` are both true.
-- `vbw:planning` and `vbw:mapping` close with the same Lead on every way out,
-  including a stop for decisions or an error. Planning's closing agent also
-  checks each planned phase with `vbw show phase`; a phase with no plans makes
-  the workflow return `status: "blocked"` with the Lead's report instead of
-  `planned`.
+- `vbw:planning` closes with the same Lead on every way out, including a stop
+  for decisions or an error. Its closing agent also checks each planned phase
+  with `vbw show phase`; a phase with no plans makes the workflow return
+  `status: "blocked"` with the Lead's report instead of `planned`.
+- `vbw:mapping` never ends its run, with or without `args.session` (#731). It
+  returns the map, and its caller (`/vbw:map`, or the router's map step) ends
+  the run with it: `vbw run end --map`, the map on stdin (from a saved result,
+  `jq -er '.result.map' FILE | vbw run end --map`). The kernel writes
+  `.vbw/map.md` and then makes the run's record commit, so that commit holds
+  the map and no VBW file is left changed. It refuses an empty map, a run that
+  is not a map run, no open run and another session's run, and then writes
+  nothing.
 - A requirement the code already meets cannot have a check that fails today.
   The Architect raises it as a decision (drop it or reword it); if one still
   reaches the Lead, the Lead applies nothing and returns `status: "blocked"`
@@ -120,7 +127,7 @@ VBW_SESSION_ID=<session> vbw run end
 
 The log lines read `the closing agent stopped: run by hand: ...`, `not
 everything was recorded: check by hand with ...` and `the run did not end: run
-by hand: ...`. A planning or mapping run logs only the `vbw run end` line.
+by hand: ...`. A planning run logs only the `vbw run end` line.
 
 The router then finds no open run. `vbw run end` with nothing open prints
 `no run is open` and exits 0, so the router's own call is harmless.
@@ -179,8 +186,8 @@ reason (which uses the glance's stored name alone, else 8 characters of the id).
 run's agents may write: the plans' files for `build`; for `fix`, the files of
 every plan that serves a fixed requirement; `[".vbw/"]` for `plan` (planning
 agents write VBW's own files, and also test files, which no plan owns yet: a
-path in a `tests/`, `test/`, `spec/` or `__tests__/` folder, or named
-`*.test.*`, `*_test.*` or `test_*.py`); `[]` for `qa` and `map` (their agents
+path in a `tests/`, `test/`, `spec/` or `__tests__/` folder, a `.t` file under
+`t/`, or named `*.test.*`, `*_test.*`, `*.spec.*`, `*_spec.*` or `test_*.py`); `[]` for `qa` and `map` (their agents
 only read; the lease also tells the autonomy gate a workflow is still running). While a lease is active, any **subagent**
 (the hook input carries `agent_type`) is held to it:
 
@@ -217,7 +224,7 @@ changes nothing. It also works right after a subcommand. With no command,
 
 ```
 $ vbw run start --help
-usage: vbw run start KIND [IDS] | run confirm ID... | run end [--owner-closed]   open the run lease, check what its agents recorded, close it
+usage: vbw run start KIND [IDS] | run confirm ID... | run end [--owner-closed | --map < MAP]   open the run lease, check what its agents recorded, close it (a map run with its map)
 ```
 
 Help writes no record, makes no commit and does not touch the index. It works
@@ -299,7 +306,17 @@ cannot fail, and QA would otherwise find it one round at a time.
   is dropped and named (its bytes belong to older files): make it again. Check
   files that differ from their last commit stop the run, and `vbw plan done`
   names breaks still queued. Only a rule break queues; a task break and
-  `--none` run at once.
+  `--none` run at once. VBW refuses a second `--run` of the same plan while one
+  is still running: it exits non-zero, before it reads or copies anything, with
+  a line naming the running one (its pid and command) and `Next: wait for it to
+  finish`. The running one holds a marker, `run.pid` under
+  `.vbw/runtime/mutate-queue/PLAN/`, with its pid from before it reads the
+  queue until it ends. A marker whose process has ended (or that is empty or
+  not a number) never blocks: the next run takes it over. A run waiting for a
+  slot holds the marker for the whole wait, on purpose: a second run would
+  compete for the same slots. A long run can pass Claude Code's 10-minute limit
+  for one command, so start it in the background, wait for it and read its
+  whole result.
 - **Where the time went:** a break that ran ends with two lines, after the
   result lines (and after a survivor's line, which keeps its exit 1):
 
@@ -539,6 +556,7 @@ Each refusal below ends with `Next: ` and the step in the right column
 | `/vbw:loop`: the ship of an item refused (the loop ends) | Run `/vbw:vibe` to take the item to its ship, then `/vbw:loop` for the items left |
 | Guards (docs/guards.md): a secret file, the record, the consent file, `vbw approve` | Use the `vbw` command or `/vbw:approve` instead of writing directly |
 | Guards: a file outside the run's plan, a protected check file, a read-only run, another session's files | Leave the file; report the need, or work on other files until the run ends |
+| Guards: a project file that is neither a test file nor under `.vbw/`, written while planning | Leave the file; put the check in a test file, or name the file in a plan's files so the build writes it |
 | Guards: a program (python, node, perl, ruby, ...) writing a file the guard cannot name, its target a variable, an expression or another call | name the file as a literal path in the program, or write it with the Edit tool (Write for a new file) |
 | Guards: `vbw loop start` by a tool call (arming the loop) | Ask the user to run `/vbw:loop` with the items and the ceiling they choose |
 | Guards: `vbw loop next` or `vbw loop park` by a tool call (the loop steps) | End your turn; the loop's Stop hook gives the next step |
@@ -625,6 +643,86 @@ Without `args.root` nothing is added. The guards judge a path in a tool call
 from the agent's working folder, so an absolute path under the project folder,
 `.vbw/runtime/scratch/` included, is judged by the run's rules (docs/guards.md).
 All nine workflows do this.
+
+## Submodules
+
+A project may hold other git repositories: submodules, or a clone nested in a
+folder. A plan or check file inside one is still named by its path from the
+project folder (`apps/mobile/src/comms.ts`), and VBW does its git work for that
+file in the repository that tracks it: the nearest folder at or above the file
+that holds `.git` (the rule the guards use, docs/guards.md). A folder that a
+symbolic link takes outside the project is never such a repository: VBW does
+nothing outside the project, so a plan file reached through it stays the
+project's, and git refuses to commit a path beyond a symbolic link.
+
+- `vbw commit` makes one commit per repository that holds a changed file, each
+  with the same message and trailers (`VBW-Plan:`, `VBW-Req:`, or `VBW-Fix:`),
+  and prints one line per commit, naming the submodule:
+  `committed 1a2b3c4 in apps/mobile for P1.1 (1 file)`. The approval's commit
+  of the check files does the same.
+- The project's pointer to the submodule is never moved: VBW commits inside the
+  submodule and stops there, since many projects bump submodule pointers only on
+  purpose. The project's `git status` shows the submodule as changed (`M
+  apps/mobile`) until you record the pointer yourself. A plan never commits a
+  pointer, even one whose files name the folder above the submodule.
+- A plan's folder entry (`apps/`, or `*`) covers the files of each submodule
+  inside it: `vbw commit` commits them in the submodule, and `vbw plan done`
+  counts them as uncommitted until it has.
+- When one repository's commit fails (a pre-commit hook refuses, say) after
+  another's went in, `vbw commit` stops, names the repository that failed and
+  each commit already made (`git commit failed in the project; already
+  committed: 1a2b3c4 in apps/mobile (1 file)`), and raises the phase's rigor
+  for what was committed. Run the same `vbw commit` again once git's reason is
+  fixed: it commits only the files still changed.
+- A submodule with a changed file must be on a branch. On a detached HEAD (as
+  `git submodule update` leaves one) `vbw commit` commits nothing anywhere and
+  says `apps/mobile is on no branch`, with the way out (`git -C apps/mobile
+  switch BRANCH`): a commit there would be left behind by the next submodule
+  update.
+- `vbw plan done` reads the plan's files' changes, and looks for the plan's
+  commit, in the repository that tracks each file. Every reader of VBW's
+  commits reads each submodule's history as well as the project's: the scope
+  check and the delivered-files check (a hand change in the submodule is a
+  deviation, named by its project path), `vbw show req` and the loop's report
+  (a submodule's commit with `(in apps/mobile)` after it), `vbw show contract
+  --changes` (the approved content of a test file in a submodule), and QA's
+  fingerprint of a phase (a commit in the submodule sends a passed phase back to
+  QA). In a submodule the record's own history ([Whose commits VBW
+  judges](proof.md#whose-commits-vbw-judges)) starts after the commit the
+  record's first commit pointed the submodule at.
+- The proof copy (`vbw prove`, `vbw mutate`, `vbw fix done`) holds each
+  checked-out submodule at its own `HEAD`, and `vbw mutate` puts a broken file
+  back as its own repository's last commit (docs/proof.md, `vbw prove`).
+- `vbw ship` wants every file committed: a submodule's files in the submodule,
+  every level down (a changed file in a submodule's own submodule is named by
+  its project path too). A moved pointer does not count as uncommitted work.
+- A `vbw` command run inside a submodule that has no `.vbw/` of its own works on
+  the project above it, and a Claude session started there is guarded as that
+  project (docs/guards.md). A clone nested in the project (its `.git` a folder)
+  and a linked worktree nested in it (its `.git` file points into a
+  `worktrees/` folder) stay projects of their own.
+- `vbw mutate` judges a break by the committed code with each submodule at its
+  own `HEAD`: a commit made only in a submodule makes the checks run on the
+  unbroken code again, and drops a break queued before it.
+- `## Test files` matches its pathspecs inside each submodule too: a test file
+  in a submodule is a test file of its own, named by its project path.
+
+Known limits:
+
+- **A parked loop item** reverts its commits in the project only: its commits in
+  a submodule stay.
+- **The loop's approval of strengthened check files** reads the project's
+  history only: for a check file in a submodule it leaves the approval to you.
+- **Uncommitted edits inside a submodule** are not seen by `vbw next`'s
+  fingerprint of the working folder or by proof reuse: a submodule counts at its
+  `HEAD` until you commit there.
+- **One level of submodules:** apart from `vbw ship`'s check, a submodule
+  inside a submodule is not followed (its folder is empty in the proof copy, so
+  a check or test file reading inside it fails).
+- **A clone nested in the project that is not its submodule:** a plan file named
+  inside it is committed there, but a plan's folder entry above it does not
+  reach into it (its pointer is never committed either), and it is not brought
+  into the proof copy, the fingerprints or the readers of VBW's history.
 
 ## The user's level
 

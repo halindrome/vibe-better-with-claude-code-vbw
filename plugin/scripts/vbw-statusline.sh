@@ -12,8 +12,9 @@
 # false in the project's .claude/settings.local.json, then its .claude/
 # settings.json, then the user's settings.json; the first file that sets it
 # decides, nothing decided means on) it prints nothing, writes nothing and exits
-# 3. Exit 3 is the hand-back signal the statusLine setting reads to run the
-# user's earlier status line (plan P134.2). This script itself never runs that
+# 3. It does the same outside any VBW project (no .vbw folder at or above the
+# folder). Exit 3 is the hand-back signal the statusLine setting reads to run the
+# user's earlier status line (plan P134.2); the setting needs no rewrite. This script itself never runs that
 # saved status line or any other command read from a file (D356).
 
 # The statusLine setting runs this file by sourcing it in a subshell of its own
@@ -41,7 +42,8 @@ fi
 
 # vbw_project_of DIR: sets root to the project of a session started in DIR, the
 # nearest folder up that holds .git (walked without a git process), or DIR itself
-# when no folder up holds one: the rule every part of VBW shares.
+# when no folder up holds one, or, from a submodule with no record of its own,
+# the VBW project above it: the rule every part of VBW shares.
 # shellcheck source-path=SCRIPTDIR source=../hooks/project.sh
 . "$plugin/hooks/project.sh"
 
@@ -76,6 +78,11 @@ take; root=$val
 take; transcript=$val
 take; sid=$val
 root=${root:-$PWD}
+
+# Outside any VBW project (no .vbw folder at or above the folder Claude Code
+# reports, else the one this runs in): hand back before any other work.
+vbw_vbw_above "$root"
+[ -n "$vbwdir" ] || exit 3
 
 # Started in a subfolder: the project is the nearest folder up that holds .git.
 vbw_project_of "$root"

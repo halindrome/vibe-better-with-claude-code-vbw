@@ -61,8 +61,8 @@ When `rename_hint` in `vbw next --json` is a sentence, say it once, as given. Ne
 `session` (`${CLAUDE_SESSION_ID}`, so the workflow confirms and ends its own run), `models` (from `vbw config models`), the next JSON's top-level `rigor`, `effort`, `profile` and `root` (the project folder: agents of a session started in a subfolder work there) in every workflow's args.
 
 Before `spec` or a workflow `plan`: code and no `.vbw/map.md` → map first:
-`VBW_SESSION_ID=${CLAUDE_SESSION_ID} vbw run start map`, Workflow `vbw:mapping` (args as above),
-write its `map` to `.vbw/map.md` (from a saved file: `jq -er '.result.map' FILE > .vbw/map.md`), read it.
+`VBW_SESSION_ID=${CLAUDE_SESSION_ID} vbw run start map`, Workflow `vbw:mapping` (args as above; it does not end its run),
+then end the run with its `map` on stdin, which saves `.vbw/map.md` in the run's commit (from a saved file: `jq -er '.result.map' FILE | VBW_SESSION_ID=${CLAUDE_SESSION_ID} vbw run end --map`; else a quoted heredoc, `<<'VBW_MAP'`), then read `.vbw/map.md`.
 
 Then, `profile.ask` true: follow `vbw:interview` before any spec or convert work; resume at
 `profile.pending`; unrecognised answer: ask again, record nothing.
@@ -91,6 +91,9 @@ judge it (look, feel, tone); a document that must contain something is `[auto]`,
 to the decision round); write a constraint only if user stated it. Recommend; don't interrogate. Follow `vbw:suggest`. Add each
 agreed requirement: `vbw spec add auto|human "statement"` (goals and constraints go in `.vbw/spec.md`, then `vbw spec sync`). Default milestone title → `vbw milestone rename "<title>"`. Check
 `## Commands` in `.vbw/spec.md` (what every proof runs) fits what was agreed (right sub-project, right interpreter); fix there, then `vbw spec sync`.
+Choose `## Commands` from the map's Tests section: prefer a command the map ran and dated. A whole suite the map marks `Not run` is never written silently. Before planning, ask once per such suite (AskUserQuestion), naming it unverified with the expected time the map gives (else say the time is unknown), with exactly these options in this order: "Run it now (Recommended)", "Leave it out and use only the commands the map verified", "Add it unverified". Under hands-off take run it now yourself and say so in one line.
+Run it now is its own step before any planning run: run the suite once (a long one in the background; read its whole result when it ends), tell the user green or red with the failing tests' names, and record it: `vbw decide "Commands: <command> ran <date> at <short commit>: green|red (<n> failing)"`. Never edit `.vbw/map.md`.
+A suite red today (the map's dated result or the run just made) is named before planning, with the narrower command (the one test file form from the map's Tests section, or the sub-project's green command) as the recommended option. A red suite enters `## Commands` only on the user's choice; then say the first proof will be red. After the choice write the chosen lines under `## Commands` in `.vbw/spec.md` and run `vbw spec sync`.
 
 **plan** with `detail.tier` express or `detail.small`: no mapping, no planning workflow. Read the
 files the request names, then `vbw apply --add` one phase at `detail.tier` with one
@@ -112,7 +115,7 @@ Status `blocked`: give its summary and blockers. A requirement already met: AskU
 **contract**: not ready for approval: do what `instruction` says (write the named check files, `vbw spec sync`), then `vbw next --json`.
 
 **approve** (needs user): `detail.changed` (this plan was approved before): `vbw show contract --changes`, say the plan changed and explain just those. Else
-`vbw show contract`: explain each requirement, how checked, plans, files, the build's shape (`build waves`: rounds, most plans at once, and each `waits for` line in plain words), commands that will run. Follow `vbw:suggest`, then AskUserQuestion with the approval question `vbw show contract` prints: "Approve" (first), "Not yet". Only this menu; never ask the user to type /vbw:approve (typing it still works). Approve: hook recorded it; continue. Not yet: ask what to change. User's own words (own-answer slot): what to change, or a question. You cannot approve.
+`vbw show contract`: explain each requirement, how checked, plans, files, the build's shape (`build waves`: rounds, most plans at once, and each `waits for` line in plain words), commands that will run. Follow `vbw:suggest`, passing `detail.replan` as the cost of a yes, then AskUserQuestion with the approval question `vbw show contract` prints: "Approve" (first), "Not yet". Only this menu; never ask the user to type /vbw:approve (typing it still works). Approve: hook recorded it; continue. Not yet: ask what to change. User's own words (own-answer slot): what to change, or a question. You cannot approve.
 A rule to reword, or one a newer requirement replaced (of any milestone): `vbw apply --patch` with `{"rules":[{"rule":"R1.2","text":"<new words>"}]}` or `{"rules":[{"rule":"R1.2","retire":"<why>"}]}` (`vbw show req R1` numbers its rules; a retired rule keeps its place), then the approval menu again.
 Test files edited during the build wait for one approval just before proof (`detail.files`): run `vbw show contract --changes` and show each file's whole diff to the user, say which and why, then ask the same way.
 

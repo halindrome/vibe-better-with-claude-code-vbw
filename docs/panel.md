@@ -36,7 +36,7 @@ milestone
 5 of 12 requirements done.
 requirements
 
-Nothing is needed from you right now.
+VBW is not waiting on you.
 your turn
 ```
 
@@ -58,7 +58,7 @@ uses. The panel shows these things, top to bottom:
 3. **Progress:** how many of the milestone's requirements are done (proven by
    their checks, or accepted by you), counted as the status line counts them.
 4. **Whether it needs you:** while VBW needs nothing from you, the line
-   "Nothing is needed from you right now" says so. When it does need you (to
+   "VBW is not waiting on you." says so. When it does need you (to
    approve the plan, check a result by hand, give the go-ahead to ship, say
    what to build, decide on a stuck fix, or answer a question) that sentence
    is the box's, in amber, and the line below is left out: nothing is said
@@ -73,7 +73,7 @@ Read the panel from the top. The box says what VBW is doing, since when, how
 long it should take and what the session has cost. When it is amber, VBW is
 waiting for you: the box says what for and which command to type. The
 sentences under the box say where the milestone stands. If the last one says
-"Nothing is needed from you right now", you can leave it running.
+"VBW is not waiting on you.", you can leave it running.
 
 A typical panel while a plan builds, before VBW has history to estimate from:
 
@@ -92,7 +92,7 @@ milestone
 5 of 12 requirements done.
 requirements
 
-Nothing is needed from you right now.
+VBW is not waiting on you.
 your turn
 ```
 

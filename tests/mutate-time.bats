@@ -121,7 +121,7 @@ C1 red" ] || { echo "$output"; false; }
   [ -z "$AFTER" ] || { echo "lines after the split: $AFTER"; false; }
   [ "$(names | tr '\n' '|')" = "copies|unbroken|break R1.1|waits|saving|" ] || { names; false; }
   sum_ok
-  last_break P1.1 | jq -e '(keys | sort) == ["at","checks","files","head","result","rule","what"] and .result == "red" and .checks == {C1: "red"}' || { last_break P1.1; false; }
+  last_break P1.1 | jq -e '(keys | sort) == ["at","checks","files","head","result","rule","tree","what"] and .result == "red" and .checks == {C1: "red"}' || { last_break P1.1; false; }
   [ "$(cat src/pay.sh)" = "$(git show HEAD:src/pay.sh)" ]
 }
 
@@ -133,7 +133,7 @@ C1 red" ] || { echo "$output"; false; }
   [ "$BEFORE" = "survivor: R2.1 (a receipt is printed): C2 still pass" ] || { echo "$output"; false; }
   [ -z "$AFTER" ] || { echo "$output"; false; }
   [ "$(names | tr '\n' '|')" = "copies|unbroken|break R2.1|waits|saving|" ] || { names; false; }
-  last_break P1.2 | jq -e '.result == "survivor" and (keys | sort) == ["at","checks","files","head","result","rule","what"]' || { last_break P1.2; false; }
+  last_break P1.2 | jq -e '.result == "survivor" and (keys | sort) == ["at","checks","files","head","result","rule","tree","what"]' || { last_break P1.2; false; }
 }
 
 @test "R207: a task break names its entry by the task" {
@@ -165,16 +165,24 @@ the pending file still needs the one approval before the proof" ] || { echo "$ou
   last_break P1.2 | jq -e '.result == "red" and .pending == ["tests/receipt.sh"]' || { last_break P1.2; false; }
 }
 
-@test "R207: the figures are measured: a check that takes a second on broken code puts it into the break's entry" {
-  printf 'out=$(sh src/pay.sh)\n[ "$out" = paid ] || sleep 1\n[ "$out" = paid ]\n' > tests/pay.sh
-  git commit -q -am "test(pay): slow when red"
+@test "R207, R232: the figures are measured by the proof's clock: a check that moves the injected clock one second on broken code puts exactly that second into the break's entry" {
+  # The clock is a file (VBW_PROOFTIME_CLOCK): the check on broken code writes a reading
+  # 1.000 s later into it, so nothing here waits a real second (T195: real time made the
+  # unbroken and the break figures both 1.1 s on Linux runners).
+  local clock="$TEST_ROOT/clock"
+  printf '1000.000\n' > "$clock"
+  printf 'out=$(sh src/pay.sh)\n[ "$out" = paid ] || printf "1001.000\\n" > "%s"\n[ "$out" = paid ]\n' "$clock" > tests/pay.sh
+  git commit -q -am "test(pay): moves the clock when red"
   "$VBW" approve > /dev/null
   printf 'echo unpaid\n' > src/pay.sh
-  vbw_run mutate P1.1 R1.1 "prints unpaid" src/pay.sh
+  run env VBW_PROOFTIME_CLOCK="$clock" "$VBW" mutate P1.1 R1.1 "prints unpaid" src/pay.sh < /dev/null
   [ "$status" -eq 0 ] || { echo "$output"; false; }
   split
-  awk -v b="$(step 'break R1.1')" -v u="$(step unbroken)" 'BEGIN {exit !(b >= 1.0 && u < b)}' || { echo "$STEPS"; false; }
+  [ "$(step 'break R1.1')" = "1.0" ] || { echo "$STEPS"; false; }
+  [ "$(step unbroken)" = "0.0" ] || { echo "$STEPS"; false; }
+  [ "$(total)" = "1.0" ] || { echo "$STEPS"; false; }
   sum_ok
+  [ "$(cat "$clock")" = "1001.000" ]
 }
 
 @test "R207: a refusal ends with its message as today and prints no breakdown: red on the unbroken code, a dirty check file, a stale queued break" {
@@ -285,4 +293,36 @@ C3 red" ] || { echo "$output"; false; }
   [ "$status" -eq 0 ] || { echo "$output"; false; }
   [ "$(printf '%s\n' "$output" | head -n 1)" = "VBW's own work: 2.2 of 2.7 min" ] || { echo "$output"; false; }
   [ "$(printf '%s\n' "$output" | sed -n 2p)" = "  steps of 160.0 s: copies 100.0, unbroken 5.0, break R1.1 20.0, waits 0.0, saving 20.0" ] || { echo "$output"; false; }
+}
+
+# R232 (T195): the clock the proof's timer reads can be injected: when VBW_PROOFTIME_CLOCK
+# names a readable file, prooftime_detect sets the clock kind to file and prooftime_clock
+# prints that file's first line (seconds with milliseconds) instead of the machine clock;
+# unset or unreadable, nothing changes. The variable is an environment variable, so it
+# reaches a unit's subshell and the vbw process a test starts. This file then measures no
+# real duration: nothing in it pauses the shell (the R152 rule in tests/release-run.bats
+# sees clocks, not pauses), and docs/proof.md names the variable as a test hook.
+
+@test "R232: prooftime_clock reads the file VBW_PROOFTIME_CLOCK names, and the machine clock when it is unset or unreadable" {
+  local clock="$TEST_ROOT/clock"
+  printf '1234.567\nignored second line\n' > "$clock"
+  run env VBW_PROOFTIME_CLOCK="$clock" VBW_LIB="$REPO_ROOT/plugin/lib" bash -c '. "$VBW_LIB/core.sh"; . "$VBW_LIB/prooftime.sh"; prooftime_detect; printf "%s %s\n" "$PROOFTIME_NS" "$(prooftime_clock)"; printf "1300.000\n" > "$VBW_PROOFTIME_CLOCK"; prooftime_clock'
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  [ "$(printf '%s\n' "$output" | sed -n 1p)" = "file 1234.567" ] || { echo "$output"; false; }
+  [ "$(printf '%s\n' "$output" | sed -n 2p)" = "1300.000" ] || { echo "$output"; false; }
+  run env -u VBW_PROOFTIME_CLOCK VBW_LIB="$REPO_ROOT/plugin/lib" bash -c '. "$VBW_LIB/core.sh"; . "$VBW_LIB/prooftime.sh"; prooftime_detect; printf "%s %s\n" "$PROOFTIME_NS" "$(prooftime_clock)"'
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  [[ "$output" =~ ^(nanos|perl|none)\ [0-9]+\.[0-9]{3}$ ]] || { echo "$output"; false; }
+  run env VBW_PROOFTIME_CLOCK="$TEST_ROOT/no-such-file" VBW_LIB="$REPO_ROOT/plugin/lib" bash -c '. "$VBW_LIB/core.sh"; . "$VBW_LIB/prooftime.sh"; prooftime_detect; printf "%s %s\n" "$PROOFTIME_NS" "$(prooftime_clock)"'
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  [[ "$output" =~ ^(nanos|perl|none)\ [0-9]+\.[0-9]{3}$ ]] || { echo "$output"; false; }
+}
+
+@test "R232: this file waits no real time: nothing in it pauses the shell" {
+  [ "$(grep -c 'slee[p]' "$BATS_TEST_FILENAME")" -eq 0 ] || { grep -n 'slee[p]' "$BATS_TEST_FILENAME"; false; }
+}
+
+@test "R232: docs/proof.md names VBW_PROOFTIME_CLOCK as a test hook for the proof's clock" {
+  grep -qF 'VBW_PROOFTIME_CLOCK' "$REPO_ROOT/docs/proof.md"
+  grep -F 'VBW_PROOFTIME_CLOCK' "$REPO_ROOT/docs/proof.md" | grep -qi 'test'
 }

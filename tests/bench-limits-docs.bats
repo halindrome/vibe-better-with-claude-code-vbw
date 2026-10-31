@@ -18,14 +18,18 @@ old_limits() {
   grep -inE '(^|[^0-9.])(8|30) ?ms' "$1" | grep -iE 'budget|limit|at most|within|≤|<=' || true
 }
 
-@test "R151: CI runs the benchmark with the local defaults: no CI-only hook or status line limit" {
-  ! grep -nE 'VBW_HOOK_BUDGET|VBW_STATUSLINE_BUDGET' "$CI" || {
-    echo "ci.yml still sets a limit of its own"
+@test "R151, R222: CI runs the benchmark with the local defaults: no CI-only hook or status line limit, and no stand-in reference" {
+  ! grep -nE 'VBW_HOOK_BUDGET|VBW_STATUSLINE_BUDGET|VBW_BENCH_REFERENCE' "$CI" || {
+    echo "ci.yml still sets a limit or a reference of its own"
+    false
+  }
+  flat "$REPO_ROOT/docs/guards.md" | grep -qF 'ci sets no reference of its own' || {
+    echo "docs/guards.md does not say CI sets no reference of its own"
     false
   }
 }
 
-@test "R151: docs/guards.md states the 20 ms limit per hook call and the busy-machine report, and no longer 8 ms" {
+@test "R151, R222: docs/guards.md states the 20 ms limit per hook call as the meaning on a nominal machine, the reference, the ratio and the slow report, the busy-machine report, and no longer 8 ms" {
   local f="$REPO_ROOT/docs/guards.md"
   flat "$f" | grep -qE '20 ?ms' || {
     echo "docs/guards.md does not state 20 ms"
@@ -33,6 +37,14 @@ old_limits() {
   }
   flat "$f" | grep -qF 'busy' || {
     echo "docs/guards.md does not describe the busy-machine report"
+    false
+  }
+  flat "$f" | grep -qE 'reference' && flat "$f" | grep -qE 'ratio' && flat "$f" | grep -qE 'slow' || {
+    echo "docs/guards.md does not describe the reference workload, the ratio and the slow report"
+    false
+  }
+  flat "$f" | grep -qE 'nominal' || {
+    echo "docs/guards.md does not say the budgets are the meaning on a nominal machine"
     false
   }
   [ -z "$(old_limits "$f")" ] || {
@@ -46,10 +58,14 @@ old_limits() {
   }
 }
 
-@test "R151: docs/statusline.md states the 60 ms limit, and no longer 30 ms" {
+@test "R151, R222: docs/statusline.md states the 60 ms limit, the reference and the ratio, and no longer 30 ms" {
   local f="$REPO_ROOT/docs/statusline.md"
   flat "$f" | grep -qE '60 ?ms' || {
     echo "docs/statusline.md does not state 60 ms"
+    false
+  }
+  flat "$f" | grep -qE 'reference' && flat "$f" | grep -qE 'ratio' || {
+    echo "docs/statusline.md does not describe the reference workload and the ratio"
     false
   }
   [ -z "$(old_limits "$f")" ] || {
@@ -59,10 +75,14 @@ old_limits() {
   }
 }
 
-@test "R151: the hot-path rule of CLAUDE.md states 20 ms per hook call, 60 ms for the status line and the busy report" {
+@test "R151, R222: the hot-path rule of CLAUDE.md states 20 ms per hook call, 60 ms for the status line, the reference and ratio with the slow report, and the busy report" {
   local rule
   rule=$(grep -E '^- \*\*Hot paths:\*\*' "$REPO_ROOT/CLAUDE.md") || {
     echo "CLAUDE.md has no hot-path rule"
+    false
+  }
+  printf '%s\n' "$rule" | grep -qi 'reference' && printf '%s\n' "$rule" | grep -qi 'ratio' && printf '%s\n' "$rule" | grep -qi 'slow' || {
+    echo "the rule does not state the reference, the ratio and the slow report: $rule"
     false
   }
   printf '%s\n' "$rule" | grep -qE '20 ?ms' || {
@@ -79,6 +99,18 @@ old_limits() {
   }
   ! printf '%s\n' "$rule" | grep -qE '(^|[^0-9.])(8|30) ?ms|1x' || {
     echo "the rule still states an old limit: $rule"
+    false
+  }
+}
+
+@test "R231: docs/guards.md describes the reference workload as a guard-shaped jq call over a fixed document and program" {
+  local f="$REPO_ROOT/docs/guards.md"
+  flat "$f" | grep -qE 'guard-shaped|shape of a guard|guard.{0,20}shape' || {
+    echo "docs/guards.md does not describe the reference as guard-shaped"
+    false
+  }
+  flat "$f" | grep -qE 'reference[^.]{0,200}fixed[^.]{0,80}(document|program)' || {
+    echo "docs/guards.md does not say the reference runs over a fixed document and program"
     false
   }
 }

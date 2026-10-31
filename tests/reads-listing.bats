@@ -12,7 +12,10 @@
 load helper
 load fixture-helper
 
-setup_file() { fixture_build shop listing_project; }
+setup_file() {
+  fixture_build shop listing_project
+  fixture_build greet greet_project
+}
 setup() { fixture_copy shop; }
 teardown() { vbw_teardown; }
 teardown_file() { fixture_teardown; }
@@ -153,4 +156,68 @@ unseen_ran_nothing() {
   git rm -q a/sub/h.txt && git commit -q -m "feat: drop h"
   vbw_run prove
   unseen_ran_nothing
+}
+
+# R226 (T194): a check whose test only executes a script by its path (./greet.sh) has
+# no folder listing on its read list, as one that runs it through sh has none, so a
+# commit that adds an unrelated file at the project root reuses it. Built once per
+# file: the greet project, proved once.
+
+# greet_project: greet.sh at the project root, run by C3 as ./greet.sh and by C4 as sh greet.sh.
+greet_project() {
+  vbw_setup
+  vbw_git_project
+  "$VBW" init > /dev/null
+  printf '#!/bin/sh\necho hello\n' > greet.sh
+  chmod +x greet.sh
+  # C5 runs lister.sh by its path; the script itself lists the folder data/, which stays a read.
+  mkdir data
+  printf 'x\n' > data/x.txt
+  printf '#!/bin/sh\nls data > /dev/null\n' > lister.sh
+  chmod +x lister.sh
+  printf '# Shop\n\n## Requirements\n\n- R1 [auto] A customer is greeted\n' > .vbw/spec.md
+  "$VBW" spec sync > /dev/null
+  edit_record '.checks = [{id:"C3", req:"R1", run:["./greet.sh"], files:["greet.sh"]},
+      {id:"C4", req:"R1", run:["sh","greet.sh"], files:["greet.sh"]},
+      {id:"C5", req:"R1", run:["./lister.sh"], files:["lister.sh"]}]
+    | .phases = [{id:"P1", title:"Shop", reqs:["R1"], milestone:"M1"}]
+    | .plans = [{id:"P1.1", phase:"P1", title:"Shop", reqs:["R1"], files:["src/"], after:[], status:"done"}]'
+  git add -A && git commit -q -m "chore(vbw): plan"
+  "$VBW" approve > /dev/null
+  STORE="$(git rev-parse --path-format=absolute --git-common-dir)/vbw/runs.json"
+  export STORE
+  "$VBW" prove > /dev/null || { echo "the first proof failed"; return 1; }
+}
+
+@test "R226: a check whose test only executes a script by its path has no folder on its read list, as the one that runs it through sh has none" {
+  fixture_copy greet
+  jq -e '.runs["check:C3"].dirs == [] and .runs["check:C4"].dirs == [] and (.runs["check:C3"].reads | index("greet.sh") != null)' "$STORE" > /dev/null || {
+    echo "read lists:"
+    jq -c '.runs | map_values({reads, dirs})' "$STORE"
+    false
+  }
+}
+
+@test "R226: a commit that adds an unrelated file at the project root reuses the check that only executes a script by its path, and the proof names it as reused" {
+  fixture_copy greet
+  printf 'notes\n' > NOTES.md
+  commit "docs: notes"
+  vbw_run prove
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  [[ "$(line C3)" == *"reused"* && "$(line C4)" == *"reused"* ]] || { echo "$output"; false; }
+  [[ "$output" != *"ran everything"* ]] || { echo "$output"; false; }
+}
+
+@test "R226: a folder the script run by its path lists itself stays on its read list, and a file added to it reruns the check" {
+  fixture_copy greet
+  jq -e '.runs["check:C5"].dirs | map(.path) | index("data") != null' "$STORE" > /dev/null || {
+    echo "read list:"
+    jq -c '.runs["check:C5"]' "$STORE"
+    false
+  }
+  printf 'y\n' > data/y.txt
+  commit "feat: another data file"
+  vbw_run prove
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  [[ "$(line C5)" != *"reused"* ]] || { echo "$output"; false; }
 }

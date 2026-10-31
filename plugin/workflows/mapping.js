@@ -34,8 +34,6 @@ const reply = o => Object.assign(o, { refused })
 
 // args: {models?: {scout?}}
 const models = (args && args.models) || {}
-// R186, D369: the closing step is a few fixed commands and the record stays the source of truth.
-const CLOSE_MODEL = 'haiku'
 const model = models.scout ? { model: models.scout } : {}
 // The effort the profile gives a role and step (args.effort, from vbw next --json): the option
 // for an agent call, or nothing when there is no table or no value (agents then run as before).
@@ -49,22 +47,8 @@ const effortOf = (role, step) => {
 const profile = (args && typeof args === 'object' && args.profile) || {}
 const voice = `\n\nThe user's level: ${profile.level || 'small scripts or no-code'}. Explanation depth: ${profile.depth || 'plain with technical terms explained'}. Involvement: ${profile.involvement || 'options with a recommendation'}. Write whatever the user will read at that level and depth.`
 
-// The run's own last step (R81): end the run on every way out. Only when the
-// router passed args.session.
-const session = (args && args.session) || ''
-const closeRun = async (phaseIds = []) => {
-  if (!session) return null
-  const end = `VBW_SESSION_ID=${session} vbw run end`
-  const check = phaseIds.length === 0 ? '' : `First check that each planned phase has plans: ${phaseIds.map(id => `vbw show phase ${id}`).join('; ')}. `
-  const done = await ask(`Close this VBW run (your own instructions, Close a run, allow it). ${check}Then, whatever you found, run ${end}. Answer ended (run end succeeded), recorded (${phaseIds.length === 0 ? 'true' : 'every phase has plans'}) and report (${phaseIds.length === 0 ? 'what it printed' : 'name each phase without plans, else "all recorded; run ended"'}). Change nothing else.${voice}`,
-    Object.assign({ agentType: 'vbw:lead', label: 'close run', schema: CLOSE_RESULT }, { model: CLOSE_MODEL }, effortOf('lead', 'close')))
-  if (!done) log(`the closing agent stopped: run by hand: ${end}`)
-  else {
-    if (!done.recorded) log(done.report)
-    if (!done.ended) log(`the run did not end: run by hand: ${end}`)
-  }
-  return done
-}
+// The run is not ended here (#731): its record commit must hold the map, which only
+// the caller has once this returns, so the caller ends it with vbw run end --map.
 
 const ANGLES = [
   { key: 'stack', ask: 'The stack and how to work with it: languages, frameworks, package manager, and the exact commands to install, build, run, test and lint (try the test and lint commands and report what happens).' },
@@ -73,17 +57,6 @@ const ANGLES = [
   { key: 'tests', ask: 'The tests: framework, where they live, how they are organized, fixtures and helpers, what is well covered and what is not. For each test framework (each subproject has its own), the exact command that runs one test file: run it once on an existing test file and report the command and what happened, and what a new test file needs before that command runs it (a naming pattern, an entry in a config or build file). Never guess one: when no form worked, say so.' },
   { key: 'risks', ask: 'The risks for someone changing this code: fragile or complex areas, generated or vendored code not to edit, global state, missing tests around important paths.' },
 ]
-
-const CLOSE_RESULT = {
-  type: 'object',
-  required: ['ended', 'recorded', 'report', 'refused'],
-  properties: {
-    refused: REFUSED,
-    ended: { type: 'boolean' },
-    recorded: { type: 'boolean' },
-    report: { type: 'string' },
-  },
-}
 
 const FINDINGS = {
   type: 'object',
@@ -106,8 +79,7 @@ const missing = sections.filter(s => s.findings.length === 0).map(s => s.angle)
 if (missing.length > 0) log(`no findings for: ${missing.join(', ')}`)
 
 phase('Merge')
-const map = await ask(`Merge these verified findings about this codebase into one concise markdown map, with the sections Stack and commands, Structure, Conventions, Tests, Risks. Keep every command and path exactly. Drop duplicates. The map is read long after this run, when the code has changed: keep each test or lint result with its "as of <commit>, <date>" and never state one as current, and make no recommendation that rests on a result (fixing a failing test is work for a plan, not advice in the map). No preamble.\n\n${JSON.stringify(sections)}${voice}`,
+const map = await ask(`Merge these verified findings about this codebase into one concise markdown map, with the sections Stack and commands, Structure, Conventions, Tests, Risks. Keep every command and path exactly. Drop duplicates. The map is read long after this run, when the code has changed: keep each test or lint result with its "as of <commit>, <date>" and never state one as current, and in the Tests section mark every test or lint command in one of two ways, in these exact words: \`ran as of <short commit>, <date>: <what happened, how long it took>\` for a command a scout ran, \`Not run\` for one no scout ran, and make no recommendation that rests on a result (fixing a failing test is work for a plan, not advice in the map). No preamble.\n\n${JSON.stringify(sections)}${voice}`,
   Object.assign({ agentType: 'vbw:scout', label: 'scout merge', phase: 'Merge', schema: MAP }, model, effortOf('scout', 'merge')))
 
-await closeRun()
 return reply({ map: (map && map.map) || sections.map(s => `## ${s.angle}\n${s.findings.map(f => `- ${f}`).join('\n')}`).join('\n\n'), missing })

@@ -40,7 +40,7 @@ More than four are sorted four at a time.
 
 | Sort | What happens |
 |---|---|
-| `now` | The idea joins the active milestone as a requirement (`vbw spec add`). Planning and approval continue as usual. With no active milestone, VBW starts the next one. |
+| `now` | The idea joins the active milestone as a requirement (`vbw spec add`). VBW offers its suggestions (`vbw:suggest`) once after the ideas are added, before the first planning run. Planning and approval continue as usual. With no active milestone, VBW starts the next one. |
 | `next` | The idea goes into the backlog (`vbw todo add`), to be picked up soon. |
 | `later` | The idea goes into the backlog, to be picked up when there is room. |
 

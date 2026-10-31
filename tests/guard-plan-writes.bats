@@ -44,8 +44,13 @@ denied() { [ "$(printf '%s' "$output" | jq -r '.hookSpecificOutput.permissionDec
   run write_call sessA src/app.js workflow-subagent
   denied
   [[ "$output" == *"src/app.js"* ]]
-  [[ "$output" == *"plan"* ]]
+  [[ "$output" == *"the project's test files"* ]] || { echo "$output"; false; }
+  [[ "$output" == *"product code is the build's"* ]] || { echo "$output"; false; }
+  [[ "$output" == *"Next: "* ]]
+  [[ "$output" != *"replanned"* ]] || { echo "a build's next step: $output"; false; }
   run write_call sessA README.md workflow-subagent
+  denied
+  run write_call sessA src/app/x.ts workflow-subagent
   denied
 }
 
@@ -58,7 +63,8 @@ denied() { [ "$(printf '%s' "$output" | jq -r '.hookSpecificOutput.permissionDec
 
 @test "R75: a planning agent may write test files, in the usual places and by the usual names" {
   local p
-  for p in tests/signup.test.js test/signup.bats tests/test_signup.py src/signup.test.ts src/signup_test.go spec/signup_spec.rb src/__tests__/signup.js; do
+  for p in tests/signup.test.js test/signup.bats tests/test_signup.py src/signup.test.ts src/signup_test.go spec/signup_spec.rb src/__tests__/signup.js \
+    src/app/x.spec.ts lib/x_spec.rb t/feature/Basic.t; do
     run write_call sessA "$p" workflow-subagent
     [ -z "$output" ] || { echo "refused: $p -> $output"; false; }
   done
@@ -69,6 +75,13 @@ denied() { [ "$(printf '%s' "$output" | jq -r '.hookSpecificOutput.permissionDec
   denied
   run shell_call sessA "echo x > tests/signup.test.js" workflow-subagent
   [ -z "$output" ]
+  local p
+  for p in src/app/x.spec.ts lib/x_spec.rb t/feature/Basic.t t/feature/Basic.t; do
+    run shell_call sessA "echo x > $p" workflow-subagent
+    [ -z "$output" ] || { echo "refused: $p -> $output"; false; }
+  done
+  run shell_call sessA "echo x > src/t/x.ts" workflow-subagent
+  denied
   run shell_call sessA "echo x > .vbw/map.md" workflow-subagent
   [ -z "$output" ]
 }
