@@ -33,7 +33,7 @@ PROOFTIME_NS=''
 prooftime_detect() {
   local n
   if [ -n "${VBW_PROOFTIME_CLOCK:-}" ] && [ -r "$VBW_PROOFTIME_CLOCK" ]; then
-    PROOFTIME_NS=file
+    PROOFTIME_NS='file'
     return 0
   fi
   n=$(date +%N 2> /dev/null) || n=
