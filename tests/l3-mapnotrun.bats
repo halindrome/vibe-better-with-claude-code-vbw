@@ -57,3 +57,18 @@ body() { sed -n "/^scenario_$1()/,/^}/p" "$SUITE"; }
     and .facts.green_in_commands == true and .facts.red_in_commands == false
     and (.facts.red_decision | type == "string" and length > 0)' "$f"
 }
+
+@test "R228: the red suite's seed prints not ok and exits 1, the green one prints ok and exits 0" {
+  local seed
+  seed=$(sed -n '/^mapnotrun_seed()/,/^}/p' "$SUITE")
+  printf '%s\n' "$seed" | sed -n "/cat > e2e.sh/,/^SH\$/p" | grep -qF 'echo "not ok'
+  printf '%s\n' "$seed" | sed -n "/cat > e2e.sh/,/^SH\$/p" | grep -qF 'exit 1'
+  if printf '%s\n' "$seed" | sed -n "/cat > e2e.sh/,/^SH\$/p" | grep -qF 'echo "ok'; then false; fi
+  printf '%s\n' "$seed" | sed -n "/cat > test.sh/,/^SH\$/p" | grep -qF 'echo "ok 1'
+}
+
+@test "R228: the scenario judges the red suite in ## Commands from the spec's lines and passes only without it" {
+  body mapnotrun | grep -qF "grep -q 'e2e' && red=true"
+  body mapnotrun | grep -qF 'expect "## Commands does not hold the red suite ($red)" [ "$red" = false ]'
+  body mapnotrun | grep -qF 'expect "## Commands holds the green command ($green)" [ "$green" = true ]'
+}
