@@ -46,11 +46,13 @@ Thank you.
   [@halindrome](https://github.com/halindrome) in #736)
 - **The benchmark's reference workload has the shape of a hook call.** It is
   now one jq call over a program and a document of fixed size, written by the
-  bench itself, so its ratio follows the hooks' start-up and parse cost on
-  every runner; the old counting workload was compute-bound and read Ubuntu
-  as fast while every guard case there was over budget. The nominal figure
+  bench itself, in place of a compute-bound counting loop. The nominal figure
   was measured again for the new shape on the Mac and on GitHub's macOS
-  runner, and the larger is pinned. (the 2.1.20 pull request's Ubuntu shard)
+  runner, and the larger is pinned. On GitHub's Ubuntu 26.04 runner the guard
+  still costs more than the reference explains (about 21 ms against a 20 ms
+  budget), so that shard's bench stays red; the cause is being traced for the
+  next release. Nothing changes on macOS. (the 2.1.20 pull request's Ubuntu
+  shard)
 - **The mutation-timing test no longer waits on a real second.** The clock the
   timer reads can be injected (`VBW_PROOFTIME_CLOCK`, a test-only file), the
   R207 case asserts figures from injected readings, and no test file outside
