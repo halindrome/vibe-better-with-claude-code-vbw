@@ -216,8 +216,19 @@ started() { [ "$(ls "$BAR" | grep -c '^[0-9]')" -ge 1 ]; }
   [[ "$(head -n 1 "$MARK")" =~ ^[0-9]+$ ]] || { cat "$MARK"; false; }
   [ "$(head -n 1 "$MARK")" != "$dead" ] || { cat "$MARK"; false; }
   [ ! -e "$MARKER" ] || { echo "the marker outlived the run"; false; }
-  [ -z "$(ls -A .vbw/runtime/mutate-queue/P1.1 2> /dev/null)" ] || ls -R .vbw/runtime/mutate-queue
+  [ ! -d .vbw/runtime/mutate-queue/P1.1 ] || { echo "the queue folder outlived the run"; ls -A .vbw/runtime/mutate-queue/P1.1; false; }
   breaks | jq -e 'map(.r) == ["red"]' || breaks
+}
+
+@test "R230: a run with no break waiting, or only a break of another commit, leaves no marker and no empty folder" {
+  run "$VBW" mutate P1.1 --run < /dev/null
+  [ "$status" -ne 0 ] && [[ "$output" == *"no break waits for P1.1"* ]] || { echo "$output"; false; }
+  [ ! -d .vbw/runtime/mutate-queue/P1.1 ] || { ls -A .vbw/runtime/mutate-queue/P1.1; false; }
+  queue R1.1 "prints unpaid" 'echo unpaid'
+  git commit --allow-empty -q -m "move head"
+  run "$VBW" mutate P1.1 --run < /dev/null
+  [ "$status" -ne 0 ] && [[ "$output" == *"queued at another commit"* ]] || { echo "$output"; false; }
+  [ ! -d .vbw/runtime/mutate-queue/P1.1 ] || { ls -A .vbw/runtime/mutate-queue/P1.1; false; }
 }
 
 @test "R230: two --run of the same plan never both make copies: the second is refused while the first holds its slot, one set of copies exists, and each entry is recorded once" {
