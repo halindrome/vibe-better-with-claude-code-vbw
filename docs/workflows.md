@@ -306,7 +306,17 @@ cannot fail, and QA would otherwise find it one round at a time.
   is dropped and named (its bytes belong to older files): make it again. Check
   files that differ from their last commit stop the run, and `vbw plan done`
   names breaks still queued. Only a rule break queues; a task break and
-  `--none` run at once.
+  `--none` run at once. A second `--run` of the same plan is refused while one
+  is still running: it exits non-zero, before it reads or copies anything, with
+  a line naming the running one (its pid and command) and `Next: wait for it to
+  finish`. The running one holds a marker, `run.pid` under
+  `.vbw/runtime/mutate-queue/PLAN/`, with its pid from before it reads the
+  queue until it ends. A marker whose process has ended (or that is empty or
+  not a number) never blocks: the next run takes it over. A run waiting for a
+  slot holds the marker for the whole wait, on purpose: a second run would
+  compete for the same slots. A long run can pass Claude Code's 10-minute limit
+  for one command, so start it in the background, wait for it and read its
+  whole result.
 - **Where the time went:** a break that ran ends with two lines, after the
   result lines (and after a survivor's line, which keeps its exit 1):
 
