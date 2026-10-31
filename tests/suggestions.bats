@@ -158,6 +158,7 @@ flat() { tr '\n' ' ' < "$1" | tr -s ' ' | tr '[:upper:]' '[:lower:]'; }
   printf '%s' "$sec" | grep -q 'backlog' || { echo "docs/interview.md does not name the backlog option"; false; }
   printf '%s' "$sec" | grep -qE 'planning run|replan' || { echo "docs/interview.md does not name the cost of a yes at approval"; false; }
   printf '%s' "$sec" | grep -q 'vbw todo add' || { echo "docs/interview.md does not name vbw todo add"; false; }
+  printf '%s' "$sec" | grep -qE 'backlog[^-]{0,30}recommended' || { echo "docs/interview.md does not recommend the backlog"; false; }
   ! printf '%s' "$sec" | grep -q 'two moments' || { echo "docs/interview.md still says two moments"; false; }
   flat "$TRIAGE_DOC" | grep -qE 'now[^|]{0,200}suggest' || { echo "docs/triage.md's now outcome does not name the suggestions"; false; }
 }
