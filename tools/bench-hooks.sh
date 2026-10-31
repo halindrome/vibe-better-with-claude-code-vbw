@@ -45,7 +45,7 @@
 # sits in the same config folder, and the setting runs as above. It is judged against
 # the same limit, and the bench fails if the loaded copy did not render.
 # The reference (R222, #716): before any record is built or case judged, the bench
-# measures one fixed workload (a jq program over a fixed range, run through sh -c as the
+# measures one fixed workload (a jq call of the guard's shape over a program and a document written by the bench, run through sh -c as the
 # hooks are, RUNS calls) on this machine in this run, and prints once
 # 'reference: <X> ms CPU per call; nominal <N> ms (...); ratio <R>', R = measured / nominal.
 # NOMINAL_MS is the workload's cost on the two nominal machines (an M1 Max Mac and
@@ -60,6 +60,9 @@
 # VBW_BENCH_REFERENCE_MS stands in for the measured reference (tests), as
 # VBW_HOOK_BUDGET_MS does for a limit. CI sets neither: tools/test.sh --shard runs the
 # bench in shard 1 of each matrix entry, so the reference line shows there.
+# The reference's program and document (R231) are written by the bench itself at the start
+# of the run, from its own fixed text: VBW_BENCH_REFERENCE_FILES=DIR (tests) writes the
+# two files (reference.jq, reference.json) into DIR and exits 0 without measuring.
 # VBW_BENCH_RUNS and VBW_BENCH_PLUGIN_ROOT override the runs and the plugin (tests).
 # VBW_BENCH_ONLY (tests) runs only the cases asked for, and builds only the records
 # they need, so a test that asserts on one line does not pay for the whole bench.
@@ -82,9 +85,14 @@ SIZES="51 500 2000"
 # The reference workload's nominal cost (R222): CPU ms per call of the workload in the
 # reference block below, on the two nominal machines, measured NOMINAL_WHEN. This is a
 # debt: measure it again whenever the workload or the nominal machines change.
-# October 2026. M1 Max Mac: 21.7 to 23.0 ms over five runs of this script on 2026-10-30.
-# GitHub's macOS runner: 23.5 and 24.0 ms in the two bench shards of pull request #739
-# (2026-10-30). The larger, 24.0, is pinned, so both machines sit at a ratio of 1 or less.
+# October 2026. The workload is one jq call of the guard's shape (--rawfile glance, --arg root,
+# --arg dir, --arg open, -f PROGRAM - DOCUMENT END) over a program of 24760 bytes and a
+# document of 86107 bytes, both written by this script. M1 Max Mac: 14.7 to 15.8 ms over
+# five runs of this script on 2026-10-31. GitHub's macOS runner: not yet read for this
+# shape (it needs the bench shard 1 log of the pull request); until that log exists the
+# figure of the old counting workload in the two bench shards of pull request #739
+# (23.5 and 24.0 ms, 2026-10-30) stays, and the larger of the two is pinned before merge:
+# 24.0 now, so both machines sit at a ratio of 1 or less.
 NOMINAL_MS=24.0
 NOMINAL_WHEN="October 2026"
 
@@ -157,6 +165,40 @@ trap 'echo "bench-hooks: stopped at line $LINENO (status $?)" >&2' ERR
 hooks_json="$PLUGIN/hooks/hooks.json"
 export CLAUDE_PLUGIN_ROOT="$PLUGIN" CLAUDE_PROJECT_DIR="$work"
 
+# reference_files DIR (R231): the reference program and document, written from the bench's
+# own text into DIR: reference.jq (about 25 KB, the size of the shipped Bash guard, built
+# of fixed helper definitions and a body that reads $glance, $root, $dir, $open and its
+# inputs the way a guard does) and reference.json (a fixed object of about 60 KB). The
+# content is deterministic and read from no shipped file and no project file.
+reference_files() {
+  mkdir -p "$1"
+  awk 'BEGIN {
+    for (i = 1; i <= 101; i++)
+      printf "def h%d($v; $w): if ($v | type) == \"object\" then ($v | keys | map(select(startswith(\"k%d\"))) | length) + $w elif ($v | type) == \"array\" then ($v | map(tostring | length) | add // 0) + %d else ($v | tostring | ascii_downcase | length) end;\n", i, i % 7, i
+    print "($glance | fromjson) as $g"
+    print "| ([inputs] | .[-2:]) as $in"
+    print "| $in[0] as $doc"
+    print "| ($in[1] // {}) as $end"
+    print "| ($doc.checks // []) as $checks"
+    print "| [$checks[] | select((.run | join(\" \") | test(\"^sh \")) and (.files | length) > 0)] as $kept"
+    print "| (($root | length) + ($dir | length) + ($open | tonumber)) as $n"
+    printf "| [$doc"
+    for (i = 1; i <= 101; i += 5) printf ", h%d($doc; $n)", i
+    print "] as $parts"
+    print "| {schema: ($g.schema // 0), kept: ($kept | length), end: ($end | length), parts: ($parts | map(numbers) | add)}"
+  }' > "$1/reference.jq"
+  jq -nc '{schema: 4, protected: ["tests/old.sh"],
+    checks: [range(0; 330) | {id: "C\(.)", req: "R\(. % 40)", run: ["sh", "tests/old.sh"], files: ["tests/old.sh", "src/old/\(.).txt"], note: ("check text " * 8)}],
+    decisions: [range(0; 60) | {id: "D\(.)", text: ("Old decision \(.) " + ("~" * 300)), at: "2026-01-01T00:00:00Z"}]}' > "$1/reference.json"
+}
+if [ -n "${VBW_BENCH_REFERENCE_FILES:-}" ]; then
+  reference_files "$VBW_BENCH_REFERENCE_FILES"
+  exit 0
+fi
+reference_files "$work/reference"
+printf '{"schema": 4}' > "$work/glance.json"
+printf '{}' > "$work/end.json"
+
 # cpu_pair INPUT BASELINE HOOK: the mean CPU time in ms of RUNS runs of each
 # `sh -c` command, "BASELINE HOOK", alternating call by call so both see the
 # same machine. The children's user and system time comes from bash's `times`
@@ -219,8 +261,9 @@ if perl -e 'exit($ARGV[0] > $ARGV[1] ? 0 : 1)' -- "$startup" "$BUDGET_MS"; then
 fi
 
 # The reference (R222): one fixed jq workload, run through sh -c as the hooks are, on
-# this machine in this run, before any record is built or case judged.
-read -r _ measured < <(cpu_pair /dev/null "jq -n empty" "jq -n '[range(0; 30000) | tostring | length] | add' > /dev/null")
+# this machine in this run, before any record is built or case judged: one jq call of the
+# guard's shape (R231) over the bench's own program and document.
+read -r _ measured < <(cpu_pair /dev/null "jq -n empty" "jq -nc --rawfile glance \"$work/glance.json\" --arg root \"$work\" --arg dir \"$work\" --arg open 0 -f \"$work/reference/reference.jq\" - \"$work/reference/reference.json\" \"$work/end.json\"")
 [ -z "${VBW_BENCH_REFERENCE_MS:-}" ] || measured="$VBW_BENCH_REFERENCE_MS"
 RATIO=$(perl -e 'printf "%.2f", $ARGV[0] / $ARGV[1]' -- "$measured" "$NOMINAL_MS")
 SLOW=0
