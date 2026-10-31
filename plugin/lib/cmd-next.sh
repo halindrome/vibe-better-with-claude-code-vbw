@@ -95,6 +95,10 @@ cmd_next() {
     step=$(step_next "$record" "$next")
     road=$(step_road "$record" "$next" "$(step_live_note "$(printf '%s' "$record" | jq -r '.lease.run // ""')")")
     next=$(printf '%s' "$next" | jq -c --argjson step "$step" --argjson road "${road:-null}" '. + {step: $step, road: $road}')
+    # What a yes to a suggestion that adds a requirement costs at the approval (R229).
+    if [ "$(printf '%s' "$next" | jq -r '.action')" = approve ]; then
+      next=$(printf '%s' "$next" | jq -c --arg r "$(step_replan_say "$record")" '.detail.replan = $r')
+    fi
     # The /rename hint (D444): once per clone, only for the command.
     hint=$(sessions_rename_hint "$(vbw_session)" "$VBW_ROOT" "$(basename "$VBW_ROOT")")
     next=$(printf '%s' "$next" | jq -c --arg hint "$hint" '. + {rename_hint: (if $hint == "" then null else $hint end)}')
