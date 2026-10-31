@@ -83,7 +83,7 @@ next_answer() {
 
 cmd_next() {
   vbw_require_project
-  local next record step road hint
+  local next record step road hint replan
   next=$(next_answer) || exit $?
   # The step to run, with its end time and the sentence to say (R190, D425), and the
   # road, the end of the milestone (R191, D438). Only the command asks for them: a
@@ -97,7 +97,8 @@ cmd_next() {
     next=$(printf '%s' "$next" | jq -c --argjson step "$step" --argjson road "${road:-null}" '. + {step: $step, road: $road}')
     # What a yes to a suggestion that adds a requirement costs at the approval (R229).
     if [ "$(printf '%s' "$next" | jq -r '.action')" = approve ]; then
-      next=$(printf '%s' "$next" | jq -c --arg r "$(step_replan_say "$record")" '.detail.replan = $r')
+      replan=$(step_replan_say "$record")
+      next=$(printf '%s' "$next" | jq -c --arg r "$replan" '.detail.replan = $r')
     fi
     # The /rename hint (D444): once per clone, only for the command.
     hint=$(sessions_rename_hint "$(vbw_session)" "$VBW_ROOT" "$(basename "$VBW_ROOT")")
