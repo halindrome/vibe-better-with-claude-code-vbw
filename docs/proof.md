@@ -448,6 +448,28 @@ without the section keeps the commands it has. A command whose exact argv the
 user has not approved makes `vbw next` ask for approval again, and
 `vbw prove` runs only approved commands.
 
+The router chooses `## Commands` from the Tests section of `.vbw/map.md`, and
+prefers a command the map ran and dated (`ran as of <short commit>, <date>`).
+A whole suite the map marked `Not run` is never added silently. Before planning,
+the router asks once per such suite, naming it as unverified with its expected
+time (or saying the time is unknown), and offers:
+
+- run it now (Recommended): the suite runs once, you hear green or red with the
+  names of failing tests, and the dated outcome is recorded as a decision
+  (`Commands: <command> ran <date> at <short commit>: green|red (<n> failing)`).
+  The map itself is written only by the map run.
+- leave it out: only the verified commands are used.
+- add it unverified: the line goes into `## Commands` as it is.
+
+Under hands-off the router takes run it now and says so. A suite that is red
+today, by the map or by that run, is named with a narrower command recommended
+(one test file, or the sub-project's green command). It enters `## Commands`
+only if you choose it, and the router then tells you the first proof will be red.
+
+Evidence: the wording is pinned at L1 by bats checks of the skills and these
+docs. At L3 only the `mapnotrun` scenario in `tools/l3-suite.sh` covers it, and
+only once it has run; nothing beyond that is claimed.
+
 ### The time limit of project commands
 
 A project command (the test run above all) runs for up to 3600 seconds
