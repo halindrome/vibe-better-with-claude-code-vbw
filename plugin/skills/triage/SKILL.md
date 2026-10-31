@@ -35,7 +35,7 @@ VBW's sort is the first option, marked (Recommended); the two other sorts are th
 
 ## Outcomes
 
-- **now**: `vbw spec add auto|human "<idea>"`, then the normal flow (planning again, the approval menu). No active milestone: `vbw milestone start "<title>"` with the idea as its first requirement.
+- **now**: `vbw spec add auto|human "<idea>"` for every now idea of the menu; then follow `vbw:suggest` once, before the first planning run (a yes costs nothing yet); then the normal flow (planning again, the approval menu). A now idea sorted during a run waits for the run to end; the suggestions come then, still before planning. No active milestone: `vbw milestone start "<title>"` with the idea as its first requirement.
 - **next** or **later**: `vbw todo add --sort <sort> --size <size> "<idea>"`.
 
 ## Overrule
