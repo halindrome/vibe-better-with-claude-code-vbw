@@ -187,7 +187,7 @@ reference_files() {
     print "] as $parts"
     print "| {schema: ($g.schema // 0), kept: ($kept | length), end: ($end | length), parts: ($parts | map(numbers) | add)}"
   }' > "$1/reference.jq"
-  jq -nc '{schema: 4, protected: ["tests/old.sh"],
+  jq -n -c '{schema: 4, protected: ["tests/old.sh"],
     checks: [range(0; 330) | {id: "C\(.)", req: "R\(. % 40)", run: ["sh", "tests/old.sh"], files: ["tests/old.sh", "src/old/\(.).txt"], note: ("check text " * 8)}],
     decisions: [range(0; 60) | {id: "D\(.)", text: ("Old decision \(.) " + ("~" * 300)), at: "2026-01-01T00:00:00Z"}]}' > "$1/reference.json"
 }
