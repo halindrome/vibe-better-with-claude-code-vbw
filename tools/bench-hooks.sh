@@ -88,12 +88,10 @@ SIZES="51 500 2000"
 # October 2026. The workload is one jq call of the guard's shape (--rawfile glance, --arg root,
 # --arg dir, --arg open, -f PROGRAM - DOCUMENT END) over a program of 24760 bytes and a
 # document of 86107 bytes, both written by this script. M1 Max Mac: 14.7 to 15.8 ms over
-# five runs of this script on 2026-10-31. GitHub's macOS runner: not yet read for this
-# shape (it needs the bench shard 1 log of the pull request); until that log exists the
-# figure of the old counting workload in the two bench shards of pull request #739
-# (23.5 and 24.0 ms, 2026-10-30) stays, and the larger of the two is pinned before merge:
-# 24.0 now, so both machines sit at a ratio of 1 or less.
-NOMINAL_MS=24.0
+# five runs of this script on 2026-10-31. GitHub's macOS runner: 16.7 ms in the bench
+# shard 1 log of pull request #740 (2026-10-31). The larger of the two is pinned, so both
+# machines sit at a ratio of 1 or less.
+NOMINAL_MS=16.7
 NOMINAL_WHEN="October 2026"
 
 # case_labels: the label of every case, in the order the bench runs them.
