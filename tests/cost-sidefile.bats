@@ -62,8 +62,10 @@ side() { printf '%s/.vbw/runtime/cost.%s.json' "$PROJECT" "${1:-s1}"; }
 }
 
 @test "R173: outside a VBW project nothing is written" {
+  # The script hands back there (R224): exit 3, nothing printed, nothing written.
   run render
-  [ "$status" -eq 0 ]
+  [ "$status" -eq 3 ]
+  [ -z "$output" ]
   [ ! -e "$PROJECT/.vbw" ]
 }
 

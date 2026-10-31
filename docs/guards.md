@@ -269,7 +269,16 @@ A command that contains none of the words any rule needs (`rm`, `git`, `vbw`,
   measured by `tools/bench-hooks.sh` in the release run (CI runs it on every
   pull request), including on a 20 KB heredoc command. CPU time, so waiting for
   a busy machine never counts, and a case over its budget is measured once more
-  before it is judged (the bench says so): a slow hook is slow twice. Measured in October 2026 (an M1 Max Mac and
+  before it is judged (the bench says so): a slow hook is slow twice. The 20 ms is the
+  meaning on a nominal machine (an M1 Max Mac, GitHub's macOS runner). The bench
+  first measures a fixed reference workload (a small jq program over fixed
+  input) and prints its cost, the nominal cost and the ratio:
+  `reference: <X> ms CPU per call; nominal <N> ms (...); ratio <R>`. At a ratio
+  of 1 or less every case is judged against 20 ms. Above 1, a case over 20 ms
+  but within 20 ms times the ratio is reported slow (the line names the cost,
+  the budget, the ratio and the scaled budget) and the bench still passes; a
+  case above the scaled budget fails. `VBW_BENCH_REFERENCE_MS` stands in for the
+  measured reference. CI sets no reference of its own. Measured in October 2026 (an M1 Max Mac and
   GitHub's macOS runners): the file guard about 4 to 5 ms, the Bash guard about
   10 to 13 ms, the answer hook about 1 ms. A real slowdown
   (an added subprocess costs several ms) still shows. When the machine is too

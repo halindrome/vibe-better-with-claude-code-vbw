@@ -87,6 +87,7 @@ jobs:
         run: |
           export PATH="${{ matrix.bash_path }}:$PATH"
           bash --version | head -1
+          jq --version
           # The timed speed checks run here, in the shards of the release run, and never in vbw prove.
           bash tools/test.sh --shard "$SHARD/$SHARDS"
 
@@ -99,6 +100,7 @@ jobs:
         run: |
           export PATH="${{ matrix.bash_path }}:$PATH"
           bash --version | head -1
+          jq --version
           # shellcheck disable=SC2086
           bats --print-output-on-failure $FILES
 

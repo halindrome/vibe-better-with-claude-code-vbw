@@ -336,7 +336,7 @@ export function panelView(input) {
       ...estimateRows(stamps, step, nx, t),
       costRow(cost),
       ...refusalRows(input.refusals, t),
-      { id: 'need', text: need ? stamped(Number.isFinite(stamps.need) ? stamps.need : need.at, need.text, t) : 'Nothing is needed from you right now.', term: 'your turn' },
+      { id: 'need', text: need ? stamped(Number.isFinite(stamps.need) ? stamps.need : need.at, need.text, t) : 'VBW is not waiting on you.', term: 'your turn' },
     ],
   }
 }

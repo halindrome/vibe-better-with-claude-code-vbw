@@ -298,3 +298,22 @@ T2 CSV export" ]
   [ "$status" -eq 2 ]
   cmp .vbw/record.json "$TEST_ROOT/before.json"
 }
+
+@test "R225: doctor names the branch the next VBW commit lands on, the checked-out branch or the detached commit; outside a VBW project it says nothing of it" {
+  vbw_run doctor
+  local l
+  l=$(printf '%s\n' "$output" | grep -E '^· .*branch' || true)
+  [ "$(printf '%s\n' "$l" | grep -c . )" -eq 1 ] || { echo "doctor's info lines naming a branch: $l"; echo "$output"; false; }
+  [[ "$l" =~ (^|[^a-zA-Z0-9_-])main($|[^a-zA-Z0-9_-]) ]] || { echo "the line does not name main: $l"; false; }
+  git checkout -q -b feature/xyz
+  vbw_run doctor
+  [[ "$output" == *"lands on branch feature/xyz"* ]] || { echo "doctor does not name feature/xyz:"; echo "$output"; false; }
+  git checkout -q --detach
+  vbw_run doctor
+  l=$(printf '%s\n' "$output" | grep -E '^· .*detached HEAD at ' || true)
+  [[ "$l" == *"detached HEAD at $(git rev-parse HEAD | cut -c1-12)"* ]] || { echo "doctor does not name the detached commit:"; echo "$output"; false; }
+  mkdir -p "$TEST_ROOT/other" && cd "$TEST_ROOT/other" && git init -q
+  vbw_run doctor
+  [[ "$output" == *"not a VBW project yet"* ]]
+  [[ "$output" != *branch* && "$output" != *"detached HEAD"* ]] || { echo "outside a VBW project doctor names a branch:"; echo "$output"; false; }
+}

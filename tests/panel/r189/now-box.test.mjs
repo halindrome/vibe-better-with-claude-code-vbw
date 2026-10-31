@@ -120,7 +120,7 @@ test('when VBW needs the user the box holds the one sentence and the command, an
     const all = (await paneLines(h)).join('\n')
     assert.equal(all.split(sentence).length - 1, 1, 'the need sentence is said once:\n' + all)
     assert.equal(all.split(command).length - 1, 1, 'the command is said once:\n' + all)
-    assert.doesNotMatch(all, /Nothing is needed from you/)
+    assert.doesNotMatch(all, /VBW is not waiting on you/)
     assert.doesNotMatch(all, /VBW is waiting for you/)
   }
 })
@@ -254,6 +254,9 @@ test('the Now tab does not say again under the box that no workflow runs; it sti
   const idle = await session()
   assert.match(await nowBox(idle), /Nothing is running/)
   assert.doesNotMatch((await paneLines(idle)).join('\n'), /No VBW workflow runs/)
+  // R227: the 'your turn' row says only what the panel knows: VBW is not waiting on the user.
+  assert.match((await paneLines(idle)).join('\n'), /VBW is not waiting on you\./)
+  assert.doesNotMatch((await paneLines(idle)).join('\n'), /Nothing is needed from you/)
   const need = await session(record(), next({ action: 'approve', gate: true }))
   assert.doesNotMatch((await paneLines(need)).join('\n'), /No VBW workflow runs/)
   const held = await session(record({ lease: lease('build', T0 - 300 * S), plans: PLANS }), next({ action: 'run' }))

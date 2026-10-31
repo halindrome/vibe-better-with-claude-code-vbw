@@ -227,8 +227,37 @@ reads_kids() {
        files: ([$f[] | {key: ., value: true}] | from_entries)}' "$1"
 }
 
-# reads_collect COPY STATE: after a run; prints its read list as one JSON
-# object {files, dirs: [{path, fp}], git}. fp fingerprints the names of the
+# reads_program_dir COPY PROGRAM: the folder, relative to COPY ("." for the top), that
+# holds PROGRAM when PROGRAM is a file inside COPY: resolved from the name by path
+# (a name with a slash, from the copy, where a unit runs) or by PATH lookup. Nothing
+# printed (and 1) for a program outside the copy or none. R226: the system notes the
+# folder of a file as listed on the first exec of a new file by its path (measured on
+# macOS, 2026-10-30; Linux notes nothing), which is no read of the test's.
+reads_program_dir() {
+  local copy=$1 prog=${2:-} f d root rel
+  [ -n "$prog" ] || return 1
+  case "$prog" in
+    */*) f=$prog ;;
+    *) f=$(cd "$copy" && command -v -- "$prog" 2> /dev/null) || return 1 ;;
+  esac
+  case "$f" in /*) ;; *) f=$copy/$f ;; esac
+  [ -f "$f" ] || return 1
+  d=$(cd "${f%/*}" 2> /dev/null && pwd -P) || return 1
+  root=$(cd "$copy" 2> /dev/null && pwd -P) || return 1
+  case "$d" in
+    "$root") rel=. ;;
+    "$root"/*) rel=${d#"$root"/} ;;
+    *) return 1 ;;
+  esac
+  printf '%s\n' "$rel"
+}
+
+# reads_collect COPY STATE [PROGRAM]: after a run; prints its read list as one JSON
+# object {files, dirs: [{path, fp}], git}. The folder holding PROGRAM (the unit's
+# first word, when it is a file inside COPY) is left out of the run's own listings:
+# the system lists it on the first exec of that file, never the test. Limit: a test
+# that both executes a script of the folder by its path and lists that folder itself
+# loses that listing. fp fingerprints the names of the
 # tracked files and folders directly in the listed folder: the SHA-256 of the
 # compact JSON text [path, names]. A fixed number of processes whatever the
 # number of tracked or listed paths: one find walks the copy once for every path
@@ -240,18 +269,20 @@ reads_kids() {
 # the files it wrote with a single copy of this list (written.json: lists by run id,
 # files by path).
 reads_collect() {
-  local copy=$1 st=$2 git=false line n=0 id
+  local copy=$1 st=$2 git=false line n=0 id skip=
   local -a names
+  skip=$(reads_program_dir "$copy" "${3:-}") || skip=
   [ -z "$(find "$copy/.git" -maxdepth 0 -anewer "$st/ref" -print 2> /dev/null)" ] || git=true
   (cd "$copy" && find . -path ./.git -prune -o -anewer "$st/ref" -print0) > "$st/moved" 2> /dev/null || true
   # The tracked paths never change (the copy is a detached checkout): sorted out once at the
   # first reset, here only when a state lacks it.
   [ -s "$st/kids.json" ] || reads_kids "$st/files" > "$st/kids.json" || return 1
-  jq -nc --rawfile moved "$st/moved" --slurpfile k "$st/kids.json" '
+  jq -nc --rawfile moved "$st/moved" --slurpfile k "$st/kids.json" --arg skip "$skip" '
     def strip: if . == "." then "" else sub("^\\./"; "") end;
     $k[0].kids as $kids
     | ($moved | split("\u0000") | map(select(length > 0) | strip))[]
     | . as $d
+    | select($skip == "" or $d != ($skip | strip))
     | select($kids | has($d))
     | [(if $d == "" then "." else $d end), ($kids[$d] | unique)]' > "$st/listings"
   rm -rf "$st/fp"; mkdir -p "$st/fp"

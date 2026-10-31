@@ -20,3 +20,17 @@ vbw_project_of() {
   done
   [ ! -e "$d/.git" ] || root=$d
 }
+
+# vbw_vbw_above DIR: sets vbwdir to the nearest folder at or above DIR that holds
+# a .vbw folder, never above /; empty when none does. Walked like vbw_project_of,
+# no process, so the hand-back outside a VBW project stays cheap.
+# shellcheck disable=SC2034 # vbwdir is the function's answer, read by the caller
+vbw_vbw_above() {
+  vbwdir=""
+  local d=$1
+  while [ -n "$d" ]; do
+    if [ -d "$d/.vbw" ]; then vbwdir=$d; return 0; fi
+    [ "$d" != / ] || return 0
+    case "$d" in */*) d=${d%/*}; d=${d:-/} ;; *) return 0 ;; esac
+  done
+}

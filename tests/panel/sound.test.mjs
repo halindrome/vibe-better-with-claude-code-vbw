@@ -73,7 +73,7 @@ test('a question for the user plays it once, and the need ends when it is answer
   answer({ result: 'A' })
   assert.deepEqual(await asking, { result: 'A' })
   await h.advance(4000)
-  assert.match(await h.text(), /nothing is needed/i)
+  assert.match(await h.text(), /not waiting on you/i)
 })
 
 test('other tool calls make no sound', async () => {

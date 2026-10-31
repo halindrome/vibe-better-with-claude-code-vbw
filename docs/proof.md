@@ -628,12 +628,13 @@ form in `.vbw/spec.md`.
    trailer naming a plan of the current milestone must change only that plan's
    files. Each commit is judged by what its plan allowed when it was made: a
    file the plan listed, or a check file a mutation survivor let it
-   strengthen, in the version of the record the commit was made under or any
-   later one, as well as today's. A file a later change renamed or dropped
+   strengthen, in the version of the record the commit descends from (the last
+   record commit in its git ancestry, whatever the clocks say) or any later
+   one in the record's history, as well as today's. A file a later change renamed or dropped
    (a check's test file renamed for the project's test runner) leaves its
    earlier commits in scope. Only a commit that looks out of scope today is
-   judged again this way: one git listing of the record's versions and one
-   read of those since the oldest such commit. A file no version allowed is
+   judged again this way: one git listing of the record's versions, one
+   read of those since the oldest base, and one git lookup per flagged commit. A file no version allowed is
    a violation (`abc123456789 (P1.1) changed src/other.txt, which is not in
    the plan`). The user accepts one by a decision recorded after the commit
    that names both the commit (those 12 characters) and the file (`vbw decide
@@ -1177,6 +1178,19 @@ They read `checks: N ran, M reused` and `test files: N ran, M reused`. After
   opening it or listing its folder, does not put that file on its read list: a
   change to that file does not run the check again, and neither does its
   addition or deletion unless a plan of the check's requirement lists it.
+- A script a unit executes by its path (`./greet.sh`) does not put its folder
+  on the read list. The cause is a start-up listing: the first time the system
+  executes a new file by its path (macOS does; Linux was measured and does not),
+  it notes the folder holding that file as listed, though no test asked for it,
+  and an unrelated file added to that folder would then re-run the unit. VBW
+  cannot prevent that read, so it leaves out of a unit's own read list the
+  folder of its program, whenever the program (the first word of the command,
+  given by its path or found on `PATH`) is a file inside the project. Running
+  the script through `sh greet.sh` never had the listing. The limit: a test that
+  both executes a script of a folder by its path and lists that same folder
+  itself loses that listing. A listing the test itself asks for (`ls`, a glob,
+  `find`) in any other folder stays a read, and a file added there re-runs the
+  unit.
 - Reads through git always run again. Any git command whose working directory
   is inside the project counts, even one that reads nothing of the project
   (`git config --global` run from the project folder): git opens the
