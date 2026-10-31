@@ -63388,6 +63388,13 @@
       "sort": "next",
       "size": "small",
       "status": "open"
+    },
+    {
+      "id": "T204",
+      "text": "R231 did not reach its goal on Ubuntu 26.04: in PR #740 guard (git) / reference was 1.02 on macOS (17.0/16.7 ms), 1.33 on Linux bash 5 (12.0/9.0) and 1.63 on Ubuntu 26.04 (20.7/12.7), so the guard pays a cost on Ubuntu 26.04 the guard-shaped reference does not hold (guard cases 20.0-21.5 ms OVER 20). Find what (jq build or version, sh, the guard program's hot builtins) with a per-step profile on that runner before changing the reference again",
+      "sort": "next",
+      "size": "small",
+      "status": "open"
     }
   ],
   "decisions": [
