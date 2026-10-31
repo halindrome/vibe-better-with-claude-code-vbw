@@ -58827,13 +58827,79 @@
       "after": [
         "P184.2"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "suggest/SKILL.md description and When: three moments, named: at spec proposal, right after triage adds requirements to the active milestone (before the first planning run), and at plan approval; keep 'never mid-run, mid-build'",
         "suggest/SKILL.md Answers: at plan approval a suggestion that would add a requirement states the cost of a yes (`a new planning run: <detail.replan from vbw next --json>`) and offers exactly: add to the backlog (Recommended) -> `vbw todo add --sort next --size <small|medium|large> \"<text>\"`; add to this milestone (replan) -> `vbw spec add`, then planning again and a new approval; no -> `vbw suggest decline`; a choice or constraint (`vbw decide`) costs no replan and keeps Yes/No; at spec proposal and after triage the options stay Yes/No and the skill says why (a yes costs nothing there)",
         "triage/SKILL.md Outcomes, now: after every now idea of one menu is added with `vbw spec add`, follow `vbw:suggest` once, before the first planning run (then the normal flow); a now sorted during a run waits for the run to end and the suggestions come then, still before planning",
         "vibe/SKILL.md approve step: `Follow vbw:suggest` passes `detail.replan` as the cost of a yes; the spec step keeps `Follow vbw:suggest`; build, fix, qa, prove and run steps stay without it"
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R229",
+            "text": "the triage skill's now outcome follows vbw:suggest once after the ideas are added, before the first planning run; a now idea during a run waits for the run to end"
+          },
+          "what": "triage now outcome drops vbw:suggest",
+          "files": [
+            "plugin/skills/triage/SKILL.md"
+          ],
+          "checks": {
+            "C529": "red"
+          },
+          "result": "red",
+          "at": "2026-10-31T09:07:30Z",
+          "head": "fb01760e70c55a74a108c54536e421fcd5010f81"
+        },
+        {
+          "rule": {
+            "req": "R229",
+            "text": "the suggest skill names its three moments (spec proposal, right after triage adds requirements, plan approval) in its description and under When, and still never offers mid-run or mid-build"
+          },
+          "what": "suggest When drops mid-run, mid-build",
+          "files": [
+            "plugin/skills/suggest/SKILL.md"
+          ],
+          "checks": {
+            "C527": "red"
+          },
+          "result": "red",
+          "at": "2026-10-31T09:07:34Z",
+          "head": "fb01760e70c55a74a108c54536e421fcd5010f81"
+        },
+        {
+          "rule": {
+            "req": "R229",
+            "text": "at plan approval a suggestion that would add a requirement states the cost of a yes from detail.replan (a new planning run) and offers add to the backlog (Recommended, vbw todo add --sort next --size <small|medium|large>), add to this milestone (replan) or no; a choice or constraint (vbw decide) costs no replan; at spec proposal and after triage the answers stay Yes/No because a yes costs nothing there"
+          },
+          "what": "backlog no longer Recommended",
+          "files": [
+            "plugin/skills/suggest/SKILL.md"
+          ],
+          "checks": {
+            "C527": "red"
+          },
+          "result": "red",
+          "at": "2026-10-31T09:07:37Z",
+          "head": "fb01760e70c55a74a108c54536e421fcd5010f81"
+        },
+        {
+          "rule": {
+            "req": "R229",
+            "text": "the router offers suggestions at the spec step, at the approve step (passing detail.replan to vbw:suggest as the cost of a yes) and after triage adds work, and nowhere else (build, fix, qa, prove, run)"
+          },
+          "what": "approve step drops vbw:suggest",
+          "files": [
+            "plugin/skills/vibe/SKILL.md"
+          ],
+          "checks": {
+            "C527": "red"
+          },
+          "result": "red",
+          "at": "2026-10-31T09:07:41Z",
+          "head": "fb01760e70c55a74a108c54536e421fcd5010f81"
+        }
       ]
     },
     {
@@ -59083,12 +59149,46 @@
       "after": [
         "P184.4"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "dev.md line 26: with several breaks, start `vbw mutate PLAN --run` in the background on purpose (Claude Code's one-command limit is 10 minutes), wait for it and read its whole result before anything else",
         "dev.md line 26: never start a second `--run` of the same plan; a refusal naming a running one means wait for that one, then run again only if breaks are still queued",
         "docs/workflows.md --queue/--run paragraph: the refusal of a second run of the same plan with its `Next: wait for it to finish` line, the `run.pid` marker under .vbw/runtime/mutate-queue/PLAN/, that a marker whose process ended never blocks (taken over), the background advice, and that a run waiting for a slot holds the marker for the whole wait (intended: a second run would compete for the same slots)"
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R230",
+            "text": "the Dev agent's instructions say to start a long --run in the background on purpose (the 10-minute one-command limit), wait for it and read its whole result, never start a second --run of the same plan, and that a refusal naming a running one means wait"
+          },
+          "what": "dev.md drops never start a second",
+          "files": [
+            "plugin/agents/dev.md"
+          ],
+          "checks": {
+            "C531": "red"
+          },
+          "result": "red",
+          "at": "2026-10-31T09:08:12Z",
+          "head": "fb01760e70c55a74a108c54536e421fcd5010f81"
+        },
+        {
+          "rule": {
+            "req": "R230",
+            "text": "docs/workflows.md documents the refusal with its Next: wait for it to finish wording, the run.pid marker, the dead-marker takeover and the background advice"
+          },
+          "what": "docs drop run.pid name",
+          "files": [
+            "docs/workflows.md"
+          ],
+          "checks": {
+            "C531": "red"
+          },
+          "result": "red",
+          "at": "2026-10-31T09:08:17Z",
+          "head": "fb01760e70c55a74a108c54536e421fcd5010f81"
+        }
       ]
     },
     {
@@ -59192,12 +59292,94 @@
       "after": [
         "P184.4"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "prooftime.sh: prooftime_detect sets PROOFTIME_NS=file when VBW_PROOFTIME_CLOCK names a readable file; prooftime_clock then prints that file's first line (seconds with milliseconds) instead of the machine clock; unset or unreadable, nanos|perl|none as today; the header comment documents the hook",
         "prooftime.sh: the file clock reaches a unit's subshell and the vbw process a test starts (an exported environment variable read at detect time, no shell function), so tracking spans and mutate steps read the same injected clock",
         "docs/proof.md: name VBW_PROOFTIME_CLOCK as a test hook (a file whose first line is the clock reading), beside the own-work section; tests/mutate-time.bats and tests/release-run.bats green under /bin/bash"
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R232",
+            "text": "when VBW_PROOFTIME_CLOCK names a readable file, prooftime_detect sets the clock kind to file and prooftime_clock prints that file's first line"
+          },
+          "what": "file clock prints a wrong reading",
+          "files": [
+            "plugin/lib/prooftime.sh"
+          ],
+          "checks": {
+            "C534": "red"
+          },
+          "result": "red",
+          "at": "2026-10-31T09:08:52Z",
+          "head": "fb01760e70c55a74a108c54536e421fcd5010f81"
+        },
+        {
+          "rule": {
+            "req": "R232",
+            "text": "with VBW_PROOFTIME_CLOCK unset or naming an unreadable file, the machine clock is read as before (nanos, perl or whole seconds)"
+          },
+          "what": "unreadable file still selects the file clock",
+          "files": [
+            "plugin/lib/prooftime.sh"
+          ],
+          "checks": {
+            "C534": "red"
+          },
+          "result": "red",
+          "at": "2026-10-31T09:08:56Z",
+          "head": "fb01760e70c55a74a108c54536e421fcd5010f81"
+        },
+        {
+          "rule": {
+            "req": "R232",
+            "text": "the figures-are-measured case runs vbw with the injected clock, a check on broken code moving it by 1.000 s, and asserts break R1.1 = 1.0, unbroken = 0.0, the total 1.0 and the sum, without a real second"
+          },
+          "what": "milliseconds scaled wrong",
+          "files": [
+            "plugin/lib/prooftime.sh"
+          ],
+          "checks": {
+            "C534": "red"
+          },
+          "result": "red",
+          "at": "2026-10-31T09:08:59Z",
+          "head": "fb01760e70c55a74a108c54536e421fcd5010f81"
+        },
+        {
+          "rule": {
+            "req": "R232",
+            "text": "tests/mutate-time.bats pauses the shell nowhere (no sleep) and reads no clock, so the default run measures no duration"
+          },
+          "what": "file clock reads the machine clock, so the figures need a real second",
+          "files": [
+            "plugin/lib/prooftime.sh"
+          ],
+          "checks": {
+            "C534": "red"
+          },
+          "result": "red",
+          "at": "2026-10-31T09:09:03Z",
+          "head": "fb01760e70c55a74a108c54536e421fcd5010f81"
+        },
+        {
+          "rule": {
+            "req": "R232",
+            "text": "docs/proof.md names VBW_PROOFTIME_CLOCK as a test hook"
+          },
+          "what": "doc misnames the variable",
+          "files": [
+            "docs/proof.md"
+          ],
+          "checks": {
+            "C534": "red"
+          },
+          "result": "red",
+          "at": "2026-10-31T09:09:06Z",
+          "head": "fb01760e70c55a74a108c54536e421fcd5010f81"
+        }
       ]
     }
   ],
@@ -74809,6 +74991,17 @@
         "ended": "2026-10-31T08:59:08Z",
         "cost": {
           "usd": 6.052283
+        }
+      },
+      {
+        "id": "build-20261031T090031Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M47",
+        "started": "2026-10-31T09:00:31Z",
+        "ended": "2026-10-31T09:10:32Z",
+        "cost": {
+          "usd": 1.425191
         }
       }
     ],
