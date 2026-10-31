@@ -239,7 +239,7 @@ The loop above is the core. Around it:
 
 | Feature | What you get |
 | :--- | :--- |
-| **Triage** | Every new idea is sorted into now, next or later, with a size. You confirm or overrule in one menu. [docs/triage.md](docs/triage.md) |
+| **Triage** | Every new idea is sorted into now, next or later, with a size. You confirm or overrule in one menu. VBW offers its ideas right after sorting, before planning. [docs/triage.md](docs/triage.md) |
 | **What's next** | After each ship, and whenever you ask, the Architect recommends a top pick and up to two runners-up, each with a reason and a size. [docs/whats-next.md](docs/whats-next.md) |
 | **Decisions, recorded** | Cost, where data lives, security, anything hard to undo: asked one at a time with a recommendation, recorded with your reason (`vbw show decisions`). When someone asks "who decided this?", the record and git say it was you. |
 | **Rigor that fits** | A typo gets one Dev and one approval. Payments or sign-in code gets the full team and deep review. VBW sizes the process from what the work touches, raises the bar when a build goes badly, and tells you why. [docs/rigor.md](docs/rigor.md) |
