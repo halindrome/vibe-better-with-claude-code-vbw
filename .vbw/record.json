@@ -7139,7 +7139,7 @@
   "milestone": {
     "id": "M47",
     "title": "Community batch 3: router uses the map, suggestions in time, one mutate run per plan, guard-shaped bench reference, mutate timing test",
-    "status": "active"
+    "status": "shipped"
   },
   "shipped": [
     {
@@ -7366,6 +7366,11 @@
       "id": "M46",
       "title": "Community batch 2: scope by ancestry, bench reference, jq floor, status line hand-back, branch note",
       "at": "2026-10-30T23:08:20Z"
+    },
+    {
+      "id": "M47",
+      "title": "Community batch 3: router uses the map, suggestions in time, one mutate run per plan, guard-shaped bench reference, mutate timing test",
+      "at": "2026-10-31T10:58:52Z"
     }
   ],
   "requirements": [
@@ -66340,6 +66345,11 @@
       "text": "Keep the changes to plugin/lib/prooftime.sh made outside any plan",
       "why": "Lead fix 933cb5f4: quoting the file clock's name cleared shellcheck SC2209 in the standards check; behaviour unchanged",
       "at": "2026-10-31T10:51:15Z"
+    },
+    {
+      "id": "D539",
+      "at": "2026-10-31T10:58:52Z",
+      "text": "Shipped M47 Community batch 3: router uses the map, suggestions in time, one mutate run per plan, guard-shaped bench reference, mutate timing test: 5 requirements proven or accepted"
     }
   ],
   "commands": {
@@ -77922,6 +77932,10 @@
             "usd": 0,
             "at": "2026-10-31T07:36:14Z"
           }
+        },
+        "total": {
+          "usd": 37.030721,
+          "sessions": 44
         }
       }
     }
