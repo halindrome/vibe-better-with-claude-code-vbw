@@ -3222,6 +3222,26 @@ scenario_mapsnapshot() {
   }
 }
 
+# mapnotrun_seed: a VBW project with existing code (greet.sh), a quick green test script
+# (test.sh) and a second suite script (e2e.sh, red today, prints "not ok") that the README
+# presents as the long end-to-end run taking many minutes; both are named with their commands.
+mapnotrun_seed() {
+  printf '#!/bin/sh\nif [ -n "$1" ]; then echo "Hello, $1!"; else echo "Hello, world!"; fi\n' > greet.sh && chmod +x greet.sh
+  cat > test.sh <<'SH'
+#!/bin/sh
+if [ "$(sh greet.sh Ana)" = "Hello, Ana!" ]; then echo "ok 1 a name is greeted"; else echo "not ok 1 a name is greeted"; exit 1; fi
+SH
+  chmod +x test.sh
+  cat > e2e.sh <<'SH'
+#!/bin/sh
+echo "not ok 1 the nightly greeting mail is sent"
+exit 1
+SH
+  chmod +x e2e.sh
+  printf '# Greeter\n\n`./greet.sh NAME` prints a greeting.\n\nQuick tests: `sh test.sh` (a few seconds).\n\nEnd-to-end run: `sh e2e.sh`. It is the long run and takes many minutes; run it before a release.\n' > README.md
+  git add greet.sh test.sh e2e.sh README.md && git commit -qm "feat: greet.sh, its quick tests and the end-to-end run" -- greet.sh test.sh e2e.sh README.md
+}
+
 failed=0
 # shellcheck disable=SC2086 # the default list splits on purpose
 [ $# -gt 0 ] || set -- $ALL
