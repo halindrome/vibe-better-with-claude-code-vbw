@@ -14,6 +14,13 @@
 # in a scratch file of this process under the runtime folder; the total sums
 # them. Without a timer open (vbw check) every count is a no-op. Seconds carry
 # milliseconds. JSON only through jq.
+#
+# Test hook (R232): VBW_PROOFTIME_CLOCK names a readable file whose first line
+# is the clock reading (seconds with milliseconds); every reading then comes
+# from that file instead of the machine clock, so a test moves the clock by
+# writing the file and waits no real time. It is an exported environment
+# variable read at detect time, so a unit's subshell and the vbw process a test
+# starts read the same clock. Unset or unreadable, the machine clock is read.
 
 PROOFTIME_FILE=''
 PROOFTIME_T0=''
@@ -25,6 +32,10 @@ PROOFTIME_NS=''
 # shell that opens the timer, so a unit's subshell inherits it.
 prooftime_detect() {
   local n
+  if [ -n "${VBW_PROOFTIME_CLOCK:-}" ] && [ -r "$VBW_PROOFTIME_CLOCK" ]; then
+    PROOFTIME_NS=file
+    return 0
+  fi
   n=$(date +%N 2> /dev/null) || n=
   case "$n" in
     '' | *[!0-9]*) if perl -MTime::HiRes -e '1' > /dev/null 2>&1; then PROOFTIME_NS=perl; else PROOFTIME_NS=none; fi ;;
@@ -37,6 +48,7 @@ prooftime_clock() {
   local n
   [ -n "$PROOFTIME_NS" ] || prooftime_detect
   case "$PROOFTIME_NS" in
+    file) IFS= read -r n < "$VBW_PROOFTIME_CLOCK" 2> /dev/null && printf '%s\n' "$n" ;;
     nanos) n=$(date +%s.%N) && printf '%s.%s\n' "${n%.*}" "$(printf '%s' "${n#*.}" | cut -c1-3)" ;;
     perl) perl -MTime::HiRes=time -e 'printf "%.3f\n", time' ;;
     *) printf '%s.000\n' "$(date +%s)" ;;

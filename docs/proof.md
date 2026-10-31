@@ -1083,6 +1083,12 @@ Writing the split itself, the record's commit and the printed summary come after
 it. Read tracking is summed over the units, and units run side by side, so with
 several running at once own work can exceed the wall time.
 
+**Test hook: `VBW_PROOFTIME_CLOCK`.** A test may set this environment variable
+to a file whose first line is the clock reading (seconds with milliseconds);
+the proof's timer, and the timer of `vbw mutate`, then read that file instead of
+the machine clock, so a test moves the clock by writing the file and waits no
+real time. Unset or unreadable, the machine clock is read.
+
 **`ran again: N of M units; top reasons: ...`.** M counts every unit the proof
 covers (checks, approved commands, test files); N counts those that really ran.
 A reason is the unit's own (the list under "When a check runs again", for
