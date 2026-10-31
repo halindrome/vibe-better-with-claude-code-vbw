@@ -44,7 +44,7 @@
 # does (the plugin data folder of a vbw@inline copy), a stand-in installed release
 # sits in the same config folder, and the setting runs as above. It is judged against
 # the same limit, and the bench fails if the loaded copy did not render.
-# The reference (R222, #716): before any record is built or case judged, the bench
+# Reference workload (R222, #716): before any record is built or case judged, the bench
 # measures one fixed workload (a jq call of the guard's shape over a program and a document written by the bench, run through sh -c as the
 # hooks are, RUNS calls) on this machine in this run, and prints once
 # 'reference: <X> ms CPU per call; nominal <N> ms (...); ratio <R>', R = measured / nominal.
