@@ -430,7 +430,9 @@ R1 [auto] A customer can pay once
 
 The project's own test, lint and build commands live in `.vbw/spec.md`, under
 `## Commands`, one per line: a name, then the command as words, or as a JSON
-array when an argument contains spaces:
+array when an argument contains spaces. The router chooses them from the Tests
+section of the map, and asks before planning about a suite marked `Not run`,
+offering to run it now or add it unverified (details below the example):
 
 ```markdown
 ## Commands
