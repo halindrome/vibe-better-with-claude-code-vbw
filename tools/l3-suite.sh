@@ -3257,14 +3257,14 @@ scenario_mapnotrun() {
   spec="$dir/.vbw/spec.md"
   commands_lines() { sed -n '/^## Commands/,/^## /p' "$spec" 2> /dev/null | grep -E '^- ' || true; }
   red_decision_text() { jq -r '[.decisions[]? | select((.text | startswith("Contract approved") | not) and (.text | test("e2e[.]sh"))) | .text] | first // empty' "$dir/.vbw/record.json" 2> /dev/null; }
-  done_yet() { commands_lines | grep -q 'test\.sh' && [ -n "$(red_decision_text)" ]; }
+  done_yet() { commands_lines | grep 'test\.sh' > /dev/null && [ -n "$(red_decision_text)" ]; }
   checks() {
     local passed=true marks=false cmds green=false red=false narrower=false dec ran=false
     cmds=$(commands_lines)
-    grep -iE 'e2e' "$dir/.vbw/map.md" 2> /dev/null | grep -qiE 'not run|as of' && marks=true
-    printf '%s\n' "$cmds" | grep -q 'test\.sh' && green=true
-    printf '%s\n' "$cmds" | grep -q 'e2e' && red=true
-    printf '%s\n' "$cmds" | grep 'test\.sh' | grep -vq 'e2e' && narrower=true
+    grep -iE 'e2e' "$dir/.vbw/map.md" 2> /dev/null | grep -iE 'not run|as of' > /dev/null && marks=true
+    printf '%s\n' "$cmds" | grep 'test\.sh' > /dev/null && green=true
+    printf '%s\n' "$cmds" | grep 'e2e' > /dev/null && red=true
+    printf '%s\n' "$cmds" | grep 'test\.sh' | grep -v 'e2e' > /dev/null && narrower=true
     dec=$(red_decision_text)
     transcripts | transcript_tool_called '(^|[;&| ])(sh |bash |\./)e2e\.sh' && ran=true
     say "## Commands: $(printf '%s' "$cmds" | tr '\n' ' ')"

@@ -68,7 +68,7 @@ body() { sed -n "/^scenario_$1()/,/^}/p" "$SUITE"; }
 }
 
 @test "R228: the scenario judges the red suite in ## Commands from the spec's lines and passes only without it" {
-  body mapnotrun | grep -qF "grep -q 'e2e' && red=true"
+  body mapnotrun | grep -qF "grep 'e2e' > /dev/null && red=true"
   body mapnotrun | grep -qF 'expect "## Commands does not hold the red suite ($red)" [ "$red" = false ]'
   body mapnotrun | grep -qF 'expect "## Commands holds the green command ($green)" [ "$green" = true ]'
 }
