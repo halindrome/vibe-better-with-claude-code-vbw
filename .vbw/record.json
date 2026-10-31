@@ -62022,7 +62022,7 @@
       "id": "F333",
       "req": "R149",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "C220 fail (exit 1)"
     }
   ],
@@ -75140,6 +75140,17 @@
         "ended": "2026-10-31T09:10:32Z",
         "cost": {
           "usd": 1.425191
+        }
+      },
+      {
+        "id": "fix-20261031T100311Z",
+        "kind": "fix",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M47",
+        "started": "2026-10-31T10:03:11Z",
+        "ended": "2026-10-31T10:42:32Z",
+        "cost": {
+          "usd": 0.222135
         }
       }
     ],
