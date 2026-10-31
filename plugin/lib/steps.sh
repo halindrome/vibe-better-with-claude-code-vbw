@@ -307,6 +307,19 @@ step_start() {
   step_road_note_set "" start
 }
 
+# step_replan_say RECORD: the sentence of a planning run of the milestone's open
+# requirements plus one (the cost of a yes to a suggestion that adds a requirement,
+# R229): the size and the words come from the same code as step.say for a plan step.
+step_replan_say() {
+  local size seconds
+  size=$(step_size "$1" plan '[]' | jq -c '.reqs += 1' 2> /dev/null) || size=
+  seconds=$(step_expect plan "$size")
+  jq -nr --arg s "$seconds" "$VBW_STEP_DEFS"'(now | floor) as $t
+    | (if $s == "" then null else ($s | tonumber) end) as $sec
+    | {kind: "plan", ids: [], parts: null, end: (if $sec == null then null else $t + $sec | todateiso8601 end), late: false}
+    | step_say(.; $t)'
+}
+
 # step_plan_done: a plan was just recorded done; count the running build's
 # parts done from the record, and when this run's own pace ends after the first
 # end time, move the end to that projection and mark it late (D424). The end
