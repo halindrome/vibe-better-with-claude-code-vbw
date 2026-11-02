@@ -193,7 +193,7 @@ only read; the lease also tells the autonomy gate a workflow is still running). 
 
 - it writes only files in `lease.files` (when not null); in a `plan` run, also test files;
 - it never writes a protected check file (any check's `files`) during `build` or `fix`;
-- it never runs `git commit`, `push`, `rebase`, `merge`, `pull`, `cherry-pick`, `revert` or `am`: commits go through `vbw commit`;
+- it never runs `git commit`, `commit-tree`, `push`, `rebase`, `merge`, `pull`, `cherry-pick`, `revert` or `am`: commits go through `vbw commit`;
 - it never moves HEAD or other agents' changes in the shared working tree: no `git stash` (except `list`/`show`), `switch`, `reset`, or `checkout` of a branch, and `git checkout -- PATH`/`git restore PATH` only for paths in `lease.files`.
 
 The main session is never held to a lease, so the user can always step in. A
@@ -557,12 +557,16 @@ Each refusal below ends with `Next: ` and the step in the right column
 | Guards (docs/guards.md): a secret file, the record, the consent file, `vbw approve` | Use the `vbw` command or `/vbw:approve` instead of writing directly |
 | Guards: a file outside the run's plan, a protected check file, a read-only run, another session's files | Leave the file; report the need, or work on other files until the run ends |
 | Guards: a project file that is neither a test file nor under `.vbw/`, written while planning | Leave the file; put the check in a test file, or name the file in a plan's files so the build writes it |
+| Guards: `git commit-tree` (with commit, push, rebase, merge, pull, cherry-pick, revert, am) by an agent under a lease | Commit through `vbw commit PLAN "type(scope): description"` |
+| Guards: a git history change by VBW's chat while an autonomous run or loop is armed | Follow the proof's Next line, or `vbw commit`; the user's own commands are never checked |
 | Guards: a program (python, node, perl, ruby, ...) writing a file the guard cannot name, its target a variable, an expression or another call | name the file as a literal path in the program, or write it with the Edit tool (Write for a new file) |
 | Guards: a shell command (`rm -r`, `cp`, `mv`, `tee`, `sed -i`, ...) writing a folder that holds a protected check file | Leave the protected check files as they are; name only the files you write |
 | Guards: a shell command writing a glob that may match a protected check file (`sed -i … tests/*.sh`) | Leave the protected check files as they are; name only the files you write, without a glob that reaches a check file |
 | Guards: `vbw loop start` by a tool call (arming the loop) | Ask the user to run `/vbw:loop` with the items and the ceiling they choose |
 | Guards: `vbw loop next` or `vbw loop park` by a tool call (the loop steps) | End your turn; the loop's Stop hook gives the next step |
 | Guards: a push, release, publish or deploy while a loop is on (leaving the project) | Wait for the loop to end, or stop it with `/vbw:loop stop`, then do it yourself |
+| Guards: an MCP tool the project has not opened to the agent's role | The user adds or marks it with `vbw config set mcp` |
+| Guards: a tool outside the agent's role (another role's built-in, or one VBW does not know) | The agent goes on with its own tools; a tool a role should have is a VBW change, not a setting |
 | Guards: a guard that failed during a run | Run `vbw doctor`, then retry |
 
 An unknown option prints the usage line for the three modes and exits 2.
@@ -627,6 +631,12 @@ needed.
 - **Docs**: documentation plans (README, changelog, guides, API and inline
   docs), concise and example-first; documentation files only.
 
+**MCP tools by role.** A project names the MCP servers its agents may use with
+`vbw config set mcp`. Dev, Debugger and Docs get every named tool; Architect,
+Lead, Scout and QA only a tool marked read-only. Agents inherit the session's
+tools, and the tools guard holds each to its role. See "MCP tools by role" in
+[docs/guards.md](guards.md).
+
 ## The project folder
 
 Every skill that starts a workflow passes `args.root`, the project folder: the
@@ -645,6 +655,111 @@ Without `args.root` nothing is added. The guards judge a path in a tool call
 from the agent's working folder, so an absolute path under the project folder,
 `.vbw/runtime/scratch/` included, is judged by the run's rules (docs/guards.md).
 All nine workflows do this.
+
+## Submodules
+
+A project may hold other git repositories: submodules, or a clone nested in a
+folder. A plan or check file inside one is still named by its path from the
+project folder (`apps/mobile/src/comms.ts`), and VBW does its git work for that
+file in the repository that tracks it: the nearest folder at or above the file
+that holds `.git` (the rule the guards use, docs/guards.md). A folder that a
+symbolic link takes outside the project is never such a repository: VBW does
+nothing outside the project, so a plan file reached through it stays the
+project's, and git refuses to commit a path beyond a symbolic link.
+
+- `vbw commit` makes one commit per repository that holds a changed file, each
+  with the same message and trailers (`VBW-Plan:`, `VBW-Req:`, or `VBW-Fix:`),
+  and prints one line per commit, naming the submodule:
+  `committed 1a2b3c4 in apps/mobile for P1.1 (1 file)`. The approval's commit
+  of the check files does the same.
+- The project's pointer to the submodule is never moved: VBW commits inside the
+  submodule and stops there, since many projects bump submodule pointers only on
+  purpose. The project's `git status` shows the submodule as changed (`M
+  apps/mobile`) until you record the pointer yourself. A plan never commits a
+  pointer, even one whose files name the folder above the submodule.
+- A plan's folder entry (`apps/`, or `*`) covers the files of each submodule
+  inside it: `vbw commit` commits them in the submodule, and `vbw plan done`
+  counts them as uncommitted until it has.
+- When one repository's commit fails (a pre-commit hook refuses, say) after
+  another's went in, `vbw commit` stops, names the repository that failed and
+  each commit already made (`git commit failed in the project; already
+  committed: 1a2b3c4 in apps/mobile (1 file)`), and raises the phase's rigor
+  for what was committed. Run the same `vbw commit` again once git's reason is
+  fixed: it commits only the files still changed.
+- A submodule with a changed file must be on a branch. On a detached HEAD (as
+  `git submodule update` leaves one) `vbw commit` commits nothing anywhere and
+  says `apps/mobile is on no branch`, with the way out (`git -C apps/mobile
+  switch BRANCH`): a commit there would be left behind by the next submodule
+  update.
+- `vbw plan done` reads the plan's files' changes, and looks for the plan's
+  commit, in the repository that tracks each file. Every reader of VBW's
+  commits reads each submodule's history as well as the project's: the scope
+  check and the delivered-files check (a hand change in the submodule is a
+  deviation, named by its project path), `vbw show req` and the loop's report
+  (a submodule's commit with `(in apps/mobile)` after it), `vbw show contract
+  --changes` (the approved content of a test file in a submodule), and QA's
+  fingerprint of a phase (a commit in the submodule sends a passed phase back to
+  QA). In a submodule the record's own history ([Whose commits VBW
+  judges](proof.md#whose-commits-vbw-judges)) starts after the commit the
+  record's first commit pointed the submodule at.
+- The proof copy (`vbw prove`, `vbw mutate`, `vbw fix done`) holds each
+  checked-out submodule at its own `HEAD`, and `vbw mutate` puts a broken file
+  back as its own repository's last commit (docs/proof.md, `vbw prove`). When
+  git cannot write the copy because Claude Code's sandbox refuses to create a
+  file named `.gitmodules`, VBW makes it again with every `.gitmodules` file
+  unwritten: git reads it from the index, VBW still finds the submodules, and
+  the copy's `git status` stays clean.
+- `vbw ship` wants every file committed: a submodule's files in the submodule,
+  every level down (a changed file in a submodule's own submodule is named by
+  its project path too). A moved pointer does not count as uncommitted work.
+- A `vbw` command run inside a submodule that has no `.vbw/` of its own works on
+  the project above it, and a Claude session started there is guarded as that
+  project (docs/guards.md). A clone nested in the project (its `.git` a folder)
+  and a linked worktree nested in it (its `.git` file points into a
+  `worktrees/` folder) stay projects of their own.
+- `vbw mutate` judges a break by the committed code with each submodule at its
+  own `HEAD`, under the contract it ran with: a commit made only in a submodule,
+  or an approved change to a check's `run`, makes the checks run on the
+  unbroken code again; a commit made only in a submodule also drops a break
+  queued before it.
+- `## Test files` matches a pathspec inside a submodule only when the pathspec
+  names it (`apps/mobile/src/**/*.spec.ts`), and an exclude that names it
+  (`:!apps/mobile/src/legacy/**`) applies inside it: a test file there is a
+  test file of its own, named by its project path. A pattern that names no
+  submodule (`*/tests/*.sh`) matches the project's own files only, so a vendored
+  submodule's tests never become units.
+
+Known limits:
+
+- **A check that reads `.gitmodules` as a file, under Claude Code's sandbox:**
+  the sandbox keeps VBW from writing `.gitmodules` into the proof copy, so such
+  a check fails in the proof while it passes in your working folder. Read it
+  through git instead (`git config --blob :.gitmodules ...`). Outside the
+  sandbox the copy holds the file.
+
+- **A parked loop item** reverts its commits in the project only: its commits in
+  a submodule stay.
+- **The loop's approval of strengthened check files** reads the project's
+  history only: for a check file in a submodule it leaves the approval to you.
+- **Uncommitted edits inside a submodule** are not seen by `vbw next`'s
+  fingerprint of the working folder or by proof reuse: a submodule counts at its
+  `HEAD` until you commit there.
+- **One level of submodules:** apart from `vbw ship`'s check, a submodule
+  inside a submodule is not followed: its folder is empty in the proof copy, so
+  a check reading inside it fails, and `## Test files` lists none of its files.
+- **A survivor strengthened only in a submodule:** `vbw mutate` finds the
+  strengthened check files by diffing the project's history from the survivor's
+  `head`, so a check file strengthened and committed only in a submodule is not
+  marked strengthened, and the next red break of that rule reports that the
+  break survives the approved check.
+- **A submodule that was once a VBW project:** when the record's first commit
+  had no submodule at that path, VBW reads the submodule's whole history, so
+  `VBW-Plan:` commits from its own earlier VBW work can count as a plan's
+  commit there.
+- **A clone nested in the project that is not its submodule:** a plan file named
+  inside it is committed there, but a plan's folder entry above it does not
+  reach into it (its pointer is never committed either), and it is not brought
+  into the proof copy, the fingerprints or the readers of VBW's history.
 
 ## The user's level
 
